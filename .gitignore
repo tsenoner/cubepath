@@ -9,6 +9,11 @@ wheels/
 # Virtual environments
 .venv
 
+# Tools
+.ruff_cache/
+.pytest_cache/
+.claude/
+
 # macOS
 .DS_Store
 
