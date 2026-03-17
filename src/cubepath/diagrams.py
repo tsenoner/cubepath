@@ -105,27 +105,27 @@ def _oll_corner_cases() -> list[CubeDiagram]:
         return [tl, Y, tr, Y, Y, Y, bl, Y, br]
 
     return [
-        # Sune: 1 yellow corner (back-left), other 3 CW-twisted
+        # Sune: 1 yellow corner (front-left), other 3 CW-twisted
         CubeDiagram(
             name="oll_sune",
             label="Sune",
             category="oll_corners",
-            u_face=with_corners(Y, G, G, G),
-            top_side=[G, G, G],
+            u_face=with_corners(G, G, Y, G),
+            top_side=[Y, G, G],
             right_side=[Y, G, G],
             bottom_side=[G, G, Y],
-            left_side=[G, G, Y],
+            left_side=[G, G, G],
         ),
-        # Anti-Sune: 1 yellow corner (back-left), other 3 CCW-twisted
+        # Anti-Sune: 1 yellow corner (back-right), other 3 CCW-twisted
         CubeDiagram(
             name="oll_antisune",
             label="Anti-Sune",
             category="oll_corners",
-            u_face=with_corners(Y, G, G, G),
-            top_side=[G, G, Y],
+            u_face=with_corners(G, Y, G, G),
+            top_side=[G, G, G],
             right_side=[G, G, Y],
             bottom_side=[Y, G, G],
-            left_side=[G, G, G],
+            left_side=[Y, G, G],
         ),
         CubeDiagram(
             name="oll_pi",
