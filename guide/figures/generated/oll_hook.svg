@@ -3,13 +3,13 @@
   <defs/>
   <rect fill="#FFFFFF" height="192" rx="8" ry="8" width="192" x="0" y="0"/>
   <rect fill="#C0C0C0" height="40" rx="4" ry="4" stroke="#333333" stroke-width="1.5" width="40" x="34" y="34"/>
-  <rect fill="#C0C0C0" height="40" rx="4" ry="4" stroke="#333333" stroke-width="1.5" width="40" x="76" y="34"/>
+  <rect fill="#FFD500" height="40" rx="4" ry="4" stroke="#333333" stroke-width="1.5" width="40" x="76" y="34"/>
   <rect fill="#C0C0C0" height="40" rx="4" ry="4" stroke="#333333" stroke-width="1.5" width="40" x="118" y="34"/>
   <rect fill="#FFD500" height="40" rx="4" ry="4" stroke="#333333" stroke-width="1.5" width="40" x="34" y="76"/>
   <rect fill="#FFD500" height="40" rx="4" ry="4" stroke="#333333" stroke-width="1.5" width="40" x="76" y="76"/>
   <rect fill="#C0C0C0" height="40" rx="4" ry="4" stroke="#333333" stroke-width="1.5" width="40" x="118" y="76"/>
   <rect fill="#C0C0C0" height="40" rx="4" ry="4" stroke="#333333" stroke-width="1.5" width="40" x="34" y="118"/>
-  <rect fill="#FFD500" height="40" rx="4" ry="4" stroke="#333333" stroke-width="1.5" width="40" x="76" y="118"/>
+  <rect fill="#C0C0C0" height="40" rx="4" ry="4" stroke="#333333" stroke-width="1.5" width="40" x="76" y="118"/>
   <rect fill="#C0C0C0" height="40" rx="4" ry="4" stroke="#333333" stroke-width="1.5" width="40" x="118" y="118"/>
   <rect fill="#C0C0C0" height="12" rx="2" ry="2" stroke="#333333" stroke-width="1" width="40" x="34" y="20"/>
   <rect fill="#C0C0C0" height="12" rx="2" ry="2" stroke="#333333" stroke-width="1" width="40" x="76" y="20"/>

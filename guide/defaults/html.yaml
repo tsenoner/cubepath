@@ -6,6 +6,9 @@ toc: true
 number-sections: true
 metadata-file: metadata.yaml
 output-file: build/cubepath.html
-css: []
+css:
+  - styles/callouts.css
+filters:
+  - filters/callouts.lua
 metadata:
   mainfont: "system-ui, sans-serif"

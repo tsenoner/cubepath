@@ -86,7 +86,7 @@ def _oll_cross_cases() -> list[CubeDiagram]:
             name="oll_hook",
             label="Hook / L-shape",
             category="oll_cross",
-            u_face=[G, G, G, Y, Y, G, G, Y, G],
+            u_face=[G, Y, G, Y, Y, G, G, G, G],  # L in back-left (ready position)
         ),
         CubeDiagram(
             name="oll_line",
@@ -104,25 +104,27 @@ def _oll_corner_cases() -> list[CubeDiagram]:
         return [tl, Y, tr, Y, Y, Y, bl, Y, br]
 
     return [
+        # Sune: 1 yellow corner (back-left), other 3 CW-twisted
         CubeDiagram(
             name="oll_sune",
             label="Sune",
             category="oll_corners",
-            u_face=with_corners(G, G, Y, G),
+            u_face=with_corners(Y, G, G, G),
             top_side=[G, G, G],
             right_side=[Y, G, G],
-            bottom_side=[G, G, G],
+            bottom_side=[G, G, Y],
             left_side=[G, G, Y],
         ),
+        # Anti-Sune: 1 yellow corner (back-left), other 3 CCW-twisted
         CubeDiagram(
             name="oll_antisune",
             label="Anti-Sune",
             category="oll_corners",
-            u_face=with_corners(G, G, G, Y),
-            top_side=[G, G, G],
+            u_face=with_corners(Y, G, G, G),
+            top_side=[G, G, Y],
             right_side=[G, G, Y],
-            bottom_side=[G, G, G],
-            left_side=[Y, G, G],
+            bottom_side=[Y, G, G],
+            left_side=[G, G, G],
         ),
         CubeDiagram(
             name="oll_pi",
