@@ -6,7 +6,6 @@ Each diagram shows the U (top) face as a 3x3 grid with 4 side strips.
 
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -48,6 +47,8 @@ class CubeDiagram:
     # Arrows for PLL: bidirectional swaps and directional cycles
     swaps: list[tuple[str, str]] = field(default_factory=list)
     cycles: list[list[str]] = field(default_factory=list)
+    # Secondary arrows (dashed) for edge movement in corner PLLs
+    dashed_swaps: list[tuple[str, str]] = field(default_factory=list)
 
 
 Y = YELLOW
@@ -56,16 +57,16 @@ G = GREY
 
 
 def _arrow_pos(name: str) -> tuple[float, float]:
-    """Return pixel center for a named arrow anchor position."""
+    """Return pixel center for a named arrow anchor on the U-face grid."""
     ox = MARGIN + SIDE_H + GAP  # 34
     oy = MARGIN + SIDE_H + GAP  # 34
     positions = {
-        # Edge midpoints (center of middle side-strip sticker)
-        "top": (ox + (CELL + GAP) + CELL / 2, MARGIN + SIDE_H / 2),
-        "bottom": (ox + (CELL + GAP) + CELL / 2, oy + 3 * CELL + 2 * GAP + GAP + SIDE_H / 2),
-        "left": (MARGIN + SIDE_H / 2, oy + (CELL + GAP) + CELL / 2),
-        "right": (ox + 3 * CELL + 2 * GAP + GAP + SIDE_H / 2, oy + (CELL + GAP) + CELL / 2),
-        # Corner midpoints (center of corner U-face stickers)
+        # Edge midpoints (center of U-face edge stickers)
+        "top": (ox + (CELL + GAP) + CELL / 2, oy + CELL / 2),
+        "bottom": (ox + (CELL + GAP) + CELL / 2, oy + 2 * (CELL + GAP) + CELL / 2),
+        "left": (ox + CELL / 2, oy + (CELL + GAP) + CELL / 2),
+        "right": (ox + 2 * (CELL + GAP) + CELL / 2, oy + (CELL + GAP) + CELL / 2),
+        # Corner midpoints (center of U-face corner stickers)
         "tl": (ox + CELL / 2, oy + CELL / 2),
         "tr": (ox + 2 * (CELL + GAP) + CELL / 2, oy + CELL / 2),
         "bl": (ox + CELL / 2, oy + 2 * (CELL + GAP) + CELL / 2),
@@ -179,29 +180,31 @@ def _oll_corner_cases() -> list[CubeDiagram]:
 def _pll_corner_cases() -> list[CubeDiagram]:
     """PLL corner permutation cases."""
     return [
-        # T-perm: adjacent corner swap (headlights on back, swap front two)
+        # T-perm: adjacent corner swap (headlights on left, swap right-side corners)
         CubeDiagram(
             name="pll_tperm",
             label="T-Perm",
             category="pll_corners",
             u_face=[Y] * 9,
-            top_side=[RED, G, RED],
-            right_side=[BLUE, G, GREEN],
-            bottom_side=[ORANGE, G, ORANGE],
-            left_side=[GREEN, G, BLUE],
-            swaps=[("tl", "tr")],
+            top_side=[RED, G, ORANGE],
+            right_side=[BLUE, G, BLUE],
+            bottom_side=[ORANGE, G, RED],
+            left_side=[GREEN, G, GREEN],
+            swaps=[("tr", "br")],
+            dashed_swaps=[("right", "left")],
         ),
-        # Y-perm: diagonal corner swap
+        # Y-perm: diagonal corner swap (UBL↔UFR) + edge swap (UB↔UL)
         CubeDiagram(
             name="pll_yperm",
             label="Y-Perm",
             category="pll_corners",
             u_face=[Y] * 9,
-            top_side=[RED, G, ORANGE],
-            right_side=[GREEN, G, RED],
-            bottom_side=[ORANGE, G, BLUE],
-            left_side=[BLUE, G, GREEN],
+            top_side=[BLUE, G, RED],
+            right_side=[BLUE, G, RED],
+            bottom_side=[ORANGE, G, GREEN],
+            left_side=[ORANGE, G, GREEN],
             swaps=[("tl", "br")],
+            dashed_swaps=[("top", "left")],
         ),
     ]
 
@@ -209,29 +212,29 @@ def _pll_corner_cases() -> list[CubeDiagram]:
 def _pll_edge_cases() -> list[CubeDiagram]:
     """PLL edge permutation cases."""
     return [
-        # Ua: 3-cycle (clockwise: top→right→bottom)
+        # Ua: 3-cycle (front→right→left, solved edge at back)
         CubeDiagram(
             name="pll_ua",
             label="Ua Perm",
             category="pll_edges",
             u_face=[Y] * 9,
-            top_side=[RED, BLUE, RED],
-            right_side=[BLUE, RED, BLUE],
-            bottom_side=[ORANGE, ORANGE, ORANGE],
-            left_side=[GREEN, GREEN, GREEN],
-            cycles=[["top", "right", "bottom"]],
+            top_side=[RED, RED, RED],
+            right_side=[BLUE, GREEN, BLUE],
+            bottom_side=[ORANGE, BLUE, ORANGE],
+            left_side=[GREEN, ORANGE, GREEN],
+            cycles=[["bottom", "right", "left"]],
         ),
-        # Ub: 3-cycle (counter-clockwise: top→left→bottom)
+        # Ub: 3-cycle (front→left→right, solved edge at back)
         CubeDiagram(
             name="pll_ub",
             label="Ub Perm",
             category="pll_edges",
             u_face=[Y] * 9,
-            top_side=[RED, GREEN, RED],
-            right_side=[BLUE, BLUE, BLUE],
-            bottom_side=[ORANGE, ORANGE, ORANGE],
-            left_side=[GREEN, RED, GREEN],
-            cycles=[["top", "left", "bottom"]],
+            top_side=[RED, RED, RED],
+            right_side=[BLUE, ORANGE, BLUE],
+            bottom_side=[ORANGE, GREEN, ORANGE],
+            left_side=[GREEN, BLUE, GREEN],
+            cycles=[["bottom", "left", "right"]],
         ),
         # H-perm: opposite edge swap
         CubeDiagram(
@@ -273,50 +276,39 @@ def _grid_to_px(col: float, row: float) -> tuple[float, float]:
 
 def _add_arrow_defs(dwg: svgwrite.Drawing) -> None:
     """Add arrowhead marker definitions to the SVG."""
-    # Forward arrowhead
+    # Forward arrowhead — insert at midpoint so tip extends past line end
     marker = dwg.marker(
         id="arrowhead",
-        insert=(6, 3),
-        size=(8, 8),
+        insert=(5, 5),
+        size=(10, 10),
         orient="auto",
-        markerUnits="strokeWidth",
+        markerUnits="userSpaceOnUse",
     )
-    marker.add(dwg.polygon([(0, 0), (6, 3), (0, 6)], fill=ARROW_COLOR))
+    marker.add(dwg.polygon([(0, 0), (10, 5), (0, 10)], fill=ARROW_COLOR))
     dwg.defs.add(marker)
 
     # Reversed arrowhead (for marker-start on swaps)
     marker_rev = dwg.marker(
         id="arrowhead-rev",
-        insert=(0, 3),
-        size=(8, 8),
+        insert=(5, 5),
+        size=(10, 10),
         orient="auto",
-        markerUnits="strokeWidth",
+        markerUnits="userSpaceOnUse",
     )
-    marker_rev.add(dwg.polygon([(6, 0), (0, 3), (6, 6)], fill=ARROW_COLOR))
+    marker_rev.add(dwg.polygon([(10, 0), (0, 5), (10, 10)], fill=ARROW_COLOR))
     dwg.defs.add(marker_rev)
 
 
-def _curved_path(
+def _arrow_path(
     dwg: svgwrite.Drawing,
-    start: tuple[float, float],
-    end: tuple[float, float],
-    curve_sign: float = 1.0,
+    pos_a: str,
+    pos_b: str,
 ) -> svgwrite.path.Path:
-    """Create a curved SVG path between two points."""
-    mx = (start[0] + end[0]) / 2
-    my = (start[1] + end[1]) / 2
-    dx = end[0] - start[0]
-    dy = end[1] - start[1]
-    length = math.sqrt(dx * dx + dy * dy)
-    if length == 0:
-        return dwg.path(d="", fill="none")
-    nx, ny = -dy / length, dx / length
-    curve_offset = min(length * 0.3, 25) * curve_sign
-    cx = mx + nx * curve_offset
-    cy = my + ny * curve_offset
-
+    """Create a straight arrow path between two named positions."""
+    start = _arrow_pos(pos_a)
+    end = _arrow_pos(pos_b)
     return dwg.path(
-        d=f"M {start[0]},{start[1]} Q {cx},{cy} {end[0]},{end[1]}",
+        d=f"M {start[0]},{start[1]} L {end[0]},{end[1]}",
         fill="none",
         stroke=ARROW_COLOR,
         stroke_width=2,
@@ -327,13 +319,15 @@ def _draw_swap(
     dwg: svgwrite.Drawing,
     pos_a: str,
     pos_b: str,
+    *,
+    dashed: bool = False,
 ) -> None:
     """Draw a single bidirectional arrow (swap) between two named positions."""
-    start = _arrow_pos(pos_a)
-    end = _arrow_pos(pos_b)
-    path = _curved_path(dwg, start, end)
+    path = _arrow_path(dwg, pos_a, pos_b)
     path["marker-start"] = "url(#arrowhead-rev)"
     path["marker-end"] = "url(#arrowhead)"
+    if dashed:
+        path.dasharray([4, 3])
     dwg.add(path)
 
 
@@ -343,9 +337,9 @@ def _draw_cycle(
 ) -> None:
     """Draw directional arrows forming a cycle through named positions."""
     for i in range(len(positions)):
-        start = _arrow_pos(positions[i])
-        end = _arrow_pos(positions[(i + 1) % len(positions)])
-        path = _curved_path(dwg, start, end)
+        a = positions[i]
+        b = positions[(i + 1) % len(positions)]
+        path = _arrow_path(dwg, a, b)
         path["marker-end"] = "url(#arrowhead)"
         dwg.add(path)
 
@@ -452,13 +446,15 @@ def render(case: CubeDiagram, output_dir: Path) -> Path:
         )
 
     # Draw arrows for PLL cases
-    has_arrows = case.swaps or case.cycles
+    has_arrows = case.swaps or case.cycles or case.dashed_swaps
     if has_arrows:
         _add_arrow_defs(dwg)
         for pos_a, pos_b in case.swaps:
             _draw_swap(dwg, pos_a, pos_b)
         for cycle in case.cycles:
             _draw_cycle(dwg, cycle)
+        for pos_a, pos_b in case.dashed_swaps:
+            _draw_swap(dwg, pos_a, pos_b, dashed=True)
 
     dwg.save(pretty=True)
     return filepath

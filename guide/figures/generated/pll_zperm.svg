@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xlink="http://www.w3.org/1999/xlink" baseProfile="full" height="192px" version="1.1" viewBox="0 0 192 192" width="192px">
   <defs>
-    <marker id="arrowhead" markerHeight="8" markerUnits="strokeWidth" markerWidth="8" orient="auto" refX="6" refY="3">
-      <polygon fill="#222222" points="0,0 6,3 0,6"/>
+    <marker id="arrowhead" markerHeight="10" markerUnits="userSpaceOnUse" markerWidth="10" orient="auto" refX="5" refY="5">
+      <polygon fill="#222222" points="0,0 10,5 0,10"/>
     </marker>
-    <marker id="arrowhead-rev" markerHeight="8" markerUnits="strokeWidth" markerWidth="8" orient="auto" refX="0" refY="3">
-      <polygon fill="#222222" points="6,0 0,3 6,6"/>
+    <marker id="arrowhead-rev" markerHeight="10" markerUnits="userSpaceOnUse" markerWidth="10" orient="auto" refX="5" refY="5">
+      <polygon fill="#222222" points="10,0 0,5 10,10"/>
     </marker>
   </defs>
   <rect fill="#FFFFFF" height="192" rx="8" ry="8" width="192" x="0" y="0"/>
@@ -30,6 +30,6 @@
   <rect fill="#0051BA" height="40" rx="2" ry="2" stroke="#333333" stroke-width="1" width="12" x="160" y="34"/>
   <rect fill="#E00000" height="40" rx="2" ry="2" stroke="#333333" stroke-width="1" width="12" x="160" y="76"/>
   <rect fill="#0051BA" height="40" rx="2" ry="2" stroke="#333333" stroke-width="1" width="12" x="160" y="118"/>
-  <path d="M 96.0,26.0 Q 113.32233047033631,78.67766952966369 166.0,96.0" fill="none" marker-end="url(#arrowhead)" marker-start="url(#arrowhead-rev)" stroke="#222222" stroke-width="2"/>
-  <path d="M 26.0,96.0 Q 43.32233047033631,148.6776695296637 96.0,166.0" fill="none" marker-end="url(#arrowhead)" marker-start="url(#arrowhead-rev)" stroke="#222222" stroke-width="2"/>
+  <path d="M 96.0,54.0 L 138.0,96.0" fill="none" marker-end="url(#arrowhead)" marker-start="url(#arrowhead-rev)" stroke="#222222" stroke-width="2"/>
+  <path d="M 54.0,96.0 L 96.0,138.0" fill="none" marker-end="url(#arrowhead)" marker-start="url(#arrowhead-rev)" stroke="#222222" stroke-width="2"/>
 </svg>
