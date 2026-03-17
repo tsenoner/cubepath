@@ -1,0 +1,8 @@
+from: markdown
+to: typst
+standalone: true
+toc: true
+number-sections: true
+shift-heading-level-by: 0
+metadata-file: metadata.yaml
+output-file: build/cubepath.pdf

@@ -1,0 +1,26 @@
+[project]
+name = "cubepath"
+version = "0.1.0"
+description = "Rubik's Cube guide: from Beginner to 2-Look CFOP"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "svgwrite>=1.4.3",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project.scripts]
+cubepath-diagrams = "cubepath.diagrams:main"
+
+[dependency-groups]
+dev = ["ruff>=0.11", "pytest>=8"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "W"]

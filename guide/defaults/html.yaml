@@ -1,0 +1,11 @@
+from: markdown
+to: html5
+standalone: true
+embed-resources: true
+toc: true
+number-sections: true
+metadata-file: metadata.yaml
+output-file: build/cubepath.html
+css: []
+metadata:
+  mainfont: "system-ui, sans-serif"
