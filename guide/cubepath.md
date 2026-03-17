@@ -89,8 +89,8 @@ Flip the cube — yellow on top. One algorithm handles all cases:
 
 | You see | Action |
 |---------|--------|
-| Dot | Apply twice: Dot → Hook → Cross |
-| Hook | Hold L in **back-left**, apply once |
+| Dot | Apply once → Hook or Line. Orient, apply again |
+| Hook | Apply once → Line. Hold line horizontal, apply again |
 | Line | Hold line **horizontal**, apply once |
 
 ## Align Yellow Edges
@@ -156,17 +156,17 @@ Switch to CFOP order. This eliminates the two slowest beginner steps:
 
 ## Yellow Cross (Updated)
 
-The Line case gets its own efficient algorithm using wide `f`:
+The Hook case gets its own efficient algorithm using wide `f`:
 
 ![Dot](figures/generated/oll_dot.svg){ width=15% }
-![Hook](figures/generated/oll_hook.svg){ width=15% }
+![Hook](figures/generated/oll_hook.svg){ width=15% rotate=180 }
 ![Line](figures/generated/oll_line.svg){ width=15% }
 
 | You see | Algorithm |
 |---------|-----------|
 | Dot | `F (R U R' U') F'` then `f (R U R' U') f'` |
-| Hook | `F (R U R' U') F'` — hold L in back-left |
-| Line | `f (R U R' U') f'` — wide `f`, hold horizontal |
+| Hook | `f (R U R' U') f'` — wide `f`, hold L in **front-right** |
+| Line | `F (R U R' U') F'` — hold line **horizontal** |
 
 ## Orient Corners: Sune + Anti-Sune
 
@@ -249,7 +249,7 @@ Every OLL and PLL case now solved in **one algorithm**.
 ::: algorithm
 | Case | Algorithm | Notes |
 |------|-----------|-------|
-| Pi (0 yellow, Π on front/back) | `f (R U R' U') f' F (R U R' U') F'` | Line + Hook — zero new triggers |
+| Pi (0 yellow, Π on front/back) | `f (R U R' U') f' F (R U R' U') F'` | Hook + Line — zero new triggers |
 | Headlights (0 yellow, headlights L+R) | `R2 D R' U2 R D' R' U2 R'` | Hold headlights on **left** |
 | Chameleon (2 diagonal yellow) | `r U R' U' r' F R F'` | Wide `r` sexy variant |
 | Bowtie (2 diagonal yellow) | `F' r U R' U' r' F R` | Rearranged Chameleon |

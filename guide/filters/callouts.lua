@@ -29,6 +29,29 @@ local callout_styles = {
   },
 }
 
+function Image(el)
+  local angle = el.attributes["rotate"]
+  if not angle then return end
+  el.attributes["rotate"] = nil  -- don't pass through
+  if FORMAT:match("typst") then
+    local w = el.attributes["width"] or ""
+    el.attributes["width"] = nil
+    local src = el.src
+    local img = w ~= ""
+      and string.format('image("%s", width: 100%%)', src)
+      or  string.format('image("%s")', src)
+    local inner = string.format("rotate(%sdeg, %s)", angle, img)
+    local outer = w ~= ""
+      and string.format("#box(width: %s, %s)", w, inner)
+      or  string.format("#box(%s)", inner)
+    return pandoc.RawInline("typst", outer)
+  else
+    -- HTML: keep as Image inside a Span with rotation style
+    local style = string.format("display:inline-block; transform:rotate(%sdeg)", angle)
+    return pandoc.Span({el}, pandoc.Attr("", {}, {{"style", style}}))
+  end
+end
+
 function Div(el)
   for cls, style in pairs(callout_styles) do
     if el.classes:includes(cls) then

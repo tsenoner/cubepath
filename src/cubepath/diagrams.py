@@ -54,6 +54,7 @@ Y = YELLOW
 G = GREY
 
 
+
 def _arrow_pos(name: str) -> tuple[float, float]:
     """Return pixel center for a named arrow anchor position."""
     ox = MARGIN + SIDE_H + GAP  # 34
@@ -86,7 +87,7 @@ def _oll_cross_cases() -> list[CubeDiagram]:
             name="oll_hook",
             label="Hook / L-shape",
             category="oll_cross",
-            u_face=[G, Y, G, Y, Y, G, G, G, G],  # L in back-left (ready position)
+            u_face=[G, Y, G, Y, Y, G, G, G, G],  # L in back-left
         ),
         CubeDiagram(
             name="oll_line",
