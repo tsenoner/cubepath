@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xlink="http://www.w3.org/1999/xlink" baseProfile="full" height="200px" version="1.1" viewBox="0 0 240 200" width="240px">
+  <defs>
+    <marker id="ov-arrow" markerHeight="10" markerUnits="userSpaceOnUse" markerWidth="10" orient="auto" refX="5" refY="5">
+      <polygon fill="#222222" points="0,1 10,5 0,9"/>
+    </marker>
+  </defs>
+  <rect fill="#FFFFFF" height="200" rx="8" ry="8" width="240" x="0" y="0"/>
+  <polygon fill="#FFD500" points="120.0,24.0 177.2,57.0 120.0,90.0 62.8,57.0" stroke="#333333" stroke-width="1.5"/>
+  <polygon fill="#E00000" points="62.8,123.0 120.0,156.0 120.0,90.0 62.8,57.0" stroke="#333333" stroke-width="1.5"/>
+  <polygon fill="#009E60" points="177.2,123.0 120.0,156.0 120.0,90.0 177.2,57.0" stroke="#333333" stroke-width="1.5"/>
+  <line stroke="#333333" stroke-width="1.5" x1="120.0" x2="177.2" y1="24.0" y2="57.0"/>
+  <line stroke="#333333" stroke-width="1.5" x1="177.2" x2="177.2" y1="57.0" y2="123.0"/>
+  <line stroke="#333333" stroke-width="1.5" x1="177.2" x2="120.0" y1="123.0" y2="156.0"/>
+  <line stroke="#333333" stroke-width="1.5" x1="120.0" x2="62.8" y1="156.0" y2="123.0"/>
+  <line stroke="#333333" stroke-width="1.5" x1="62.8" x2="62.8" y1="123.0" y2="57.0"/>
+  <line stroke="#333333" stroke-width="1.5" x1="62.8" x2="120.0" y1="57.0" y2="24.0"/>
+  <line stroke="#333333" stroke-width="1.5" x1="120.0" x2="62.8" y1="90.0" y2="57.0"/>
+  <line stroke="#333333" stroke-width="1.5" x1="120.0" x2="177.2" y1="90.0" y2="57.0"/>
+  <line stroke="#333333" stroke-width="1.5" x1="120.0" x2="120.0" y1="90.0" y2="156.0"/>
+  <line marker-end="url(#ov-arrow)" stroke="#222222" stroke-width="2" x1="120.0" x2="120.0" y1="57.0" y2="17.4"/>
+  <text fill="#222" font-family="sans-serif" font-size="16px" font-weight="bold" text-anchor="middle" x="120.0" y="10.399999999999999">U</text>
+  <line marker-end="url(#ov-arrow)" stroke="#222222" stroke-width="2" x1="120.0" x2="120.0" y1="123.0" y2="149.4"/>
+  <text fill="#222" font-family="sans-serif" font-size="16px" font-weight="bold" text-anchor="middle" x="120.0" y="166.4">D</text>
+  <line marker-end="url(#ov-arrow)" stroke="#222222" stroke-width="2" x1="91.4" x2="57.1" y1="106.5" y2="126.3"/>
+  <text fill="#222" font-family="sans-serif" font-size="16px" font-weight="bold" text-anchor="middle" x="46.70728658975111" y="137.2992922892982">F</text>
+  <line marker-end="url(#ov-arrow)" stroke="#222222" stroke-width="2" x1="148.6" x2="171.4" y1="73.5" y2="60.3"/>
+  <text fill="#222" font-family="sans-serif" font-size="16px" font-weight="bold" text-anchor="middle" x="181.7851154257735" y="59.287564753499545">B</text>
+  <line marker-end="url(#ov-arrow)" stroke="#222222" stroke-width="2" x1="148.6" x2="182.9" y1="106.5" y2="126.3"/>
+  <text fill="#222" font-family="sans-serif" font-size="16px" font-weight="bold" text-anchor="middle" x="193.2927134102489" y="137.2992922892982">R</text>
+  <line marker-end="url(#ov-arrow)" stroke="#222222" stroke-width="2" x1="91.4" x2="68.6" y1="73.5" y2="60.3"/>
+  <text fill="#222" font-family="sans-serif" font-size="16px" font-weight="bold" text-anchor="middle" x="58.21488457422648" y="59.287564753499545">L</text>
+</svg>

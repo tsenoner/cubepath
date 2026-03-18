@@ -20,27 +20,44 @@ Hold the cube with **white on bottom, yellow on top** throughout.
 
 # Notation
 
-Each letter = 90° clockwise (looking at that face). Add **'** for counterclockwise. Add **2** for 180°.
+Each letter = one 90° turn, clockwise when looking at that face.
+Add **'** (prime) for counterclockwise. Add **2** for 180°.
+
+**Face Moves** — the six faces of the cube:
 
 ![R](figures/generated/notation/move_r.svg){ width=10% }
-![R'](figures/generated/notation/move_r_prime.svg){ width=10% }
-![U](figures/generated/notation/move_u.svg){ width=10% }
-![U'](figures/generated/notation/move_u_prime.svg){ width=10% }
-![F](figures/generated/notation/move_f.svg){ width=10% }
-![F'](figures/generated/notation/move_f_prime.svg){ width=10% }
 ![L](figures/generated/notation/move_l.svg){ width=10% }
-![L'](figures/generated/notation/move_l_prime.svg){ width=10% }
-
+![U](figures/generated/notation/move_u.svg){ width=10% }
 ![D](figures/generated/notation/move_d.svg){ width=10% }
-![D'](figures/generated/notation/move_d_prime.svg){ width=10% }
-![M](figures/generated/notation/move_m.svg){ width=10% }
-![f](figures/generated/notation/move_fw.svg){ width=10% }
+![F](figures/generated/notation/move_f.svg){ width=10% }
+![B](figures/generated/notation/move_b.svg){ width=10% }
+
+**Other Moves** — primes, doubles, and wide turns:
+
+An apostrophe **'** reverses the move (counterclockwise). A **2** means turn 180°.
+Lowercase = wide move (two layers). These modifiers apply to any face move.
+
+![R'](figures/generated/notation/move_r_prime.svg){ width=10% }
+![R2](figures/generated/notation/move_r2.svg){ width=10% }
 ![r](figures/generated/notation/move_rw.svg){ width=10% }
+
+**Cube Rotations** (dashed arrow) — the whole cube turns, no layer stays fixed:
+
 ![x](figures/generated/notation/move_x.svg){ width=10% }
 ![y](figures/generated/notation/move_y.svg){ width=10% }
 ![z](figures/generated/notation/move_z.svg){ width=10% }
 
-Highlighted stickers show the turning layer. Lowercase (**f**, **r**) = wide move (two layers). **M** = middle layer (same direction as L). **x**/**y**/**z** = whole-cube rotation.
+**x** follows R · **y** follows U · **z** follows F
+
+**Slice Moves** — turn only the middle layer:
+
+![M](figures/generated/notation/move_m.svg){ width=10% }
+![S](figures/generated/notation/move_s.svg){ width=10% }
+![E](figures/generated/notation/move_e.svg){ width=10% }
+
+**M** follows L · **S** follows F · **E** follows D
+
+![Overview](figures/generated/notation/overview.svg){ width=40% }
 
 > **Sexy Move:** [`R U R' U'`]{.trig-r} — The most important trigger in cubing. Practice until it's muscle memory.
 

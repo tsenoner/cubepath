@@ -386,73 +386,30 @@ def render(case: CubeDiagram, output_dir: Path) -> Path:
             )
         )
 
-    # Draw side strips
+    # Draw side strips (top, bottom, left, right)
     ox = MARGIN + SIDE_H + GAP
     oy = MARGIN + SIDE_H + GAP
-
-    # Top side strip
-    for i, color in enumerate(case.top_side):
-        x = ox + i * (CELL + GAP)
-        y = MARGIN
-        dwg.add(
-            dwg.rect(
-                (x, y),
-                (CELL, SIDE_H),
-                fill=color,
-                stroke=STICKER_STROKE,
-                stroke_width=1,
-                rx=2,
-                ry=2,
+    step = CELL + GAP
+    side_strips = [
+        # (colors, x0, y0, dx, dy, width, height)
+        (case.top_side, ox, MARGIN, step, 0, CELL, SIDE_H),
+        (case.bottom_side, ox, oy + grid_h + GAP, step, 0, CELL, SIDE_H),
+        (case.left_side, MARGIN, oy, 0, step, SIDE_H, CELL),
+        (case.right_side, ox + grid_w + GAP, oy, 0, step, SIDE_H, CELL),
+    ]
+    for colors, x0, y0, sx, sy, w, h in side_strips:
+        for i, color in enumerate(colors):
+            dwg.add(
+                dwg.rect(
+                    (x0 + i * sx, y0 + i * sy),
+                    (w, h),
+                    fill=color,
+                    stroke=STICKER_STROKE,
+                    stroke_width=1,
+                    rx=2,
+                    ry=2,
+                )
             )
-        )
-
-    # Bottom side strip
-    for i, color in enumerate(case.bottom_side):
-        x = ox + i * (CELL + GAP)
-        y = oy + grid_h + GAP
-        dwg.add(
-            dwg.rect(
-                (x, y),
-                (CELL, SIDE_H),
-                fill=color,
-                stroke=STICKER_STROKE,
-                stroke_width=1,
-                rx=2,
-                ry=2,
-            )
-        )
-
-    # Left side strip (top to bottom)
-    for i, color in enumerate(case.left_side):
-        x = MARGIN
-        y = oy + i * (CELL + GAP)
-        dwg.add(
-            dwg.rect(
-                (x, y),
-                (SIDE_H, CELL),
-                fill=color,
-                stroke=STICKER_STROKE,
-                stroke_width=1,
-                rx=2,
-                ry=2,
-            )
-        )
-
-    # Right side strip (top to bottom)
-    for i, color in enumerate(case.right_side):
-        x = ox + grid_w + GAP
-        y = oy + i * (CELL + GAP)
-        dwg.add(
-            dwg.rect(
-                (x, y),
-                (SIDE_H, CELL),
-                fill=color,
-                stroke=STICKER_STROKE,
-                stroke_width=1,
-                rx=2,
-                ry=2,
-            )
-        )
 
     # Draw arrows for PLL cases
     has_arrows = case.swaps or case.cycles or case.dashed_swaps
@@ -480,6 +437,19 @@ _N_CX, _N_CY = _N_W / 2, 66
 _CUBE_FACE_COLORS = {"U": YELLOW, "F": RED, "R": GREEN}
 # Hidden faces: B=Orange, L=Blue, D=White
 
+# 3D isometric cube outline edges (shared by notation and overview diagrams)
+_CUBE_OUTLINE_EDGES = [
+    ((0, 3, 0), (3, 3, 0)),
+    ((3, 3, 0), (3, 0, 0)),
+    ((3, 0, 0), (3, 0, 3)),
+    ((3, 0, 3), (0, 0, 3)),
+    ((0, 0, 3), (0, 3, 3)),
+    ((0, 3, 3), (0, 3, 0)),
+    ((3, 3, 3), (0, 3, 3)),
+    ((3, 3, 3), (3, 3, 0)),
+    ((3, 3, 3), (3, 0, 3)),
+]
+
 
 @dataclass
 class NotationMove:
@@ -487,7 +457,7 @@ class NotationMove:
 
     name: str
     filename: str
-    layer: str  # R/L/U/D/F/M/f/r/x/y/z
+    layer: str  # R/L/U/D/F/B/M/S/E/f/r/x/y/z/R2
     clockwise: bool
 
 
@@ -495,16 +465,15 @@ def _notation_moves() -> list[NotationMove]:
     return [
         NotationMove("R", "move_r", "R", True),
         NotationMove("R'", "move_r_prime", "R", False),
+        NotationMove("R2", "move_r2", "R2", True),
         NotationMove("U", "move_u", "U", True),
-        NotationMove("U'", "move_u_prime", "U", False),
         NotationMove("L", "move_l", "L", True),
-        NotationMove("L'", "move_l_prime", "L", False),
         NotationMove("F", "move_f", "F", True),
-        NotationMove("F'", "move_f_prime", "F", False),
         NotationMove("D", "move_d", "D", True),
-        NotationMove("D'", "move_d_prime", "D", False),
+        NotationMove("B", "move_b", "B", True),
         NotationMove("M", "move_m", "M", True),
-        NotationMove("f", "move_fw", "f", True),
+        NotationMove("S", "move_s", "S", True),
+        NotationMove("E", "move_e", "E", True),
         NotationMove("r", "move_rw", "r", True),
         NotationMove("x", "move_x", "x", True),
         NotationMove("y", "move_y", "y", True),
@@ -520,55 +489,6 @@ def _n_proj(x: float, y: float, z: float) -> tuple[float, float]:
     )
 
 
-def _n_in_layer(face: str, a: int, b: int, layer: str) -> bool:
-    """Check if sticker (a,b) on visible face belongs to turning layer.
-
-    Face U: a=col_x, b=col_z.  Face F: a=col_x, b=col_y.  Face R: a=col_z, b=col_y.
-    """
-    tbl = {
-        "U": {
-            "R": a == 2,
-            "L": a == 0,
-            "U": True,
-            "D": False,
-            "F": b == 2,
-            "M": a == 1,
-            "f": b >= 1,
-            "r": a >= 1,
-            "x": True,
-            "y": True,
-            "z": True,
-        },
-        "F": {
-            "R": a == 2,
-            "L": a == 0,
-            "U": b == 2,
-            "D": b == 0,
-            "F": True,
-            "M": a == 1,
-            "f": True,
-            "r": a >= 1,
-            "x": True,
-            "y": True,
-            "z": True,
-        },
-        "R": {
-            "R": True,
-            "L": False,
-            "U": b == 2,
-            "D": b == 0,
-            "F": a == 2,
-            "M": False,
-            "f": a >= 1,
-            "r": True,
-            "x": True,
-            "y": True,
-            "z": True,
-        },
-    }
-    return tbl.get(face, {}).get(layer, False)
-
-
 def _n_sticker_color(face: str, a: int, b: int, layer: str, cw: bool) -> str:
     """Get sticker color at (face, a, b) after one move applied to a solved cube.
 
@@ -576,6 +496,13 @@ def _n_sticker_color(face: str, a: int, b: int, layer: str, cw: bool) -> str:
     Hidden face colors: B=Orange, L=Blue, D=White.
     """
     base = _CUBE_FACE_COLORS[face]
+    # R2 (180°: U↔D, F↔B on the R column)
+    if layer == "R2":
+        if face == "U" and a == 2:
+            return WHITE  # from D
+        if face == "F" and a == 2:
+            return ORANGE  # from B
+        return base
     # R / R'
     if layer == "R" and cw:
         if face == "U" and a == 2:
@@ -587,82 +514,74 @@ def _n_sticker_color(face: str, a: int, b: int, layer: str, cw: bool) -> str:
             return ORANGE  # from B
         if face == "F" and a == 2:
             return YELLOW  # from U
-    # L / L'
-    elif layer == "L" and cw:
+    # L CW
+    elif layer == "L":
         if face == "U" and a == 0:
             return ORANGE  # from B
         if face == "F" and a == 0:
             return YELLOW  # from U
-    elif layer == "L" and not cw:
-        if face == "U" and a == 0:
-            return RED  # from F
-        if face == "F" and a == 0:
-            return WHITE  # from D
-    # U / U'
-    elif layer == "U" and cw:
-        if face == "F" and b == 2:
-            return BLUE  # from L
-        if face == "R" and b == 2:
-            return RED  # from F
-    elif layer == "U" and not cw:
+    # U CW
+    elif layer == "U":
         if face == "F" and b == 2:
             return GREEN  # from R
         if face == "R" and b == 2:
             return ORANGE  # from B
-    # D / D'
-    elif layer == "D" and cw:
+    # D CW
+    elif layer == "D":
         if face == "F" and b == 0:
             return BLUE  # from L
         if face == "R" and b == 0:
             return RED  # from F
-    elif layer == "D" and not cw:
-        if face == "F" and b == 0:
-            return GREEN  # from R
-        if face == "R" and b == 0:
-            return ORANGE  # from B
-    # F / F'
-    elif layer == "F" and cw:
+    # F CW
+    elif layer == "F":
         if face == "U" and b == 2:
             return BLUE  # from L
         if face == "R" and a == 2:
             return YELLOW  # from U
-    elif layer == "F" and not cw:
-        if face == "U" and b == 2:
+    # B CW
+    elif layer == "B":
+        if face == "U" and b == 0:
             return GREEN  # from R
-        if face == "R" and a == 2:
+        if face == "R" and a == 0:
             return WHITE  # from D
-    # M (same direction as L)
-    elif layer == "M" and cw:
+    # M CW (follows L)
+    elif layer == "M":
         if face == "U" and a == 1:
             return ORANGE
         if face == "F" and a == 1:
             return YELLOW
-    # f (wide F)
-    elif layer == "f" and cw:
-        if face == "U" and b >= 1:
-            return BLUE
-        if face == "R" and a >= 1:
-            return YELLOW
-    # r (wide R)
-    elif layer == "r" and cw:
+    # S CW (follows F)
+    elif layer == "S":
+        if face == "U" and b == 1:
+            return BLUE  # from L
+        if face == "R" and a == 1:
+            return YELLOW  # from U
+    # E CW (follows D)
+    elif layer == "E":
+        if face == "F" and b == 1:
+            return GREEN  # from R
+        if face == "R" and b == 1:
+            return ORANGE  # from B
+    # r CW (wide R)
+    elif layer == "r":
         if face == "U" and a >= 1:
             return RED
         if face == "F" and a >= 1:
             return WHITE
-    # x (whole cube like R)
-    elif layer == "x" and cw:
+    # x CW (whole cube like R)
+    elif layer == "x":
         if face == "U":
             return RED
         if face == "F":
             return WHITE
-    # y (whole cube like U) — show green on front (from R), orange on right (from B)
-    elif layer == "y" and cw:
+    # y CW (whole cube like U)
+    elif layer == "y":
         if face == "F":
             return GREEN
         if face == "R":
             return ORANGE
-    # z (whole cube like F)
-    elif layer == "z" and cw:
+    # z CW (whole cube like F)
+    elif layer == "z":
         if face == "U":
             return BLUE
         if face == "R":
@@ -684,80 +603,80 @@ def _n_sticker_pts(face: str, a: int, b: int) -> list[tuple[float, float]]:
 
 
 def _n_draw_arrow(dwg: svgwrite.Drawing, layer: str, clockwise: bool) -> None:
-    """Draw a quarter-arc arrow curving over a cube corner, detached from the surface.
+    """Draw a curved arrow from source face sticker center to destination face sticker center.
 
-    Each arrow is a 90° arc in the rotation plane, placed at a cube corner where
-    two visible faces meet. The arc is offset outward so it floats outside the cube.
-    One leg points toward each face; the arrowhead shows the sticker flow direction
-    (e.g. R CW: from F face over the corner to U face = white→red).
+    Each arrow is a quadratic Bezier curve in 3D, going from the center of the
+    affected row/column on one visible face to the center on the other visible face,
+    curving outward over the edge between them.
     """
     is_whole = layer in ("x", "y", "z")
 
-    # Per-move config: (corner, v1, v2, offset_dir, cw_to_v2)
-    #   corner:     3D point where the arrow sits (cube corner or mid-edge)
-    #   v1, v2:     outward face normals at the corner (arc curves OUTSIDE the cube)
-    #   offset_dir: push the arc center for detachment
-    #   cw_to_v2:   True → CW arrowhead at v2 end; False → at v1 end
-    _cfgs: dict[str, tuple[
-        tuple[float, ...], tuple[float, ...], tuple[float, ...],
-        tuple[float, ...], bool,
-    ]] = {
-        # R: top of F-R ridge. v1=F outward(+z), v2=U outward(+y). R CW → F→U.
-        "R": ((3, 3, 3), (0, 0, 1), (0, 1, 0), (-1, 0, 0), True),
-        # L: top of F-L edge. v1=F outward(+z), v2=U outward(+y). L CW → U→F.
-        "L": ((0, 3, 3), (0, 0, 1), (0, 1, 0), (1, 0, 0), False),
-        # U: top-front-right. v1=F outward(+z), v2=R outward(+x). U CW → F→R.
-        "U": ((3, 3, 3), (0, 0, 1), (1, 0, 0), (0, 1, 0), True),
-        # D: bottom-front-right. v1=F outward(+z), v2=R outward(+x). D CW → F→R.
-        "D": ((3, 0, 3), (0, 0, 1), (1, 0, 0), (0, 1, 0), True),
-        # F: top-front-right. v1=U outward(+y), v2=R outward(+x). F CW → U→R.
-        "F": ((3, 3, 3), (0, 1, 0), (1, 0, 0), (0, 0, 1), True),
-        # M: top of mid-F at x=1. Same plane as L. M CW → U→F.
-        "M": ((1, 3, 3), (0, 0, 1), (0, 1, 0), (1, 0, 0), False),
-        # f: wide F, centered between two front layers at z=2 on U-R ridge.
-        "f": ((3, 3, 2), (0, 1, 0), (1, 0, 0), (0, 0, 1), True),
-        # r: wide R, centered at x=2 on F-R ridge (over 2nd and 3rd columns).
-        "r": ((2, 3, 3), (0, 0, 1), (0, 1, 0), (1, 0, 0), True),
-        # x: whole cube (like R), centered at x=1.5 on F-R ridge edge.
-        "x": ((1.5, 3, 3), (0, 0, 1), (0, 1, 0), (1, 0, 0), True),
-        # y: whole cube (like U), on F-R ridge midpoint, arrow from orange(R) to green(F).
-        "y": ((3, 1.5, 3), (0, 0, 1), (1, 0, 0), (-1, 0, 0), False),
-        # z: whole cube (like F), centered at midpoint of U-R ridge (top to right).
-        "z": ((3, 3, 1.5), (0, 1, 0), (1, 0, 0), (0, 0, 1), True),
+    # Arrow configs: (cw_src_3d, cw_dst_3d, control_3d)
+    # src/dst = center of affected stickers on each face for CW direction.
+    # control = edge point pushed outward (Bezier control for the bulge).
+    # When CCW, src and dst swap.
+    _b = 0.5  # bulge offset from edge
+    _cfgs: dict[str, tuple[tuple[float, ...], tuple[float, ...], tuple[float, ...]]] = {
+        # R CW: F col a=2 → U col a=2.  Edge: F-U at x=2.5
+        "R": ((2.5, 1.5, 3), (2.5, 3, 1.5), (2.5, 3 + _b, 3 + _b)),
+        "R2": ((2.5, 1.5, 3), (2.5, 3, 1.5), (2.5, 3 + _b, 3 + _b)),
+        # L CW: U col a=0 → F col a=0.  Edge: F-U at x=0.5
+        "L": ((0.5, 3, 1.5), (0.5, 1.5, 3), (0.5, 3 + _b, 3 + _b)),
+        # U CW: R row b=2 → F row b=2.  Edge: F-R at y=2.5
+        "U": ((3, 2.5, 1.5), (1.5, 2.5, 3), (3 + _b, 2.5, 3 + _b)),
+        # D CW: F row b=0 → R row b=0.  Edge: F-R at y=0.5
+        "D": ((1.5, 0.5, 3), (3, 0.5, 1.5), (3 + _b, 0.5, 3 + _b)),
+        # F CW: U row b=2 → R col a=2.  Edge: U-R at z=2.5
+        "F": ((1.5, 3, 2.5), (3, 1.5, 2.5), (3 + _b, 3 + _b, 2.5)),
+        # B CW: R col a=0 → U row b=0.  Edge: U-R at z=0.5
+        "B": ((3, 1.5, 0.5), (1.5, 3, 0.5), (3 + _b, 3 + _b, 0.5)),
+        # M CW (follows L): U col a=1 → F col a=1.  Edge: F-U at x=1.5
+        "M": ((1.5, 3, 1.5), (1.5, 1.5, 3), (1.5, 3 + _b, 3 + _b)),
+        # S CW (follows F): U row b=1 → R col a=1.  Edge: U-R at z=1.5
+        "S": ((1.5, 3, 1.5), (3, 1.5, 1.5), (3 + _b, 3 + _b, 1.5)),
+        # E CW (follows D): R row b=1 → F row b=1.  Edge: F-R at y=1.5
+        "E": ((3, 1.5, 1.5), (1.5, 1.5, 3), (3 + _b, 1.5, 3 + _b)),
+        # r CW (wide R): F cols a=1,2 → U cols a=1,2.  Edge: F-U at x=2
+        "r": ((2, 1.5, 3), (2, 3, 1.5), (2, 3 + _b, 3 + _b)),
+        # x CW (whole cube, like R): F center → U center.  Edge: F-U at x=1.5
+        "x": ((1.5, 1.5, 3), (1.5, 3, 1.5), (1.5, 3 + _b, 3 + _b)),
+        # y CW (whole cube, like U): R center → F center.  Edge: F-R at y=1.5
+        "y": ((3, 1.5, 1.5), (1.5, 1.5, 3), (3 + _b, 1.5, 3 + _b)),
+        # z CW (whole cube, like F): U center → R center.  Edge: U-R at z=1.5
+        "z": ((1.5, 3, 1.5), (3, 1.5, 1.5), (3 + _b, 3 + _b, 1.5)),
     }
 
-    corner, v1, v2, offset_dir, cw_to_v2 = _cfgs[layer]
-
-    # Determine which end gets the arrowhead
-    if clockwise == cw_to_v2:
-        start_v, end_v = v1, v2
+    cw_src, cw_dst, ctrl = _cfgs[layer]
+    if clockwise:
+        src, dst = cw_src, cw_dst
     else:
-        start_v, end_v = v2, v1
+        src, dst = cw_dst, cw_src
 
-    # Build 3D quarter-circle arc, offset outward from the corner
-    offset_dist = 0.5
-    radius = 0.8
-    cx = corner[0] + offset_dir[0] * offset_dist
-    cy = corner[1] + offset_dir[1] * offset_dist
-    cz = corner[2] + offset_dir[2] * offset_dist
-
+    # Generate quadratic Bezier curve in 3D, then project to 2D
     n_pts = 20
     pts_3d = []
     for i in range(n_pts + 1):
-        t = (math.pi / 2) * i / n_pts
-        px = cx + radius * (start_v[0] * math.cos(t) + end_v[0] * math.sin(t))
-        py = cy + radius * (start_v[1] * math.cos(t) + end_v[1] * math.sin(t))
-        pz = cz + radius * (start_v[2] * math.cos(t) + end_v[2] * math.sin(t))
-        pts_3d.append((px, py, pz))
-
+        t = i / n_pts
+        t1 = (1 - t) ** 2
+        t2 = 2 * t * (1 - t)
+        t3 = t**2
+        pts_3d.append(
+            (
+                t1 * src[0] + t2 * ctrl[0] + t3 * dst[0],
+                t1 * src[1] + t2 * ctrl[1] + t3 * dst[1],
+                t1 * src[2] + t2 * ctrl[2] + t3 * dst[2],
+            )
+        )
     pts = [_n_proj(*p) for p in pts_3d]
 
-    # Shorten arc at tip end and add arrowhead
+    # Compute tip direction for arrowhead
     tip = pts[-1]
     prev = pts[-4]
     dx, dy = tip[0] - prev[0], tip[1] - prev[1]
     ln = math.hypot(dx, dy)
-    sz = 10
+    sz = 16
+
+    # Shorten arc at tip to make room for arrowhead
     if ln > 0:
         dx, dy = dx / ln, dy / ln
         nx, ny = -dy, dx
@@ -773,14 +692,15 @@ def _n_draw_arrow(dwg: svgwrite.Drawing, layer: str, clockwise: bool) -> None:
             d=d,
             fill="none",
             stroke=ARROW_COLOR,
-            stroke_width=2.5,
+            stroke_width=5,
             **stroke_extra,
         )
     )
 
+    # Tip arrowhead
     if ln > 0:
-        base1 = (tip[0] - sz * dx + sz * 0.4 * nx, tip[1] - sz * dy + sz * 0.4 * ny)
-        base2 = (tip[0] - sz * dx - sz * 0.4 * nx, tip[1] - sz * dy - sz * 0.4 * ny)
+        base1 = (tip[0] - sz * dx + sz * 0.5 * nx, tip[1] - sz * dy + sz * 0.5 * ny)
+        base2 = (tip[0] - sz * dx - sz * 0.5 * nx, tip[1] - sz * dy - sz * 0.5 * ny)
         dwg.add(dwg.polygon([tip, base1, base2], fill=ARROW_COLOR))
 
 
@@ -803,17 +723,7 @@ def render_notation(move: NotationMove, output_dir: Path) -> Path:
                 color = _n_sticker_color(vis_face, a, b, move.layer, move.clockwise)
                 dwg.add(dwg.polygon(pts, fill=color, stroke=STICKER_STROKE, stroke_width=1.2))
     # Cube outline
-    for edge_a, edge_b in [
-        ((0, 3, 0), (3, 3, 0)),
-        ((3, 3, 0), (3, 0, 0)),
-        ((3, 0, 0), (3, 0, 3)),
-        ((3, 0, 3), (0, 0, 3)),
-        ((0, 0, 3), (0, 3, 3)),
-        ((0, 3, 3), (0, 3, 0)),
-        ((3, 3, 3), (0, 3, 3)),
-        ((3, 3, 3), (3, 3, 0)),
-        ((3, 3, 3), (3, 0, 3)),
-    ]:
+    for edge_a, edge_b in _CUBE_OUTLINE_EDGES:
         dwg.add(
             dwg.line(
                 _n_proj(*edge_a),
@@ -840,6 +750,98 @@ def render_notation(move: NotationMove, output_dir: Path) -> Path:
     return filepath
 
 
+def render_overview(output_dir: Path) -> Path:
+    """Render a summary overview diagram: one isometric cube with 6 labeled axis arrows."""
+    subdir = output_dir / "notation"
+    subdir.mkdir(parents=True, exist_ok=True)
+    filepath = subdir / "overview.svg"
+
+    ov_w, ov_h = 240, 200
+    ov_cx, ov_cy = ov_w / 2, 90
+    scale = 22
+    cos30 = _N_COS30
+
+    def proj(x: float, y: float, z: float) -> tuple[float, float]:
+        return (
+            round((x - z) * cos30 * scale + ov_cx, 1),
+            round(((x + z) * 0.5 - y) * scale + ov_cy, 1),
+        )
+
+    dwg = svgwrite.Drawing(
+        str(filepath),
+        size=(f"{ov_w}px", f"{ov_h}px"),
+        viewBox=f"0 0 {ov_w} {ov_h}",
+    )
+    dwg.add(dwg.rect((0, 0), (ov_w, ov_h), fill=WHITE, rx=8, ry=8))
+
+    # Draw cube faces (solid colors, no sticker grid)
+    face_colors = [
+        # U face (top) — Yellow
+        ([(0, 3, 0), (3, 3, 0), (3, 3, 3), (0, 3, 3)], YELLOW),
+        # F face (front-left) — Red
+        ([(0, 0, 3), (3, 0, 3), (3, 3, 3), (0, 3, 3)], RED),
+        # R face (front-right) — Green
+        ([(3, 0, 0), (3, 0, 3), (3, 3, 3), (3, 3, 0)], GREEN),
+    ]
+    for corners, color in face_colors:
+        pts = [proj(*c) for c in corners]
+        dwg.add(dwg.polygon(pts, fill=color, stroke=STICKER_STROKE, stroke_width=1.5))
+
+    # Cube outline
+    for ea, eb in _CUBE_OUTLINE_EDGES:
+        dwg.add(dwg.line(proj(*ea), proj(*eb), stroke=STICKER_STROKE, stroke_width=1.5))
+
+    # Axis arrows: face center → outward, with label
+    axes = [
+        ("U", (1.5, 3, 1.5), (1.5, 4.8, 1.5)),
+        ("D", (1.5, 0, 1.5), (1.5, -1.2, 1.5)),
+        ("F", (1.5, 1.5, 3), (1.5, 1.5, 4.8)),
+        ("B", (1.5, 1.5, 0), (1.5, 1.5, -1.2)),
+        ("R", (3, 1.5, 1.5), (4.8, 1.5, 1.5)),
+        ("L", (0, 1.5, 1.5), (-1.2, 1.5, 1.5)),
+    ]
+
+    # Add arrowhead marker
+    marker = dwg.marker(
+        id="ov-arrow",
+        insert=(5, 5),
+        size=(10, 10),
+        orient="auto",
+        markerUnits="userSpaceOnUse",
+    )
+    marker.add(dwg.polygon([(0, 1), (10, 5), (0, 9)], fill=ARROW_COLOR))
+    dwg.defs.add(marker)
+
+    for label, start_3d, end_3d in axes:
+        s = proj(*start_3d)
+        e = proj(*end_3d)
+        line = dwg.line(s, e, stroke=ARROW_COLOR, stroke_width=2)
+        line["marker-end"] = "url(#ov-arrow)"
+        dwg.add(line)
+        # Label offset: push text slightly past the arrow tip
+        dx, dy = e[0] - s[0], e[1] - s[1]
+        ln = math.hypot(dx, dy)
+        if ln > 0:
+            lx = e[0] + dx / ln * 12
+            ly = e[1] + dy / ln * 12
+        else:
+            lx, ly = e[0], e[1]
+        dwg.add(
+            dwg.text(
+                label,
+                insert=(lx, ly + 5),
+                text_anchor="middle",
+                font_size="16px",
+                font_family="sans-serif",
+                font_weight="bold",
+                fill="#222",
+            )
+        )
+
+    dwg.save(pretty=True)
+    return filepath
+
+
 def main() -> None:
     output_dir = Path(__file__).resolve().parents[2] / "guide" / "figures" / "generated"
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -854,7 +856,13 @@ def main() -> None:
         path = render_notation(move, output_dir)
         print(f"  {path.relative_to(output_dir)}")
 
-    print(f"\nGenerated {len(cases)} case diagrams + {len(moves)} notation moves in {output_dir}")
+    overview_path = render_overview(output_dir)
+    print(f"  {overview_path.relative_to(output_dir)}")
+
+    print(
+        f"\nGenerated {len(cases)} case diagrams + {len(moves)} notation moves"
+        f" + 1 overview in {output_dir}"
+    )
 
 
 if __name__ == "__main__":
