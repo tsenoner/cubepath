@@ -20,16 +20,27 @@ Hold the cube with **white on bottom, yellow on top** throughout.
 
 # Notation
 
-| Move | Meaning |
-|------|---------|
-| `R` / `R'` / `R2` | Right face CW / CCW / 180° |
-| `U` / `U'` / `U2` | Up face CW / CCW / 180° |
-| `L` / `L'` | Left face CW / CCW |
-| `F` / `F'` | Front face CW / CCW |
-| `D` / `D'` | Down face CW / CCW |
-| `f` / `r` (lowercase) | Wide move — two layers together |
-| `M` / `M2` | Middle layer (same direction as L) / 180° |
-| `x` / `y` / `z` | Whole-cube rotation (R / U / F direction) |
+Each letter = 90° clockwise (looking at that face). Add **'** for counterclockwise. Add **2** for 180°.
+
+![R](figures/generated/notation/move_r.svg){ width=10% }
+![R'](figures/generated/notation/move_r_prime.svg){ width=10% }
+![U](figures/generated/notation/move_u.svg){ width=10% }
+![U'](figures/generated/notation/move_u_prime.svg){ width=10% }
+![F](figures/generated/notation/move_f.svg){ width=10% }
+![F'](figures/generated/notation/move_f_prime.svg){ width=10% }
+![L](figures/generated/notation/move_l.svg){ width=10% }
+![L'](figures/generated/notation/move_l_prime.svg){ width=10% }
+
+![D](figures/generated/notation/move_d.svg){ width=10% }
+![D'](figures/generated/notation/move_d_prime.svg){ width=10% }
+![M](figures/generated/notation/move_m.svg){ width=10% }
+![f](figures/generated/notation/move_fw.svg){ width=10% }
+![r](figures/generated/notation/move_rw.svg){ width=10% }
+![x](figures/generated/notation/move_x.svg){ width=10% }
+![y](figures/generated/notation/move_y.svg){ width=10% }
+![z](figures/generated/notation/move_z.svg){ width=10% }
+
+Highlighted stickers show the turning layer. Lowercase (**f**, **r**) = wide move (two layers). **M** = middle layer (same direction as L). **x**/**y**/**z** = whole-cube rotation.
 
 > **Sexy Move:** [`R U R' U'`]{.trig-r} — The most important trigger in cubing. Practice until it's muscle memory.
 
@@ -70,9 +81,9 @@ Flip the cube — yellow on top. One algorithm handles all cases:
 
 > **F-sexy-F':** `F` [R U R' U']{.trig-r} `F'` — Sexy Move wrapped with F/F'.
 
-![Dot](figures/generated/oll_dot.svg){ width=15% }
-![Hook](figures/generated/oll_hook.svg){ width=15% }
-![Line](figures/generated/oll_line.svg){ width=15% }
+![Dot](figures/generated/oll/oll_dot.svg){ width=15% }
+![Hook](figures/generated/oll/oll_hook.svg){ width=15% }
+![Line](figures/generated/oll/oll_line.svg){ width=15% }
 
 | You see | Action |
 |---------|--------|
@@ -120,9 +131,9 @@ Each section teaches ONE algorithm — enough to solve every case. Learning the 
 
 The Hook case gets its own efficient algorithm using wide `f`:
 
-![Dot](figures/generated/oll_dot.svg){ width=15% }
-![Hook](figures/generated/oll_hook.svg){ width=15% rotate=180 }
-![Line](figures/generated/oll_line.svg){ width=15% }
+![Dot](figures/generated/oll/oll_dot.svg){ width=15% }
+![Hook](figures/generated/oll/oll_hook.svg){ width=15% rotate=180 }
+![Line](figures/generated/oll/oll_line.svg){ width=15% }
 
 | You see | Algorithm |
 |---------|-----------|
@@ -137,7 +148,7 @@ After the cross, look at the four corners. **Learn Sune — apply it repeatedly 
 ::: algorithm
 | | Case | Algorithm |
 |---|------|-----------|
-| ![](figures/generated/oll_sune.svg){ width=60px } | **Sune** — 1 yellow corner, others CW | [`R U R' U`]{.trig-g} `R U2 R'` |
+| ![](figures/generated/oll/oll_sune.svg){ width=60px } | **Sune** — 1 yellow corner, others CW | [`R U R' U`]{.trig-g} `R U2 R'` |
 :::
 
 For any unrecognized corner pattern, apply Sune until you reach a solved or Sune state. Anti-Sune + the remaining 5 corner cases are in Phase 3.
@@ -149,7 +160,7 @@ Yellow face complete. Check side colors for **headlights** (two matching corners
 ::: algorithm
 | | Case | Algorithm |
 |---|------|-----------|
-| ![](figures/generated/pll_tperm.svg){ width=60px } | **T-Perm** — headlights on one face, hold at **left** | [R U R' U']{.trig-r} [R' F]{.trig-b} `R2 U' R'` `U'` [R U R' F']{.trig-r} |
+| ![](figures/generated/pll/pll_tperm.svg){ width=60px } | **T-Perm** — headlights on one face, hold at **left** | [R U R' U']{.trig-r} [R' F]{.trig-b} `R2 U' R'` `U'` [R U R' F']{.trig-r} |
 :::
 
 - **No headlights (diagonal swap)?** Apply T-Perm → creates headlights → T-Perm again.
@@ -168,7 +179,7 @@ Corners done. Turn U — find the solved edge, hold it at **back**.
 ::: algorithm
 | | Case | Algorithm |
 |---|------|-----------|
-| ![](figures/generated/pll_ub.svg){ width=60px } | **Ub** — front edge → left | `R2 U` [R U R' U']{.trig-r} `R' U'` `R' U R'` |
+| ![](figures/generated/pll/pll_ub.svg){ width=60px } | **Ub** — front edge → left | `R2 U` [R U R' U']{.trig-r} `R' U'` `R' U R'` |
 :::
 
 - **No single solved edge?** Apply Ub → creates a solved edge → identify direction, apply again.
@@ -187,11 +198,11 @@ Anti-Sune completes the Sune pair. The remaining 4 cases each have a dedicated a
 ::: algorithm
 | | Case | Algorithm |
 |---|------|-----------|
-| ![](figures/generated/oll_antisune.svg){ width=60px } | **Anti-Sune** — 1 yellow corner, others CCW | `R U2 R' U' R U' R'` |
-| ![](figures/generated/oll_pi.svg){ width=60px } | **Pi** — 0 yellow, Π on front/back | `f` [R U R' U']{.trig-r} `f' F` [R U R' U']{.trig-r} `F'` |
-| ![](figures/generated/oll_headlights.svg){ width=60px } | **Headlights** — 0 yellow, headlights L+R | `R2 D R' U2 R D' R' U2 R'` |
-| ![](figures/generated/oll_chameleon.svg){ width=60px } | **Chameleon** — 2 diagonal yellow | `r U R' U' r'` [F R F']{.trig-b} |
-| ![](figures/generated/oll_bowtie.svg){ width=60px } | **Bowtie** — 2 diagonal yellow | `F' r U R' U' r'` `F R` |
+| ![](figures/generated/oll/oll_antisune.svg){ width=60px } | **Anti-Sune** — 1 yellow corner, others CCW | `R U2 R' U' R U' R'` |
+| ![](figures/generated/oll/oll_pi.svg){ width=60px } | **Pi** — 0 yellow, Π on front/back | `f` [R U R' U']{.trig-r} `f' F` [R U R' U']{.trig-r} `F'` |
+| ![](figures/generated/oll/oll_headlights.svg){ width=60px } | **Headlights** — 0 yellow, headlights L+R | `R2 D R' U2 R D' R' U2 R'` |
+| ![](figures/generated/oll/oll_chameleon.svg){ width=60px } | **Chameleon** — 2 diagonal yellow | `r U R' U' r'` [F R F']{.trig-b} |
+| ![](figures/generated/oll/oll_bowtie.svg){ width=60px } | **Bowtie** — 2 diagonal yellow | `F' r U R' U' r'` `F R` |
 :::
 
 ## Permute Corners: Y-Perm
@@ -201,7 +212,7 @@ Completes the T-Perm pair. Solves diagonal corner swaps directly (no double T-Pe
 ::: algorithm
 | | Case | Algorithm |
 |---|------|-----------|
-| ![](figures/generated/pll_yperm.svg){ width=60px } | **Y-Perm** — no headlights, any angle | `F R U' R' U'` [R U R' F']{.trig-r} [R U R' U']{.trig-r} [R' F R F']{.trig-b} |
+| ![](figures/generated/pll/pll_yperm.svg){ width=60px } | **Y-Perm** — no headlights, any angle | `F R U' R' U'` [R U R' F']{.trig-r} [R U R' U']{.trig-r} [R' F R F']{.trig-b} |
 :::
 
 ## Permute Edges: Ua + H-Perm + Z-Perm
@@ -211,9 +222,9 @@ Completes the T-Perm pair. Solves diagonal corner swaps directly (no double T-Pe
 ::: algorithm
 | | Case | Algorithm |
 |---|------|-----------|
-| ![](figures/generated/pll_ua.svg){ width=60px } | **Ua** — front edge → right | `R U' R U R U R U' R' U' R2` |
-| ![](figures/generated/pll_hperm.svg){ width=60px } | **H-Perm** — opposite swap | `M2 U' M2 U2 M2 U' M2` |
-| ![](figures/generated/pll_zperm.svg){ width=60px } | **Z-Perm** — adjacent swap | `M' U' M2 U' M2 U' M' U2 M2` |
+| ![](figures/generated/pll/pll_ua.svg){ width=60px } | **Ua** — front edge → right | `R U' R U R U R U' R' U' R2` |
+| ![](figures/generated/pll/pll_hperm.svg){ width=60px } | **H-Perm** — opposite swap | `M2 U' M2 U2 M2 U' M2` |
+| ![](figures/generated/pll/pll_zperm.svg){ width=60px } | **Z-Perm** — adjacent swap | `M' U' M2 U' M2 U' M' U2 M2` |
 :::
 
 **H vs Z:** No edges match after any U turn. Opposite colors facing each other = H. Adjacent colors = Z.

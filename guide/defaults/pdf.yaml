@@ -8,3 +8,10 @@ metadata-file: metadata.yaml
 output-file: build/cubepath.pdf
 filters:
   - filters/callouts.lua
+include-in-header:
+  - styles/compact.typ
+metadata:
+  fontsize: 10pt
+  margin:
+    x: 1.8cm
+    y: 1.5cm

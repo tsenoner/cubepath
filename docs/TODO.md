@@ -1,0 +1,2 @@
+- [ ] cretae small portable credit card size cheetsheets for each step similar to: https://mastercubestore.de/anleitungen-ratgeber/1923-z-cube-cfop-cards-algorithm-set-f2l-oll-and-pll.html
+- [ ] extend with different guids, can be found here: https://www.kungfoomanchu.com/home.html#333

@@ -10,5 +10,7 @@ css:
   - styles/callouts.css
 filters:
   - filters/callouts.lua
+include-in-header:
+  - styles/compact.html
 metadata:
   mainfont: "system-ui, sans-serif"

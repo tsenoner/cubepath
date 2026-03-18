@@ -2,8 +2,8 @@
 .algorithm, .tip, .caution, .info {
   border-left: 4px solid;
   border-radius: 4px;
-  padding: 0.75em 1em;
-  margin: 1em 0;
+  padding: 0.4em 0.7em;
+  margin: 0.5em 0;
 }
 
 .algorithm { background: #e8f4fd; border-color: #2196F3; }
@@ -21,3 +21,18 @@
 .tip .callout-title       { color: #2E7D32; }
 .caution .callout-title   { color: #E65100; }
 .info .callout-title      { color: #616161; }
+
+/* Tighter tables */
+table { border-collapse: collapse; }
+td, th { padding: 0.25em 0.5em; }
+
+/* Emphasize algorithm text */
+.algorithm code {
+  font-size: 1.05em;
+  font-weight: 600;
+}
+
+/* Trigger color classes */
+.trig-r { color: #D32F2F; font-weight: bold; }
+.trig-g { color: #2E7D32; font-weight: bold; }
+.trig-b { color: #1565C0; font-weight: bold; }

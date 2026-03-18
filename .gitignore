@@ -19,3 +19,6 @@ wheels/
 
 # Guide build output
 guide/build/
+
+# other guids
+docs/other_guides/
