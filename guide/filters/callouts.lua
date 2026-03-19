@@ -78,7 +78,105 @@ function Span(el)
   end
 end
 
+-- Convert a table Cell to a Typst grid item string.
+local function _cell_to_typst(cell)
+  -- Single image → bare image() call (no content brackets needed)
+  local first = cell.contents[1]
+  if #cell.contents == 1 and (first.t == "Para" or first.t == "Plain") then
+    local para = first
+    if #para.content == 1 and para.content[1].t == "Image" then
+      local img = para.content[1]
+      local w = img.attributes.width or "100%"
+      return string.format('image("%s", width: %s)', img.src, w)
+    end
+  end
+  -- Empty cell
+  if #cell.contents == 0 then return "[]" end
+  -- Text content: render via pandoc and wrap in content brackets
+  local typst = pandoc.write(pandoc.Pandoc(cell.contents), "typst")
+  typst = typst:gsub("%s+$", "")
+  if typst == "" then return "[]" end
+  return "[" .. typst .. "]"
+end
+
+-- Convert a borderless Table to a Typst #grid() for equal distribution.
+local function _table_to_typst_grid(tbl)
+  local ncols = #tbl.colspecs
+  local parts = {}
+  table.insert(parts, "#grid(")
+  table.insert(parts, string.format("  columns: (1fr,) * %d,", ncols))
+  table.insert(parts, "  align: center,")
+  table.insert(parts, "  row-gutter: 2pt,")
+
+  -- Header row: detect group labels (non-empty header cells)
+  if #tbl.head.rows > 0 then
+    local hcells = tbl.head.rows[1].cells
+    local labels = {}
+    for _, cell in ipairs(hcells) do
+      local text = pandoc.utils.stringify(cell.contents):match("^%s*(.-)%s*$")
+      if text ~= "" then
+        table.insert(labels, text)
+      end
+    end
+    if #labels > 0 then
+      local gsize = math.floor(ncols / #labels)
+      local pct = math.floor((gsize - 1) / gsize * 100)
+      for _, label in ipairs(labels) do
+        table.insert(parts, string.format(
+          '  grid.cell(colspan: %d, align: center)[%s\\ #line(length: %d%%, stroke: 0.5pt + luma(180))],',
+          gsize, label, pct))
+      end
+    end
+  end
+
+  -- Body rows
+  for _, body in ipairs(tbl.bodies) do
+    for _, row in ipairs(body.body) do
+      local items = {}
+      for _, cell in ipairs(row.cells) do
+        table.insert(items, _cell_to_typst(cell))
+      end
+      table.insert(parts, "  " .. table.concat(items, ", ") .. ",")
+    end
+  end
+
+  table.insert(parts, ")")
+  return table.concat(parts, "\n")
+end
+
 function Div(el)
+  -- Centered block (no justification, center-aligned)
+  if el.classes:includes("center") then
+    if FORMAT:match("typst") then
+      local open = pandoc.RawBlock("typst", "#align(center)[#set par(justify: false)")
+      local close = pandoc.RawBlock("typst", "]")
+      local blocks = pandoc.List({open})
+      blocks:extend(el.content)
+      blocks:insert(close)
+      return blocks
+    else
+      el.attributes["style"] = "text-align: center;"
+      return el
+    end
+  end
+
+  -- Borderless table wrapper
+  if el.classes:includes("borderless") then
+    if FORMAT:match("typst") then
+      local blocks = pandoc.List({})
+      for _, block in ipairs(el.content) do
+        if block.t == "Table" then
+          blocks:insert(pandoc.RawBlock("typst", _table_to_typst_grid(block)))
+        else
+          blocks:insert(block)
+        end
+      end
+      return blocks
+    else
+      return el  -- HTML: class on div, CSS handles it
+    end
+  end
+
   for cls, style in pairs(callout_styles) do
     if el.classes:includes(cls) then
       if FORMAT:match("typst") then

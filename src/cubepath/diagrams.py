@@ -429,9 +429,11 @@ def render(case: CubeDiagram, output_dir: Path) -> Path:
 # ── Notation move diagrams (3D isometric cube) ──────────────────────────────
 
 _N_SCALE = 20
-_N_COS30 = math.cos(math.radians(30))
-_N_W, _N_H = 155, 190
-_N_CX, _N_CY = _N_W / 2, 66
+_N_H_ANGLE = math.radians(35)
+_N_COS_H, _N_SIN_H = math.cos(_N_H_ANGLE), math.sin(_N_H_ANGLE)
+_N_ELEV = 0.40
+_N_W, _N_H = 155, 200
+_N_CX, _N_CY = _N_W / 2, 84
 
 # Standard cube face colors (Yellow top, Red front, Green right)
 _CUBE_FACE_COLORS = {"U": YELLOW, "F": RED, "R": GREEN}
@@ -459,33 +461,34 @@ class NotationMove:
     filename: str
     layer: str  # R/L/U/D/F/B/M/S/E/f/r/x/y/z/R2
     clockwise: bool
+    desc: str = ""
 
 
 def _notation_moves() -> list[NotationMove]:
     return [
-        NotationMove("R", "move_r", "R", True),
-        NotationMove("R'", "move_r_prime", "R", False),
-        NotationMove("R2", "move_r2", "R2", True),
-        NotationMove("U", "move_u", "U", True),
-        NotationMove("L", "move_l", "L", True),
-        NotationMove("F", "move_f", "F", True),
-        NotationMove("D", "move_d", "D", True),
-        NotationMove("B", "move_b", "B", True),
-        NotationMove("M", "move_m", "M", True),
-        NotationMove("S", "move_s", "S", True),
-        NotationMove("E", "move_e", "E", True),
-        NotationMove("r", "move_rw", "r", True),
-        NotationMove("x", "move_x", "x", True),
-        NotationMove("y", "move_y", "y", True),
-        NotationMove("z", "move_z", "z", True),
+        NotationMove("R", "move_r", "R", True, "Right CW"),
+        NotationMove("R'", "move_r_prime", "R", False, "Right CCW"),
+        NotationMove("R2", "move_r2", "R2", True, "Right 180°"),
+        NotationMove("U", "move_u", "U", True, "Up CW"),
+        NotationMove("L", "move_l", "L", True, "Left CW"),
+        NotationMove("F", "move_f", "F", True, "Front CW"),
+        NotationMove("D", "move_d", "D", True, "Down CW"),
+        NotationMove("B", "move_b", "B", True, "Back CW"),
+        NotationMove("M", "move_m", "M", True, "Mid (L dir)"),
+        NotationMove("S", "move_s", "S", True, "Standing (F dir)"),
+        NotationMove("E", "move_e", "E", True, "Equator (D dir)"),
+        NotationMove("r (Rw)", "move_rw", "r", True, "Wide R CW"),
+        NotationMove("x", "move_x", "x", True, "Rotate on R"),
+        NotationMove("y", "move_y", "y", True, "Rotate on U"),
+        NotationMove("z", "move_z", "z", True, "Rotate on F"),
     ]
 
 
 def _n_proj(x: float, y: float, z: float) -> tuple[float, float]:
-    """Isometric 3D→2D projection for notation diagrams."""
+    """Tilted 3D→2D projection for notation diagrams (matches overview)."""
     return (
-        round((x - z) * _N_COS30 * _N_SCALE + _N_CX, 1),
-        round(((x + z) * 0.5 - y) * _N_SCALE + _N_CY, 1),
+        round((x * _N_COS_H - z * _N_SIN_H) * _N_SCALE + _N_CX, 1),
+        round(((x * _N_SIN_H + z * _N_COS_H) * _N_ELEV - y) * _N_SCALE + _N_CY, 1),
     )
 
 
@@ -709,12 +712,22 @@ def render_notation(move: NotationMove, output_dir: Path) -> Path:
     subdir = output_dir / "notation"
     subdir.mkdir(parents=True, exist_ok=True)
     filepath = subdir / f"{move.filename}.svg"
+
+    # Compute layout from cube bounding box
+    cube_top_y = min(_n_proj(x, y, z)[1] for x in (0, 3) for y in (0, 3) for z in (0, 3))
+    cube_bot_y = max(_n_proj(x, y, z)[1] for x in (0, 3) for y in (0, 3) for z in (0, 3))
+    label_font = 30
+    label_y = cube_top_y - 8
+    vb_top = label_y - label_font
+    vb_bot = cube_bot_y + 6
+    vb_h = vb_bot - vb_top
+
     dwg = svgwrite.Drawing(
         str(filepath),
-        size=(f"{_N_W}px", f"{_N_H}px"),
-        viewBox=f"0 0 {_N_W} {_N_H}",
+        size=(f"{_N_W}px", f"{vb_h:.0f}px"),
+        viewBox=f"0 {vb_top:.1f} {_N_W} {vb_h:.1f}",
     )
-    dwg.add(dwg.rect((0, 0), (_N_W, _N_H), fill=WHITE, rx=6, ry=6))
+    dwg.add(dwg.rect((0, vb_top), (_N_W, vb_h), fill=WHITE, rx=6, ry=6))
     # Stickers (draw order: right → front → top for correct layering)
     for vis_face in ("R", "F", "U"):
         for a in range(3):
@@ -734,13 +747,13 @@ def render_notation(move: NotationMove, output_dir: Path) -> Path:
         )
     # Rotation arrow
     _n_draw_arrow(dwg, move.layer, move.clockwise)
-    # Label (large, prominent)
+    # Label (top, above cube)
     dwg.add(
         dwg.text(
             move.name,
-            insert=(_N_W / 2, _N_H - 6),
+            insert=(_N_W / 2, label_y),
             text_anchor="middle",
-            font_size="24px",
+            font_size=f"{label_font}px",
             font_family="sans-serif",
             font_weight="bold",
             fill="#222",
@@ -817,8 +830,11 @@ def _draw_rotation_arc(
         return d + " Z" if closed else d
 
     stroke_kw = dict(
-        fill="none", stroke=ARROW_COLOR, stroke_width=1.5,
-        stroke_linejoin="round", stroke_linecap="round",
+        fill="none",
+        stroke=ARROW_COLOR,
+        stroke_width=1.5,
+        stroke_linejoin="round",
+        stroke_linecap="round",
     )
 
     def _add_cap(group, pt_a, pt_b):
@@ -835,19 +851,24 @@ def _draw_rotation_arc(
         seg_angles = [a0 + span * j / n_seg for j in range(n_seg + 1)]
 
         is_front = _depth((a0 + a1) / 2) > 0 or depth_amplitude < 0.01
-        seg_data.append((
-            is_front,
-            [_pt_3d(a, +1) for a in seg_angles],
-            [_pt_3d(a, -1) for a in seg_angles],
-        ))
+        seg_data.append(
+            (
+                is_front,
+                [_pt_3d(a, +1) for a in seg_angles],
+                [_pt_3d(a, -1) for a in seg_angles],
+            )
+        )
 
     # Pass 1: white polygon fills (no stroke)
     for is_front, top_pts, bot_pts in seg_data:
         group = front_group if is_front else back_group
-        group.add(dwg.path(
-            d=_svg_polyline(top_pts + list(reversed(bot_pts)), closed=True),
-            fill="white", stroke="none",
-        ))
+        group.add(
+            dwg.path(
+                d=_svg_polyline(top_pts + list(reversed(bot_pts)), closed=True),
+                fill="white",
+                stroke="none",
+            )
+        )
 
     # Pass 2: merge consecutive same-zone segments into continuous polylines
     i = 0
@@ -906,10 +927,13 @@ def _draw_rotation_arc(
     # Arrowhead: stroke sides + partial base (skip the segment between ribbon edges)
     ribbon_top_end = _pt_3d(end_angle, +1)
     ribbon_bot_end = _pt_3d(end_angle, -1)
-    arrow_g.add(dwg.path(
-        d=_svg_polyline([ribbon_top_end, base_outer, tip, base_inner, ribbon_bot_end]),
-        fill="white", **{k: v for k, v in stroke_kw.items() if k != "fill"},
-    ))
+    arrow_g.add(
+        dwg.path(
+            d=_svg_polyline([ribbon_top_end, base_outer, tip, base_inner, ribbon_bot_end]),
+            fill="white",
+            **{k: v for k, v in stroke_kw.items() if k != "fill"},
+        )
+    )
 
     return back_group, front_group, arrow_g
 
@@ -988,7 +1012,7 @@ def render_overview(output_dir: Path) -> Path:
     # Behind-axis lines use this so they're only visible outside the cube silhouette.
     clip = dwg.defs.add(dwg.clipPath(id="behind-clip"))
     m = 5  # margin
-    outer = f"M{vb_x - m},{vb_y - m} h{vb_w + 2*m} v{vb_h + 2*m} h-{vb_w + 2*m} Z"
+    outer = f"M{vb_x - m},{vb_y - m} h{vb_w + 2 * m} v{vb_h + 2 * m} h-{vb_w + 2 * m} Z"
     inner = ""
     for corners, _ in face_colors:
         pts = [proj(*p) for p in corners]
@@ -1015,7 +1039,11 @@ def render_overview(output_dir: Path) -> Path:
         start_angle = theta_max - arc_sweep - math.radians(42)
 
         back_g, front_g, arrow_g = _draw_rotation_arc(
-            dwg, proj, arc_center, v1, v2,
+            dwg,
+            proj,
+            arc_center,
+            v1,
+            v2,
             radius=arc_radius,
             start_angle=start_angle,
             view_dir=view_dir,
@@ -1035,10 +1063,15 @@ def render_overview(output_dir: Path) -> Path:
     # 2b. Visible cube faces (solid, colored)
     for corners, color in face_colors:
         pts = [proj(*p) for p in corners]
-        dwg.add(dwg.polygon(
-            pts, fill=color, stroke=STICKER_STROKE,
-            stroke_width=1.5, stroke_linejoin="round",
-        ))
+        dwg.add(
+            dwg.polygon(
+                pts,
+                fill=color,
+                stroke=STICKER_STROKE,
+                stroke_width=1.5,
+                stroke_linejoin="round",
+            )
+        )
 
     # 3. Cube outline
     for ea, eb in _CUBE_OUTLINE_EDGES:
@@ -1067,7 +1100,9 @@ def render_overview(output_dir: Path) -> Path:
         else:
             dwg.add(front_g)
             _add_line(
-                proj(*face_center), proj(*tip), color=ARROW_COLOR,
+                proj(*face_center),
+                proj(*tip),
+                color=ARROW_COLOR,
                 **{"clip-path": "url(#behind-clip)"},
             )
             if label in ("B", "L"):

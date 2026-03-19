@@ -5,6 +5,10 @@ author: "Based on Cube.Academy methods"
 date: 2026-03-17
 ---
 
+```{=typst}
+#pagebreak()
+```
+
 # Introduction
 
 This guide bridges the gap from beginner to CFOP in 3 phases:
@@ -20,53 +24,29 @@ Hold the cube with **white on bottom, yellow on top** throughout.
 
 # Notation
 
-Each letter = one 90° turn, clockwise when looking at that face.
-Add **'** (prime) for counterclockwise. Add **2** for 180°.
+Each letter = one 90° CW turn (looking at that face). **'** = CCW, **2** = 180°, lowercase (e.g. **r**) = wide (two layers).
 
-**Face Moves** — the six faces of the cube:
+::: {.borderless}
 
-![R](figures/generated/notation/move_r.svg){ width=10% }
-![L](figures/generated/notation/move_l.svg){ width=10% }
-![U](figures/generated/notation/move_u.svg){ width=10% }
-![D](figures/generated/notation/move_d.svg){ width=10% }
-![F](figures/generated/notation/move_f.svg){ width=10% }
-![B](figures/generated/notation/move_b.svg){ width=10% }
+| | | | | | |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+| ![R](figures/generated/notation/move_r.svg){ width=100% } | ![L](figures/generated/notation/move_l.svg){ width=100% } | ![U](figures/generated/notation/move_u.svg){ width=100% } | ![D](figures/generated/notation/move_d.svg){ width=100% } | ![F](figures/generated/notation/move_f.svg){ width=100% } | ![B](figures/generated/notation/move_b.svg){ width=100% } |
+| **R**ight | **L**eft | **U**p | **D**own | **F**ront | **B**ack |
 
-**Other Moves** — primes, doubles, and wide turns:
+| | Modifiers | | | Slices | | | Rotations | |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| ![R'](figures/generated/notation/move_r_prime.svg){ width=100% } | ![R2](figures/generated/notation/move_r2.svg){ width=100% } | ![r (Rw)](figures/generated/notation/move_rw.svg){ width=100% } | ![M](figures/generated/notation/move_m.svg){ width=100% } | ![S](figures/generated/notation/move_s.svg){ width=100% } | ![E](figures/generated/notation/move_e.svg){ width=100% } | ![x](figures/generated/notation/move_x.svg){ width=100% } | ![y](figures/generated/notation/move_y.svg){ width=100% } | ![z](figures/generated/notation/move_z.svg){ width=100% } |
+| CCW | 180° | **w**ide | **M**id (L) | **S**tand (F) | **E**quat (D) | rotate (R) | rotate (U) | rotate (F) |
 
-An apostrophe **'** reverses the move (counterclockwise). A **2** means turn 180°.
-Lowercase = wide move (two layers). These modifiers apply to any face move.
-
-![R'](figures/generated/notation/move_r_prime.svg){ width=10% }
-![R2](figures/generated/notation/move_r2.svg){ width=10% }
-![r](figures/generated/notation/move_rw.svg){ width=10% }
-
-**Cube Rotations** (dashed arrow) — the whole cube turns, no layer stays fixed:
-
-![x](figures/generated/notation/move_x.svg){ width=10% }
-![y](figures/generated/notation/move_y.svg){ width=10% }
-![z](figures/generated/notation/move_z.svg){ width=10% }
-
-**x** follows R · **y** follows U · **z** follows F
-
-**Slice Moves** — turn only the middle layer:
-
-![M](figures/generated/notation/move_m.svg){ width=10% }
-![S](figures/generated/notation/move_s.svg){ width=10% }
-![E](figures/generated/notation/move_e.svg){ width=10% }
-
-**M** follows L · **S** follows F · **E** follows D
-
-![Overview](figures/generated/notation/overview.svg){ width=40% }
-
-> **Sexy Move:** [`R U R' U'`]{.trig-r} — The most important trigger in cubing. Practice until it's muscle memory.
-
+:::
 
 # Phase 1: Beginner Method
 
 ## White Cross (Intuitive)
 
 Build a white cross on the bottom, matching each edge's side color to its center. No algorithms — plan ahead, then execute.
+
+> **Sexy Move:** [`R U R' U'`]{.trig-r} — The most important trigger in cubing. Practice until it's muscle memory.
 
 ## White Corners
 
@@ -98,9 +78,9 @@ Flip the cube — yellow on top. One algorithm handles all cases:
 
 > **F-sexy-F':** `F` [R U R' U']{.trig-r} `F'` — Sexy Move wrapped with F/F'.
 
-![Dot](figures/generated/oll/oll_dot.svg){ width=15% }
-![Hook](figures/generated/oll/oll_hook.svg){ width=15% }
-![Line](figures/generated/oll/oll_line.svg){ width=15% }
+![Dot](figures/generated/oll/oll_dot.svg){ width=28% }
+![Hook](figures/generated/oll/oll_hook.svg){ width=28% }
+![Line](figures/generated/oll/oll_line.svg){ width=28% }
 
 | You see | Action |
 |---------|--------|
@@ -148,9 +128,9 @@ Each section teaches ONE algorithm — enough to solve every case. Learning the 
 
 The Hook case gets its own efficient algorithm using wide `f`:
 
-![Dot](figures/generated/oll/oll_dot.svg){ width=15% }
+![Dot](figures/generated/oll/oll_dot.svg){ width=28% }
 ![Hook](figures/generated/oll/oll_hook.svg){ width=15% rotate=180 }
-![Line](figures/generated/oll/oll_line.svg){ width=15% }
+![Line](figures/generated/oll/oll_line.svg){ width=28% }
 
 | You see | Algorithm |
 |---------|-----------|
@@ -283,3 +263,5 @@ Completes the T-Perm pair. Solves diagonal corner swaps directly (no double T-Pe
 
 - **F2L:** Replace beginner corner+edge insertion with intuitive pairs — the biggest speed improvement.
 - **Full OLL** (57 algs) / **Full PLL** (21 algs) / **Cross planning** / **Look-ahead**.
+
+![Overview of cube faces and rotation axes](figures/generated/notation/overview.svg){ width=40% }
