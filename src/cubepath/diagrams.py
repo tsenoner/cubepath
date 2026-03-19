@@ -750,88 +750,344 @@ def render_notation(move: NotationMove, output_dir: Path) -> Path:
     return filepath
 
 
+def _draw_rotation_arc(
+    dwg: svgwrite.Drawing,
+    proj_fn,
+    center: tuple[float, ...],
+    v1: tuple[float, ...],
+    v2: tuple[float, ...],
+    radius: float = 0.5,
+    start_angle: float = 0.0,
+    view_dir: tuple[float, float, float] = (0, -1, 0),
+) -> tuple[svgwrite.container.Group, svgwrite.container.Group, svgwrite.container.Group]:
+    """Draw a 3D ribbon-style CW rotation arc, split into back/front/arrow groups.
+
+    Returns (back_group, front_group, arrow_group) so the caller can control
+    z-ordering of the ring, axis line, and arrowhead independently.
+    """
+    n_pts = 48
+    sweep = math.radians(280)
+    band_w = 0.17
+
+    normal = (
+        v1[1] * v2[2] - v1[2] * v2[1],
+        v1[2] * v2[0] - v1[0] * v2[2],
+        v1[0] * v2[1] - v1[1] * v2[0],
+    )
+
+    # Depth coefficients: depth(θ) = A*cos(θ) + B*sin(θ)
+    A = v1[0] * view_dir[0] + v1[1] * view_dir[1] + v1[2] * view_dir[2]
+    B = v2[0] * view_dir[0] + v2[1] * view_dir[1] + v2[2] * view_dir[2]
+    depth_amplitude = math.hypot(A, B)
+
+    def _pt_3d(angle: float, offset_sign: float) -> tuple[float, float]:
+        co, si = math.cos(angle), math.sin(angle)
+        return proj_fn(
+            center[0] + radius * (v1[0] * co + v2[0] * si) + offset_sign * band_w * normal[0],
+            center[1] + radius * (v1[1] * co + v2[1] * si) + offset_sign * band_w * normal[1],
+            center[2] + radius * (v1[2] * co + v2[2] * si) + offset_sign * band_w * normal[2],
+        )
+
+    def _depth(angle: float) -> float:
+        return A * math.cos(angle) + B * math.sin(angle)
+
+    # Generate arc sample points with depths
+    angles = [start_angle + sweep * i / n_pts for i in range(n_pts + 1)]
+    depths = [_depth(a) for a in angles]
+
+    # Find zero-crossing indices and interpolate boundary angles
+    crossings: list[float] = []
+    for i in range(len(depths) - 1):
+        if depths[i] * depths[i + 1] < 0:
+            t = depths[i] / (depths[i] - depths[i + 1])
+            crossings.append(angles[i] + t * (angles[i + 1] - angles[i]))
+
+    # Build segment boundaries
+    boundaries = [angles[0]] + sorted(crossings) + [angles[-1]]
+
+    # Classify segments and build ribbon pieces.
+    # Separate fill from stroke: draw polygon fills first (no stroke), then
+    # draw top/bottom edges as continuous polylines per depth zone so there
+    # are no visible joints between adjacent segments.
+    back_group = dwg.g()
+    front_group = dwg.g()
+
+    def _svg_polyline(pts: list[tuple[float, float]], closed: bool = False) -> str:
+        d = "M " + " L ".join(f"{x},{y}" for x, y in pts)
+        return d + " Z" if closed else d
+
+    stroke_kw = dict(
+        fill="none", stroke=ARROW_COLOR, stroke_width=1.5,
+        stroke_linejoin="round", stroke_linecap="round",
+    )
+
+    def _add_cap(group, pt_a, pt_b):
+        cap = dwg.line(pt_a, pt_b, stroke=ARROW_COLOR, stroke_width=1.5)
+        cap["stroke-linecap"] = "round"
+        group.add(cap)
+
+    # Collect per-segment data for two-pass rendering
+    seg_data: list[tuple[bool, list, list]] = []
+    for seg_i in range(len(boundaries) - 1):
+        a0, a1 = boundaries[seg_i], boundaries[seg_i + 1]
+        span = a1 - a0
+        n_seg = max(2, round(n_pts * span / sweep))
+        seg_angles = [a0 + span * j / n_seg for j in range(n_seg + 1)]
+
+        is_front = _depth((a0 + a1) / 2) > 0 or depth_amplitude < 0.01
+        seg_data.append((
+            is_front,
+            [_pt_3d(a, +1) for a in seg_angles],
+            [_pt_3d(a, -1) for a in seg_angles],
+        ))
+
+    # Pass 1: white polygon fills (no stroke)
+    for is_front, top_pts, bot_pts in seg_data:
+        group = front_group if is_front else back_group
+        group.add(dwg.path(
+            d=_svg_polyline(top_pts + list(reversed(bot_pts)), closed=True),
+            fill="white", stroke="none",
+        ))
+
+    # Pass 2: merge consecutive same-zone segments into continuous polylines
+    i = 0
+    while i < len(seg_data):
+        is_front = seg_data[i][0]
+        group = front_group if is_front else back_group
+        merged_top = list(seg_data[i][1])
+        merged_bot = list(seg_data[i][2])
+        j = i + 1
+        while j < len(seg_data) and seg_data[j][0] == is_front:
+            merged_top.extend(seg_data[j][1][1:])  # skip shared boundary point
+            merged_bot.extend(seg_data[j][2][1:])
+            j += 1
+        group.add(dwg.path(d=_svg_polyline(merged_top), **stroke_kw))
+        group.add(dwg.path(d=_svg_polyline(merged_bot), **stroke_kw))
+        _add_cap(group, merged_top[0], merged_bot[0])
+        _add_cap(group, merged_top[-1], merged_bot[-1])
+        i = j
+
+    # Arrowhead — always at sweep end
+    end_angle = start_angle + sweep
+
+    def _ring_pt(angle: float) -> tuple[float, float, float]:
+        """3D point on the ring center-line at the given angle."""
+        co, si = math.cos(angle), math.sin(angle)
+        return (
+            center[0] + radius * (v1[0] * co + v2[0] * si),
+            center[1] + radius * (v1[1] * co + v2[1] * si),
+            center[2] + radius * (v1[2] * co + v2[2] * si),
+        )
+
+    tip = proj_fn(*_ring_pt(end_angle + math.radians(42)))
+
+    arrow_w = band_w * 2.5
+    base_center_3d = _ring_pt(end_angle)
+    base_inner = proj_fn(*(base_center_3d[j] - arrow_w * normal[j] for j in range(3)))
+    base_outer = proj_fn(*(base_center_3d[j] + arrow_w * normal[j] for j in range(3)))
+
+    # Combined background covering last ribbon segment + arrowhead (no gap)
+    last_seg_a0 = boundaries[-2]
+    n_last = max(2, round(n_pts * (end_angle - last_seg_a0) / sweep))
+    last_span = end_angle - last_seg_a0
+    last_top = [_pt_3d(last_seg_a0 + last_span * j / n_last, +1) for j in range(n_last + 1)]
+    last_bot = [_pt_3d(last_seg_a0 + last_span * j / n_last, -1) for j in range(n_last + 1)]
+
+    # Arrowhead in a separate group so callers can control its z-order.
+    bg_pts = last_top + [base_outer, tip, base_inner] + list(reversed(last_bot))
+    arrow_g = dwg.g()
+    arrow_g.add(dwg.path(d=_svg_polyline(bg_pts, closed=True), fill="white", stroke="none"))
+    # Re-stroke the last ribbon segment edges (covered by the white background)
+    arrow_g.add(dwg.path(d=_svg_polyline(last_top), **stroke_kw))
+    arrow_g.add(dwg.path(d=_svg_polyline(last_bot), **stroke_kw))
+    # Re-stroke the end-cap at the front/back boundary (also covered by background)
+    if last_seg_a0 not in (angles[0], angles[-1]):
+        _add_cap(arrow_g, _pt_3d(last_seg_a0, +1), _pt_3d(last_seg_a0, -1))
+    # Arrowhead: stroke sides + partial base (skip the segment between ribbon edges)
+    ribbon_top_end = _pt_3d(end_angle, +1)
+    ribbon_bot_end = _pt_3d(end_angle, -1)
+    arrow_g.add(dwg.path(
+        d=_svg_polyline([ribbon_top_end, base_outer, tip, base_inner, ribbon_bot_end]),
+        fill="white", **{k: v for k, v in stroke_kw.items() if k != "fill"},
+    ))
+
+    return back_group, front_group, arrow_g
+
+
 def render_overview(output_dir: Path) -> Path:
     """Render a summary overview diagram: one isometric cube with 6 labeled axis arrows."""
     subdir = output_dir / "notation"
     subdir.mkdir(parents=True, exist_ok=True)
     filepath = subdir / "overview.svg"
 
-    ov_w, ov_h = 240, 200
-    ov_cx, ov_cy = ov_w / 2, 90
+    # Projection origin (arbitrary; viewBox is computed from content bounds).
+    # Tilted view: higher viewpoint + rotated left so D/B/L axes go behind the cube.
+    ov_cx, ov_cy = 155.0, 110.0
     scale = 22
-    cos30 = _N_COS30
+    # Horizontal rotation ~40° (instead of 45°): F face wider, R face narrower
+    h_angle = math.radians(40)
+    cos_h, sin_h = math.cos(h_angle), math.sin(h_angle)
+    elev = 0.40  # elevation factor (0.5 = standard iso, lower = more top visible)
 
     def proj(x: float, y: float, z: float) -> tuple[float, float]:
         return (
-            round((x - z) * cos30 * scale + ov_cx, 1),
-            round(((x + z) * 0.5 - y) * scale + ov_cy, 1),
+            round((x * cos_h - z * sin_h) * scale + ov_cx, 1),
+            round(((x * sin_h + z * cos_h) * elev - y) * scale + ov_cy, 1),
         )
+
+    # Axis definitions: (label, face_center, tip, arc_v1, arc_v2)
+    c = 1.5  # cube center coordinate
+    axes = [
+        ("U", (c, 3, c), (c, c + 3.0, c), (1, 0, 0), (0, 0, 1)),
+        ("D", (c, 0, c), (c, c - 3.5, c), (1, 0, 0), (0, 0, -1)),
+        ("F", (c, c, 3), (c, c, c + 4.2), (1, 0, 0), (0, -1, 0)),
+        ("B", (c, c, 0), (c, c, c - 4.8), (-1, 0, 0), (0, -1, 0)),
+        ("R", (3, c, c), (c + 3.8, c, c), (0, 0, 1), (0, 1, 0)),
+        ("L", (0, c, c), (c - 4.3, c, c), (0, 0, -1), (0, 1, 0)),
+    ]
+    front = {"U", "F", "R"}
+
+    # Pre-compute label positions to determine tight viewBox
+    label_dist = 18
+    label_positions: list[tuple[float, float]] = []
+    for _, face_center, tip, _, _ in axes:
+        e = proj(*tip)
+        fc = proj(*face_center)
+        pdx, pdy = e[0] - fc[0], e[1] - fc[1]
+        pln = math.hypot(pdx, pdy)
+        if pln > 0:
+            label_positions.append((e[0] + pdx / pln * label_dist, e[1] + pdy / pln * label_dist))
+        else:
+            label_positions.append(e)
+
+    # Compute tight viewBox with uniform padding
+    pad = 16
+    text_half = 10  # approximate half-extent of 18px label text
+    all_x = [lx for lx, _ in label_positions]
+    all_y = [ly for _, ly in label_positions]
+    vb_x = min(all_x) - text_half - pad
+    vb_y = min(all_y) - text_half - pad
+    vb_w = max(all_x) - min(all_x) + 2 * (text_half + pad)
+    vb_h = max(all_y) - min(all_y) + 2 * (text_half + pad)
 
     dwg = svgwrite.Drawing(
         str(filepath),
-        size=(f"{ov_w}px", f"{ov_h}px"),
-        viewBox=f"0 0 {ov_w} {ov_h}",
+        size=(f"{vb_w:.0f}px", f"{vb_h:.0f}px"),
+        viewBox=f"{vb_x:.1f} {vb_y:.1f} {vb_w:.1f} {vb_h:.1f}",
     )
-    dwg.add(dwg.rect((0, 0), (ov_w, ov_h), fill=WHITE, rx=8, ry=8))
+    dwg.add(dwg.rect((vb_x, vb_y), (vb_w, vb_h), fill=WHITE, rx=8, ry=8))
 
-    # Draw cube faces (solid colors, no sticker grid)
+    # Cube face definitions (needed before step 1 for clip path)
     face_colors = [
-        # U face (top) — Yellow
         ([(0, 3, 0), (3, 3, 0), (3, 3, 3), (0, 3, 3)], YELLOW),
-        # F face (front-left) — Red
         ([(0, 0, 3), (3, 0, 3), (3, 3, 3), (0, 3, 3)], RED),
-        # R face (front-right) — Green
         ([(3, 0, 0), (3, 0, 3), (3, 3, 3), (3, 3, 0)], GREEN),
     ]
-    for corners, color in face_colors:
-        pts = [proj(*c) for c in corners]
-        dwg.add(dwg.polygon(pts, fill=color, stroke=STICKER_STROKE, stroke_width=1.5))
 
-    # Cube outline
-    for ea, eb in _CUBE_OUTLINE_EDGES:
-        dwg.add(dwg.line(proj(*ea), proj(*eb), stroke=STICKER_STROKE, stroke_width=1.5))
+    # Clip path: viewport minus cube face polygons (evenodd punches holes).
+    # Behind-axis lines use this so they're only visible outside the cube silhouette.
+    clip = dwg.defs.add(dwg.clipPath(id="behind-clip"))
+    m = 5  # margin
+    outer = f"M{vb_x - m},{vb_y - m} h{vb_w + 2*m} v{vb_h + 2*m} h-{vb_w + 2*m} Z"
+    inner = ""
+    for corners, _ in face_colors:
+        pts = [proj(*p) for p in corners]
+        inner += " M " + " L ".join(f"{x},{y}" for x, y in pts) + " Z"
+    clip_elem = dwg.path(d=outer + inner)
+    clip_elem["clip-rule"] = "evenodd"
+    clip.add(clip_elem)
 
-    # Axis arrows: face center → outward, with label
-    axes = [
-        ("U", (1.5, 3, 1.5), (1.5, 4.8, 1.5)),
-        ("D", (1.5, 0, 1.5), (1.5, -1.2, 1.5)),
-        ("F", (1.5, 1.5, 3), (1.5, 1.5, 4.8)),
-        ("B", (1.5, 1.5, 0), (1.5, 1.5, -1.2)),
-        ("R", (3, 1.5, 1.5), (4.8, 1.5, 1.5)),
-        ("L", (0, 1.5, 1.5), (-1.2, 1.5, 1.5)),
-    ]
+    # Pre-compute all rotation arcs so we can control z-ordering precisely.
+    view_dir = (sin_h, elev, cos_h)
+    arc_radius = 0.6
+    arc_sweep = math.radians(280)
+    arc_data = {}
+    for label, face_center, tip, v1, v2 in axes:
+        d = tuple(tip[j] - face_center[j] for j in range(3))
+        ln = math.hypot(*d)
+        d_norm = tuple(x / ln for x in d) if ln > 0 else (0, 0, 0)
 
-    # Add arrowhead marker
-    marker = dwg.marker(
-        id="ov-arrow",
-        insert=(5, 5),
-        size=(10, 10),
-        orient="auto",
-        markerUnits="userSpaceOnUse",
-    )
-    marker.add(dwg.polygon([(0, 1), (10, 5), (0, 9)], fill=ARROW_COLOR))
-    dwg.defs.add(marker)
+        arc_center = tuple(tip[j] - d_norm[j] * 0.7 for j in range(3))
 
-    for label, start_3d, end_3d in axes:
-        s = proj(*start_3d)
-        e = proj(*end_3d)
-        line = dwg.line(s, e, stroke=ARROW_COLOR, stroke_width=2)
-        line["marker-end"] = "url(#ov-arrow)"
+        a_coeff = sum(v1[j] * view_dir[j] for j in range(3))
+        b_coeff = sum(v2[j] * view_dir[j] for j in range(3))
+        theta_max = math.atan2(b_coeff, a_coeff)
+        start_angle = theta_max - arc_sweep - math.radians(42)
+
+        back_g, front_g, arrow_g = _draw_rotation_arc(
+            dwg, proj, arc_center, v1, v2,
+            radius=arc_radius,
+            start_angle=start_angle,
+            view_dir=view_dir,
+        )
+        arc_data[label] = (back_g, front_g, arrow_g, d_norm, arc_center)
+
+    # B's back ring drawn behind the cube for correct 3D occlusion
+    dwg.add(arc_data["B"][0])
+
+    def _add_line(start, end, color=STICKER_STROKE, **extra):
+        line = dwg.line(start, end, stroke=color, stroke_width=1.5)
+        line["stroke-linecap"] = "round"
+        for k, v in extra.items():
+            line[k] = v
         dwg.add(line)
-        # Label offset: push text slightly past the arrow tip
-        dx, dy = e[0] - s[0], e[1] - s[1]
-        ln = math.hypot(dx, dy)
-        if ln > 0:
-            lx = e[0] + dx / ln * 12
-            ly = e[1] + dy / ln * 12
+
+    # 2b. Visible cube faces (solid, colored)
+    for corners, color in face_colors:
+        pts = [proj(*p) for p in corners]
+        dwg.add(dwg.polygon(
+            pts, fill=color, stroke=STICKER_STROKE,
+            stroke_width=1.5, stroke_linejoin="round",
+        ))
+
+    # 3. Cube outline
+    for ea, eb in _CUBE_OUTLINE_EDGES:
+        _add_line(proj(*ea), proj(*eb))
+
+    # 4. Redraw "front" axis lines (U, F, R) on top of cube faces
+    for label, face_center, tip, _, _ in axes:
+        if label in front:
+            _add_line(proj(*face_center), proj(*tip), color=ARROW_COLOR)
+
+    # 5. Draw rotation arcs with front/back splitting around axis lines
+    for label, face_center, tip, _, _ in axes:
+        back_g, front_g, arrow_g, d_norm, arc_center = arc_data[label]
+
+        # B's back_g already drawn before the cube
+        if label != "B":
+            dwg.add(back_g)
+
+        if label in front:
+            seg_len = 1.2 * arc_radius
+            seg_out = proj(*tuple(arc_center[j] + seg_len * d_norm[j] for j in range(3)))
+            seg_in = proj(*tuple(arc_center[j] - seg_len * d_norm[j] for j in range(3)))
+            _add_line(seg_in, seg_out, color=ARROW_COLOR)
+            dwg.add(front_g)
+            dwg.add(arrow_g)
         else:
-            lx, ly = e[0], e[1]
+            dwg.add(front_g)
+            _add_line(
+                proj(*face_center), proj(*tip), color=ARROW_COLOR,
+                **{"clip-path": "url(#behind-clip)"},
+            )
+            if label in ("B", "L"):
+                dwg.add(dwg.circle(center=proj(*tip), r=5, fill=ARROW_COLOR))
+            dwg.add(arrow_g)
+
+    # 6. Dots and labels at each tip
+    for i, (label, face_center, tip, _, _) in enumerate(axes):
+        e = proj(*tip)
+        if label not in ("B", "L"):
+            dwg.add(dwg.circle(center=e, r=5, fill=ARROW_COLOR))
+
+        lx, ly = label_positions[i]
         dwg.add(
             dwg.text(
                 label,
-                insert=(lx, ly + 5),
+                insert=(lx, ly),
                 text_anchor="middle",
-                font_size="16px",
+                dominant_baseline="central",
+                font_size="18px",
                 font_family="sans-serif",
                 font_weight="bold",
                 fill="#222",
