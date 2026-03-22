@@ -464,6 +464,24 @@ class NotationMove:
     desc: str = ""
 
 
+@dataclass
+class StepDiagram:
+    """A single step progress diagram."""
+
+    name: str
+    filename: str
+    solved: set[tuple[str, int, int]]
+    face_colors: dict[str, str] | None = None  # override face colors (e.g. white on top)
+    arrow: str | None = None  # rotation arrow layer (e.g. "x" for flip)
+    overrides: dict[tuple[str, int, int], str] = field(default_factory=dict)
+    swap_arrows: list[tuple[tuple[float, ...], tuple[float, ...], tuple[float, ...]]] = field(
+        default_factory=list
+    )  # Each: (src_3d, dst_3d, ctrl_3d) — bidirectional 3D Bezier arrows
+    dir_arrows: list[tuple[tuple[float, ...], tuple[float, ...], tuple[float, ...]]] = field(
+        default_factory=list
+    )  # Each: (src_3d, dst_3d, ctrl_3d) — unidirectional 3D Bezier arrows
+
+
 def _notation_moves() -> list[NotationMove]:
     return [
         NotationMove("R", "move_r", "R", True, "Right CW"),
@@ -481,6 +499,246 @@ def _notation_moves() -> list[NotationMove]:
         NotationMove("x", "move_x", "x", True, "Rotate on R"),
         NotationMove("y", "move_y", "y", True, "Rotate on U"),
         NotationMove("z", "move_z", "z", True, "Rotate on F"),
+    ]
+
+
+_CENTERS = {("U", 1, 1), ("F", 1, 1), ("R", 1, 1)}
+
+
+def _step_sticker_color(
+    face: str,
+    a: int,
+    b: int,
+    solved: set[tuple[str, int, int]],
+    face_colors: dict[str, str] | None = None,
+    overrides: dict[tuple[str, int, int], str] | None = None,
+) -> str:
+    """Return face color if sticker is solved, GREY otherwise. Overrides take priority."""
+    if overrides and (face, a, b) in overrides:
+        return overrides[(face, a, b)]
+    colors = face_colors or _CUBE_FACE_COLORS
+    return colors[face] if (face, a, b) in solved else GREY
+
+
+def _step_cases() -> list[StepDiagram]:
+    """Define step progress diagrams: white-on-top → flip → yellow-on-top."""
+    white_top = {"U": WHITE, "F": GREEN, "R": RED}
+    steps: list[StepDiagram] = []
+
+    centers = set(_CENTERS)
+
+    # --- White on top (step 1 only) ---
+
+    # Step 1: White Cross on top
+    cross = centers | {
+        ("U", 1, 0), ("U", 0, 1), ("U", 2, 1), ("U", 1, 2),  # U cross edges
+        ("F", 1, 2), ("R", 1, 2),  # visible side colors of cross edges
+    }
+    steps.append(StepDiagram("White Cross", "step_1_cross", cross, white_top))
+
+    # Flip: cross done, rotate to white-on-bottom
+    steps.append(StepDiagram("Flip", "step_flip", set(cross), white_top, arrow="x"))
+
+    # --- Yellow on top (steps 2-7) ---
+
+    # Step 2: White Corners (now done with white on bottom)
+    solved_y = centers | {
+        ("F", 0, 0), ("F", 1, 0), ("F", 2, 0),  # F bottom row (full first layer)
+        ("R", 0, 0), ("R", 1, 0), ("R", 2, 0),  # R bottom row
+    }
+    steps.append(StepDiagram("White Corners", "step_2_corners", set(solved_y)))
+
+    # Step 3: Middle Edges
+    solved_y = solved_y | {("F", 0, 1), ("F", 2, 1), ("R", 0, 1), ("R", 2, 1)}
+    steps.append(StepDiagram("Middle Edges", "step_3_edges", set(solved_y)))
+
+    # Step 4: Yellow Cross
+    solved_y = solved_y | {("U", 1, 0), ("U", 0, 1), ("U", 2, 1), ("U", 1, 2)}
+    steps.append(StepDiagram("Yellow Cross", "step_4_ycross", set(solved_y)))
+
+    # Step 5: Align Edges
+    solved_y = solved_y | {("F", 1, 2), ("R", 1, 2)}
+    steps.append(StepDiagram("Align Edges", "step_5_yedges", set(solved_y)))
+
+    # Step 6: Position Corners
+    solved_y = solved_y | {("F", 0, 2), ("F", 2, 2), ("R", 0, 2), ("R", 2, 2)}
+    steps.append(StepDiagram("Position Corners", "step_6_ycorners_pos", set(solved_y)))
+
+    # Step 7: Orient Corners (fully solved)
+    solved_y = solved_y | {("U", 0, 0), ("U", 2, 0), ("U", 0, 2), ("U", 2, 2)}
+    steps.append(StepDiagram("Solved", "step_7_solved", set(solved_y)))
+
+    return steps
+
+
+def _corner_case_steps() -> list[StepDiagram]:
+    """Corner insertion case diagrams: white faces right/front/up."""
+    # Cross done on bottom: centers + bottom edge stickers visible on F and R
+    cross_done = set(_CENTERS) | {("F", 1, 0), ("R", 1, 0)}
+    return [
+        StepDiagram(
+            "White Right",
+            "corner_right",
+            cross_done,
+            overrides={("R", 2, 2): WHITE, ("U", 2, 2): RED, ("F", 2, 2): GREEN},
+        ),
+        StepDiagram(
+            "White Front",
+            "corner_front",
+            cross_done,
+            overrides={("F", 2, 2): WHITE, ("R", 2, 2): RED, ("U", 2, 2): GREEN},
+        ),
+        StepDiagram(
+            "White Up",
+            "corner_up",
+            cross_done,
+            overrides={("U", 2, 2): WHITE, ("F", 2, 2): RED, ("R", 2, 2): GREEN},
+        ),
+    ]
+
+
+def _align_edge_cases() -> list[StepDiagram]:
+    """Yellow edge alignment case diagrams: adjacent vs diagonal."""
+    # Step 4 state: first layer + middle edges + yellow cross
+    step4 = set(_CENTERS) | {
+        ("F", 0, 0), ("F", 1, 0), ("F", 2, 0),
+        ("R", 0, 0), ("R", 1, 0), ("R", 2, 0),
+        ("F", 0, 1), ("F", 2, 1),
+        ("R", 0, 1), ("R", 2, 1),
+        ("U", 1, 0), ("U", 0, 1), ("U", 2, 1), ("U", 1, 2),
+    }
+    return [
+        StepDiagram(
+            "Adjacent Edges",
+            "align_adjacent",
+            step4 | {("R", 1, 2)},  # R+B correct
+            overrides={("F", 1, 2): BLUE},  # F has L's color
+            swap_arrows=[  # front ↔ left, arc to the left
+                ((1.5, 2.5, 3), (0.5, 3, 1.5), (-0.5, 4.5, 3.5)),
+            ],
+        ),
+        StepDiagram(
+            "Opposite Edges",
+            "align_diagonal",
+            step4 | {("R", 1, 2)},  # R+L correct
+            overrides={("F", 1, 2): ORANGE},  # F has B's color
+            swap_arrows=[  # front ↔ back, arc upward
+                ((1.5, 2.5, 3), (1.5, 3, 0.5), (-0.4, 4.5, 1.5)),
+            ],
+        ),
+    ]
+
+
+def _orient_corner_case() -> StepDiagram:
+    """Orient corners diagram (flipped, white on top): DFR corner with yellow on R face."""
+    flipped = {"U": WHITE, "F": ORANGE, "R": GREEN}
+    # After x2 flip: white on top (fully solved), orange in front, green on right.
+    # All stickers solved except D-layer corner orientations.
+    solved = {
+        # U face: all 9 (complete white first layer)
+        ("U", 0, 0), ("U", 1, 0), ("U", 2, 0),
+        ("U", 0, 1), ("U", 1, 1), ("U", 2, 1),
+        ("U", 0, 2), ("U", 1, 2), ("U", 2, 2),
+        # F face: all except bottom corners F(0,0) and F(2,0)
+        ("F", 1, 0), ("F", 0, 1), ("F", 1, 1), ("F", 2, 1),
+        ("F", 0, 2), ("F", 1, 2), ("F", 2, 2),
+        # R face: all except bottom corners R(0,0) and R(2,0)
+        ("R", 1, 0), ("R", 0, 1), ("R", 1, 1), ("R", 2, 1),
+        ("R", 0, 2), ("R", 1, 2), ("R", 2, 2),
+    }
+    return StepDiagram(
+        "Orient Corner",
+        "orient_corner",
+        solved,
+        face_colors=flipped,
+        overrides={
+            ("R", 2, 0): YELLOW,  # DFR: yellow on R face (CW twist)
+            ("F", 2, 0): GREEN,   # DFR: green wraps to F face
+            ("F", 0, 0): YELLOW,  # DFL: yellow on F face (CCW twist)
+            ("R", 0, 0): RED,     # DBR: red on R face (CCW twist)
+        },
+    )
+
+
+def _orient_corner_cases_15() -> list[StepDiagram]:
+    """Phase 1.5 orient corner diagrams: yellow on R face vs yellow on F face."""
+    step6 = set(_CENTERS) | {
+        ("F", 0, 0), ("F", 1, 0), ("F", 2, 0),
+        ("R", 0, 0), ("R", 1, 0), ("R", 2, 0),
+        ("F", 0, 1), ("F", 2, 1),
+        ("R", 0, 1), ("R", 2, 1),
+        ("U", 1, 0), ("U", 0, 1), ("U", 2, 1), ("U", 1, 2),
+        ("F", 1, 2), ("R", 1, 2),
+        ("F", 0, 2), ("F", 2, 2), ("R", 0, 2), ("R", 2, 2),
+        ("U", 0, 2),  # UFL corner oriented (yellow up)
+    }
+    return [
+        StepDiagram(
+            "Orient Right",
+            "orient_right",
+            step6,
+            overrides={
+                ("U", 2, 2): RED,      # UFR: red on top
+                ("R", 2, 2): YELLOW,   # UFR: yellow on R face
+                ("F", 2, 2): GREEN,    # UFR: green on F face
+            },
+        ),
+        StepDiagram(
+            "Orient Front",
+            "orient_front",
+            step6,
+            overrides={
+                ("U", 2, 2): GREEN,    # UFR: green on top
+                ("F", 2, 2): YELLOW,   # UFR: yellow on F face
+                ("R", 2, 2): RED,      # UFR: red on R face
+            },
+        ),
+    ]
+
+
+def _corner_pos_case() -> StepDiagram:
+    """Corner positioning diagram: 3-cycle with Niklas, FL corner solved."""
+    step5 = set(_CENTERS) | {
+        ("F", 0, 0), ("F", 1, 0), ("F", 2, 0),
+        ("R", 0, 0), ("R", 1, 0), ("R", 2, 0),
+        ("F", 0, 1), ("F", 2, 1),
+        ("R", 0, 1), ("R", 2, 1),
+        ("U", 1, 0), ("U", 0, 1), ("U", 2, 1), ("U", 1, 2),
+        ("F", 1, 2), ("R", 1, 2),
+    }
+    return StepDiagram(
+        "Corner Cycle",
+        "corner_cycle",
+        step5 | {("F", 0, 2)},  # FL corner F-sticker correct
+        overrides={("U", 0, 2): RED, ("F", 0, 2): BLUE},  # FL corner: red on top, blue on front
+        dir_arrows=[
+            ((0.5, 3, 0.5), (2.5, 3, 2.5), (1.5, 3, 1.5)),    # BL → FR (straight)
+            ((2.5, 3, 2.5), (2.5, 3, 0.5), (2.5, 3, 1.5)),    # FR → BR (straight)
+            ((2.5, 3, 0.5), (0.5, 3, 0.5), (1.5, 3, 0.5)),    # BR → BL (straight)
+        ],
+    )
+
+
+def _edge_case_steps() -> list[StepDiagram]:
+    """Edge insertion case diagrams: edge goes right/left."""
+    # First layer complete: centers + bottom row of F and R
+    first_layer = set(_CENTERS) | {
+        ("F", 0, 0), ("F", 1, 0), ("F", 2, 0),
+        ("R", 0, 0), ("R", 1, 0), ("R", 2, 0),
+    }
+    return [
+        StepDiagram(
+            "Edge Right",
+            "edge_right",
+            first_layer,
+            overrides={("F", 1, 2): RED, ("U", 1, 2): GREEN},
+        ),
+        StepDiagram(
+            "Edge Left",
+            "edge_left",
+            first_layer,
+            overrides={("F", 1, 2): RED, ("U", 1, 2): BLUE},
+        ),
     ]
 
 
@@ -759,6 +1017,141 @@ def render_notation(move: NotationMove, output_dir: Path) -> Path:
             fill="#222",
         )
     )
+    dwg.save(pretty=True)
+    return filepath
+
+
+def render_step(step: StepDiagram, output_dir: Path) -> Path:
+    """Render a step progress diagram (3D isometric cube) to SVG."""
+    subdir = output_dir / "steps"
+    subdir.mkdir(parents=True, exist_ok=True)
+    filepath = subdir / f"{step.filename}.svg"
+
+    # Tight canvas from cube bounding box
+    all_corners = [(x, y, z) for x in (0, 3) for y in (0, 3) for z in (0, 3)]
+    proj_pts = [_n_proj(*c) for c in all_corners]
+    min_x = min(p[0] for p in proj_pts)
+    max_x = max(p[0] for p in proj_pts)
+    min_y = min(p[1] for p in proj_pts)
+    max_y = max(p[1] for p in proj_pts)
+    pad = 6 if step.arrow or step.swap_arrows or step.dir_arrows else 4
+    vb_x = min_x - pad
+    vb_y = min_y - pad
+    vb_w = max_x - min_x + 2 * pad
+    vb_h = max_y - min_y + 2 * pad
+
+    dwg = svgwrite.Drawing(
+        str(filepath),
+        size=(f"{vb_w:.0f}px", f"{vb_h:.0f}px"),
+        viewBox=f"{vb_x:.1f} {vb_y:.1f} {vb_w:.1f} {vb_h:.1f}",
+    )
+    dwg.add(dwg.rect((vb_x, vb_y), (vb_w, vb_h), fill=WHITE, rx=6, ry=6))
+
+    # Stickers (draw order: R → F → U for correct layering)
+    for face in ("R", "F", "U"):
+        for a in range(3):
+            for b in range(3):
+                pts = _n_sticker_pts(face, a, b)
+                color = _step_sticker_color(
+                    face, a, b, step.solved, step.face_colors, step.overrides
+                )
+                dwg.add(dwg.polygon(pts, fill=color, stroke=STICKER_STROKE, stroke_width=1.2))
+
+    # Cube outline
+    for edge_a, edge_b in _CUBE_OUTLINE_EDGES:
+        dwg.add(
+            dwg.line(
+                _n_proj(*edge_a),
+                _n_proj(*edge_b),
+                stroke=STICKER_STROKE,
+                stroke_width=1.5,
+            )
+        )
+
+    # Rotation arrow (for flip step)
+    if step.arrow:
+        _n_draw_arrow(dwg, step.arrow, True)
+
+    # Swap arrows (bidirectional 3D Bezier, matching notation arrow style)
+    if step.swap_arrows:
+        for src, dst, ctrl in step.swap_arrows:
+            n_pts = 20
+            pts = []
+            for k in range(n_pts + 1):
+                t = k / n_pts
+                t1, t2, t3 = (1 - t) ** 2, 2 * t * (1 - t), t ** 2
+                pts.append(_n_proj(
+                    t1 * src[0] + t2 * ctrl[0] + t3 * dst[0],
+                    t1 * src[1] + t2 * ctrl[1] + t3 * dst[1],
+                    t1 * src[2] + t2 * ctrl[2] + t3 * dst[2],
+                ))
+            sz = 12
+            # Arrowhead at end (tip = pts[-1])
+            tip_e = pts[-1]
+            prev_e = pts[-3]
+            de = (tip_e[0] - prev_e[0], tip_e[1] - prev_e[1])
+            le = math.hypot(*de)
+            if le > 0:
+                ue = (de[0] / le, de[1] / le)
+                ne = (-ue[1], ue[0])
+                end_base = (tip_e[0] - sz * ue[0], tip_e[1] - sz * ue[1])
+                dwg.add(dwg.polygon([
+                    tip_e,
+                    (end_base[0] + sz * 0.4 * ne[0], end_base[1] + sz * 0.4 * ne[1]),
+                    (end_base[0] - sz * 0.4 * ne[0], end_base[1] - sz * 0.4 * ne[1]),
+                ], fill=ARROW_COLOR))
+            # Arrowhead at start (tip = pts[0], pointing backward)
+            tip_s = pts[0]
+            prev_s = pts[2]
+            ds = (tip_s[0] - prev_s[0], tip_s[1] - prev_s[1])
+            ls = math.hypot(*ds)
+            if ls > 0:
+                us = (ds[0] / ls, ds[1] / ls)
+                ns = (-us[1], us[0])
+                start_base = (tip_s[0] - sz * us[0], tip_s[1] - sz * us[1])
+                dwg.add(dwg.polygon([
+                    tip_s,
+                    (start_base[0] + sz * 0.4 * ns[0], start_base[1] + sz * 0.4 * ns[1]),
+                    (start_base[0] - sz * 0.4 * ns[0], start_base[1] - sz * 0.4 * ns[1]),
+                ], fill=ARROW_COLOR))
+            # Shortened arc (trim ends for arrowheads)
+            shortened = pts[1:-2]
+            if len(shortened) >= 2:
+                d = "M " + " L ".join(f"{x:.1f},{y:.1f}" for x, y in shortened)
+                dwg.add(dwg.path(d=d, fill="none", stroke=ARROW_COLOR, stroke_width=5))
+
+    # Directional arrows (unidirectional 3D Bezier, arrowhead at end only)
+    if step.dir_arrows:
+        for src, dst, ctrl in step.dir_arrows:
+            n_pts = 20
+            pts = []
+            for k in range(n_pts + 1):
+                t = k / n_pts
+                t1, t2, t3 = (1 - t) ** 2, 2 * t * (1 - t), t ** 2
+                pts.append(_n_proj(
+                    t1 * src[0] + t2 * ctrl[0] + t3 * dst[0],
+                    t1 * src[1] + t2 * ctrl[1] + t3 * dst[1],
+                    t1 * src[2] + t2 * ctrl[2] + t3 * dst[2],
+                ))
+            sz = 8
+            tip = pts[-1]
+            prev = pts[-3]
+            de = (tip[0] - prev[0], tip[1] - prev[1])
+            le = math.hypot(*de)
+            if le > 0:
+                ue = (de[0] / le, de[1] / le)
+                ne = (-ue[1], ue[0])
+                end_base = (tip[0] - sz * ue[0], tip[1] - sz * ue[1])
+                dwg.add(dwg.polygon([
+                    tip,
+                    (end_base[0] + sz * 0.4 * ne[0], end_base[1] + sz * 0.4 * ne[1]),
+                    (end_base[0] - sz * 0.4 * ne[0], end_base[1] - sz * 0.4 * ne[1]),
+                ], fill=ARROW_COLOR))
+            shortened = pts[:-1]
+            if len(shortened) >= 2:
+                d = "M " + " L ".join(f"{x:.1f},{y:.1f}" for x, y in shortened)
+                dwg.add(dwg.path(d=d, fill="none", stroke=ARROW_COLOR, stroke_width=2.5))
+
     dwg.save(pretty=True)
     return filepath
 
@@ -1150,9 +1543,46 @@ def main() -> None:
     overview_path = render_overview(output_dir)
     print(f"  {overview_path.relative_to(output_dir)}")
 
+    steps = _step_cases()
+    for step in steps:
+        path = render_step(step, output_dir)
+        print(f"  {path.relative_to(output_dir)}")
+
+    corner_cases = _corner_case_steps()
+    for cc in corner_cases:
+        path = render_step(cc, output_dir)
+        print(f"  {path.relative_to(output_dir)}")
+
+    edge_cases = _edge_case_steps()
+    for ec in edge_cases:
+        path = render_step(ec, output_dir)
+        print(f"  {path.relative_to(output_dir)}")
+
+    orient_corner = _orient_corner_case()
+    path = render_step(orient_corner, output_dir)
+    print(f"  {path.relative_to(output_dir)}")
+
+    orient_15_cases = _orient_corner_cases_15()
+    for oc15 in orient_15_cases:
+        path = render_step(oc15, output_dir)
+        print(f"  {path.relative_to(output_dir)}")
+
+    corner_cycle = _corner_pos_case()
+    path = render_step(corner_cycle, output_dir)
+    print(f"  {path.relative_to(output_dir)}")
+
+    align_cases = _align_edge_cases()
+    for ac in align_cases:
+        path = render_step(ac, output_dir)
+        print(f"  {path.relative_to(output_dir)}")
+
     print(
         f"\nGenerated {len(cases)} case diagrams + {len(moves)} notation moves"
-        f" + 1 overview in {output_dir}"
+        f" + 1 overview + {len(steps)} step diagrams"
+        f" + {len(corner_cases)} corner cases"
+        f" + {len(edge_cases)} edge cases"
+        f" + {len(orient_15_cases)} orient 1.5 cases"
+        f" + {len(align_cases)} align cases in {output_dir}"
     )
 
 

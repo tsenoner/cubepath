@@ -36,17 +36,21 @@ This is a Rubik's Cube guide with a Python SVG diagram pipeline and Pandoc-based
 
 Four case groups: `_oll_cross_cases()` (3), `_oll_corner_cases()` (7), `_pll_corner_cases()` (2), `_pll_edge_cases()` (4). OLL cases have no arrows; PLL cases use `swaps` (bidirectional) and `cycles` (directional) arrow fields.
 
+`StepDiagram` dataclasses produce 3D isometric progress/case diagrams: `_step_cases()` (8 steps), `_corner_case_steps()` (3), `_edge_case_steps()` (2), `_orient_corner_case()` (1), `_orient_corner_cases_15()` (2), `_corner_pos_case()` (1), `_align_edge_cases()` (2). Each specifies a solved-sticker set, optional face_colors override (e.g. flipped white-on-top), and sticker overrides for highlighting.
+
 ### Guide Build
 
 `guide/cubepath.md` is the single source file. Pandoc builds it twice using `guide/defaults/pdf.yaml` (Typst output) and `guide/defaults/html.yaml` (HTML5 output). Both pass through `guide/filters/callouts.lua`.
 
 ### Lua Filter (`guide/filters/callouts.lua`)
 
-Handles two things:
+Handles three things:
 
 1. **Callout divs** — Fenced divs with classes `.algorithm`, `.tip`, `.caution`, `.info` become styled blocks. For Typst: inline `#block()` markup. For HTML: CSS classes styled by `guide/styles/callouts.css`.
 
-2. **Image rotation** — `![alt](path){ rotate=180 }` attribute. For Typst: wraps in `#box(width, rotate(..., image(...)))`. For HTML: wraps `Image` in a `Span` with CSS `transform:rotate()`. This keeps rotated images inline (important for side-by-side figure rows).
+2. **Steps div** — `:::: {.steps}` wraps the Phase 1 step tables in a mirrored 4-column grid layout (Typst) or table styling (HTML/CSS).
+
+3. **Image rotation** — `![alt](path){ rotate=180 }` attribute. For Typst: wraps in `#box(width, rotate(..., image(...)))`. For HTML: wraps `Image` in a `Span` with CSS `transform:rotate()`. This keeps rotated images inline (important for side-by-side figure rows).
 
 ## Rubik's Cube Color Scheme & Physics
 
@@ -77,6 +81,11 @@ Generated SVGs are organized in subdirectories under `guide/figures/generated/`:
 - `oll/` — OLL case diagrams (plan-view, top-down)
 - `pll/` — PLL case diagrams (plan-view with arrows)
 - `notation/` — 3D isometric move notation diagrams
+- `steps/` — 3D isometric step progress + case diagrams
+
+## Writing Philosophy
+
+The guide should be as small and concise as possible while containing all information needed to learn to solve the Rubik's cube well. The method progressively introduces as few new algorithms as possible at each phase while always being able to fully solve the cube. Prefer terse, information-dense prose over verbose explanations.
 
 ## Key Conventions
 

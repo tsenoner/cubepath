@@ -1,6 +1,13 @@
 """Tests for cubepath diagram generation."""
 
-from cubepath.diagrams import _arrow_pos, all_cases, render
+from cubepath.diagrams import (
+    _arrow_pos,
+    _orient_corner_cases_15,
+    _step_cases,
+    all_cases,
+    render,
+    render_step,
+)
 
 # ViewBox dimensions (computed from layout constants)
 VIEWBOX_SIZE = 192
@@ -52,3 +59,24 @@ def test_pll_cases_have_arrows():
     for case in all_cases():
         if case.category.startswith("pll"):
             assert case.swaps or case.cycles, f"{case.name} has no arrows"
+
+
+def test_step_cases_count():
+    assert len(_step_cases()) == 8
+
+
+def test_step_render_creates_svg(tmp_path):
+    steps = _step_cases()
+    for step in steps:
+        path = render_step(step, tmp_path)
+        assert path.exists()
+        assert path.suffix == ".svg"
+        content = path.read_text()
+        assert "<svg" in content
+
+
+def test_orient_corner_cases_15():
+    cases = _orient_corner_cases_15()
+    assert len(cases) == 2
+    assert cases[0].filename == "orient_right"
+    assert cases[1].filename == "orient_front"

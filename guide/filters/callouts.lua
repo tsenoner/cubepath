@@ -87,6 +87,9 @@ local function _cell_to_typst(cell)
     if #para.content == 1 and para.content[1].t == "Image" then
       local img = para.content[1]
       local w = img.attributes.width or "100%"
+      -- Convert px to pt for Typst (1px = 0.75pt)
+      local num = w:match("^(%d+)px$")
+      if num then w = string.format("%.1fpt", tonumber(num) * 0.75) end
       return string.format('image("%s", width: %s)', img.src, w)
     end
   end
@@ -99,13 +102,73 @@ local function _cell_to_typst(cell)
   return "[" .. typst .. "]"
 end
 
+-- Convert a steps Table to a Typst #grid() with mirrored 4-column pairs.
+-- Each visual row has two step-pairs: [IMG text | text IMG]
+local function _table_to_steps_grid(tbl)
+  local parts = {}
+  table.insert(parts, "#grid(")
+  table.insert(parts, "  columns: (auto, 1fr, 1fr, auto),")
+  table.insert(parts, "  column-gutter: (8pt, 14pt, 8pt),")
+  table.insert(parts, "  row-gutter: 4pt,")
+  table.insert(parts, "  align: (center + horizon, left + top, left + top, center + horizon),")
+  -- Collect all rows
+  local rows = {}
+  for _, body in ipairs(tbl.bodies) do
+    for _, row in ipairs(body.body) do
+      table.insert(rows, row)
+    end
+  end
+  -- Process rows in pairs: left=[img,text] right=[text,img]
+  for i = 1, #rows, 2 do
+    local a = rows[i]
+    local img_a = _cell_to_typst(a.cells[1])
+    local txt_a = _cell_to_typst(a.cells[2])
+    if rows[i + 1] then
+      local b = rows[i + 1]
+      local img_b = _cell_to_typst(b.cells[1])
+      local txt_b = _cell_to_typst(b.cells[2])
+      table.insert(parts, string.format(
+        "  %s, %s, %s, %s,", img_a, txt_a, txt_b, img_b))
+    else
+      table.insert(parts, string.format(
+        "  %s, grid.cell(colspan: 3)%s,", img_a, txt_a))
+    end
+  end
+  table.insert(parts, ")")
+  return table.concat(parts, "\n")
+end
+
 -- Convert a borderless Table to a Typst #grid() for equal distribution.
 local function _table_to_typst_grid(tbl)
   local ncols = #tbl.colspecs
   local parts = {}
   table.insert(parts, "#grid(")
-  table.insert(parts, string.format("  columns: (1fr,) * %d,", ncols))
-  table.insert(parts, "  align: center,")
+  -- Detect column widths: 1fr for image columns, auto for text-only
+  local col_widths = {}
+  if #tbl.bodies > 0 and #tbl.bodies[1].body > 0 then
+    local first_row = tbl.bodies[1].body[1]
+    for _, cell in ipairs(first_row.cells) do
+      local first = cell.contents[1]
+      local is_image = #cell.contents == 1
+        and (first.t == "Para" or first.t == "Plain")
+        and #first.content == 1 and first.content[1].t == "Image"
+      table.insert(col_widths, is_image and "1fr" or "auto")
+    end
+    -- If exactly 1 image with text columns, use auto for image, 1fr for text
+    local n_img, n_txt = 0, 0
+    for _, w in ipairs(col_widths) do
+      if w == "1fr" then n_img = n_img + 1 else n_txt = n_txt + 1 end
+    end
+    if n_img == 1 and n_txt >= 1 then
+      for ci, w in ipairs(col_widths) do
+        col_widths[ci] = w == "1fr" and "auto" or "1fr"
+      end
+    end
+    table.insert(parts, string.format("  columns: (%s),", table.concat(col_widths, ", ")))
+  else
+    table.insert(parts, string.format("  columns: (1fr,) * %d,", ncols))
+  end
+  table.insert(parts, "  align: center + horizon,")
   table.insert(parts, "  row-gutter: 2pt,")
 
   -- Header row: detect group labels (non-empty header cells)
@@ -160,19 +223,99 @@ function Div(el)
     end
   end
 
+  -- Steps list (image + text column layout)
+  if el.classes:includes("steps") then
+    if FORMAT:match("typst") then
+      -- Flatten content: step rows from tables, embedded blocks from processed divs
+      local items = {}
+      for _, block in ipairs(el.content) do
+        if block.t == "Table" then
+          for _, body in ipairs(block.bodies) do
+            for _, row in ipairs(body.body) do
+              table.insert(items, {type = "step", cells = row.cells})
+            end
+          end
+        elseif block.t == "RawBlock" and block.format == "typst" then
+          table.insert(items, {type = "embed", text = block.text})
+        end
+      end
+      -- Pass 1: merge each step with its trailing embed (if any)
+      local merged = {}
+      local j = 1
+      while j <= #items do
+        if items[j].type == "step" and items[j + 1]
+            and items[j + 1].type == "embed" then
+          local txt = _cell_to_typst(items[j].cells[2])
+          items[j].merged_txt = txt:sub(1, -2) .. "\n" .. items[j + 1].text .. "\n]"
+          table.insert(merged, items[j])
+          j = j + 2
+        else
+          table.insert(merged, items[j])
+          j = j + 1
+        end
+      end
+      -- Pass 2: pair steps into mirrored grid rows
+      local parts = {}
+      table.insert(parts, "#grid(")
+      table.insert(parts, "  columns: (auto, 1fr, 1fr, auto),")
+      table.insert(parts, "  column-gutter: (8pt, 14pt, 8pt),")
+      table.insert(parts, "  row-gutter: 4pt,")
+      table.insert(parts, "  align: (center + horizon, left + top, left + top, center + horizon),")
+      local i = 1
+      while i <= #merged do
+        local item = merged[i]
+        if item.type == "embed" then
+          table.insert(parts, string.format(
+            "  [], grid.cell(colspan: 2)[\n%s\n], [],", item.text))
+          i = i + 1
+        else
+          local img = _cell_to_typst(item.cells[1])
+          local txt = item.merged_txt or _cell_to_typst(item.cells[2])
+          local next_item = merged[i + 1]
+          if next_item and next_item.type == "step" then
+            local img_b = _cell_to_typst(next_item.cells[1])
+            local txt_b = next_item.merged_txt or _cell_to_typst(next_item.cells[2])
+            table.insert(parts, string.format(
+              "  %s, %s, %s, %s,", img, txt, txt_b, img_b))
+            i = i + 2
+          else
+            table.insert(parts, string.format(
+              "  %s, grid.cell(colspan: 3)%s,", img, txt))
+            i = i + 1
+          end
+        end
+      end
+      table.insert(parts, ")")
+      return {pandoc.RawBlock("typst", table.concat(parts, "\n"))}
+    else
+      return el  -- HTML: class on div, CSS handles it
+    end
+  end
+
   -- Borderless table wrapper
   if el.classes:includes("borderless") then
     if FORMAT:match("typst") then
+      local width = el.attributes["width"]
       local blocks = pandoc.List({})
       for _, block in ipairs(el.content) do
         if block.t == "Table" then
-          blocks:insert(pandoc.RawBlock("typst", _table_to_typst_grid(block)))
+          local grid = _table_to_typst_grid(block)
+          if width then
+            grid = string.format("#box(width: %s)[\n%s\n]", width, grid)
+          end
+          blocks:insert(pandoc.RawBlock("typst", grid))
         else
           blocks:insert(block)
         end
       end
       return blocks
     else
+      local width = el.attributes["width"]
+      if width then
+        local style = el.attributes["style"] or ""
+        if style ~= "" then style = style .. "; " end
+        el.attributes["style"] = style .. string.format("width: %s;", width)
+      end
       return el  -- HTML: class on div, CSS handles it
     end
   end
