@@ -30,6 +30,10 @@ uv run ruff format src/ tests/
 
 This is a Rubik's Cube guide with a Python SVG diagram pipeline and Pandoc-based PDF output (via Typst).
 
+### Cube Simulator
+
+`src/cubepath/cube.py` is a minimal Rubik's cube simulator (~220 lines). Used by tests to verify diagram sticker colors and algorithm correctness. State: 6 faces × 9 stickers (row-major). Table-driven moves (R/L/U/D/F/B/M/S/E + wide/rotations). Algorithm parser handles `R U R' U'`, `R2`, lowercase wide (`r`, `f`), and `(R U)×2` repeats. Coordinate mapping `diagram_to_sim(face, a, b)` bridges diagram coords to simulator state.
+
 ### Diagram Pipeline
 
 `src/cubepath/diagrams.py` defines all 16 cube diagrams as `CubeDiagram` dataclasses (u_face colors, side strips, optional PLL arrows) and renders them to SVG using `svgwrite`. The entry point `cubepath-diagrams` writes to `guide/figures/generated/`.
@@ -73,7 +77,7 @@ Standard Western color scheme with **Yellow on top, White on bottom, Red in fron
 - R CW from +x: top→front→bottom→back. In yz plane: (y, z) → (2−z, y).
 - U CW from +y: front→right→back→left. In xz plane: similar.
 - F CW from +z: top→right→bottom→left. In xy plane: similar.
-- L/D follow opposite-face conventions. M follows L direction.
+- L/D follow opposite-face conventions. M follows L direction, S follows F direction, E follows D direction.
 
 ### Diagram output structure
 

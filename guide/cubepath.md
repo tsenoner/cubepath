@@ -267,7 +267,7 @@ Completes the T-Perm pair. Solves diagonal corner swaps directly (no double T-Pe
 |---|------|-----------|
 | ![](figures/generated/pll/pll_ua.svg){ width=60px } | **Ua** — front edge → right | `R U' R U R U R U' R' U' R2` |
 | ![](figures/generated/pll/pll_hperm.svg){ width=60px } | **H-Perm** — opposite swap | `M2 U' M2 U2 M2 U' M2` |
-| ![](figures/generated/pll/pll_zperm.svg){ width=60px } | **Z-Perm** — adjacent swap | `M' U' M2 U' M2 U' M' U2 M2` |
+| ![](figures/generated/pll/pll_zperm.svg){ width=60px } | **Z-Perm** — adjacent swap | `M' U' M2 U' M2 U' M' U2 M2 U` |
 :::
 
 **H vs Z:** No edges match after any U turn. Opposite colors facing each other = H. Adjacent colors = Z.
@@ -295,7 +295,7 @@ Completes the T-Perm pair. Solves diagonal corner swaps directly (no double T-Pe
 | 3     | `F R U' R' U'` [`R U R' F'`]{.trig-r} [`R U R' U'`]{.trig-r} [`R' F R F'`]{.trig-b} | Y-Perm     | PC            |
 | 3     | `R U' R U R U R U' R' U' R2`                                                        | Ua         | PE            |
 | 3     | `M2 U' M2 U2 M2 U' M2`                                                              | H-Perm     | PE            |
-| 3     | `M' U' M2 U' M2 U' M' U2 M2`                                                        | Z-Perm     | PE            |
+| 3     | `M' U' M2 U' M2 U' M' U2 M2 U`                                                      | Z-Perm     | PE            |
 
 ## Progression
 

@@ -259,7 +259,7 @@ def _pll_edge_cases() -> list[CubeDiagram]:
             right_side=[GREEN, RED, GREEN],
             bottom_side=[ORANGE, BLUE, ORANGE],
             left_side=[BLUE, ORANGE, BLUE],
-            swaps=[("top", "right"), ("left", "bottom")],
+            swaps=[("bottom", "right"), ("left", "top")],
         ),
     ]
 
@@ -507,8 +507,12 @@ _CENTERS = {("U", 1, 1), ("F", 1, 1), ("R", 1, 1)}
 
 # Shared solved-sticker-set progression (cumulative, each builds on the previous)
 _FIRST_LAYER = _CENTERS | {
-    ("F", 0, 0), ("F", 1, 0), ("F", 2, 0),
-    ("R", 0, 0), ("R", 1, 0), ("R", 2, 0),
+    ("F", 0, 0),
+    ("F", 1, 0),
+    ("F", 2, 0),
+    ("R", 0, 0),
+    ("R", 1, 0),
+    ("R", 2, 0),
 }
 _SECOND_LAYER = _FIRST_LAYER | {("F", 0, 1), ("F", 2, 1), ("R", 0, 1), ("R", 2, 1)}
 _YELLOW_CROSS = _SECOND_LAYER | {("U", 1, 0), ("U", 0, 1), ("U", 2, 1), ("U", 1, 2)}
@@ -542,11 +546,13 @@ def _bezier_2d(
     for i in range(n_pts + 1):
         t = i / n_pts
         t1, t2, t3 = (1 - t) ** 2, 2 * t * (1 - t), t**2
-        pts.append(_n_proj(
-            t1 * src[0] + t2 * ctrl[0] + t3 * dst[0],
-            t1 * src[1] + t2 * ctrl[1] + t3 * dst[1],
-            t1 * src[2] + t2 * ctrl[2] + t3 * dst[2],
-        ))
+        pts.append(
+            _n_proj(
+                t1 * src[0] + t2 * ctrl[0] + t3 * dst[0],
+                t1 * src[1] + t2 * ctrl[1] + t3 * dst[1],
+                t1 * src[2] + t2 * ctrl[2] + t3 * dst[2],
+            )
+        )
     return pts
 
 
@@ -563,11 +569,16 @@ def _draw_arrowhead(
         ux, uy = dx / ln, dy / ln
         nx, ny = -uy, ux
         base = (tip[0] - sz * ux, tip[1] - sz * uy)
-        dwg.add(dwg.polygon([
-            tip,
-            (base[0] + sz * 0.4 * nx, base[1] + sz * 0.4 * ny),
-            (base[0] - sz * 0.4 * nx, base[1] - sz * 0.4 * ny),
-        ], fill=ARROW_COLOR))
+        dwg.add(
+            dwg.polygon(
+                [
+                    tip,
+                    (base[0] + sz * 0.4 * nx, base[1] + sz * 0.4 * ny),
+                    (base[0] - sz * 0.4 * nx, base[1] - sz * 0.4 * ny),
+                ],
+                fill=ARROW_COLOR,
+            )
+        )
 
 
 def _render_bezier_arrow(
@@ -602,8 +613,12 @@ def _step_cases() -> list[StepDiagram]:
 
     # Step 1: White Cross on top
     cross = set(_CENTERS) | {
-        ("U", 1, 0), ("U", 0, 1), ("U", 2, 1), ("U", 1, 2),
-        ("F", 1, 2), ("R", 1, 2),
+        ("U", 1, 0),
+        ("U", 0, 1),
+        ("U", 2, 1),
+        ("U", 1, 2),
+        ("F", 1, 2),
+        ("R", 1, 2),
     }
     solved = _CORNERS_POSITIONED | {("U", 0, 0), ("U", 2, 0), ("U", 0, 2), ("U", 2, 2)}
     return [
@@ -675,8 +690,7 @@ def _orient_corner_case() -> StepDiagram:
     # All stickers solved except D-layer corner orientations (bottom corners of F and R).
     # Derive from _CORNERS_POSITIONED: add all U-face stickers, remove F/R bottom corners.
     solved = (
-        _CORNERS_POSITIONED
-        | {(f, a, b) for f in ("U",) for a in range(3) for b in range(3)}
+        _CORNERS_POSITIONED | {(f, a, b) for f in ("U",) for a in range(3) for b in range(3)}
     ) - {("F", 0, 0), ("F", 2, 0), ("R", 0, 0), ("R", 2, 0)}
     return StepDiagram(
         "Orient Corner",
@@ -685,9 +699,9 @@ def _orient_corner_case() -> StepDiagram:
         face_colors=flipped,
         overrides={
             ("R", 2, 0): YELLOW,  # DFR: yellow on R face (CW twist)
-            ("F", 2, 0): GREEN,   # DFR: green wraps to F face
+            ("F", 2, 0): GREEN,  # DFR: green wraps to F face
             ("F", 0, 0): YELLOW,  # DFL: yellow on F face (CCW twist)
-            ("R", 0, 0): RED,     # DBR: red on R face (CCW twist)
+            ("R", 0, 0): RED,  # DBR: red on R face (CCW twist)
         },
     )
 
@@ -701,9 +715,9 @@ def _orient_corner_cases_15() -> list[StepDiagram]:
             "orient_right",
             step6,
             overrides={
-                ("U", 2, 2): RED,      # UFR: red on top
-                ("R", 2, 2): YELLOW,   # UFR: yellow on R face
-                ("F", 2, 2): GREEN,    # UFR: green on F face
+                ("U", 2, 2): RED,  # UFR: red on top
+                ("R", 2, 2): YELLOW,  # UFR: yellow on R face
+                ("F", 2, 2): GREEN,  # UFR: green on F face
             },
         ),
         StepDiagram(
@@ -711,9 +725,9 @@ def _orient_corner_cases_15() -> list[StepDiagram]:
             "orient_front",
             step6,
             overrides={
-                ("U", 2, 2): GREEN,    # UFR: green on top
-                ("F", 2, 2): YELLOW,   # UFR: yellow on F face
-                ("R", 2, 2): RED,      # UFR: red on R face
+                ("U", 2, 2): GREEN,  # UFR: green on top
+                ("F", 2, 2): YELLOW,  # UFR: yellow on F face
+                ("R", 2, 2): RED,  # UFR: red on R face
             },
         ),
     ]
@@ -727,9 +741,9 @@ def _corner_pos_case() -> StepDiagram:
         _EDGES_ALIGNED | {("F", 0, 2)},  # FL corner F-sticker correct
         overrides={("U", 0, 2): RED, ("F", 0, 2): BLUE},  # FL corner: red on top, blue on front
         dir_arrows=[
-            ((0.5, 3, 0.5), (2.5, 3, 2.5), (1.5, 3, 1.5)),    # BL → FR (straight)
-            ((2.5, 3, 2.5), (2.5, 3, 0.5), (2.5, 3, 1.5)),    # FR → BR (straight)
-            ((2.5, 3, 0.5), (0.5, 3, 0.5), (1.5, 3, 0.5)),    # BR → BL (straight)
+            ((0.5, 3, 0.5), (2.5, 3, 2.5), (1.5, 3, 1.5)),  # BL → FR (straight)
+            ((2.5, 3, 2.5), (2.5, 3, 0.5), (2.5, 3, 1.5)),  # FR → BR (straight)
+            ((2.5, 3, 0.5), (0.5, 3, 0.5), (1.5, 3, 0.5)),  # BR → BL (straight)
         ],
     )
 
@@ -766,21 +780,21 @@ _EQ_A, _EQ_B, _GE_A, _ANY = "a", "b", "A", "*"
 # Lookup table for _n_sticker_color: (layer, cw) → [(face, cond_type, value, color), ...]
 # Each entry lists the 2 rules that override the base face color for that move.
 _STICKER_COLOR_RULES: dict[tuple[str, bool], list[tuple[str, str, int, str]]] = {
-    ("R2", True):  [("U", _EQ_A, 2, WHITE), ("F", _EQ_A, 2, ORANGE)],
-    ("R", True):   [("U", _EQ_A, 2, RED), ("F", _EQ_A, 2, WHITE)],
-    ("R", False):  [("U", _EQ_A, 2, ORANGE), ("F", _EQ_A, 2, YELLOW)],
-    ("L", True):   [("U", _EQ_A, 0, ORANGE), ("F", _EQ_A, 0, YELLOW)],
-    ("U", True):   [("F", _EQ_B, 2, GREEN), ("R", _EQ_B, 2, ORANGE)],
-    ("D", True):   [("F", _EQ_B, 0, BLUE), ("R", _EQ_B, 0, RED)],
-    ("F", True):   [("U", _EQ_B, 2, BLUE), ("R", _EQ_A, 2, YELLOW)],
-    ("B", True):   [("U", _EQ_B, 0, GREEN), ("R", _EQ_A, 0, WHITE)],
-    ("M", True):   [("U", _EQ_A, 1, ORANGE), ("F", _EQ_A, 1, YELLOW)],
-    ("S", True):   [("U", _EQ_B, 1, BLUE), ("R", _EQ_A, 1, YELLOW)],
-    ("E", True):   [("F", _EQ_B, 1, GREEN), ("R", _EQ_B, 1, ORANGE)],
-    ("r", True):   [("U", _GE_A, 1, RED), ("F", _GE_A, 1, WHITE)],
-    ("x", True):   [("U", _ANY, 0, RED), ("F", _ANY, 0, WHITE)],
-    ("y", True):   [("F", _ANY, 0, GREEN), ("R", _ANY, 0, ORANGE)],
-    ("z", True):   [("U", _ANY, 0, BLUE), ("R", _ANY, 0, YELLOW)],
+    ("R2", True): [("U", _EQ_A, 2, WHITE), ("F", _EQ_A, 2, ORANGE)],
+    ("R", True): [("U", _EQ_A, 2, RED), ("F", _EQ_A, 2, WHITE)],
+    ("R", False): [("U", _EQ_A, 2, ORANGE), ("F", _EQ_A, 2, YELLOW)],
+    ("L", True): [("U", _EQ_A, 0, ORANGE), ("F", _EQ_A, 0, YELLOW)],
+    ("U", True): [("F", _EQ_B, 2, GREEN), ("R", _EQ_B, 2, ORANGE)],
+    ("D", True): [("F", _EQ_B, 0, BLUE), ("R", _EQ_B, 0, RED)],
+    ("F", True): [("U", _EQ_B, 2, BLUE), ("R", _EQ_A, 2, YELLOW)],
+    ("B", True): [("U", _EQ_B, 0, GREEN), ("R", _EQ_A, 0, WHITE)],
+    ("M", True): [("U", _EQ_A, 1, ORANGE), ("F", _EQ_A, 1, YELLOW)],
+    ("S", True): [("U", _EQ_B, 1, BLUE), ("R", _EQ_A, 1, YELLOW)],
+    ("E", True): [("F", _EQ_B, 1, BLUE), ("R", _EQ_B, 1, RED)],
+    ("r", True): [("U", _GE_A, 1, RED), ("F", _GE_A, 1, WHITE)],
+    ("x", True): [("U", _ANY, 0, RED), ("F", _ANY, 0, WHITE)],
+    ("y", True): [("F", _ANY, 0, GREEN), ("R", _ANY, 0, ORANGE)],
+    ("z", True): [("U", _ANY, 0, BLUE), ("R", _ANY, 0, YELLOW)],
 }
 
 
@@ -854,8 +868,8 @@ def _n_draw_arrow(dwg: svgwrite.Drawing, layer: str, clockwise: bool) -> None:
         "M": ((1.5, 3, 1.5), (1.5, 1.5, 3), (1.5, 3 + _b, 3 + _b)),
         # S CW (follows F): U row b=1 → R col a=1.  Edge: U-R at z=1.5
         "S": ((1.5, 3, 1.5), (3, 1.5, 1.5), (3 + _b, 3 + _b, 1.5)),
-        # E CW (follows D): R row b=1 → F row b=1.  Edge: F-R at y=1.5
-        "E": ((3, 1.5, 1.5), (1.5, 1.5, 3), (3 + _b, 1.5, 3 + _b)),
+        # E CW (follows D): F row b=1 → R row b=1.  Edge: F-R at y=1.5
+        "E": ((1.5, 1.5, 3), (3, 1.5, 1.5), (3 + _b, 1.5, 3 + _b)),
         # r CW (wide R): F cols a=1,2 → U cols a=1,2.  Edge: F-U at x=2
         "r": ((2, 1.5, 3), (2, 3, 1.5), (2, 3 + _b, 3 + _b)),
         # x CW (whole cube, like R): F center → U center.  Edge: F-U at x=1.5
@@ -909,9 +923,7 @@ def _n_draw_arrow(dwg: svgwrite.Drawing, layer: str, clockwise: bool) -> None:
         dwg.add(dwg.polygon([tip, base1, base2], fill=ARROW_COLOR))
 
 
-def _draw_iso_stickers(
-    dwg: svgwrite.Drawing, color_fn: Callable[[str, int, int], str]
-) -> None:
+def _draw_iso_stickers(dwg: svgwrite.Drawing, color_fn: Callable[[str, int, int], str]) -> None:
     """Draw 3×3 stickers on each visible face (R → F → U for correct layering)."""
     for face in ("R", "F", "U"):
         for a in range(3):

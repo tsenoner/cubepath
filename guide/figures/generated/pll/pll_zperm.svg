@@ -30,6 +30,6 @@
   <rect fill="#009E60" height="40" rx="2" ry="2" stroke="#333333" stroke-width="1" width="12" x="160" y="34"/>
   <rect fill="#E00000" height="40" rx="2" ry="2" stroke="#333333" stroke-width="1" width="12" x="160" y="76"/>
   <rect fill="#009E60" height="40" rx="2" ry="2" stroke="#333333" stroke-width="1" width="12" x="160" y="118"/>
-  <path d="M 96.0,54.0 L 138.0,96.0" fill="none" marker-end="url(#arrowhead)" marker-start="url(#arrowhead-rev)" stroke="#222222" stroke-width="2"/>
-  <path d="M 54.0,96.0 L 96.0,138.0" fill="none" marker-end="url(#arrowhead)" marker-start="url(#arrowhead-rev)" stroke="#222222" stroke-width="2"/>
+  <path d="M 96.0,138.0 L 138.0,96.0" fill="none" marker-end="url(#arrowhead)" marker-start="url(#arrowhead-rev)" stroke="#222222" stroke-width="2"/>
+  <path d="M 54.0,96.0 L 96.0,54.0" fill="none" marker-end="url(#arrowhead)" marker-start="url(#arrowhead-rev)" stroke="#222222" stroke-width="2"/>
 </svg>
