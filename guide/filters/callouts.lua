@@ -1,7 +1,6 @@
---- Callout box filter for pandoc.
+--- Callout box filter for pandoc (Typst output).
 --- Transforms fenced divs (.algorithm, .tip, .caution, .info) into styled
---- blocks for typst output. HTML output uses CSS classes directly.
---- Also handles image rotation and algorithm trigger color spans.
+--- blocks. Also handles image rotation and algorithm trigger color spans.
 
 local callout_styles = {
   algorithm = {
@@ -40,40 +39,29 @@ function Image(el)
   local angle = el.attributes["rotate"]
   if not angle then return end
   el.attributes["rotate"] = nil  -- don't pass through
-  if FORMAT:match("typst") then
-    local w = el.attributes["width"] or ""
-    el.attributes["width"] = nil
-    local src = el.src
-    local img = w ~= ""
-      and string.format('image("%s", width: 100%%)', src)
-      or  string.format('image("%s")', src)
-    local inner = string.format("rotate(%sdeg, %s)", angle, img)
-    local outer = w ~= ""
-      and string.format("#box(width: %s, %s)", w, inner)
-      or  string.format("#box(%s)", inner)
-    return pandoc.RawInline("typst", outer)
-  else
-    -- HTML: keep as Image inside a Span with rotation style
-    local style = string.format("display:inline-block; transform:rotate(%sdeg)", angle)
-    return pandoc.Span({el}, pandoc.Attr("", {}, {{"style", style}}))
-  end
+  local w = el.attributes["width"] or ""
+  el.attributes["width"] = nil
+  local src = el.src
+  local img = w ~= ""
+    and string.format('image("%s", width: 100%%)', src)
+    or  string.format('image("%s")', src)
+  local inner = string.format("rotate(%sdeg, %s)", angle, img)
+  local outer = w ~= ""
+    and string.format("#box(width: %s, %s)", w, inner)
+    or  string.format("#box(%s)", inner)
+  return pandoc.RawInline("typst", outer)
 end
 
 function Span(el)
   for cls, style in pairs(trigger_colors) do
     if el.classes:includes(cls) then
-      if FORMAT:match("typst") then
-        local open = pandoc.RawInline("typst",
-          string.format('#text(weight: "bold", fill: rgb("%s"))[', style.hex))
-        local close = pandoc.RawInline("typst", "]")
-        local inlines = pandoc.List({open})
-        inlines:extend(el.content)
-        inlines:insert(close)
-        return inlines
-      else
-        -- HTML: class already on span, CSS handles it
-        return el
-      end
+      local open = pandoc.RawInline("typst",
+        string.format('#text(weight: "bold", fill: rgb("%s"))[', style.hex))
+      local close = pandoc.RawInline("typst", "]")
+      local inlines = pandoc.List({open})
+      inlines:extend(el.content)
+      inlines:insert(close)
+      return inlines
     end
   end
 end
@@ -100,42 +88,6 @@ local function _cell_to_typst(cell)
   typst = typst:gsub("%s+$", "")
   if typst == "" then return "[]" end
   return "[" .. typst .. "]"
-end
-
--- Convert a steps Table to a Typst #grid() with mirrored 4-column pairs.
--- Each visual row has two step-pairs: [IMG text | text IMG]
-local function _table_to_steps_grid(tbl)
-  local parts = {}
-  table.insert(parts, "#grid(")
-  table.insert(parts, "  columns: (auto, 1fr, 1fr, auto),")
-  table.insert(parts, "  column-gutter: (8pt, 14pt, 8pt),")
-  table.insert(parts, "  row-gutter: 4pt,")
-  table.insert(parts, "  align: (center + horizon, left + top, left + top, center + horizon),")
-  -- Collect all rows
-  local rows = {}
-  for _, body in ipairs(tbl.bodies) do
-    for _, row in ipairs(body.body) do
-      table.insert(rows, row)
-    end
-  end
-  -- Process rows in pairs: left=[img,text] right=[text,img]
-  for i = 1, #rows, 2 do
-    local a = rows[i]
-    local img_a = _cell_to_typst(a.cells[1])
-    local txt_a = _cell_to_typst(a.cells[2])
-    if rows[i + 1] then
-      local b = rows[i + 1]
-      local img_b = _cell_to_typst(b.cells[1])
-      local txt_b = _cell_to_typst(b.cells[2])
-      table.insert(parts, string.format(
-        "  %s, %s, %s, %s,", img_a, txt_a, txt_b, img_b))
-    else
-      table.insert(parts, string.format(
-        "  %s, grid.cell(colspan: 3)%s,", img_a, txt_a))
-    end
-  end
-  table.insert(parts, ")")
-  return table.concat(parts, "\n")
 end
 
 -- Convert a borderless Table to a Typst #grid() for equal distribution.
@@ -210,140 +162,111 @@ end
 function Div(el)
   -- Centered block (no justification, center-aligned)
   if el.classes:includes("center") then
-    if FORMAT:match("typst") then
-      local open = pandoc.RawBlock("typst", "#align(center)[#set par(justify: false)")
-      local close = pandoc.RawBlock("typst", "]")
-      local blocks = pandoc.List({open})
-      blocks:extend(el.content)
-      blocks:insert(close)
-      return blocks
-    else
-      el.attributes["style"] = "text-align: center;"
-      return el
-    end
+    local open = pandoc.RawBlock("typst", "#align(center)[#set par(justify: false)")
+    local close = pandoc.RawBlock("typst", "]")
+    local blocks = pandoc.List({open})
+    blocks:extend(el.content)
+    blocks:insert(close)
+    return blocks
   end
 
   -- Steps list (image + text column layout)
   if el.classes:includes("steps") then
-    if FORMAT:match("typst") then
-      -- Flatten content: step rows from tables, embedded blocks from processed divs
-      local items = {}
-      for _, block in ipairs(el.content) do
-        if block.t == "Table" then
-          for _, body in ipairs(block.bodies) do
-            for _, row in ipairs(body.body) do
-              table.insert(items, {type = "step", cells = row.cells})
-            end
-          end
-        elseif block.t == "RawBlock" and block.format == "typst" then
-          table.insert(items, {type = "embed", text = block.text})
-        end
-      end
-      -- Pass 1: merge each step with its trailing embed (if any)
-      local merged = {}
-      local j = 1
-      while j <= #items do
-        if items[j].type == "step" and items[j + 1]
-            and items[j + 1].type == "embed" then
-          local txt = _cell_to_typst(items[j].cells[2])
-          items[j].merged_txt = txt:sub(1, -2) .. "\n" .. items[j + 1].text .. "\n]"
-          table.insert(merged, items[j])
-          j = j + 2
-        else
-          table.insert(merged, items[j])
-          j = j + 1
-        end
-      end
-      -- Pass 2: pair steps into mirrored grid rows
-      local parts = {}
-      table.insert(parts, "#grid(")
-      table.insert(parts, "  columns: (auto, 1fr, 1fr, auto),")
-      table.insert(parts, "  column-gutter: (8pt, 14pt, 8pt),")
-      table.insert(parts, "  row-gutter: 4pt,")
-      table.insert(parts, "  align: (center + horizon, left + top, left + top, center + horizon),")
-      local i = 1
-      while i <= #merged do
-        local item = merged[i]
-        if item.type == "embed" then
-          table.insert(parts, string.format(
-            "  [], grid.cell(colspan: 2)[\n%s\n], [],", item.text))
-          i = i + 1
-        else
-          local img = _cell_to_typst(item.cells[1])
-          local txt = item.merged_txt or _cell_to_typst(item.cells[2])
-          local next_item = merged[i + 1]
-          if next_item and next_item.type == "step" then
-            local img_b = _cell_to_typst(next_item.cells[1])
-            local txt_b = next_item.merged_txt or _cell_to_typst(next_item.cells[2])
-            table.insert(parts, string.format(
-              "  %s, %s, %s, %s,", img, txt, txt_b, img_b))
-            i = i + 2
-          else
-            table.insert(parts, string.format(
-              "  %s, grid.cell(colspan: 3)%s,", img, txt))
-            i = i + 1
+    -- Flatten content: step rows from tables, embedded blocks from processed divs
+    local items = {}
+    for _, block in ipairs(el.content) do
+      if block.t == "Table" then
+        for _, body in ipairs(block.bodies) do
+          for _, row in ipairs(body.body) do
+            table.insert(items, {type = "step", cells = row.cells})
           end
         end
+      elseif block.t == "RawBlock" and block.format == "typst" then
+        table.insert(items, {type = "embed", text = block.text})
       end
-      table.insert(parts, ")")
-      return {pandoc.RawBlock("typst", table.concat(parts, "\n"))}
-    else
-      return el  -- HTML: class on div, CSS handles it
     end
+    -- Pass 1: merge each step with its trailing embed (if any)
+    local merged = {}
+    local j = 1
+    while j <= #items do
+      if items[j].type == "step" and items[j + 1]
+          and items[j + 1].type == "embed" then
+        local txt = _cell_to_typst(items[j].cells[2])
+        items[j].merged_txt = txt:sub(1, -2) .. "\n" .. items[j + 1].text .. "\n]"
+        table.insert(merged, items[j])
+        j = j + 2
+      else
+        table.insert(merged, items[j])
+        j = j + 1
+      end
+    end
+    -- Pass 2: pair steps into mirrored grid rows
+    local parts = {}
+    table.insert(parts, "#grid(")
+    table.insert(parts, "  columns: (auto, 1fr, 1fr, auto),")
+    table.insert(parts, "  column-gutter: (8pt, 14pt, 8pt),")
+    table.insert(parts, "  row-gutter: 4pt,")
+    table.insert(parts, "  align: (center + horizon, left + top, left + top, center + horizon),")
+    local i = 1
+    while i <= #merged do
+      local item = merged[i]
+      if item.type == "embed" then
+        table.insert(parts, string.format(
+          "  [], grid.cell(colspan: 2)[\n%s\n], [],", item.text))
+        i = i + 1
+      else
+        local img = _cell_to_typst(item.cells[1])
+        local txt = item.merged_txt or _cell_to_typst(item.cells[2])
+        local next_item = merged[i + 1]
+        if next_item and next_item.type == "step" then
+          local img_b = _cell_to_typst(next_item.cells[1])
+          local txt_b = next_item.merged_txt or _cell_to_typst(next_item.cells[2])
+          table.insert(parts, string.format(
+            "  %s, %s, %s, %s,", img, txt, txt_b, img_b))
+          i = i + 2
+        else
+          table.insert(parts, string.format(
+            "  %s, grid.cell(colspan: 3)%s,", img, txt))
+          i = i + 1
+        end
+      end
+    end
+    table.insert(parts, ")")
+    return {pandoc.RawBlock("typst", table.concat(parts, "\n"))}
   end
 
   -- Borderless table wrapper
   if el.classes:includes("borderless") then
-    if FORMAT:match("typst") then
-      local width = el.attributes["width"]
-      local blocks = pandoc.List({})
-      for _, block in ipairs(el.content) do
-        if block.t == "Table" then
-          local grid = _table_to_typst_grid(block)
-          if width then
-            grid = string.format("#box(width: %s)[\n%s\n]", width, grid)
-          end
-          blocks:insert(pandoc.RawBlock("typst", grid))
-        else
-          blocks:insert(block)
+    local width = el.attributes["width"]
+    local blocks = pandoc.List({})
+    for _, block in ipairs(el.content) do
+      if block.t == "Table" then
+        local grid = _table_to_typst_grid(block)
+        if width then
+          grid = string.format("#box(width: %s)[\n%s\n]", width, grid)
         end
+        blocks:insert(pandoc.RawBlock("typst", grid))
+      else
+        blocks:insert(block)
       end
-      return blocks
-    else
-      local width = el.attributes["width"]
-      if width then
-        local style = el.attributes["style"] or ""
-        if style ~= "" then style = style .. "; " end
-        el.attributes["style"] = style .. string.format("width: %s;", width)
-      end
-      return el  -- HTML: class on div, CSS handles it
     end
+    return blocks
   end
 
   for cls, style in pairs(callout_styles) do
     if el.classes:includes(cls) then
-      if FORMAT:match("typst") then
-        -- Check for custom title attribute
-        local label = el.attributes["title"] or style.label
+      local label = el.attributes["title"] or style.label
 
-        local open = pandoc.RawBlock("typst", string.format(
-          '#block(\n  fill: rgb("%s"),\n  stroke: (left: 4pt + rgb("%s")),\n  inset: (left: 12pt, top: 6pt, bottom: 6pt, right: 8pt),\n  radius: 4pt,\n  width: 100%%,\n)[\n  #text(weight: "bold", size: 0.9em, fill: rgb("%s"))[%s] \\',
-          style.bg, style.border, style.text, label
-        ))
-        local close = pandoc.RawBlock("typst", "]")
+      local open = pandoc.RawBlock("typst", string.format(
+        '#block(\n  fill: rgb("%s"),\n  stroke: (left: 4pt + rgb("%s")),\n  inset: (left: 12pt, top: 6pt, bottom: 6pt, right: 8pt),\n  radius: 4pt,\n  width: 100%%,\n)[\n  #text(weight: "bold", size: 0.9em, fill: rgb("%s"))[%s] \\',
+        style.bg, style.border, style.text, label
+      ))
+      local close = pandoc.RawBlock("typst", "]")
 
-        local blocks = pandoc.List({open})
-        blocks:extend(el.content)
-        blocks:insert(close)
-        return blocks
-      else
-        -- HTML: add a title span as first element, CSS handles the rest
-        local label = el.attributes["title"] or style.label
-        local title_html = pandoc.RawBlock("html",
-          string.format('<p class="callout-title">%s</p>', label))
-        el.content:insert(1, title_html)
-        return el
-      end
+      local blocks = pandoc.List({open})
+      blocks:extend(el.content)
+      blocks:insert(close)
+      return blocks
     end
   end
 end

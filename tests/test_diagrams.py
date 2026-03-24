@@ -1,6 +1,12 @@
 """Tests for cubepath diagram generation."""
 
 from cubepath.diagrams import (
+    _CENTERS,
+    _CORNERS_POSITIONED,
+    _EDGES_ALIGNED,
+    _FIRST_LAYER,
+    _SECOND_LAYER,
+    _YELLOW_CROSS,
     _arrow_pos,
     _orient_corner_cases_15,
     _step_cases,
@@ -80,3 +86,8 @@ def test_orient_corner_cases_15():
     assert len(cases) == 2
     assert cases[0].filename == "orient_right"
     assert cases[1].filename == "orient_front"
+
+
+def test_solve_state_progression():
+    assert _CENTERS < _FIRST_LAYER < _SECOND_LAYER < _YELLOW_CROSS
+    assert _YELLOW_CROSS < _EDGES_ALIGNED < _CORNERS_POSITIONED

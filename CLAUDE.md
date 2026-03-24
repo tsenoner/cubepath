@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Build Commands
 
 ```bash
-# Full build: generate diagrams + PDF + HTML
+# Full build: generate diagrams + PDF
 bash scripts/build.sh
 
 # Generate SVG diagrams only
@@ -28,7 +28,7 @@ uv run ruff format src/ tests/
 
 ## Architecture
 
-This is a Rubik's Cube guide with a Python SVG diagram pipeline and Pandoc-based multi-format output (PDF via Typst, HTML).
+This is a Rubik's Cube guide with a Python SVG diagram pipeline and Pandoc-based PDF output (via Typst).
 
 ### Diagram Pipeline
 
@@ -40,17 +40,17 @@ Four case groups: `_oll_cross_cases()` (3), `_oll_corner_cases()` (7), `_pll_cor
 
 ### Guide Build
 
-`guide/cubepath.md` is the single source file. Pandoc builds it twice using `guide/defaults/pdf.yaml` (Typst output) and `guide/defaults/html.yaml` (HTML5 output). Both pass through `guide/filters/callouts.lua`.
+`guide/cubepath.md` is the single source file. Pandoc builds PDF using `guide/defaults/pdf.yaml` (Typst output), passing through `guide/filters/callouts.lua`.
 
 ### Lua Filter (`guide/filters/callouts.lua`)
 
 Handles three things:
 
-1. **Callout divs** — Fenced divs with classes `.algorithm`, `.tip`, `.caution`, `.info` become styled blocks. For Typst: inline `#block()` markup. For HTML: CSS classes styled by `guide/styles/callouts.css`.
+1. **Callout divs** — Fenced divs with classes `.algorithm`, `.tip`, `.caution`, `.info` become styled Typst `#block()` markup.
 
-2. **Steps div** — `:::: {.steps}` wraps the Phase 1 step tables in a mirrored 4-column grid layout (Typst) or table styling (HTML/CSS).
+2. **Steps div** — `:::: {.steps}` wraps the Phase 1 step tables in a mirrored 4-column Typst grid layout.
 
-3. **Image rotation** — `![alt](path){ rotate=180 }` attribute. For Typst: wraps in `#box(width, rotate(..., image(...)))`. For HTML: wraps `Image` in a `Span` with CSS `transform:rotate()`. This keeps rotated images inline (important for side-by-side figure rows).
+3. **Image rotation** — `![alt](path){ rotate=180 }` attribute wraps in `#box(width, rotate(..., image(...)))`. This keeps rotated images inline (important for side-by-side figure rows).
 
 ## Rubik's Cube Color Scheme & Physics
 

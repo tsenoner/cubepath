@@ -11,13 +11,11 @@ A Rubik's Cube guide from Beginner to 2-Look CFOP, with a smooth 3-phase transit
 ## Build
 
 ```bash
-# Generate SVG diagrams + build PDF and HTML
+# Generate SVG diagrams + build PDF
 bash scripts/build.sh
 ```
 
-Output files:
-- `guide/build/cubepath.pdf`
-- `guide/build/cubepath.html`
+Output: `guide/build/cubepath.pdf`
 
 ## Generate Diagrams Only
 

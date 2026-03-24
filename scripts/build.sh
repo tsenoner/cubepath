@@ -20,13 +20,6 @@ pandoc cubepath.md \
   --defaults defaults/pdf.yaml \
   2>&1
 
-# Build HTML
-echo "Building HTML..."
-pandoc cubepath.md \
-  --defaults defaults/html.yaml \
-  2>&1
-
 echo ""
 echo "Build complete:"
 echo "  PDF:  $GUIDE_DIR/build/cubepath.pdf"
-echo "  HTML: $GUIDE_DIR/build/cubepath.html"
