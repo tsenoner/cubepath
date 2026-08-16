@@ -56,3 +56,22 @@ Sources researched and referenced while building this guide.
 - [sr-visualizer](https://github.com/cubing/sr-visualizer) — Speedcubing results visualizer
 - [bugbytes-io/svg-cube-diagram](https://github.com/bugbytes-io/svg-cube-diagram) — Simple SVG cube diagrams
 - [rsapkf/20](https://github.com/rsapkf/20) — Cubing resources collection
+
+## Offline Reference PDFs (not redistributed)
+
+`docs/other_guides/` holds locally-downloaded copies used while writing this guide. They are
+**gitignored** — the community PDFs are other people's work and are freely available from source.
+Canonical links, so nothing here is lost:
+
+| Local file | Source |
+|---|---|
+| `badmephistos-speedcubing-method-v2.pdf` | badmephisto's Speedcubing Guide, arranged by Andy Klise — [kungfoomanchu.com](https://www.kungfoomanchu.com/) |
+| `good algs/oll-algorithms.pdf` | OLL Algorithms, Feliks Zemdegs & Andy Klise — [CubeSkills](https://www.cubeskills.com/tutorials) |
+| `good algs/pll-algorithms.pdf` | PLL Algorithms, Feliks Zemdegs & Andy Klise — [CubeSkills](https://www.cubeskills.com/tutorials) |
+| `good algs/useful-f2l-algorithms.pdf` | F2L Algorithms – Some Useful Cases, Feliks Zemdegs — [CubeSkills](https://www.cubeskills.com/tutorials) |
+| `good algs/Best F2L Algorithms.pdf` | F2L algorithm set — [JPerm](https://jperm.net/algs/f2l) |
+| `4LLL.pdf` | Four-Look Last Layer sheet — [SpeedSolving Wiki](https://www.speedsolving.com/wiki/index.php/4LLL) |
+| `rotations/Cube Notation … Cube.Academy.pdf` | Page capture — [Cube.Academy — Cube Notation](https://www.cube.academy/cube-notation) |
+
+`2-LBL2CFOP.pdf`, `LBL_front.pdf` and `PLL.pdf`/`PLL.docx` are **my own** working notes, not
+third-party material.
