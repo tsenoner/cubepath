@@ -38,7 +38,7 @@ VIEWBOX_SIZE = 192
 
 
 def test_all_cases_count():
-    assert len(all_cases()) == 16
+    assert len(all_cases()) == 17
 
 
 def test_case_names_unique():
@@ -171,25 +171,6 @@ def test_sticker_color_rules_match_simulator():
     assert mismatches == [], "Sticker color mismatches:\n" + "\n".join(mismatches)
 
 
-# ── PLL side-color verification ─────────────────────────────────────
-
-# Map diagram colors to sim color chars
-_DIAG_TO_SIM = {RED: "R", GREEN: "G", BLUE: "B", ORANGE: "O", YELLOW: "Y", GREY: "?"}
-
-# Map plan-view side positions to simulator face + col for the edge sticker
-# top_side[0..2] = B face top row (left-to-right in plan view)
-# right_side[0..2] = R face top row
-# bottom_side[0..2] = F face top row
-# left_side[0..2] = L face top row
-_PLL_ALGORITHMS = {
-    "pll_tperm": "R U R' U' R' F R2 U' R' U' R U R' F'",
-    "pll_yperm": "F R U' R' U' R U R' F' R U R' U' R' F R F'",
-    "pll_ua": "R U' R U R U R U' R' U' R2",
-    "pll_ub": "R2 U R U R' U' R' U' R' U R'",
-    "pll_hperm": "M2 U' M2 U2 M2 U' M2",
-}
-
-
 def test_pll_edge_cases_have_correct_corner_colors():
     """PLL edge cases (Ua, Ub, H, Z) should show correct corner colors (all same per face)."""
     for case in _pll_edge_cases():
@@ -205,16 +186,11 @@ def test_pll_edge_cases_have_correct_corner_colors():
             )
 
 
-def test_pll_corner_cases_have_grey_edges():
-    """PLL corner cases use GREY for edge stickers (not relevant to corner swaps)."""
+def test_pll_corner_cases_show_true_edge_colors():
+    """PLL corner cases show real (non-grey) edge sticker colors from the pre-state."""
     for case in _pll_corner_cases():
-        for side_name, side in [
-            ("top", case.top_side),
-            ("right", case.right_side),
-            ("bottom", case.bottom_side),
-            ("left", case.left_side),
-        ]:
-            assert side[1] == GREY, f"{case.name} {side_name}: edge should be GREY, got {side[1]}"
+        for side in (case.top_side, case.right_side, case.bottom_side, case.left_side):
+            assert GREY not in side, f"{case.name}: grey sticker in side strip"
 
 
 # ── Render smoke tests ──────────────────────────────────────────────

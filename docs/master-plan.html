@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cubepath — Status &amp; Master Plan · Aug 2026</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7;
+    --surface: #fcfcfb;
+    --ink: #0b0b0b;
+    --ink2: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --baseline: #c3c2b7;
+    --border: rgba(11,11,11,0.10);
+    --accent: #2a78d6;
+    --accent-deep: #256abf;
+    --track: #cde2fb;
+    --wash: rgba(42,120,214,0.08);
+    --good: #0ca30c;
+    --good-text: #006300;
+    --warn: #fab219;
+    --serious: #ec835a;
+    --crit: #d03b3b;
+    --code-bg: #f0efec;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page: #0d0d0d;
+      --surface: #1a1a19;
+      --ink: #ffffff;
+      --ink2: #c3c2b7;
+      --muted: #898781;
+      --grid: #2c2c2a;
+      --baseline: #383835;
+      --border: rgba(255,255,255,0.10);
+      --accent: #3987e5;
+      --accent-deep: #5598e7;
+      --track: #0d366b;
+      --wash: rgba(57,135,229,0.12);
+      --good-text: #0ca30c;
+      --code-bg: #232322;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --ink: #ffffff;
+    --ink2: #c3c2b7;
+    --muted: #898781;
+    --grid: #2c2c2a;
+    --baseline: #383835;
+    --border: rgba(255,255,255,0.10);
+    --accent: #3987e5;
+    --accent-deep: #5598e7;
+    --track: #0d366b;
+    --wash: rgba(57,135,229,0.12);
+    --good-text: #0ca30c;
+    --code-bg: #232322;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 28px 20px 72px; }
+  a { color: var(--accent-deep); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, .mono {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.86em;
+    background: var(--code-bg);
+    border-radius: 4px;
+    padding: 1px 5px;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    overflow-x: auto;
+    font-size: 12.5px;
+    line-height: 1.5;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+
+  /* Header */
+  header { margin-bottom: 10px; }
+  .kicker {
+    font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); font-weight: 600;
+  }
+  h1 { font-size: 27px; line-height: 1.2; margin: 6px 0 8px; letter-spacing: -0.01em; }
+  .sub { color: var(--ink2); font-size: 15px; max-width: 760px; margin: 0; }
+  .meta-row { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center;
+    margin-top: 14px; font-size: 13px; color: var(--muted); }
+  .theme-btn {
+    margin-left: auto; border: 1px solid var(--border); background: var(--surface);
+    color: var(--ink2); border-radius: 999px; padding: 4px 12px; font-size: 12.5px;
+    cursor: pointer; font-family: inherit;
+  }
+
+  nav.toc { display: flex; flex-wrap: wrap; gap: 6px; margin: 18px 0 26px; }
+  nav.toc a {
+    font-size: 12.5px; color: var(--ink2); border: 1px solid var(--border);
+    background: var(--surface); padding: 4px 11px; border-radius: 999px; white-space: nowrap;
+  }
+  nav.toc a:hover { border-color: var(--accent); color: var(--accent-deep); text-decoration: none; }
+
+  /* Sections */
+  section { margin: 40px 0; }
+  .sec-kicker { font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent-deep); font-weight: 700; }
+  h2 { font-size: 21px; margin: 4px 0 6px; letter-spacing: -0.01em; }
+  .lede { color: var(--ink2); margin: 0 0 18px; max-width: 800px; }
+  h3 { font-size: 16px; margin: 26px 0 8px; }
+  p { max-width: 820px; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin: 14px 0;
+  }
+  .card h3 { margin-top: 4px; }
+
+  /* Stat tiles */
+  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 20px 0 8px; }
+  @media (max-width: 720px) { .tiles { grid-template-columns: repeat(2, 1fr); } }
+  .tile {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 16px;
+  }
+  .tile .t-label { font-size: 12.5px; color: var(--ink2); }
+  .tile .t-value { font-size: 28px; font-weight: 600; margin: 2px 0 1px; letter-spacing: -0.01em; }
+  .tile .t-sub { font-size: 12px; color: var(--muted); line-height: 1.4; }
+
+  /* Status chips: icon + label, never color alone */
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11.5px; font-weight: 600; color: var(--ink2);
+    border-radius: 999px; padding: 2px 9px 2px 7px; white-space: nowrap;
+    border: 1px solid var(--border); background: var(--surface);
+  }
+  .chip .dot { font-size: 11px; line-height: 1; }
+  .chip-done .dot { color: var(--good); }
+  .chip-part .dot { color: var(--warn); }
+  .chip-bug  .dot { color: var(--crit); }
+  .chip-miss .dot { color: var(--muted); }
+  .chip-ser  .dot { color: var(--serious); }
+
+  /* Coverage meters */
+  .meter-group { margin: 14px 0 4px; }
+  .meter-group h4 {
+    font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted); margin: 18px 0 8px; font-weight: 700;
+  }
+  .meter-row { display: grid; grid-template-columns: 250px 1fr 120px; gap: 12px;
+    align-items: center; padding: 7px 0; border-bottom: 1px solid var(--grid); }
+  .meter-row:last-child { border-bottom: none; }
+  @media (max-width: 680px) { .meter-row { grid-template-columns: 1fr 90px; }
+    .meter-row .m-bar { grid-column: 1 / -1; order: 3; } }
+  .m-name { font-size: 13.5px; color: var(--ink); }
+  .m-name small { display: block; color: var(--muted); font-size: 11.5px; }
+  .m-bar { height: 8px; border-radius: 4px; background: var(--track); overflow: hidden; }
+  .m-fill { height: 100%; background: var(--accent); border-radius: 4px 0 0 4px; }
+  .m-fill.full { border-radius: 4px; }
+  .m-val { font-size: 12.5px; color: var(--ink2); text-align: right;
+    font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* Tables */
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; margin: 12px 0; }
+  th { text-align: left; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted); font-weight: 700; padding: 7px 10px; border-bottom: 1px solid var(--baseline); }
+  td { padding: 8px 10px; border-bottom: 1px solid var(--grid); vertical-align: top; color: var(--ink); }
+  tr:last-child td { border-bottom: none; }
+  td.num { font-variant-numeric: tabular-nums; }
+  .tick { color: var(--good-text); font-weight: 600; }
+  .cross { color: var(--muted); }
+  .half { color: var(--ink2); }
+  .scroll-x { overflow-x: auto; }
+  .scroll-x table { min-width: 720px; }
+  td .chip { margin: 1px 4px 1px 0; }
+
+  /* Findings */
+  .finding { border-left: 3px solid var(--baseline); padding: 2px 0 2px 14px; margin: 16px 0; }
+  .finding.sev-high { border-left-color: var(--crit); }
+  .finding.sev-med { border-left-color: var(--warn); }
+  .finding h4 { margin: 0 0 4px; font-size: 14.5px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .finding p { margin: 4px 0; font-size: 13.8px; color: var(--ink2); }
+  .finding .evidence { font-size: 12.5px; color: var(--muted); }
+
+  /* Roadmap */
+  .mstone { display: grid; grid-template-columns: 64px 1fr; gap: 14px;
+    padding: 16px 0; border-bottom: 1px solid var(--grid); }
+  .mstone:last-child { border-bottom: none; }
+  .m-id { font-weight: 700; font-size: 15px; color: var(--accent-deep); }
+  .m-id small { display: block; font-weight: 600; font-size: 10.5px; color: var(--muted);
+    letter-spacing: 0.06em; text-transform: uppercase; margin-top: 2px; }
+  .mstone h4 { margin: 0 0 4px; font-size: 15.5px; }
+  .mstone p { margin: 3px 0; font-size: 13.8px; color: var(--ink2); }
+  .mstone .done-when { font-size: 13px; color: var(--ink); margin-top: 7px; }
+  .mstone .done-when b { color: var(--good-text); }
+
+  ul { margin: 8px 0; padding-left: 20px; }
+  li { margin: 4px 0; }
+  .cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 28px; }
+  @media (max-width: 680px) { .cols2 { grid-template-columns: 1fr; } }
+
+  /* Flow figure */
+  .flow { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: stretch; margin: 16px 0; }
+  @media (max-width: 680px) { .flow { grid-template-columns: 1fr; } .flow .arrow { transform: rotate(90deg); margin: -4px auto; } }
+  .fbox { border: 1px solid var(--border); background: var(--wash); border-radius: 10px;
+    padding: 10px 13px; font-size: 12.8px; }
+  .fbox b { display: block; font-size: 13px; }
+  .fbox.src { background: var(--surface); }
+  .arrow { align-self: center; color: var(--muted); font-size: 18px; text-align: center; }
+  .fan { display: grid; gap: 8px; }
+
+  footer { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--grid);
+    font-size: 12.5px; color: var(--muted); }
+  .srcs { font-size: 13px; }
+  .srcs li { margin: 3px 0; }
+  .badge-size { font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em;
+    border: 1px solid var(--border); border-radius: 5px; padding: 1px 6px; color: var(--ink2); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="kicker">Cubepath · project review</div>
+  <h1>Where we are, and the path to an offline‑first cube‑teaching PWA</h1>
+  <p class="sub">Deep audit of <a href="https://github.com/tsenoner/cubepath">tsenoner/cubepath</a> against the goal — a free, installable, offline‑first web app teaching 3×3 from zero to full CFOP, plus 4×4 and 5×5 — with a researched tech verdict and a phased roadmap.</p>
+  <div class="meta-row">
+    <span>August 18, 2026</span>
+    <span>Audited at commit <span class="mono">f6c0f6b</span> (master, 19 commits)</span>
+    <button class="theme-btn" onclick="cycleTheme()" id="themeBtn">Theme: auto</button>
+  </div>
+</header>
+
+<nav class="toc">
+  <a href="#verdict">Verdict</a>
+  <a href="#audit">Repo audit</a>
+  <a href="#findings">Findings</a>
+  <a href="#coverage">Coverage</a>
+  <a href="#vision">Product vision</a>
+  <a href="#stack">Tech stack</a>
+  <a href="#architecture">Architecture</a>
+  <a href="#pwa">PWA blueprint</a>
+  <a href="#roadmap">Roadmap</a>
+  <a href="#risks">Risks</a>
+  <a href="#decisions">Open decisions</a>
+  <a href="#sources">Sources</a>
+</nav>
+
+<section id="verdict">
+  <div class="sec-kicker">1 · Executive verdict</div>
+  <h2>A high‑quality PDF guide — but 0% of the app exists yet</h2>
+  <p class="lede">What's in the repo is small, careful, and correct in spirit: a tested Python diagram pipeline and a genuinely distinctive teaching method. But it produces a <em>PDF</em>, covers only 3×3 up to 2‑look CFOP, and contains no JavaScript, no TypeScript, no HTML output, and no PWA groundwork. The content is ~1/5 of the target curriculum; the platform is at zero. The good news: the hard-won assets (pedagogy, diagrams, alg verification) transfer cleanly into the app plan below.</p>
+
+  <div class="tiles">
+    <div class="tile">
+      <div class="t-label">Curriculum cases covered</div>
+      <div class="t-value">16<span style="color:var(--muted);font-size:18px;font-weight:500;"> / ~145</span></div>
+      <div class="t-sub">3×3 beginner + 2‑look CFOP only · no F2L, full OLL/PLL, 4×4, 5×5</div>
+    </div>
+    <div class="tile">
+      <div class="t-label">App layer built</div>
+      <div class="t-value">0%</div>
+      <div class="t-sub">PDF‑only output — HTML build was removed in Mar 2026 (<span class="mono">b78fe13</span>)</div>
+    </div>
+    <div class="tile">
+      <div class="t-label">JS / TS in repo</div>
+      <div class="t-value">0 <span style="color:var(--muted);font-size:18px;font-weight:500;">lines</span></div>
+      <div class="t-sub">Python 3.12 + Pandoc/Typst today · verdict: build the app in TypeScript</div>
+    </div>
+    <div class="tile">
+      <div class="t-label">Test suite</div>
+      <div class="t-value">50<span style="color:var(--muted);font-size:18px;font-weight:500;">/50</span></div>
+      <div class="t-sub">Passing · algorithms machine‑verified against a bundled cube simulator</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>The three headline answers</h3>
+    <p><b>Do we use JS or TS at the moment?</b> No. The repo is 100% Python (diagram generator + cube simulator), Markdown, Lua (Pandoc filter), and Typst config. There is no web code at all — an earlier HTML output path was deliberately removed to keep the build PDF‑only.</p>
+    <p><b>Should we switch?</b> Yes — for the app. A PDF can't be an installable, offline‑first, interactive PWA, so the product needs a web codebase, and in 2026 that means <b>TypeScript (strict)</b>: it's the ecosystem default (all major frameworks scaffold TS; ~72% of frontend job listings ask for it; the TC39 "types in JS" proposal is still Stage 1, so a build step is required either way), and cubepath's fiddliest parts — algorithm data, cube state, SRS scheduling — are exactly where types pay off. The Python code is <em>not</em> wasted: it stays as build‑time tooling (diagram generation, PDF companion) — details in <a href="#stack">§6</a>.</p>
+    <p><b>How far along are we?</b> Content ≈ 20% (beginner→2‑look CFOP done well, with 3 correctness bugs found in this audit — one real coverage gap). Full CFOP ≈ 15%, 4×4 and 5×5 at 0%, platform at 0%. The realistic framing: <em>the project so far produced an excellent seed and a validated pedagogy; the product itself starts now.</em></p>
+  </div>
+</section>
+
+<section id="audit">
+  <div class="sec-kicker">2 · Repo audit</div>
+  <h2>What exists today — and its quality</h2>
+  <p class="lede">Full clone inspected; tests, lint, and diagram generation re‑run locally (all green). The repo is ~3,300 hand‑written lines across 24 source files, plus 51 generated SVGs. Activity: a focused build sprint Mar 17–24, 2026, then one documentation commit Aug 16.</p>
+
+  <div class="card">
+    <h3>Inventory</h3>
+    <div class="scroll-x">
+    <table>
+      <tr><th>Component</th><th>What it is</th><th style="text-align:right">Lines</th><th>Assessment</th></tr>
+      <tr>
+        <td><span class="mono">guide/cubepath.md</span></td>
+        <td>The entire guide: beginner → 2‑look CFOP in a 3‑phase "no dead zone" progression (Phase 1 beginner · 1.5 speed tricks · 2 CFOP switch +2 algs · 3 full 2‑look +8 algs), 16 algorithms total, built on trigger reuse (sexy move, Sune, F‑sexy‑F′)</td>
+        <td class="num" style="text-align:right">314</td>
+        <td><span class="chip chip-done"><span class="dot">●</span>Strong — this pedagogy is the project's moat</span></td>
+      </tr>
+      <tr>
+        <td><span class="mono">src/cubepath/diagrams.py</span></td>
+        <td>SVG generator (svgwrite): top‑view OLL/PLL case diagrams with arrows, 3D isometric step + notation diagrams; 51 SVGs, distinctive consistent style</td>
+        <td class="num" style="text-align:right">1,437</td>
+        <td><span class="chip chip-done"><span class="dot">●</span>Solid, tested</span> <span class="chip chip-part"><span class="dot">◐</span>Cases are hand‑defined → drift risk (see F2)</span></td>
+      </tr>
+      <tr>
+        <td><span class="mono">src/cubepath/cube.py</span></td>
+        <td>Minimal cube simulator: full move set (incl. wide, slices, rotations), alg parser with <span class="mono">(R U)×2</span> repeats — used to machine‑verify algorithms</td>
+        <td class="num" style="text-align:right">308</td>
+        <td><span class="chip chip-done"><span class="dot">●</span>Excellent idea; reusable</span></td>
+      </tr>
+      <tr>
+        <td><span class="mono">tests/</span> (pytest)</td>
+        <td>50 tests: move‑engine identities, alg parsing, per‑algorithm verification, diagram invariants</td>
+        <td class="num" style="text-align:right">617</td>
+        <td><span class="chip chip-done"><span class="dot">●</span>50/50 pass</span> <span class="chip chip-part"><span class="dot">◐</span>Blind spot: algs tested against their own inverse, not against the shipped diagram (see F4)</span></td>
+      </tr>
+      <tr>
+        <td><span class="mono">guide/filters, styles, defaults</span></td>
+        <td>Pandoc→Typst PDF build: Lua callout/steps/rotation filter, compact Typst styling</td>
+        <td class="num" style="text-align:right">~400</td>
+        <td><span class="chip chip-done"><span class="dot">●</span>Works (PDF‑only by design)</span></td>
+      </tr>
+      <tr>
+        <td><span class="mono">CLAUDE.md · docs/</span></td>
+        <td>Precise agent instructions, curated research sources (<span class="mono">resources.md</span>), TODO (cheat‑sheet cards, more guides)</td>
+        <td class="num" style="text-align:right">~230</td>
+        <td><span class="chip chip-done"><span class="dot">●</span>Great foundation for agentic work</span></td>
+      </tr>
+      <tr>
+        <td>Web app · PWA · interactivity</td>
+        <td>Site, service worker, manifest, 3D player, trainer, timer, progress tracking</td>
+        <td class="num" style="text-align:right">0</td>
+        <td><span class="chip chip-miss"><span class="dot">○</span>Not started</span></td>
+      </tr>
+    </table>
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:2px;">Verified in this audit: <span class="mono">uv run pytest</span> → 50 passed · <span class="mono">uv run cubepath-diagrams</span> → 51 SVGs · <span class="mono">ruff check</span> → clean. Toolchain: Python 3.12, uv, pandoc ≥3, typst.</p>
+  </div>
+
+  <div class="card">
+    <h3>What deserves to survive the rewrite</h3>
+    <p style="margin-top:4px;">Three assets are better than anything the big reference sites offer and must carry over unchanged in spirit:</p>
+    <ul>
+      <li><b>The phased method.</b> Beginner → CFOP with no "throw away what you learned" cliff: Phase 2 switches last‑layer order with just 2 new algorithms, Phase 3 completes 2‑look with 8 more, and nearly every alg reuses known triggers. No mainstream site structures the transition this deliberately.</li>
+      <li><b>Machine‑verified correctness.</b> Every published algorithm runs through a simulator in CI. Extended (see F4), this becomes the app's superpower at 145+ cases: <em>no hand‑maintained case can silently rot.</em></li>
+      <li><b>The visual language.</b> Consistent top‑view case diagrams + isometric step/notation diagrams, generated from code — ready to scale to full OLL/PLL sets programmatically.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="findings">
+  <div class="sec-kicker">3 · Audit findings</div>
+  <h2>Four verified issues in the current content</h2>
+  <p class="lede">Found by cross‑checking the guide's cases against its own bundled simulator (all claims below were reproduced mechanically, not by eyeballing). None of these diminish the approach — but F1/F2 are learner‑facing and worth fixing even before the app work starts.</p>
+
+  <div class="card">
+    <div class="finding sev-high">
+      <h4><span class="chip chip-bug"><span class="dot">✕</span>F1 · Coverage gap</span> The H case (OLL 21) has no algorithm — Phase 3's "one algorithm per case" promise is broken for it</h4>
+      <p>Phase 3 claims every OLL/PLL case is solved in one algorithm. Classifying the six taught corner‑orientation algs against the seven canonical OCLL twist cases (Sune, Anti‑Sune, H, Pi, U, T, L) shows they cover exactly six — <b>no taught alg solves H</b> (all four corners twisted, yellow "headlights" on both sides). A learner hitting H must fall back to Phase 2's Sune‑chaining, contradicting the phase's premise.</p>
+      <p class="evidence">Evidence: exhaustive simulator classification (each guide alg × each canonical case × all AUF/rotation offsets). Fix: add H — <span class="mono">R U R′ U R U′ R′ U R U2 R′</span> — verified to solve exactly the double‑headlights state.</p>
+    </div>
+    <div class="finding sev-high">
+      <h4><span class="chip chip-bug"><span class="dot">✕</span>F2 · Diagram ↔ algorithm mismatch</span> The "Headlights" entry pairs an H‑case picture with a U‑case algorithm</h4>
+      <p>The shipped <span class="mono">oll_headlights.svg</span> (and its caption "0 yellow, headlights L+R") depicts the <b>H case</b>. But its algorithm <span class="mono">R2 D R′ U2 R D′ R′ U2 R′</span> actually solves the <b>U case (OLL 23)</b> — two back corners already oriented, headlights facing the solver. A learner holding the pictured case and running the printed alg will not orient the corners.</p>
+      <p class="evidence">Evidence: applying the alg's inverse to a solved cube in the repo's simulator yields 2 yellow‑up corners + front headlights — not the pictured 0‑up, left/right‑headlights state. Fix: keep the existing picture for the new H entry (it matches H exactly), and draw a new U‑case diagram for the <span class="mono">R2 D…</span> alg.</p>
+    </div>
+    <div class="finding sev-med">
+      <h4><span class="chip chip-part"><span class="dot">◐</span>F3 · Wrong caption</span> "Chameleon — 2 diagonal yellow" is actually the adjacent case</h4>
+      <p>Chameleon (T case) and Bowtie (L case) are both captioned "2 diagonal yellow" in Phase 3. Simulator check: Chameleon's two oriented corners are <b>adjacent</b>; only Bowtie's are diagonal. Recognition text is the one thing a learner leans on mid‑solve — captions need a full audit pass.</p>
+      <p class="evidence">Evidence: inverse‑alg state inspection — Chameleon yellow‑up corners {BR, FR} (adjacent); Bowtie {BR, FL} (diagonal).</p>
+    </div>
+    <div class="finding sev-med">
+      <h4><span class="chip chip-part"><span class="dot">◐</span>F4 · Test blind spot</span> Tests verify each alg against its own inverse — so picture/alg drift is invisible</h4>
+      <p>The alg tests construct each case by inverting the alg under test, then confirm the alg solves it. That's self‑consistent by construction and can never catch F2‑style mismatches between the <em>diagrammed</em> state and the alg. The architectural fix (and a core principle for the app): <b>derive every case picture from its algorithm</b> — one source of truth, mismatch impossible — instead of hand‑defining sticker layouts.</p>
+      <p class="evidence">Evidence: <span class="mono">tests/test_algorithms.py</span> pattern; F2 passed CI precisely because of it.</p>
+    </div>
+  </div>
+</section>
+
+<section id="coverage">
+  <div class="sec-kicker">4 · Coverage map</div>
+  <h2>Curriculum: what's done, partial, and missing</h2>
+  <p class="lede">Measured against the full target curriculum (researched across JPerm, CubeSkills, SpeedSolving wiki, and WCA norms): ~145 teachable cases/units — 119 CFOP cases (41 F2L + 57 OLL + 21 PLL) plus beginner set, technique lessons, ~6 4×4 units and ~13 5×5 units.</p>
+
+  <div class="card meter-group">
+    <h4>3×3 foundations</h4>
+    <div class="meter-row">
+      <div class="m-name">Cube anatomy &amp; first‑timer onboarding<small>piece types · fixed centers · how to hold · troubleshooting twisted corners</small></div>
+      <div class="m-bar"><div class="m-fill" style="width:0%"></div></div>
+      <div class="m-val"><span class="chip chip-miss"><span class="dot">○</span>Missing</span></div>
+    </div>
+    <div class="meter-row">
+      <div class="m-name">Notation (3×3)<small>faces · modifiers · wide · slices · rotations — 15 diagrams</small></div>
+      <div class="m-bar"><div class="m-fill full" style="width:100%"></div></div>
+      <div class="m-val">Done</div>
+    </div>
+    <div class="meter-row">
+      <div class="m-name">Beginner method (Phases 1 + 1.5)<small>7 steps · ~6 algs · speed tricks</small></div>
+      <div class="m-bar"><div class="m-fill full" style="width:100%"></div></div>
+      <div class="m-val">Done</div>
+    </div>
+    <div class="meter-row">
+      <div class="m-name">2‑look OLL (Phases 2–3)<small>3 edge + 7 corner cases</small></div>
+      <div class="m-bar"><div class="m-fill" style="width:90%"></div></div>
+      <div class="m-val">9 / 10 <span class="chip chip-bug" title="H case missing (finding F1)"><span class="dot">✕</span>F1</span></div>
+    </div>
+    <div class="meter-row">
+      <div class="m-name">2‑look PLL (Phases 2–3)<small>T · Y · Ua · Ub · H · Z</small></div>
+      <div class="m-bar"><div class="m-fill full" style="width:100%"></div></div>
+      <div class="m-val">6 / 6</div>
+    </div>
+
+    <h4>Full CFOP</h4>
+    <div class="meter-row">
+      <div class="m-name">Intuitive F2L + case reference<small>the single biggest speed unlock — 41 standard cases</small></div>
+      <div class="m-bar"><div class="m-fill" style="width:0%"></div></div>
+      <div class="m-val">0 / 41</div>
+    </div>
+    <div class="meter-row">
+      <div class="m-name">Full PLL<small>21 cases (F, G×4, J×2, N×2, R×2, A×2, E, V…)</small></div>
+      <div class="m-bar"><div class="m-fill" style="width:29%"></div></div>
+      <div class="m-val">6 / 21</div>
+    </div>
+    <div class="meter-row">
+      <div class="m-name">Full OLL<small>57 cases, grouped by shape for recognition</small></div>
+      <div class="m-bar"><div class="m-fill" style="width:11%"></div></div>
+      <div class="m-val">6 / 57</div>
+    </div>
+    <div class="meter-row">
+      <div class="m-name">Technique lessons<small>cross planning &amp; inspection · finger tricks · lookahead</small></div>
+      <div class="m-bar"><div class="m-fill" style="width:0%"></div></div>
+      <div class="m-val">0 / 3</div>
+    </div>
+
+    <h4>Big cubes</h4>
+    <div class="meter-row">
+      <div class="m-name">4×4 course<small>centers · edge pairing · 3×3 stage &amp; wide notation · OLL parity · PLL parity · Yau (advanced)</small></div>
+      <div class="m-bar"><div class="m-fill" style="width:0%"></div></div>
+      <div class="m-val">0 / 6</div>
+    </div>
+    <div class="meter-row">
+      <div class="m-name">5×5 course<small>centers · freeslice pairing · last‑2‑edges (12 cases) · parity · "why no PLL parity"</small></div>
+      <div class="m-bar"><div class="m-fill" style="width:0%"></div></div>
+      <div class="m-val">0 / 5</div>
+    </div>
+
+    <h4>Platform</h4>
+    <div class="meter-row">
+      <div class="m-name">Web app · PWA · practice system<small>site shell · 3D players · offline · install · trainer · SRS · progress · timer</small></div>
+      <div class="m-bar"><div class="m-fill" style="width:0%"></div></div>
+      <div class="m-val">0 / 8</div>
+    </div>
+  </div>
+  <p style="font-size:12.5px;color:var(--muted);">Case counts verified against ≥2 sources each (SpeedSolving wiki + Wikipedia/JPerm). "16 cases covered" in §1 counts the guide's own algorithm reference table.</p>
+</section>
+
+<section id="vision">
+  <div class="sec-kicker">5 · Product vision</div>
+  <h2>The niche is genuinely open</h2>
+  <p class="lede">Research across the teaching/training landscape shows a clear gap: the best free resources (JPerm, Ruwix) are static pages + YouTube with no course structure, no offline story, and no retention system; the only product bundling lessons + 3D + spaced repetition (CuberPal) is iOS‑only at ~$40/year. Nobody offers <b>free + structured + interactive + offline‑first</b>. That's the slot cubepath fits — with a pedagogy the others don't have.</p>
+
+  <div class="card">
+    <h3>Five pillars of "amazing"</h3>
+    <ul>
+      <li><b>One unbroken ladder.</b> Absolute zero → beginner → 2‑look → full CFOP → 4×4 → 5×5, applying the no‑dead‑zone principle at every seam (full PLL learned as upgrades of 2‑look cases; 4×4 framed as "your 3×3 + two new skills + parity"; 5×5 as "4×4 skills, but centers are fixed again").</li>
+      <li><b>Interactive everything.</b> Every step, case, and algorithm gets a scrubbable 3D player (tap to play, drag to rotate, stage‑aware sticker dimming) plus the static case icon; notation taught by tapping moves, not reading tables.</li>
+      <li><b>Offline‑first, installable.</b> The entire course precached on first visit; WCA‑quality scrambles generated on‑device; installs to the home screen; works in airplane mode. Nothing in the app ever needs a server.</li>
+      <li><b>Practice that sticks.</b> Per‑case trainer with realistic case frequencies, recognition‑only drills, FSRS spaced repetition for algorithm retention, local progress with export — the paid‑app feature set, free.</li>
+      <li><b>Terse and dense.</b> Keep the repo's writing philosophy: minimal prose, maximal signal, no 20‑minute videos. The anti‑YouTube cube site.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Competitive landscape</h3>
+    <div class="scroll-x">
+    <table>
+      <tr><th>Resource</th><th>Free</th><th>Structured course</th><th>Interactive 3D lessons</th><th>4×4 + 5×5</th><th>Alg trainer</th><th>Spaced repetition</th><th>Offline PWA</th><th>Progress</th></tr>
+      <tr><td>JPerm.net</td><td class="tick">✓</td><td class="half">±</td><td class="cross">—</td><td class="tick">✓</td><td class="tick">✓</td><td class="cross">—</td><td class="cross">—</td><td class="half">±</td></tr>
+      <tr><td>CubeSkills (Zemdegs)</td><td class="half">± freemium</td><td class="tick">✓</td><td class="cross">— video</td><td class="tick">✓</td><td class="half">±</td><td class="cross">—</td><td class="cross">—</td><td class="cross">—</td></tr>
+      <tr><td>Ruwix</td><td class="tick">✓</td><td class="cross">—</td><td class="half">± widgets</td><td class="tick">✓</td><td class="cross">—</td><td class="cross">—</td><td class="cross">—</td><td class="cross">—</td></tr>
+      <tr><td>csTimer</td><td class="tick">✓</td><td class="cross">—</td><td class="cross">—</td><td class="half">± scrambles</td><td class="half">±</td><td class="cross">—</td><td class="half">±</td><td class="half">± stats</td></tr>
+      <tr><td>SpeedCubeDB</td><td class="tick">✓</td><td class="cross">—</td><td class="half">± alg anims</td><td class="tick">✓ algs</td><td class="half">±</td><td class="cross">—</td><td class="cross">—</td><td class="half">±</td></tr>
+      <tr><td>CuberPal (iOS)</td><td class="cross">— $40/yr</td><td class="tick">✓</td><td class="tick">✓</td><td class="half">±</td><td class="tick">✓</td><td class="tick">✓</td><td class="half">± native</td><td class="tick">✓</td></tr>
+      <tr><td><b>Cubepath (target)</b></td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td></tr>
+    </table>
+    </div>
+    <p style="font-size:12.5px;color:var(--muted);margin-bottom:2px;">✓ full support · ± partial · — absent. Assessed Aug 2026; details and links in <a href="#sources">Sources</a>. Honorable mentions: Rubik's Connected (best real‑time mistake feedback, but $60 hardware + ~1h of content), CubeDesk (gamification), Cubeast (smart‑cube analytics) — all post‑v1 inspiration, not v1 competition.</p>
+  </div>
+
+  <div class="card">
+    <h3>Licensing &amp; naming (cleared)</h3>
+    <p style="margin:4px 0;">Algorithms themselves are procedures/facts — not copyrightable (US Copyright Office Circular 33); every site shares the same T‑perm. What <em>is</em> protected is others' prose, videos, and imagery — cubepath writes its own words and generates its own diagrams, so it's clean. "Rubik's" remains a live trademark (Spin Master): keep branding as "cubepath — speedcubing from zero", use generic "3×3 cube" phrasing in product copy. Third‑party PDFs already correctly gitignored. cubing.js is dual MPL‑2.0/GPL — the MPL option is web‑app friendly with no copyleft over app code.</p>
+  </div>
+</section>
+
+<section id="stack">
+  <div class="sec-kicker">6 · Tech stack verdict</div>
+  <h2>TypeScript + Astro + cubing.js — Python stays as tooling</h2>
+  <p class="lede">Every choice below was researched against 2026 versions, licenses, and known issues (sources in §12). The shape of the product — dozens of prerendered lesson pages with islands of heavy interactivity — points at one stack unusually clearly.</p>
+
+  <div class="card">
+    <h3>The stack, one line each</h3>
+    <div class="scroll-x">
+    <table>
+      <tr><th>Layer</th><th>Choice</th><th>Why</th></tr>
+      <tr><td>Language</td><td><b>TypeScript, strict</b></td><td>2026 ecosystem default; typed alg data/cube state/SRS math; free to compile since the bundler is required anyway (TC39 type annotations still Stage 1)</td></tr>
+      <tr><td>Framework</td><td><b>Astro 7</b> + MDX content collections</td><td>Designed exactly for content‑heavy + interactive‑islands; ~0 KB JS on prose pages; type‑safe content; Vite‑based (matches cubing.js guidance); MIT, Cloudflare‑backed since Jan 2026</td></tr>
+      <tr><td>Cube rendering</td><td><b>cubing.js</b> <span class="mono">v0.63.x</span> (pin it)</td><td>The only maintained serious option (Lucas Garron; monthly releases; MPL‑2.0 option). <span class="mono">&lt;twisty-player&gt;</span> gives 3×3/4×4/5×5 3D, alg scrubbing, case setup via <span class="mono">experimental-setup-anchor="end"</span>, and CFOP stage stickering (<span class="mono">OLL/PLL/F2L/Cross</span>) out of the box</td></tr>
+      <tr><td>Scrambles</td><td><span class="mono">cubing/scramble</span></td><td>WCA random‑state scrambles for 3×3/4×4/5×5, computed in a web worker, fully offline once bundled</td></tr>
+      <tr><td>Case icons</td><td><b>Existing Python generator</b>, build‑time</td><td>Keep the distinctive style; extend to derive states from algs (kills the F2 bug class); static SVGs precache perfectly. (Fallback: sr‑visualizer, a TS VisualCube port)</td></tr>
+      <tr><td>PWA</td><td><b>@vite-pwa/astro</b> (Workbox)</td><td>Precache the whole site; <span class="mono">registerType: "prompt"</span> update toast; offline‑ready toast</td></tr>
+      <tr><td>Local data</td><td><b>idb</b> (IndexedDB) + <span class="mono">navigator.storage.persist()</span></td><td>Progress, trainer state, SRS cards; async, worker‑safe, eviction‑protected once persisted/installed</td></tr>
+      <tr><td>Spaced repetition</td><td><b>ts-fsrs</b> v5 (FSRS‑6, MIT, zero deps)</td><td>The current Anki‑grade scheduler; one Card object per algorithm case</td></tr>
+      <tr><td>Deploy</td><td><b>Cloudflare Workers static assets</b> via GitHub Actions</td><td>Free unlimited static requests; header control for SW caching (GH Pages can't); CF Pages is in maintenance mode — Workers static is the 2026 path</td></tr>
+      <tr><td>Testing</td><td><b>Vitest</b> + <b>Playwright</b></td><td>Vitest ports the "verify every alg" philosophy to the TS data (via cubing.js kpuzzle); Playwright runs an <em>offline‑mode</em> E2E — the test that guards the whole PWA promise</td></tr>
+    </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Framework decision in brief</h3>
+    <div class="scroll-x">
+    <table>
+      <tr><th></th><th>Astro 7 ★</th><th>SvelteKit</th><th>Plain Vite + TS</th><th>Next.js 16</th></tr>
+      <tr><td>JS shipped on a lesson page</td><td class="num">~0–15 KB</td><td class="num">~20–40 KB</td><td class="num">DIY</td><td class="num">~60–80 KB</td></tr>
+      <tr><td>Content pipeline (MD/MDX, SEO, prerender)</td><td class="tick">✓ native, type‑safe</td><td class="half">± adapter‑static</td><td class="cross">— hand‑rolled</td><td class="half">± second‑class export</td></tr>
+      <tr><td>PWA plugin</td><td class="tick">✓ @vite-pwa/astro</td><td class="tick">✓ @vite-pwa/sveltekit</td><td class="tick">✓ vite-plugin-pwa</td><td class="half">± community forks</td></tr>
+      <tr><td>cubing.js compatibility</td><td class="tick">✓ Vite (known fixes)</td><td class="tick">✓ Vite (known fixes)</td><td class="tick">✓ closest to maintainer's esbuild advice</td><td class="cross">— known worker/bundler issues (#309)</td></tr>
+      <tr><td>Fit for "tutorial + interactive islands"</td><td class="tick">✓ the designed use case</td><td class="half">± app‑first</td><td class="half">± app parts only</td><td class="cross">— React tax on prose</td></tr>
+    </table>
+    </div>
+    <p style="font-size:13.5px;color:var(--ink2);">Note: <span class="mono">&lt;twisty-player&gt;</span> is a web component, so most "islands" need no UI framework at all — plain TS + HTML. Svelte/Preact can be added later <em>only if</em> trainer UIs grow complex. SvelteKit is the respectable runner‑up if the app ever becomes mostly‑interactive.</p>
+  </div>
+
+  <div class="card">
+    <h3>What happens to the existing code — nothing is thrown away</h3>
+    <table>
+      <tr><th>Today</th><th>Disposition</th></tr>
+      <tr><td><span class="mono">guide/cubepath.md</span> (the method)</td><td><b>Becomes the app's 3×3 course</b> (split into MDX lessons) <em>and</em> stays buildable as the print/PDF companion</td></tr>
+      <tr><td><span class="mono">src/cubepath/diagrams.py</span></td><td><b>Kept</b> as the build‑time case‑icon generator; extended to derive sticker states from algorithms via the simulator (fixes F4 class); emits SVGs into the app's assets</td></tr>
+      <tr><td><span class="mono">src/cubepath/cube.py</span> + pytest suite</td><td><b>Kept</b> for the Python pipeline; its <em>role</em> (machine‑verify every alg) is mirrored in Vitest over the shared alg data so the app can never ship a wrong alg</td></tr>
+      <tr><td>Pandoc/Typst/Lua PDF build</td><td><b>Kept</b>, demoted to companion output; later also generates the credit‑card cheat sheets already on the TODO list — from the same alg data as the site</td></tr>
+      <tr><td>JS/TS</td><td>New <span class="mono">app/</span> workspace — TypeScript strict from day one</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>cubing.js — the one dependency that needs respect</h3>
+    <p style="margin-top:4px;">It does everything (3D player, alg parsing, kpuzzle state math, WCA scrambles, even Bluetooth smart‑cubes later) — but it's pre‑1.0 with <span class="mono">experimental*</span> APIs, and its web‑worker loading is the classic failure point under bundlers. Pin the version, apply the known Vite config, and gate releases on an offline E2E test:</p>
+<pre><code>&lt;!-- A PLL case demo: player shows the case, plays to solved --&gt;
+&lt;twisty-player
+  alg="R U R' U' R' F R2 U' R' U' R U R' F'"
+  experimental-setup-anchor="end"
+  experimental-stickering="PLL"
+  background="none" control-panel="bottom-row"&gt;
+&lt;/twisty-player&gt;
+
+// astro.config.mjs → vite options (known-good cubing.js setup)
+vite: {
+  optimizeDeps: { exclude: ["cubing"] },
+  worker: { format: "es" },
+  build: { target: "es2022" },
+}</code></pre>
+    <p style="font-size:13px;color:var(--muted);">4×4/5×5 render via its puzzle‑geometry engine (<span class="mono">puzzle="4x4x4"</span>). Budget ~250–400 KB gz extra on player pages (three.js) — a one‑time precache cost, irrelevant offline. License: choose the MPL‑2.0 option.</p>
+  </div>
+</section>
+
+<section id="architecture">
+  <div class="sec-kicker">7 · Architecture</div>
+  <h2>One data source feeds everything</h2>
+  <p class="lede">The audit's core lesson (F2/F4): hand‑maintained case definitions drift. The app inverts this — a single typed algorithm/case dataset from which pages, players, icons, trainers, tests, and the PDF are all derived. A mismatch becomes a build error, not a shipped bug.</p>
+
+  <div class="card">
+    <div class="flow">
+      <div class="fbox src" style="align-self:center;">
+        <b>algs.ts — single source of truth</b>
+        ~145 cases: id · group · name · recognition text · alg variants · setup · stickering mask · probability · phase/prereqs
+      </div>
+      <div class="arrow">→</div>
+      <div class="fan">
+        <div class="fbox"><b>Lesson pages (MDX)</b> reference cases by id; players + icons auto‑embedded</div>
+        <div class="fbox"><b>&lt;twisty-player&gt; islands</b> case demo = alg + setup‑anchor "end"</div>
+        <div class="fbox"><b>SVG case icons</b> Python generator derives state from alg at build time</div>
+        <div class="fbox"><b>Trainer + FSRS</b> drills &amp; review scheduling per case id (idb)</div>
+        <div class="fbox"><b>Vitest gate</b> every alg must solve its case on cubing.js kpuzzle — CI fails otherwise</div>
+        <div class="fbox"><b>PDF companion + cheat cards</b> Typst build reads the same data</div>
+      </div>
+    </div>
+<pre><code>// data/algs.ts (schema sketch)
+interface CaseDef {
+  id: string;              // "pll.t", "oll.27", "f2l.06", "444.oll-parity", "555.l2e.03"
+  group: string;           // "2look-pll" | "ocll" | "big-lightning" | …
+  name: string;            // "T‑Perm"
+  recognition: string;     // "headlights left, bar right"
+  algs: { moves: string; primary?: boolean; note?: string }[];
+  stickering: "PLL" | "OLL" | "F2L" | "Cross" | "full";
+  puzzle: "3x3x3" | "4x4x4" | "5x5x5";
+  probability?: string;    // "1/72"
+  phase: string;           // "phase-3" | "full-pll" | …  (drives course ordering)
+  prereqs?: string[];      // case ids — powers "learn next" paths
+}</code></pre>
+<pre><code>cubepath/
+├── app/                  # Astro 7 + TS strict — THE PRODUCT
+│   ├── src/content/      #   MDX lessons: courses/3x3-beginner … /cfop /4x4 /5x5
+│   ├── src/data/         #   algs.ts + course maps (single source of truth)
+│   ├── src/islands/      #   player wrapper · trainer · timer · SRS review
+│   └── public/icons/     #   build‑generated case SVGs
+├── tools/diagrams/       # today's Python pkg (cube.py, diagrams.py) + pytest
+├── guide/                # Typst PDF companion + cheat cards (reads app/src/data)
+└── .github/workflows/    # ruff+pytest · vitest · playwright(offline) · deploy</code></pre>
+  </div>
+</section>
+
+<section id="pwa">
+  <div class="sec-kicker">8 · PWA blueprint</div>
+  <h2>Offline‑first, verified in CI — not hoped for</h2>
+  <p class="lede">The site is finite (a few MB with icons and player code), so the right strategy is the simple one: precache everything on first visit; after that the app never needs the network again. Verified iOS/Android behavior as of mid‑2026 below — several popular blog claims are outdated.</p>
+
+  <div class="card cols2">
+    <div>
+      <h3>Caching &amp; updates</h3>
+      <ul>
+        <li><b>Precache all of it</b> — pages, CSS/JS, case SVGs, fonts, <em>and cubing.js worker chunks</em> (<span class="mono">globPatterns</span> incl. <span class="mono">wasm</span>); scrambles then work in airplane mode.</li>
+        <li><b>Update UX:</b> <span class="mono">registerType: "prompt"</span> — never reload mid‑lesson; show "New version — refresh" toast via <span class="mono">virtual:pwa-register</span>; plus a one‑time "Available offline" toast.</li>
+        <li><b>Storage:</b> progress/SRS in IndexedDB (<span class="mono">idb</span>); call <span class="mono">navigator.storage.persist()</span> on first meaningful interaction; offer JSON export/import as belt‑and‑braces.</li>
+        <li><b>CI gate:</b> Playwright E2E: load once → <span class="mono">context.setOffline(true)</span> → navigate a lesson, scrub a player, generate a 3×3 + 4×4 scramble. This single test protects the product promise.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Install reality, mid‑2026</h3>
+      <ul>
+        <li><b>iOS 26 / Safari 26:</b> every site added to the Home Screen now opens as a web app by default; manifest + SVG icons honored. Still no <span class="mono">beforeinstallprompt</span> → show a small "Share → Add to Home Screen" hint for iOS visitors.</li>
+        <li><b>iOS storage:</b> installed web apps get browser‑class quota (up to ~60% of disk/origin) and, once persisted, are excluded from eviction — the old "7‑day wipe" fear doesn't apply to installed+persisted apps. EU users unaffected (Apple's 2024 EU PWA removal was reversed before shipping).</li>
+        <li><b>Android/desktop:</b> full install support; custom install button via <span class="mono">beforeinstallprompt</span>.</li>
+        <li><b>Hosting note:</b> SW + precache needs header control (<span class="mono">Cache-Control</span> on <span class="mono">sw.js</span>) — a reason for Cloudflare over GitHub Pages.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="roadmap">
+  <div class="sec-kicker">9 · Roadmap</div>
+  <h2>Seven milestones, each shippable on its own</h2>
+  <p class="lede">Ordered so the PWA promise is locked in early (M2) and every later milestone inherits it. Sizes are relative effort (S &lt; M &lt; L) assuming Claude Code does the heavy lifting and you review. Fix‑first: the three content bugs get patched before anything else so the current PDF stays trustworthy.</p>
+
+  <div class="card">
+    <h3>Quick wins — this week, in the current repo</h3>
+    <ul>
+      <li>Fix <b>F1–F3</b>: add the H case (<span class="mono">R U R′ U R U′ R′ U R U2 R′</span>) reusing the existing headlights diagram; draw the true U‑case (OLL 23) diagram for <span class="mono">R2 D R′ U2 R D′ R′ U2 R′</span>; correct the Chameleon caption ("2 adjacent"). Phase 3 becomes 11 algs / honest.</li>
+      <li>Fix <b>F4</b>: add one pytest that renders each case's diagram state <em>from its algorithm's inverse</em> and asserts the shipped diagram matches — the class of bug that can never recur.</li>
+      <li>Rebuild + tag the corrected PDF as <span class="mono">guide-v0.2</span> — the stable artifact while the app is built.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="mstone">
+      <div class="m-id">M0<small><span class="badge-size">S</span></small></div>
+      <div>
+        <h4>Foundation — scaffold, prove, deploy</h4>
+        <p>Restructure repo (<span class="mono">app/</span>, <span class="mono">tools/diagrams/</span>, <span class="mono">guide/</span>); Astro 7 + TS strict; <span class="mono">&lt;twisty-player&gt;</span> island proof on 3×3 <em>and</em> 4×4/5×5; <span class="mono">algs.ts</span> schema v1 seeded with the current 16 algs; CI (ruff + pytest + Vitest + Playwright); first deploy to Cloudflare.</p>
+        <p class="done-when"><b>Done when:</b> a live URL scrubs a T‑Perm on 3×3 and an OLL‑parity alg on 4×4, and CI is green.</p>
+      </div>
+    </div>
+    <div class="mstone">
+      <div class="m-id">M1<small><span class="badge-size">M</span></small></div>
+      <div>
+        <h4>3×3 course online — the existing guide, made interactive</h4>
+        <p>Port Phases 1 → 3 into MDX lessons: every step gets a player (case → solved), every alg a tap‑to‑play; interactive notation page; new "cube anatomy / absolute zero" onboarding module; per‑case pages generated from <span class="mono">algs.ts</span>; PDF companion still builds.</p>
+        <p class="done-when"><b>Done when:</b> a stranger can go from scrambled to solved to 2‑look CFOP entirely on the site, and every published alg is Vitest‑verified.</p>
+      </div>
+    </div>
+    <div class="mstone">
+      <div class="m-id">M2<small><span class="badge-size">S</span></small></div>
+      <div>
+        <h4>PWA — offline‑first locked in</h4>
+        <p>@vite-pwa/astro precache‑everything; update + offline‑ready toasts; iOS install hint, Android install button; <span class="mono">storage.persist()</span>; manifest + icons; Playwright offline E2E gating deploys.</p>
+        <p class="done-when"><b>Done when:</b> airplane‑mode phone: full course, players, and fresh scrambles all work; installs to home screen on iOS and Android.</p>
+      </div>
+    </div>
+    <div class="mstone">
+      <div class="m-id">M3<small><span class="badge-size">L</span></small></div>
+      <div>
+        <h4>Full CFOP — the big content build</h4>
+        <p>Intuitive F2L lessons (discovery‑first, then the 41‑case reference); full PLL (21) as upgrades from 2‑look; full OLL (57) grouped by shape with recognition text; cross planning + inspection; finger tricks; lookahead. Diagram generator scales by deriving all case states from algs. "Learn next" ordering from <span class="mono">prereqs</span>.</p>
+        <p class="done-when"><b>Done when:</b> all 119 CFOP cases have page + icon + player + verified alg(s), reachable through a coherent course path.</p>
+      </div>
+    </div>
+    <div class="mstone">
+      <div class="m-id">M4<small><span class="badge-size">M</span></small></div>
+      <div>
+        <h4>Practice layer — what makes it stick</h4>
+        <p>Alg trainer (per‑case status: unlearned/learning/finished; case‑filtered scrambles; balanced vs realistic frequencies); recognition‑only drills; FSRS reviews (<span class="mono">ts-fsrs</span>) with a daily queue; progress dashboard; JSON export/import.</p>
+        <p class="done-when"><b>Done when:</b> you can drill exactly the 6 PLLs you're learning, offline, and tomorrow the app knows which ones you're about to forget.</p>
+      </div>
+    </div>
+    <div class="mstone">
+      <div class="m-id">M5<small><span class="badge-size">L</span></small></div>
+      <div>
+        <h4>Big cubes — 4×4 then 5×5</h4>
+        <p>4×4: centers (no fixed centers! color‑scheme from corners), 2‑then‑3‑2‑3 edge pairing, wide/layer notation, 3×3 stage, OLL + PLL parity with the 25/25/25/25 probability framing ("parity is expected, not broken"), Yau as the advanced track. 5×5: centers via bars, freeslice pairing, last‑2‑edges (12 cases), single parity alg, and <em>why</em> there's no PLL parity. All on PG3D players; parity algs verified on 4×4/5×5 kpuzzle.</p>
+        <p class="done-when"><b>Done when:</b> both courses are complete and a 3×3 solver can finish a 5×5 using only the site.</p>
+      </div>
+    </div>
+    <div class="mstone">
+      <div class="m-id">M6<small><span class="badge-size">M</span></small></div>
+      <div>
+        <h4>Polish &amp; reach — v1.0</h4>
+        <p>Light timer (ao5/ao12, session stats — not a csTimer clone); printable credit‑card cheat sheets from <span class="mono">algs.ts</span> (the old TODO, finally cheap); landing page, SEO/OG cards; i18n scaffold (EN first, DE ready); optional streaks from SRS. Backlog beyond v1: smart‑cube support via <span class="mono">cubing/bluetooth</span>, community alg voting, 1v1 races.</p>
+        <p class="done-when"><b>Done when:</b> v1.0 is public, installable, and something you'd post on r/Cubers without a disclaimer.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="risks">
+  <div class="sec-kicker">10 · Risks</div>
+  <h2>What could bite, and the pre‑planned answer</h2>
+  <div class="card scroll-x">
+    <table>
+      <tr><th>Risk</th><th>Severity</th><th>Mitigation</th></tr>
+      <tr>
+        <td>cubing.js worker bundling breaks offline (its known failure mode under bundlers)</td>
+        <td><span class="chip chip-ser"><span class="dot">▲</span>High impact</span></td>
+        <td>Pin <span class="mono">v0.63.x</span>; apply known Vite config; Playwright offline E2E as a deploy gate; AnimCubeJS as emergency fallback renderer</td>
+      </tr>
+      <tr>
+        <td>Content volume of full OLL (57 cases) stalls momentum</td>
+        <td><span class="chip chip-ser"><span class="dot">▲</span>High likelihood</span></td>
+        <td>Data‑driven case pages (template + per‑case recognition line only); diagrams derived, not drawn; ship shape‑group by shape‑group — each group is independently useful</td>
+      </tr>
+      <tr>
+        <td>Hand‑maintained cases drift from algs (the F2 bug class) as data grows 9×</td>
+        <td><span class="chip chip-ser"><span class="dot">▲</span>High impact</span></td>
+        <td>Single‑source <span class="mono">algs.ts</span>; icons + players + PDF all derived; Vitest kpuzzle gate fails CI on any mismatch</td>
+      </tr>
+      <tr>
+        <td>iOS PWA quirks (install discoverability, storage)</td>
+        <td><span class="chip chip-part"><span class="dot">◐</span>Medium</span></td>
+        <td>iOS 26 opens Home‑Screen sites as web apps by default; in‑app Share‑sheet hint; <span class="mono">persist()</span> + export/import escape hatch; test on device each release</td>
+      </tr>
+      <tr>
+        <td>Two languages in one repo (TS product + Python tooling)</td>
+        <td><span class="chip chip-part"><span class="dot">◐</span>Low–medium</span></td>
+        <td>Python confined to build‑time with a single entry point; revisit a TS port of the generator only if it causes real friction (decision point after M3)</td>
+      </tr>
+      <tr>
+        <td>Scope creep toward timers/smart‑cubes/social before the course is done</td>
+        <td><span class="chip chip-part"><span class="dot">◐</span>Medium</span></td>
+        <td>Course + practice layer (M1–M5) before any timer polish; smart‑cube and social features explicitly post‑v1 backlog</td>
+      </tr>
+    </table>
+  </div>
+</section>
+
+<section id="decisions">
+  <div class="sec-kicker">11 · Open decisions</div>
+  <h2>Five calls only you can make</h2>
+  <div class="card">
+    <table>
+      <tr><th>Decision</th><th>Recommendation</th></tr>
+      <tr><td><b>Domain / name.</b> Publish under a custom domain?</td><td>Yes — e.g. <span class="mono">cubepath.app</span> (clean PWA scope, needed for a stable SW + install identity). Avoid "Rubik's" in the name (trademark).</td></tr>
+      <tr><td><b>PDF companion.</b> Keep it first‑class or freeze it?</td><td>Keep — it's cheap once data‑driven, it's the printable cheat‑card answer, and it's a differentiator (offline before the app even installs).</td></tr>
+      <tr><td><b>Languages.</b> EN‑only v1, or EN + DE?</td><td>EN‑only v1 with i18n‑ready content structure; DE at M6 if desired.</td></tr>
+      <tr><td><b>Timer ambition.</b> Minimal practice timer or csTimer‑class?</td><td>Minimal (ao5/ao12, per‑case drill times). csTimer already exists; cubepath's edge is teaching, not timing.</td></tr>
+      <tr><td><b>License for the repo.</b> Currently none is declared.</td><td>Pick one now: e.g. MIT for app code + CC BY‑NC‑SA (or CC BY) for the written course. Required before anyone can legally contribute or reuse.</td></tr>
+    </table>
+  </div>
+</section>
+
+<section id="sources">
+  <div class="sec-kicker">12 · Sources</div>
+  <h2>What this plan is based on</h2>
+  <div class="card cols2 srcs">
+    <div>
+      <h3>Repo evidence (verified locally)</h3>
+      <ul>
+        <li>Clone of <a href="https://github.com/tsenoner/cubepath">tsenoner/cubepath</a> @ <span class="mono">f6c0f6b</span> · 19 commits · sole author</li>
+        <li>Re‑ran: pytest (50/50), ruff (clean), diagram generation (51 SVGs)</li>
+        <li>Findings F1–F4 reproduced with <span class="mono">src/cubepath/cube.py</span> (exhaustive OCLL classification + inverse‑state inspection)</li>
+        <li>HTML output removal: commit <span class="mono">b78fe13</span> "Remove HTML output, keep PDF‑only build"</li>
+      </ul>
+      <h3>Curriculum &amp; landscape</h3>
+      <ul>
+        <li><a href="https://jperm.net/3x3/cfop">JPerm — CFOP</a>, <a href="https://jperm.net/algs/pll">alg trainer</a>, <a href="https://www.jperm.net/4x4/faster">4×4/Yau</a>, <a href="https://www.jperm.net/5x5">5×5</a></li>
+        <li><a href="https://www.speedsolving.com/wiki/index.php/OLL">SpeedSolving wiki — OLL (57)</a>, <a href="https://www.speedsolving.com/wiki/index.php/PLL">PLL (21)</a>, <a href="https://www.speedsolving.com/wiki/index.php/4x4x4_parity_algorithms">4×4 parity</a>, <a href="https://www.speedsolving.com/wiki/index.php/Yau_method">Yau</a></li>
+        <li><a href="https://en.wikipedia.org/wiki/CFOP_method">Wikipedia — CFOP</a> (41 F2L, 2‑look counts, skip odds)</li>
+        <li><a href="https://sarah.cubing.net/5x5x5/l2e">Sarah's Cubing Site — L2E (12 cases)</a></li>
+        <li><a href="https://www.cubeskills.com/tutorials">CubeSkills — course structure</a> · <a href="https://www.cuberpal.com/">CuberPal</a> · <a href="https://cstimer.net">csTimer</a> · <a href="https://speedcubedb.com">SpeedCubeDB</a></li>
+        <li><a href="https://www.copyright.gov/circs/circ33.pdf">US Copyright Office Circular 33</a> (algorithms = uncopyrightable procedures)</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Tech (versions checked Aug 2026)</h3>
+      <ul>
+        <li><a href="https://github.com/cubing/cubing.js/">cubing.js</a> v0.63.3 · MPL‑2.0/GPL dual · <a href="https://js.cubing.net/cubing/twisty/">twisty‑player docs</a> · bundler issues <a href="https://github.com/cubing/cubing.js/issues/309">#309</a>, <a href="https://github.com/cubing/cubing.js/issues/327">#327</a></li>
+        <li><a href="https://astro.build/blog/astro-7/">Astro 7</a> (Jun 2026; Cloudflare‑backed, MIT commitment)</li>
+        <li><a href="https://vite-pwa-org.netlify.app/frameworks/astro">@vite-pwa/astro</a> · prompt‑update flow</li>
+        <li><a href="https://webkit.org/blog/16993/news-from-wwdc25-web-technology-coming-this-fall-in-safari-26-beta/">WebKit — Safari 26</a> (Home‑Screen sites open as web apps) · <a href="https://webkit.org/blog/14403/updates-to-storage-policy/">storage policy</a> (quota, persist, eviction)</li>
+        <li><a href="https://www.macrumors.com/2024/03/01/apple-walks-back-decision-to-disable-eu-web-apps/">EU PWA reversal (Mar 2024)</a></li>
+        <li><a href="https://github.com/open-spaced-repetition/ts-fsrs">ts‑fsrs</a> v5 (FSRS‑6, MIT) · <a href="https://www.npmjs.com/package/idb">idb</a> v8</li>
+        <li><a href="https://developers.cloudflare.com/workers/static-assets/">Cloudflare Workers static assets</a> (free unlimited static requests; Pages in maintenance mode)</li>
+        <li>TypeScript 2026 consensus: SO 2025 survey · job‑listing data · TC39 type annotations still Stage 1</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>
+  Prepared by Claude for Tobias · August 18, 2026 · Audit basis: local clone at <span class="mono">f6c0f6b</span>, tests re‑run; web research with primary‑source verification (WebKit, npm registry, GitHub). Counts like "~145 cases" are honest estimates — exact case inventory becomes <span class="mono">algs.ts</span> in M0.
+</footer>
+
+</div>
+<script>
+  const order = ["auto","light","dark"];
+  function cycleTheme(){
+    const cur = document.documentElement.getAttribute("data-theme") || "auto";
+    const next = order[(order.indexOf(cur)+1)%order.length];
+    if (next === "auto") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme", next);
+    document.getElementById("themeBtn").textContent = "Theme: " + next;
+  }
+</script>
+</body>
+</html>

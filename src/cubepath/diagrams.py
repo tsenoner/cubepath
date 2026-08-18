@@ -13,6 +13,9 @@ from pathlib import Path
 
 import svgwrite
 
+from cubepath.algs import ALGORITHMS, DOT_SEQUENCE
+from cubepath.cube import Cube, state_before
+
 # Colors — standard Western Rubik's cube (Yellow top, Red front)
 YELLOW = "#FFD500"
 GREY = "#C0C0C0"
@@ -56,6 +59,96 @@ class CubeDiagram:
 Y = YELLOW
 G = GREY
 
+# Simulator color letter → diagram hex color
+_SIM_COLOR = {"Y": YELLOW, "R": RED, "G": GREEN, "O": ORANGE, "B": BLUE, "W": WHITE}
+
+
+def _u_layer_views(cube: Cube) -> tuple[list[str], dict[str, list[str]]]:
+    """Plan-view of the U layer: u_face (row 0 = back) + side strips.
+
+    Side strips are read left-to-right (top/bottom) and top-to-bottom
+    (left/right) as viewed from above with the front face at the bottom.
+    """
+    sides = {
+        "top": [cube.faces["B"][2], cube.faces["B"][1], cube.faces["B"][0]],
+        "right": [cube.faces["R"][2], cube.faces["R"][1], cube.faces["R"][0]],
+        "bottom": [cube.faces["F"][0], cube.faces["F"][1], cube.faces["F"][2]],
+        "left": [cube.faces["L"][0], cube.faces["L"][1], cube.faces["L"][2]],
+    }
+    return list(cube.faces["U"]), sides
+
+
+def _yellow_mask(stickers: list[str]) -> list[str]:
+    return [YELLOW if s == "Y" else GREY for s in stickers]
+
+
+def _derived_cross_case(name: str, label: str, alg: str, *, view_turn: str = "") -> CubeDiagram:
+    """OLL cross case derived from its algorithm's pre-state.
+
+    Shows the U-face edge/center pattern; corners are GREY (don't-care at
+    the cross stage). `view_turn` reorients the derived state so the diagram
+    matches how the guide tells the learner to hold the cube.
+    """
+    cube = state_before(alg)
+    if view_turn:
+        cube.apply(view_turn)
+    u, _ = _u_layer_views(cube)
+    u_face = _yellow_mask(u)
+    for corner in (0, 2, 6, 8):
+        u_face[corner] = GREY
+    return CubeDiagram(name=name, label=label, category="oll_cross", u_face=u_face)
+
+
+def _derived_oll_corner_case(name: str, label: str, alg: str) -> CubeDiagram:
+    """OLL corner case derived from its algorithm's pre-state (cross solved)."""
+    cube = state_before(alg)
+    u, sides = _u_layer_views(cube)
+    assert all(u[i] == "Y" for i in (1, 3, 4, 5, 7)), f"{name}: cross not solved in pre-state"
+    return CubeDiagram(
+        name=name,
+        label=label,
+        category="oll_corners",
+        u_face=_yellow_mask(u),
+        top_side=_yellow_mask(sides["top"]),
+        right_side=_yellow_mask(sides["right"]),
+        bottom_side=_yellow_mask(sides["bottom"]),
+        left_side=_yellow_mask(sides["left"]),
+    )
+
+
+def _derived_pll_case(
+    name: str,
+    label: str,
+    alg: str,
+    *,
+    category: str,
+    swaps: list[tuple[str, str]] | None = None,
+    cycles: list[list[str]] | None = None,
+    dashed_swaps: list[tuple[str, str]] | None = None,
+) -> CubeDiagram:
+    """PLL case with true side-sticker colors derived from the algorithm's pre-state.
+
+    Arrows stay hand-declared for layout, but tests verify them against the
+    piece permutation implied by the same pre-state.
+    """
+    cube = state_before(alg)
+    u, sides = _u_layer_views(cube)
+    assert all(s == "Y" for s in u), f"{name}: U face not fully yellow in pre-state"
+    colorize = lambda strip: [_SIM_COLOR[s] for s in strip]  # noqa: E731
+    return CubeDiagram(
+        name=name,
+        label=label,
+        category=category,
+        u_face=[YELLOW] * 9,
+        top_side=colorize(sides["top"]),
+        right_side=colorize(sides["right"]),
+        bottom_side=colorize(sides["bottom"]),
+        left_side=colorize(sides["left"]),
+        swaps=swaps or [],
+        cycles=cycles or [],
+        dashed_swaps=dashed_swaps or [],
+    )
+
 
 def _arrow_pos(name: str) -> tuple[float, float]:
     """Return pixel center for a named arrow anchor on the U-face grid."""
@@ -77,133 +170,61 @@ def _arrow_pos(name: str) -> tuple[float, float]:
 
 
 def _oll_cross_cases() -> list[CubeDiagram]:
-    """OLL cross cases: Dot, Hook (L-shape), Line."""
+    """OLL cross cases: Dot, Hook (L-shape), Line — derived from their algorithms.
+
+    The Hook diagram is drawn at the Phase-1 angle (L in back-left, where
+    F-sexy-F' turns it into a Line); Phase 1.5 rotates the image 180° to the
+    f-sexy-f' angle (L in front-right).
+    """
     return [
-        CubeDiagram(
-            name="oll_dot",
-            label="Dot",
-            category="oll_cross",
-            u_face=[G, G, G, G, Y, G, G, G, G],
-        ),
-        CubeDiagram(
-            name="oll_hook",
-            label="Hook / L-shape",
-            category="oll_cross",
-            u_face=[G, Y, G, Y, Y, G, G, G, G],  # L in back-left
-        ),
-        CubeDiagram(
-            name="oll_line",
-            label="Line",
-            category="oll_cross",
-            u_face=[G, G, G, Y, Y, Y, G, G, G],
-        ),
+        _derived_cross_case("oll_dot", "Dot", DOT_SEQUENCE),
+        _derived_cross_case("oll_hook", "Hook / L-shape", ALGORITHMS["f-sexy-f'"], view_turn="y2"),
+        _derived_cross_case("oll_line", "Line", ALGORITHMS["F-sexy-F'"]),
     ]
 
 
 def _oll_corner_cases() -> list[CubeDiagram]:
-    """OLL corner orientation cases (yellow cross already done)."""
-
-    def with_corners(tl: str, tr: str, bl: str, br: str) -> list[str]:
-        return [tl, Y, tr, Y, Y, Y, bl, Y, br]
-
-    return [
-        # Sune: 1 yellow corner (front-left), other 3 CW-twisted
-        CubeDiagram(
-            name="oll_sune",
-            label="Sune",
-            category="oll_corners",
-            u_face=with_corners(G, G, Y, G),
-            top_side=[Y, G, G],
-            right_side=[Y, G, G],
-            bottom_side=[G, G, Y],
-            left_side=[G, G, G],
+    """OLL corner orientation cases (yellow cross done) — derived from their algorithms."""
+    cases = [
+        _derived_oll_corner_case("oll_sune", "Sune", ALGORITHMS["Sune"]),
+        _derived_oll_corner_case("oll_antisune", "Anti-Sune", ALGORITHMS["Anti-Sune"]),
+        _derived_oll_corner_case("oll_pi", "Pi / Double Sune", ALGORITHMS["Pi"]),
+        _derived_oll_corner_case("oll_headlights", "Headlights", ALGORITHMS["Headlights"]),
+        _derived_oll_corner_case(
+            "oll_double_headlights", "Double Headlights", ALGORITHMS["Double Headlights"]
         ),
-        # Anti-Sune: 1 yellow corner (back-right), other 3 CCW-twisted
-        CubeDiagram(
-            name="oll_antisune",
-            label="Anti-Sune",
-            category="oll_corners",
-            u_face=with_corners(G, Y, G, G),
-            top_side=[G, G, G],
-            right_side=[G, G, Y],
-            bottom_side=[Y, G, G],
-            left_side=[Y, G, G],
-        ),
-        CubeDiagram(
-            name="oll_pi",
-            label="Pi / Double Sune",
-            category="oll_corners",
-            u_face=with_corners(G, G, G, G),
-            top_side=[Y, G, Y],
-            right_side=[G, G, G],
-            bottom_side=[Y, G, Y],
-            left_side=[G, G, G],
-        ),
-        CubeDiagram(
-            name="oll_headlights",
-            label="Headlights",
-            category="oll_corners",
-            u_face=with_corners(G, G, G, G),
-            top_side=[G, G, G],
-            right_side=[Y, G, Y],
-            bottom_side=[G, G, G],
-            left_side=[Y, G, Y],
-        ),
-        CubeDiagram(
-            name="oll_chameleon",
-            label="Chameleon",
-            category="oll_corners",
-            u_face=with_corners(Y, G, G, Y),
-            top_side=[G, G, Y],
-            right_side=[G, G, G],
-            bottom_side=[Y, G, G],
-            left_side=[G, G, G],
-        ),
-        CubeDiagram(
-            name="oll_bowtie",
-            label="Bowtie",
-            category="oll_corners",
-            u_face=with_corners(G, Y, Y, G),
-            top_side=[Y, G, G],
-            right_side=[G, G, G],
-            bottom_side=[G, G, Y],
-            left_side=[G, G, G],
-        ),
+        _derived_oll_corner_case("oll_chameleon", "Chameleon", ALGORITHMS["Chameleon"]),
+        _derived_oll_corner_case("oll_bowtie", "Bowtie", ALGORITHMS["Bowtie"]),
+    ]
+    cases.append(
         CubeDiagram(
             name="oll_solved",
             label="All Corners Yellow",
             category="oll_corners",
             u_face=[Y, Y, Y, Y, Y, Y, Y, Y, Y],
-        ),
-    ]
+        )
+    )
+    return cases
 
 
 def _pll_corner_cases() -> list[CubeDiagram]:
-    """PLL corner permutation cases."""
+    """PLL corner permutation cases — side colors derived from their algorithms."""
     return [
-        # T-perm: adjacent corner swap (headlights on left, swap right-side corners)
-        CubeDiagram(
-            name="pll_tperm",
-            label="T-Perm",
+        # T-perm: adjacent corner swap (headlights left, swap right-side corners)
+        _derived_pll_case(
+            "pll_tperm",
+            "T-Perm",
+            ALGORITHMS["T-Perm"],
             category="pll_corners",
-            u_face=[Y] * 9,
-            top_side=[RED, G, ORANGE],
-            right_side=[GREEN, G, GREEN],
-            bottom_side=[ORANGE, G, RED],
-            left_side=[BLUE, G, BLUE],
             swaps=[("tr", "br")],
             dashed_swaps=[("right", "left")],
         ),
         # Y-perm: diagonal corner swap (UBL↔UFR) + edge swap (UB↔UL)
-        CubeDiagram(
-            name="pll_yperm",
-            label="Y-Perm",
+        _derived_pll_case(
+            "pll_yperm",
+            "Y-Perm",
+            ALGORITHMS["Y-Perm"],
             category="pll_corners",
-            u_face=[Y] * 9,
-            top_side=[GREEN, G, RED],
-            right_side=[GREEN, G, RED],
-            bottom_side=[ORANGE, G, BLUE],
-            left_side=[ORANGE, G, BLUE],
             swaps=[("tl", "br")],
             dashed_swaps=[("top", "left")],
         ),
@@ -211,54 +232,38 @@ def _pll_corner_cases() -> list[CubeDiagram]:
 
 
 def _pll_edge_cases() -> list[CubeDiagram]:
-    """PLL edge permutation cases."""
+    """PLL edge permutation cases — side colors derived from their algorithms."""
     return [
         # Ua: 3-cycle (front→right→left, solved edge at back)
-        CubeDiagram(
-            name="pll_ua",
-            label="Ua Perm",
+        _derived_pll_case(
+            "pll_ua",
+            "Ua Perm",
+            ALGORITHMS["Ua"],
             category="pll_edges",
-            u_face=[Y] * 9,
-            top_side=[RED, RED, RED],
-            right_side=[GREEN, BLUE, GREEN],
-            bottom_side=[ORANGE, GREEN, ORANGE],
-            left_side=[BLUE, ORANGE, BLUE],
             cycles=[["bottom", "right", "left"]],
         ),
         # Ub: 3-cycle (front→left→right, solved edge at back)
-        CubeDiagram(
-            name="pll_ub",
-            label="Ub Perm",
+        _derived_pll_case(
+            "pll_ub",
+            "Ub Perm",
+            ALGORITHMS["Ub"],
             category="pll_edges",
-            u_face=[Y] * 9,
-            top_side=[RED, RED, RED],
-            right_side=[GREEN, ORANGE, GREEN],
-            bottom_side=[ORANGE, BLUE, ORANGE],
-            left_side=[BLUE, GREEN, BLUE],
             cycles=[["bottom", "left", "right"]],
         ),
         # H-perm: opposite edge swap
-        CubeDiagram(
-            name="pll_hperm",
-            label="H-Perm",
+        _derived_pll_case(
+            "pll_hperm",
+            "H-Perm",
+            ALGORITHMS["H-Perm"],
             category="pll_edges",
-            u_face=[Y] * 9,
-            top_side=[RED, ORANGE, RED],
-            right_side=[GREEN, BLUE, GREEN],
-            bottom_side=[ORANGE, RED, ORANGE],
-            left_side=[BLUE, GREEN, BLUE],
             swaps=[("top", "bottom"), ("left", "right")],
         ),
         # Z-perm: adjacent edge swap
-        CubeDiagram(
-            name="pll_zperm",
-            label="Z-Perm",
+        _derived_pll_case(
+            "pll_zperm",
+            "Z-Perm",
+            ALGORITHMS["Z-Perm"],
             category="pll_edges",
-            u_face=[Y] * 9,
-            top_side=[RED, GREEN, RED],
-            right_side=[GREEN, RED, GREEN],
-            bottom_side=[ORANGE, BLUE, ORANGE],
-            left_side=[BLUE, ORANGE, BLUE],
             swaps=[("bottom", "right"), ("left", "top")],
         ),
     ]

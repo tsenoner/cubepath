@@ -262,6 +262,18 @@ def _invert_token(token: str) -> str:
     return token + "'"
 
 
+def invert_algorithm(alg: str) -> str:
+    """Invert an algorithm: reverse the token order and invert each token."""
+    return " ".join(_invert_token(t) for t in reversed(parse_algorithm(alg)))
+
+
+def state_before(alg: str) -> Cube:
+    """The state an algorithm solves: its inverse applied to a solved cube."""
+    c = Cube.solved()
+    c.apply(invert_algorithm(alg))
+    return c
+
+
 def diagram_to_sim(face: str, a: int, b: int) -> tuple[str, int, int]:
     """Convert diagram (face, a, b) to simulator (face, row, col)."""
     if face == "U":

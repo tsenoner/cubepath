@@ -3,25 +3,8 @@
 Algorithms sourced from the cubepath guide's algorithm reference table.
 """
 
+from cubepath.algs import ALGORITHMS
 from cubepath.cube import Cube
-
-ALGORITHMS = {
-    "F-sexy-F'": "F R U R' U' F'",
-    "f-sexy-f'": "f R U R' U' f'",
-    "Sune": "R U R' U R U2 R'",
-    "Anti-Sune": "R U2 R' U' R U' R'",
-    "Pi": "f R U R' U' f' F R U R' U' F'",
-    "Headlights": "R2 D R' U2 R D' R' U2 R'",
-    "Chameleon": "r U R' U' r' F R F'",
-    "Bowtie": "F' r U R' U' r' F R",
-    "Niklas": "R U' L' U R' U' L",
-    "T-Perm": "R U R' U' R' F R2 U' R' U' R U R' F'",
-    "Y-Perm": "F R U' R' U' R U R' F' R U R' U' R' F R F'",
-    "Ua": "R U' R U R U R U' R' U' R2",
-    "Ub": "R2 U R U R' U' R' U' R' U R'",
-    "H-Perm": "M2 U' M2 U2 M2 U' M2",
-    "Z-Perm": "M' U' M2 U' M2 U' M' U2 M2 U",
-}
 
 
 def _apply_on_solved(name: str) -> Cube:
@@ -101,6 +84,10 @@ def test_oll_corner_pi():
 
 def test_oll_corner_headlights():
     _verify_oll_corner_alg("Headlights")
+
+
+def test_oll_corner_double_headlights():
+    _verify_oll_corner_alg("Double Headlights")
 
 
 def test_oll_corner_chameleon():

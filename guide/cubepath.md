@@ -12,7 +12,7 @@ This guide bridges the gap from beginner to CFOP in 3 phases:
 1. **Phase 1** — Beginner method. Solve the cube reliably.
 2. **Phase 1.5** — Speed tricks: white cross on bottom, wide-f Hook, orient corners without flipping.
 3. **Phase 2** — Switch to CFOP last-layer order with 2 new algorithms.
-4. **Phase 3** — Complete 2-Look CFOP with 8 more algorithms.
+4. **Phase 3** — Complete 2-Look CFOP with 10 more algorithms.
 
 **Key idea:** nearly every new algorithm reuses triggers you already know — the [sexy move]{.trig-r}, Sune, and F-sexy-F'.
 
@@ -230,21 +230,22 @@ Corners done. Turn U — find the solved edge, hold it at **back**.
 
 Ua (M-slice version) in Phase 3.
 
-# Phase 3: Complete 2-Look CFOP (+8 Algorithms)
+# Phase 3: Complete 2-Look CFOP (+10 Algorithms)
 
 Every OLL and PLL case now solved in **one algorithm**. This phase introduces M-slice moves and completes each algorithm pair.
 
-## Orient Corners: Anti-Sune + 4 New Cases
+## Orient Corners: Anti-Sune + 5 New Cases
 
-Anti-Sune completes the Sune pair. The remaining 4 cases each have a dedicated algorithm.
+Anti-Sune completes the Sune pair. The remaining 5 cases each have a dedicated algorithm.
 
 ::: algorithm
 | | Case | Algorithm |
 |---|------|-----------|
 | ![](figures/generated/oll/oll_antisune.svg){ width=60px } | **Anti-Sune** — 1 yellow corner, others CCW | `R U2 R' U' R U' R'` |
-| ![](figures/generated/oll/oll_pi.svg){ width=60px } | **Pi** — 0 yellow, Π on front/back | `f` [R U R' U']{.trig-r} `f' F` [R U R' U']{.trig-r} `F'` |
-| ![](figures/generated/oll/oll_headlights.svg){ width=60px } | **Headlights** — 0 yellow, headlights L+R | `R2 D R' U2 R D' R' U2 R'` |
-| ![](figures/generated/oll/oll_chameleon.svg){ width=60px } | **Chameleon** — 2 diagonal yellow | `r U R' U' r'` [F R F']{.trig-b} |
+| ![](figures/generated/oll/oll_pi.svg){ width=60px } | **Pi** — 0 yellow, headlights **left only** | `f` [R U R' U']{.trig-r} `f' F` [R U R' U']{.trig-r} `F'` |
+| ![](figures/generated/oll/oll_headlights.svg){ width=60px } | **Headlights** — 2 yellow at back, headlights facing you | `R2 D R' U2 R D' R' U2 R'` |
+| ![](figures/generated/oll/oll_double_headlights.svg){ width=60px } | **Double Headlights** — 0 yellow, headlights L+R | [R U R' U]{.trig-g} `R U' R' U R U2 R'` |
+| ![](figures/generated/oll/oll_chameleon.svg){ width=60px } | **Chameleon** — 2 adjacent yellow (right) | `r U R' U' r'` [F R F']{.trig-b} |
 | ![](figures/generated/oll/oll_bowtie.svg){ width=60px } | **Bowtie** — 2 diagonal yellow | `F' r U R' U' r'` `F R` |
 :::
 
@@ -265,7 +266,7 @@ Completes the T-Perm pair. Solves diagonal corner swaps directly (no double T-Pe
 ::: algorithm
 | | Case | Algorithm |
 |---|------|-----------|
-| ![](figures/generated/pll/pll_ua.svg){ width=60px } | **Ua** — front edge → right | `R U' R U R U R U' R' U' R2` |
+| ![](figures/generated/pll/pll_ua.svg){ width=60px } | **Ua** — front edge → right | `M2 U M U2 M' U M2` |
 | ![](figures/generated/pll/pll_hperm.svg){ width=60px } | **H-Perm** — opposite swap | `M2 U' M2 U2 M2 U' M2` |
 | ![](figures/generated/pll/pll_zperm.svg){ width=60px } | **Z-Perm** — adjacent swap | `M' U' M2 U' M2 U' M' U2 M2 U` |
 :::
@@ -290,10 +291,11 @@ Completes the T-Perm pair. Solves diagonal corner swaps directly (no double T-Pe
 | 3     | `R U2 R' U' R U' R'`                                                                | Anti-Sune  | OC            |
 | 3     | `f` [`R U R' U'`]{.trig-r} `f' F` [`R U R' U'`]{.trig-r} `F'`                       | Pi         | OC            |
 | 3     | `R2 D R' U2 R D' R' U2 R'`                                                          | Headlights | OC            |
+| 3     | [`R U R' U`]{.trig-g} `R U' R' U R U2 R'`                                           | Double Headlights | OC     |
 | 3     | `r U R' U' r'` [`F R F'`]{.trig-b}                                                  | Chameleon  | OC            |
 | 3     | `F' r U R' U' r' F R`                                                               | Bowtie     | OC            |
 | 3     | `F R U' R' U'` [`R U R' F'`]{.trig-r} [`R U R' U'`]{.trig-r} [`R' F R F'`]{.trig-b} | Y-Perm     | PC            |
-| 3     | `R U' R U R U R U' R' U' R2`                                                        | Ua         | PE            |
+| 3     | `M2 U M U2 M' U M2`                                                                 | Ua         | PE            |
 | 3     | `M2 U' M2 U2 M2 U' M2`                                                              | H-Perm     | PE            |
 | 3     | `M' U' M2 U' M2 U' M' U2 M2 U`                                                      | Z-Perm     | PE            |
 
@@ -304,7 +306,7 @@ Completes the T-Perm pair. Solves diagonal corner swaps directly (no double T-Pe
 | 1: Beginner       | ~6  | ~6    | OE → PE → PC → OC |
 | 1.5: Speed Tricks | +0  | ~6    | OE → PE → PC → OC |
 | 2: CFOP Switch    | +2  | ~8    | OE → OC → PC → PE |
-| 3: Full 2-Look    | +8  | ~16   | OE → OC → PC → PE |
+| 3: Full 2-Look    | +10 | ~18   | OE → OC → PC → PE |
 
 # What's Next
 
