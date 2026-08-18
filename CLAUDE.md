@@ -8,19 +8,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Full build: generate diagrams + PDF
 bash scripts/build.sh
 
-# Generate SVG diagrams only
-uv run cubepath-diagrams
-
-# Run tests
-uv run pytest tests/
-
-# Run a single test
-uv run pytest tests/test_diagrams.py::test_all_cases_count
-
-# Lint
+# Python tooling lives in tools/diagrams/ — run from there:
+cd tools/diagrams
+uv run cubepath-diagrams   # generate SVG diagrams
+uv run pytest tests/       # run tests
+uv run pytest tests/test_diagrams.py::test_all_cases_count   # single test
 uv run ruff check src/ tests/
-
-# Format
 uv run ruff format src/ tests/
 ```
 
@@ -32,15 +25,15 @@ This is a Rubik's Cube guide with a Python SVG diagram pipeline and Pandoc-based
 
 ### Cube Simulator
 
-`src/cubepath/cube.py` is a minimal Rubik's cube simulator (~220 lines). Used by tests to verify diagram sticker colors and algorithm correctness. State: 6 faces × 9 stickers (row-major). Table-driven moves (R/L/U/D/F/B/M/S/E + wide/rotations). Algorithm parser handles `R U R' U'`, `R2`, lowercase wide (`r`, `f`), and `(R U)×2` repeats. Coordinate mapping `diagram_to_sim(face, a, b)` bridges diagram coords to simulator state.
+`tools/diagrams/src/cubepath/cube.py` is a minimal Rubik's cube simulator (~220 lines). Used by tests to verify diagram sticker colors and algorithm correctness. State: 6 faces × 9 stickers (row-major). Table-driven moves (R/L/U/D/F/B/M/S/E + wide/rotations). Algorithm parser handles `R U R' U'`, `R2`, lowercase wide (`r`, `f`), and `(R U)×2` repeats. Coordinate mapping `diagram_to_sim(face, a, b)` bridges diagram coords to simulator state.
 
 ### Algorithm Data
 
-`src/cubepath/algs.py` is the single source of truth for all algorithms. Diagrams derive their sticker states from these strings via the simulator; `tests/test_derivation.py` asserts the guide's tables match, arrows match the real piece permutation, and the 7 corner-orientation algs cover all 7 OCLL classes. Never hand-define sticker layouts — derive them.
+`tools/diagrams/src/cubepath/algs.py` is the single source of truth for all algorithms. Diagrams derive their sticker states from these strings via the simulator; `tests/test_derivation.py` asserts the guide's tables match, arrows match the real piece permutation, and the 7 corner-orientation algs cover all 7 OCLL classes. Never hand-define sticker layouts — derive them.
 
 ### Diagram Pipeline
 
-`src/cubepath/diagrams.py` defines all 17 cube diagrams as `CubeDiagram` dataclasses rendered to SVG using `svgwrite`. Case sticker data is **derived from algorithms** via `_derived_cross_case` / `_derived_oll_corner_case` / `_derived_pll_case` (OLL: yellow/grey masks; PLL: true colors). The entry point `cubepath-diagrams` writes to `guide/figures/generated/`.
+`tools/diagrams/src/cubepath/diagrams.py` defines all 17 cube diagrams as `CubeDiagram` dataclasses rendered to SVG using `svgwrite`. Case sticker data is **derived from algorithms** via `_derived_cross_case` / `_derived_oll_corner_case` / `_derived_pll_case` (OLL: yellow/grey masks; PLL: true colors). The entry point `cubepath-diagrams` writes to `guide/figures/generated/`.
 
 Four case groups: `_oll_cross_cases()` (3), `_oll_corner_cases()` (8), `_pll_corner_cases()` (2), `_pll_edge_cases()` (4). OLL cases have no arrows; PLL cases use `swaps` (bidirectional) and `cycles` (directional) arrow fields — hand-declared for layout but permutation-verified by tests.
 

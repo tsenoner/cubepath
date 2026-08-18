@@ -20,7 +20,7 @@ from cubepath.diagrams import (
     _u_layer_views,
 )
 
-GUIDE = Path(__file__).parent.parent / "guide" / "cubepath.md"
+GUIDE = Path(__file__).resolve().parents[3] / "guide" / "cubepath.md"
 
 # ── Frame anchors ────────────────────────────────────────────────────
 # Freeze the plan-view conventions (U row 0 = back; side strips as viewed

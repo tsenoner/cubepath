@@ -1404,7 +1404,8 @@ def render_overview(output_dir: Path) -> Path:
 
 
 def main() -> None:
-    output_dir = Path(__file__).resolve().parents[2] / "guide" / "figures" / "generated"
+    # tools/diagrams/src/cubepath/diagrams.py -> repo root is 4 levels up
+    output_dir = Path(__file__).resolve().parents[4] / "guide" / "figures" / "generated"
     output_dir.mkdir(parents=True, exist_ok=True)
     total = 0
 

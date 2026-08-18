@@ -7,7 +7,7 @@ GUIDE_DIR="$PROJECT_DIR/guide"
 
 # Generate SVG diagrams
 echo "Generating diagrams..."
-uv run cubepath-diagrams
+uv run --project "$PROJECT_DIR/tools/diagrams" cubepath-diagrams
 
 # Ensure build directory exists
 mkdir -p "$GUIDE_DIR/build"

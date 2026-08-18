@@ -25,3 +25,8 @@ guide/build/
 
 # other guids
 docs/other_guides/
+
+# Node / app
+node_modules/
+app/dist/
+app/.astro/
