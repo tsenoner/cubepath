@@ -318,3 +318,11 @@ Positioning: everything CuberPal charges for, minus the AI, free, offline, on ev
 | 16 | **CuberPal competitive gap may narrow** (Android in dev; fast iteration) — web still unannounced | Low / Low | Ship the free web/PWA wedge fast; 4x4/5x5 curriculum is uncontested |
 | 17 | **iOS icon precedence UNVERIFIED on iOS 26** (apple-touch-icon vs manifest icons, last verified iOS 15.4–17) | Low / Low | Ship apple-touch-icon identical to manifest icon art so precedence is moot |
 | 18 | **Node floor**: Astro needs >=22.12, cubing >=22.3 | Low / Med | `engines.node: ">=22.12.0"`, pin Node 22 in Vercel + CI |
+---
+
+## Post-verification corrections (adversarial fact-check pass)
+
+1. `cubing@0.63.3` exports **eleven** subpaths (adds `./stream`, `./protocol`, `./bluetooth`, `./puzzle-geometry` to the seven listed). No root export — confirmed.
+2. `@vite-pwa/astro@1.2.0` peer range `^1.6.0 || ^2 || ^3 || ^4 || ^5` **registry-verified** — the overrides workaround is required for Astro 7 (issue #72 was filed for Astro 6; the range equally excludes 7).
+3. Firefox on Android DOES offer menu-based install ("Add app to Home Screen") despite no `beforeinstallprompt`; only desktop Firefox lacks install UI.
+4. Workbox's 2 MiB precache limit warns (not silent); vite-plugin-pwa ≥0.20.2 turns the warning into a build error — the 8 MiB override remains required either way.
