@@ -1,0 +1,65 @@
+{
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 1280,
+      "h": 790
+    },
+    {
+      "file": "Lesson.dc.html",
+      "x": 1360,
+      "y": 0,
+      "w": 1280,
+      "h": 1010
+    },
+    {
+      "file": "Case.dc.html",
+      "x": 2720,
+      "y": 0,
+      "w": 1280,
+      "h": 760
+    },
+    {
+      "file": "Trainer.dc.html",
+      "x": 0,
+      "y": 890,
+      "w": 1280,
+      "h": 800
+    },
+    {
+      "file": "Dark.dc.html",
+      "x": 1360,
+      "y": 1110,
+      "w": 1280,
+      "h": 1010
+    },
+    {
+      "file": "Mobile.dc.html",
+      "x": 2720,
+      "y": 860,
+      "w": 390,
+      "h": 844
+    },
+    {
+      "file": "Tokens.dc.html",
+      "x": 0,
+      "y": 1790,
+      "w": 1280,
+      "h": 1180
+    }
+  ],
+  "annotations": [
+    {
+      "id": "direction-note",
+      "x": 0,
+      "y": -170,
+      "w": 460,
+      "text": "Cubepath UI system \u2014 evolves the PDF guide's visual language: print-quality type (Newsreader + IBM Plex), the guide's callout tints, trigger-colored algorithms, and the real generated case diagrams. Light-first with a dark counterpart. All copy is real course content."
+    }
+  ],
+  "launch": {
+    "view": "canvas"
+  }
+}

@@ -27,3 +27,21 @@ courses · PDF stays first-class.
   the H addition (9 new algs were listed).
 - `src/cubepath/algs.py` is the single source of truth for algorithms; the
   guide's tables are tested against it (`test_guide_tables_match_canonical_algorithms`).
+
+## Design phase
+
+- **Static hi-fi mockups** (not clickable prototypes) on the design canvas —
+  the product itself is built in code; the canvas exists to react to visual
+  direction. Published as "Cubepath UI System"
+  (https://claude.ai/code/artifact/a42873c4-ee91-4882-90e5-dbffac7b4fb8).
+- **Type**: Newsreader (headings) + IBM Plex Sans (body) + IBM Plex Mono
+  (algorithms), all Google Fonts with metric-close fallbacks.
+- **Tokens**: warm paper #FCFBF8 / ink #1C1917, accent #1565C0 (the guide's
+  algorithm-callout blue), ok #2E7D32, warn #E65100; cube colors and trigger
+  colors (trig-r/g/b) carried over verbatim from the pipeline; dark theme
+  counterparts defined in design/build_canvas.py.
+- **Signature elements**: trigger-colored monospace algorithms, real derived
+  case diagrams inline, guide callout system on the web, case-row anatomy
+  (diagram / name+recognition / alg / status / play).
+- design/ holds the generator (build_canvas.py) + artboards; re-run and
+  re-seed to update the canvas.

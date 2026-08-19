@@ -1,0 +1,257 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap">
+  <style>
+  body { margin: 0; background: #FCFBF8; color: #1C1917;
+    font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 15px;
+    line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  a { color: #1565C0; text-decoration: none; }
+  a:hover { color: #1565C0; text-decoration: underline; }
+  h1, h2, h3 { font-family: 'Newsreader', Georgia, serif; margin: 0; font-weight: 600; }
+  h1 { font-size: 34px; line-height: 1.15; letter-spacing: -0.01em; }
+  h2 { font-size: 23px; line-height: 1.2; }
+  h3 { font-size: 17px; line-height: 1.3; }
+  .mono { font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-weight: 500; }
+  .alg { font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace; font-weight: 600;
+    font-size: 14.5px; letter-spacing: 0.01em; white-space: nowrap; }
+  .tr { color: #D32F2F; } .tg { color: #2E7D32; } .tb { color: #1565C0; }
+  .soft { color: #57534E; } .faint { color: #8A857D; }
+  .small { font-size: 13px; } .tiny { font-size: 12px; }
+  .card { background: #FFFFFF; border: 1px solid #E7E4DE; border-radius: 10px; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; border-radius: 8px;
+    font-weight: 600; font-size: 14px; padding: 10px 18px; cursor: pointer;
+    border: 1px solid transparent; }
+  .btn-primary { background: #1565C0; color: #fff; }
+  .btn-secondary { background: transparent; color: #1565C0;
+    border-color: #1565C0; }
+  .btn-ghost { background: transparent; color: #57534E; border-color: #E7E4DE; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px;
+    font-size: 12.5px; font-weight: 600; padding: 3px 10px; }
+  .navlink { font-weight: 600; font-size: 14px; color: #57534E; }
+  .navlink-active { color: #1C1917; }
+  .diagram svg { display: block; }
+  .wrapalg .alg { white-space: normal; line-height: 1.6; }
+</style>
+</helmet>
+<div style="width: 1280px; min-height: 100%; background: #FCFBF8">
+
+<div style="padding: 32px 36px; display: flex; flex-direction: column; gap: 26px">
+  <div style="display: flex; align-items: center; gap: 12px">
+    <svg width="24" height="24" viewBox="0 0 24 24"><rect x="0.75" y="0.75" width="6.5" height="6.5" rx="1.5" fill="#FFD500" stroke="#333333" stroke-width="0.9"/><rect x="8.75" y="0.75" width="6.5" height="6.5" rx="1.5" fill="#FFD500" stroke="#333333" stroke-width="0.9"/><rect x="16.75" y="0.75" width="6.5" height="6.5" rx="1.5" fill="#FFD500" stroke="#333333" stroke-width="0.9"/><rect x="0.75" y="8.75" width="6.5" height="6.5" rx="1.5" fill="#FFD500" stroke="#333333" stroke-width="0.9"/><rect x="8.75" y="8.75" width="6.5" height="6.5" rx="1.5" fill="#FFD500" stroke="#333333" stroke-width="0.9"/><rect x="16.75" y="8.75" width="6.5" height="6.5" rx="1.5" fill="#FFD500" stroke="#333333" stroke-width="0.9"/><rect x="0.75" y="16.75" width="6.5" height="6.5" rx="1.5" fill="#FFD500" stroke="#333333" stroke-width="0.9"/><rect x="8.75" y="16.75" width="6.5" height="6.5" rx="1.5" fill="#FFD500" stroke="#333333" stroke-width="0.9"/><rect x="16.75" y="16.75" width="6.5" height="6.5" rx="1.5" fill="#FFD500" stroke="#333333" stroke-width="0.9"/></svg>
+    <h2>Design tokens &amp; components</h2>
+    <span class="tiny faint">carried over from the PDF guide's visual language</span>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 10px">
+    <h3>Type — Newsreader / IBM Plex Sans / IBM Plex Mono</h3>
+    <h1>Orient the last layer</h1>
+    <h2>Phase 3 — Complete 2-Look CFOP</h2>
+    <span>Body — Hold the cube with white on bottom, yellow on top throughout.
+    Nearly every algorithm reuses triggers you already know.</span>
+    <span class="small soft">Small — recognition text and captions.</span>
+    <div><span class="alg"><span class="tr">R U R' U'</span> R' F R2 U' R' U' R U R' F'</span></div>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 12px">
+    <h3>Color</h3>
+    <div style="display: flex; gap: 14px; flex-wrap: wrap">
+      <div style="display: flex; flex-direction: column; gap: 6px; width: 108px">
+        <div style="height: 52px; border-radius: 8px; background: #FCFBF8;
+          border: 1px solid #E7E4DE"></div>
+        <span class="tiny" style="font-weight: 600">paper</span>
+        <span class="tiny mono faint">#FCFBF8</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px; width: 108px">
+        <div style="height: 52px; border-radius: 8px; background: #FFFFFF;
+          border: 1px solid #E7E4DE"></div>
+        <span class="tiny" style="font-weight: 600">card</span>
+        <span class="tiny mono faint">#FFFFFF</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px; width: 108px">
+        <div style="height: 52px; border-radius: 8px; background: #1C1917;
+          "></div>
+        <span class="tiny" style="font-weight: 600">ink</span>
+        <span class="tiny mono faint">#1C1917</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px; width: 108px">
+        <div style="height: 52px; border-radius: 8px; background: #57534E;
+          "></div>
+        <span class="tiny" style="font-weight: 600">soft</span>
+        <span class="tiny mono faint">#57534E</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px; width: 108px">
+        <div style="height: 52px; border-radius: 8px; background: #E7E4DE;
+          border: 1px solid #E7E4DE"></div>
+        <span class="tiny" style="font-weight: 600">line</span>
+        <span class="tiny mono faint">#E7E4DE</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px; width: 108px">
+        <div style="height: 52px; border-radius: 8px; background: #1565C0;
+          "></div>
+        <span class="tiny" style="font-weight: 600">accent</span>
+        <span class="tiny mono faint">#1565C0</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px; width: 108px">
+        <div style="height: 52px; border-radius: 8px; background: #2E7D32;
+          "></div>
+        <span class="tiny" style="font-weight: 600">ok</span>
+        <span class="tiny mono faint">#2E7D32</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px; width: 108px">
+        <div style="height: 52px; border-radius: 8px; background: #E65100;
+          "></div>
+        <span class="tiny" style="font-weight: 600">warn</span>
+        <span class="tiny mono faint">#E65100</span>
+      </div></div>
+    <div style="display: flex; gap: 14px; align-items: flex-end">
+      <div style="display: flex; flex-direction: column; gap: 6px; width: 108px">
+        <div style="height: 52px; border-radius: 8px; background: #FFD500;
+          "></div>
+        <span class="tiny" style="font-weight: 600">yellow</span>
+        <span class="tiny mono faint">#FFD500</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px; width: 108px">
+        <div style="height: 52px; border-radius: 8px; background: #E00000;
+          "></div>
+        <span class="tiny" style="font-weight: 600">red</span>
+        <span class="tiny mono faint">#E00000</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px; width: 108px">
+        <div style="height: 52px; border-radius: 8px; background: #009E60;
+          "></div>
+        <span class="tiny" style="font-weight: 600">green</span>
+        <span class="tiny mono faint">#009E60</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px; width: 108px">
+        <div style="height: 52px; border-radius: 8px; background: #0051BA;
+          "></div>
+        <span class="tiny" style="font-weight: 600">blue</span>
+        <span class="tiny mono faint">#0051BA</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px; width: 108px">
+        <div style="height: 52px; border-radius: 8px; background: #FF8C00;
+          "></div>
+        <span class="tiny" style="font-weight: 600">orange</span>
+        <span class="tiny mono faint">#FF8C00</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px; width: 108px">
+        <div style="height: 52px; border-radius: 8px; background: #C0C0C0;
+          "></div>
+        <span class="tiny" style="font-weight: 600">grey</span>
+        <span class="tiny mono faint">#C0C0C0</span>
+      </div>
+      <div style="width: 24px"></div>
+      <div style="display: flex; flex-direction: column; gap: 6px; width: 108px">
+        <div style="height: 52px; border-radius: 8px; background: #D32F2F;
+          "></div>
+        <span class="tiny" style="font-weight: 600">trig-r</span>
+        <span class="tiny mono faint">#D32F2F</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px; width: 108px">
+        <div style="height: 52px; border-radius: 8px; background: #2E7D32;
+          "></div>
+        <span class="tiny" style="font-weight: 600">trig-g</span>
+        <span class="tiny mono faint">#2E7D32</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px; width: 108px">
+        <div style="height: 52px; border-radius: 8px; background: #1565C0;
+          "></div>
+        <span class="tiny" style="font-weight: 600">trig-b</span>
+        <span class="tiny mono faint">#1565C0</span>
+      </div></div>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 12px">
+    <h3>Buttons &amp; chips</h3>
+    <div style="display: flex; gap: 12px; align-items: center">
+      <span class="btn btn-primary"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 5l10 7-10 7z" fill="#fff" stroke="none"/></svg> Primary</span>
+      <span class="btn btn-secondary">Secondary</span>
+      <span class="btn btn-ghost">Ghost</span>
+      <span class="chip" style="background: #E8F5E9; color: #2E7D32"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg> Learned</span>
+      <span class="chip" style="background: #E8F4FD; color: #1565C0">Continue</span>
+      <span class="chip" style="border: 1px solid #E7E4DE; color: #8A857D">Not started</span>
+    </div>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 12px">
+    <h3>Callouts</h3>
+    <div style="display: flex; gap: 12px">
+      <div style="flex-grow: 1; padding: 12px 16px; background: #e8f4fd;
+          border-left: 4px solid #2196F3; border-radius: 6px">
+        <span style="font-weight: 600; font-size: 12px; color: #1565C0">ALGORITHM</span>
+        <div class="small" style="color: #1C1917">Case tables and players live here.</div>
+      </div>
+      <div style="flex-grow: 1; padding: 12px 16px; background: #e8f5e9;
+          border-left: 4px solid #4CAF50; border-radius: 6px">
+        <span style="font-weight: 600; font-size: 12px; color: #2E7D32">TIP</span>
+        <div class="small" style="color: #1C1917">Optional speedups and shortcuts.</div>
+      </div>
+      <div style="flex-grow: 1; padding: 12px 16px; background: #fff3e0;
+          border-left: 4px solid #FF9800; border-radius: 6px">
+        <span style="font-weight: 600; font-size: 12px; color: #E65100">CAUTION</span>
+        <div class="small" style="color: #1C1917">Mistakes that break the solve.</div>
+      </div>
+      <div style="flex-grow: 1; padding: 12px 16px; background: #f5f5f5;
+          border-left: 4px solid #9E9E9E; border-radius: 6px">
+        <span style="font-weight: 600; font-size: 12px; color: #616161">INFO</span>
+        <div class="small" style="color: #1C1917">Background and context.</div>
+      </div></div>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 12px">
+    <h3>Case row anatomy</h3>
+    <div class="card" style="overflow: hidden; max-width: 900px">
+      
+  <div style="display: flex; align-items: center; gap: 18px; padding: 14px 18px;
+      border-top: 1px solid #E7E4DE">
+    <span class="diagram"><svg style="width:62px;height:62px" xmlns="http://www.w3.org/2000/svg" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xlink="http://www.w3.org/1999/xlink" baseProfile="full" height="192px" version="1.1" viewBox="0 0 192 192" width="192px">
+  <defs/>
+  <rect fill="#FFFFFF" height="192" rx="8" ry="8" width="192" x="0" y="0"/>
+  <rect fill="#C0C0C0" height="40" rx="4" ry="4" stroke="#333333" stroke-width="1.5" width="40" x="34" y="34"/>
+  <rect fill="#FFD500" height="40" rx="4" ry="4" stroke="#333333" stroke-width="1.5" width="40" x="76" y="34"/>
+  <rect fill="#C0C0C0" height="40" rx="4" ry="4" stroke="#333333" stroke-width="1.5" width="40" x="118" y="34"/>
+  <rect fill="#FFD500" height="40" rx="4" ry="4" stroke="#333333" stroke-width="1.5" width="40" x="34" y="76"/>
+  <rect fill="#FFD500" height="40" rx="4" ry="4" stroke="#333333" stroke-width="1.5" width="40" x="76" y="76"/>
+  <rect fill="#FFD500" height="40" rx="4" ry="4" stroke="#333333" stroke-width="1.5" width="40" x="118" y="76"/>
+  <rect fill="#C0C0C0" height="40" rx="4" ry="4" stroke="#333333" stroke-width="1.5" width="40" x="34" y="118"/>
+  <rect fill="#FFD500" height="40" rx="4" ry="4" stroke="#333333" stroke-width="1.5" width="40" x="76" y="118"/>
+  <rect fill="#C0C0C0" height="40" rx="4" ry="4" stroke="#333333" stroke-width="1.5" width="40" x="118" y="118"/>
+  <rect fill="#C0C0C0" height="12" rx="2" ry="2" stroke="#333333" stroke-width="1" width="40" x="34" y="20"/>
+  <rect fill="#C0C0C0" height="12" rx="2" ry="2" stroke="#333333" stroke-width="1" width="40" x="76" y="20"/>
+  <rect fill="#C0C0C0" height="12" rx="2" ry="2" stroke="#333333" stroke-width="1" width="40" x="118" y="20"/>
+  <rect fill="#C0C0C0" height="12" rx="2" ry="2" stroke="#333333" stroke-width="1" width="40" x="34" y="160"/>
+  <rect fill="#C0C0C0" height="12" rx="2" ry="2" stroke="#333333" stroke-width="1" width="40" x="76" y="160"/>
+  <rect fill="#C0C0C0" height="12" rx="2" ry="2" stroke="#333333" stroke-width="1" width="40" x="118" y="160"/>
+  <rect fill="#FFD500" height="40" rx="2" ry="2" stroke="#333333" stroke-width="1" width="12" x="20" y="34"/>
+  <rect fill="#C0C0C0" height="40" rx="2" ry="2" stroke="#333333" stroke-width="1" width="12" x="20" y="76"/>
+  <rect fill="#FFD500" height="40" rx="2" ry="2" stroke="#333333" stroke-width="1" width="12" x="20" y="118"/>
+  <rect fill="#FFD500" height="40" rx="2" ry="2" stroke="#333333" stroke-width="1" width="12" x="160" y="34"/>
+  <rect fill="#C0C0C0" height="40" rx="2" ry="2" stroke="#333333" stroke-width="1" width="12" x="160" y="76"/>
+  <rect fill="#FFD500" height="40" rx="2" ry="2" stroke="#333333" stroke-width="1" width="12" x="160" y="118"/>
+</svg>
+</span>
+    <div style="display: flex; flex-direction: column; gap: 3px; width: 240px">
+      <span style="font-weight: 600; font-size: 15.5px">Double Headlights</span>
+      <span class="small soft">0 yellow — headlights left + right</span>
+    </div>
+    <div style="flex-grow: 1"><span class="alg"><span class="tg">R U R' U</span> R U' R' U R U2 R'</span></div>
+    <span class="chip" style="background: #FCFBF8; color: #8A857D; border: 1px solid #E7E4DE">Learning</span>
+    <span style="display: inline-flex; width: 38px; height: 38px; border-radius: 8px;
+      background: #E8F4FD; color: #1565C0; align-items: center;
+      justify-content: center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1565C0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 5l10 7-10 7z" fill="#1565C0" stroke="none"/></svg></span>
+  </div>
+    </div>
+  </div>
+</div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,645 @@
+[
+  {
+    "key": "cubing-js",
+    "keyFacts": [
+      {
+        "claim": "Latest cubing version on npm is 0.63.3, published 2026-02-26; dist-tag latest; official template pins \"cubing\": \"^0.63.3\"",
+        "source": "https://registry.npmjs.org/cubing (dist-tags queried directly) and https://github.com/cubing/create-cubing-app/blob/main/app-template/package.json",
+        "confidence": "verified"
+      },
+      {
+        "claim": "License is dual: MPL-2.0 OR GPL-3.0-or-later (SPDX expression in package.json of the published tarball)",
+        "source": "https://registry.npmjs.org/cubing/0.63.3",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Package is ESM-only with subpath-only exports (cubing/alg, cubing/twisty, cubing/kpuzzle, cubing/puzzles, cubing/scramble, cubing/search, \u2026); no root \"cubing\" import, no CJS; engines node >=22.3.0",
+        "source": "package.json exports field of cubing-0.63.3.tgz (inspected locally at /tmp/cubing-pkg/package/package.json)",
+        "confidence": "verified"
+      },
+      {
+        "claim": "experimental-setup-anchor=\"end\" makes the player start at inverse(alg) applied to the setup state and play forward to solved: start state = setupAlg \u2218 inverse(algTransformation); default timestamp with anchor \"end\" shows the start (the case)",
+        "source": "AnchorTransformationProp code in the shipped dist/lib/cubing/twisty/index.js of cubing@0.63.3, cross-checked with https://js.cubing.net/cubing/twisty/",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Full experimental-stickering list includes PLL, OLL, F2L, Cross, Daisy, LL, ELL, EPLL, COLL, OCLL, CLL, CPLL, ZBLL, EOLL, LS/ELS/CLS/ZBLS/VLS/WVLS/LSOLL/LSOCLL, EO/EOline/EOcross, FirstBlock/SecondBlock/CMLL/L10P/L6E/L6EO, 2x2x2/2x2x3, EODF, G1, OBL/PBL (2x2x2), and big-cube masks L2C (4x4x4/5x5x5/6x6x6) and opposite-centers (4x4x4); 4x4x4/5x5x5 also accept all 3x3x3 masks as fallbacks",
+        "source": "https://github.com/cubing/cubing.js/blob/main/src/cubing/puzzles/stickerings/puzzle-stickerings.ts plus executed puzzles[\"4x4x4\"].stickerings() locally",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Attribute value sets: background = checkered|checkered-transparent|none|auto; control-panel = bottom-row|none|auto; back-view = none|side-by-side|top-right|auto; hint-facelets = floating|none|auto; visualization = 3D|2D|experimental-2D-LL|experimental-2D-LL-face|PG3D|auto; color-scheme = light|dark|auto; camera defaults for cubes are latitude 35, longitude 30, distance 6",
+        "source": "Published .d.ts (PuzzleLoader-*.d.ts) and dist twisty/index.js of cubing@0.63.3",
+        "confidence": "verified"
+      },
+      {
+        "claim": "kpuzzle solved-check API: (await cube3x3x3.kpuzzle()).defaultPattern().applyAlg(setup).applyAlg(solution).experimentalIsSolved({ignorePuzzleOrientation: true, ignoreCenterOrientation: true}) \u2014 both options required; transformation route: kpuzzle.algToTransformation(a).isIdentityTransformation(); a real Vitest suite using this passed (Vitest 4.1.11, Node 26)",
+        "source": "Executed at /tmp/cubing-smoke/test/algs.test.ts against cubing@0.63.3",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Alg parsing is puzzle-agnostic: new Alg(\"R Q\") parses without error; unknown moves throw only at kpuzzle.algToTransformation (\"Invalid move for KPuzzle (3x3x3): Q\"); syntax errors like \"R ++\" throw at parse (\"Unexpected character\")",
+        "source": "Executed locally against cubing@0.63.3 (/tmp/cubing-smoke/check-alg.mjs)",
+        "confidence": "verified"
+      },
+      {
+        "claim": "randomScrambleForEvent works for \"333\" (random-state, ~80ms), \"444\" (random-state, ~1s first call), \"555\" (random-moves via inlined twsearch wasm, ~30ms) \u2014 measured in Node 26; 555/666/777 are random-moves per the shipped wcaEvents data",
+        "source": "Executed /tmp/cubing-smoke/scramble-test.mjs; wcaEvents data in shipped chunk of cubing@0.63.3",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Scramble generation is fully offline once bundled: worker entry, per-event solver chunks, and the base64-inlined wasm chunk are all same-origin emitted assets; worker instantiation falls back import.meta.resolve \u2192 esbuild-workaround trampoline \u2192 new URL(\u2026, import.meta.url), and node:worker_threads under Node",
+        "source": "Instantiation code read from shipped chunks of cubing@0.63.3; Vite 8 build output inspected at /tmp/cubing-vite/dist",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Current Vite (8.2.1, Rolldown) builds a page importing cubing/twisty + cubing/scramble with DEFAULT config: search-worker-entry-[hash].js is emitted and the WORKER_ENTRY_FILE_URL dynamic import is rewritten correctly; dev server serves the worker entry with HTTP 200",
+        "source": "Executed vite build/dev locally at /tmp/cubing-vite with cubing@0.63.3",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Official bundler-compatibility tracking issue is cubing/cubing.js#323 (linked from js.cubing.net): Vite \u22655.1.6 compatible, worker:{format:\"es\"} recommended, esbuild is the recommended bundler, Next.js dev may hang; issues #309 (Next.js/webpack) and #327 (SvelteKit dev optimizer can't serve search-worker-entry.js) were closed as third-party-bundler issues \u2014 #327's fix is optimizeDeps.exclude:[\"cubing\"]",
+        "source": "https://github.com/cubing/cubing.js/issues/323, https://github.com/cubing/cubing.js/issues/309, https://github.com/cubing/cubing.js/issues/327, https://js.cubing.net/cubing/",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Bundle sizes (esbuild --minify, measured): player critical path \u2248 28 KB gz entry + 136 KB gz lazy 3D/three.js chunk + ~25 KB gz shared/puzzle chunks \u2248 190 KB gz first render; scramble adds \u2248 23 KB gz for 333 and a lazy 215 KB gz wasm chunk for 444/555-class events; totals \u2248 237 KB gz (player) / 338 KB gz (scramble, all chunks)",
+        "source": "Measured locally: esbuild bundling of cubing@0.63.3 entries, gzip/brotli byte counts (/tmp/cubing-smoke/dist-player, dist-scramble)",
+        "confidence": "verified"
+      },
+      {
+        "claim": "cubing/twisty imports cleanly under plain Node (HTMLElement is shimmed), so Astro SSG builds won't crash if the import reaches the server module graph; players must still be constructed client-side",
+        "source": "Executed node import('cubing/twisty') locally against cubing@0.63.3",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Big-cube (4x4x4/5x5x5) rendering uses the generic PG3D/puzzle-geometry path rather than the optimized 3x3x3 Cube3D renderer, implying higher per-frame cost; hint-facelets=\"none\" reduces sticker count by half",
+        "source": "defaultCameraOrbitCoordinates/Cube3D-vs-PG3D strategy split in shipped twisty code; perf implication inferred, not benchmarked",
+        "confidence": "likely"
+      },
+      {
+        "claim": "In-browser runtime scramble generation after a Vite/Astro production build works (build output is correct and #323 declares Vite \u22655.1.6 compatible), but was not exercised in a real browser in this research",
+        "source": "https://github.com/cubing/cubing.js/issues/323 + local build-output inspection only",
+        "confidence": "likely"
+      }
+    ],
+    "risks": [
+      "End-to-end browser runtime of scramble workers after an Astro/Vite production build was not verified in a real browser here (build output and dev server verified, plus maintainer's #323 says Vite >=5.1.6 works). Smoke-test randomScrambleForEvent in a deployed preview during M0/M1 before building features on it.",
+      "Pre-1.0 API surface: every attribute prefixed experimental- (setup-anchor, stickering, setup-alg) is explicitly subject to change between 0.x versions. Pin cubing exactly (0.63.3) and treat upgrades as a deliberate task with visual regression checks.",
+      "engines requires Node >=22.3.0 \u2014 CI and Vercel build must use Node 22.3+ (npm may refuse install or warn otherwise). Vercel's current default Node satisfies this, but pin the Node version in project settings/package.json engines.",
+      "555 scrambles are random-moves, not random-state (only 333/222/444 are random-state in 0.63.3). Fine for a teaching app; do not advertise WCA-regulation 5x5x5 scrambles.",
+      "The lazy wasm chunk is ~704 KB raw (215 KB gz) and the 3D chunk ~516 KB raw (136 KB gz): keep them lazy (they already are), and ensure the PWA precache includes all hashed lazy chunks or offline scrambles/players will break on first offline use.",
+      "In plain Node scripts the search worker keeps the process alive (needs process.exit); if you ever add a Node prebuild step that generates scrambles, remember this. Vitest is unaffected (verified).",
+      "Astro SSR/hydration nuance: cubing/twisty imports safely in Node, but constructing TwistyPlayer during SSR will not render meaningful HTML; keep players in client-side <script> tags or client:only islands.",
+      "three.js (^0.170.0) is a transitive dependency; if Cubepath later imports three directly for custom visuals, align versions to avoid double-bundling.",
+      "MPL-2.0 obligations: keep cubing.js license notices in distributed bundles and publish any modifications you make to cubing.js's own files; no obligation for app code."
+    ]
+  },
+  {
+    "key": "astro-pwa",
+    "keyFacts": [
+      {
+        "claim": "Current Astro on npm is 7.2.3 (latest tag); Node >=22.12.0 required; ships Vite ^8.0.13 (Rolldown)",
+        "source": "npm registry: npm view astro version dist-tags engines dependencies.vite (2026-08-19)",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Astro 7 replaces the Go compiler with a Rust compiler (unclosed tags now error, no HTML auto-correction) and replaces remark/rehype with the Rust 'S\u00e4tteri' Markdown/MDX processor by default; unified pipeline available via @astrojs/markdown-remark's unified() processor; recma plugins unsupported by default",
+        "source": "https://astro.build/blog/astro-7/ and https://docs.astro.build/en/guides/upgrade-to/v7/",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Astro 6 removed legacy content collections: Content Layer API (glob() loader, src/content.config.ts, render(entry) from astro:content) is mandatory; Zod 4 via astro/zod",
+        "source": "https://docs.astro.build/en/guides/upgrade-to/v6/ and https://docs.astro.build/en/guides/content-collections/",
+        "confidence": "verified"
+      },
+      {
+        "claim": "@astrojs/mdx is at 7.0.6 with peerDependencies astro ^7.0.0 and dependency @astrojs/markdown-satteri ^0.3.1",
+        "source": "npm registry: npm view @astrojs/mdx@7.0.6 peerDependencies (2026-08-19)",
+        "confidence": "verified"
+      },
+      {
+        "claim": "client: directives can only be used on UI framework components imported into .astro files; custom elements like <twisty-player> need no directive \u2014 a processed <script> module (bundled, deduped, type=module) defines them",
+        "source": "https://docs.astro.build/en/reference/directives-reference/ and https://docs.astro.build/en/guides/client-side-scripts/",
+        "confidence": "verified"
+      },
+      {
+        "claim": "@vite-pwa/astro is at 1.2.0 and its peer range is astro ^1.6.0||^2||^3||^4||^5 \u2014 installing under Astro 6/7 fails peer resolution; issues #72 and #74 are open and PR #73 (Astro 6 support) was closed unmerged",
+        "source": "npm registry + https://github.com/vite-pwa/astro/issues/72 and /issues/74 (checked via GitHub API 2026-08-19)",
+        "confidence": "verified"
+      },
+      {
+        "claim": "npm overrides workaround ({\"overrides\":{\"@vite-pwa/astro\":{\"astro\":\"...^6.0.0 || ^7.0.0\"}}}) is community-tested with Astro 7.0.4 + @vite-pwa/astro 1.2.0",
+        "source": "https://github.com/vite-pwa/astro/issues/72 (comment by zarguell)",
+        "confidence": "likely"
+      },
+      {
+        "claim": "vite-plugin-pwa latest is 1.3.0 with peer vite ^3.1.0||^4||^5||^6||^7||^8 and workbox-build/workbox-window ^7.4.1, so the core plugin supports Astro 7's Vite 8/Rolldown",
+        "source": "npm registry: npm view vite-plugin-pwa@latest peerDependencies (2026-08-19)",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Official @vite-pwa/astro prompt-flow reference: registerType 'prompt' (or default), an .astro ReloadPrompt component with <script src=\"./pwa.ts\">, registerSW({immediate:true, onNeedRefresh, onOfflineReady, onRegisteredSW}) from virtual:pwa-register, refreshSW(true) on Reload click; types via /// <reference types=\"vite-plugin-pwa/info\" /> and \"vite-plugin-pwa/vanillajs\"",
+        "source": "https://github.com/vite-pwa/astro/tree/main/examples/pwa-prompt (astro.config.mjs, ReloadPrompt.astro, pwa.ts, env.d.ts fetched raw)",
+        "confidence": "verified"
+      },
+      {
+        "claim": "For Astro trailing-slash/directory URLs offline, vite-pwa provides experimental.directoryAndTrailingSlashHandler: true (generateSW) or precacheAndRoute(self.__WB_MANIFEST, {directoryIndex:'index.html', cleanURLs:true}) (injectManifest)",
+        "source": "https://vite-pwa-org.netlify.app/frameworks/astro",
+        "confidence": "verified"
+      },
+      {
+        "claim": "playwright context.setOffline does not reliably make service-worker-originated fetches fail (issue #2311 closed unfixed); workaround: PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS=1 + serviceWorkers:'allow' + context.route handler checking route.request().serviceWorker(); context.route otherwise never intercepts SW-handled requests",
+        "source": "https://github.com/microsoft/playwright/issues/2311 (state/comments via GitHub API) and https://playwright.dev/docs/api/class-browsercontext",
+        "confidence": "verified"
+      },
+      {
+        "claim": "@playwright/test current is 1.62.1; astro dev and astro preview both default to port 4321; since Astro 7.2.0 preview/dev support --background and stop/status/logs subcommands",
+        "source": "npm registry + https://docs.astro.build/en/reference/cli-reference/ (raw file grepped)",
+        "confidence": "verified"
+      },
+      {
+        "claim": "@astrojs/check current is 0.9.10 (peer typescript ^5 || ^6); astro check exits 1 on errors, runs astro sync first unless --noSync, flags include --watch/--minimumFailingSeverity/--minimumSeverity/--tsconfig/--root/--preserveWatchOutput",
+        "source": "npm registry + https://docs.astro.build/en/reference/cli-reference/",
+        "confidence": "verified"
+      },
+      {
+        "claim": "TypeScript template: extends astro/tsconfigs/strict with include ['.astro/types.d.ts','**/*'] and exclude ['dist']; verbatimModuleSyntax enabled by presets; tsc ignores .astro files so use astro check",
+        "source": "https://docs.astro.build/en/guides/typescript/",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Script tag handling inside .mdx files is undocumented in current MDX integration docs; historical hoisted-script bugs existed (withastro/astro #5991, #6035, #8034) \u2014 wrapping custom elements in an imported .astro component is the reliable pattern",
+        "source": "https://docs.astro.build/en/guides/integrations-guide/mdx/ (raw grep found no script-tag docs) + GitHub issue search repo:withastro/astro",
+        "confidence": "likely"
+      },
+      {
+        "claim": "cubing npm package current version is 0.63.3",
+        "source": "npm registry: npm view cubing version (2026-08-19)",
+        "confidence": "verified"
+      }
+    ],
+    "risks": [
+      "@vite-pwa/astro has no published Astro 6/7 peer support (issues #72/#74 open, PR closed unmerged, maintainer activity uncertain) \u2014 the npm 'overrides' workaround is required and could break on a future @vite-pwa/astro or Astro release; pin exact versions and add the override removal to a tracked TODO.",
+      "workbox-build's default maximumFileSizeToCacheInBytes is 2 MiB; cubing.js solver/search chunks (and any wasm) may exceed it and silently drop out of the precache manifest \u2014 set maximumFileSizeToCacheInBytes explicitly and assert the precache count in CI (or run the Playwright offline test over solver pages).",
+      "Playwright setOffline does not block fetches originating inside the service worker (issue #2311 closed unfixed), so a broken precache can still produce a passing offline test; mitigate with PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS=1 + route-abort of SW requests, or a server-kill variant of the test.",
+      "Astro 7's default S\u00e4tteri processor drops recma support and may differ subtly from remark/rehype output; if the guide content relies on remark/rehype plugins (e.g., callouts), opt into markdown: { processor: unified() } from @astrojs/markdown-remark and accept the build-speed cost.",
+      "Astro 7's Rust compiler errors on unclosed tags and no longer auto-corrects invalid HTML, and compressHTML default changed to 'jsx' whitespace collapsing \u2014 copied/legacy markup and whitespace-sensitive inline layouts need review.",
+      "Vite 8/Rolldown is new; third-party Vite plugins beyond vite-plugin-pwa (which declares ^8 support) may lag \u2014 verify each plugin's peer range before adding.",
+      "src/fetch.ts is a reserved filename in Astro 7 (advanced routing) \u2014 avoid that path for app code.",
+      "Test the real production SW via astro build + astro preview, not devOptions' dev SW \u2014 dev SW behavior (navigateFallback allowlists, partial precache) differs from the generateSW output."
+    ]
+  },
+  {
+    "key": "storage-fsrs",
+    "keyFacts": [
+      {
+        "claim": "ts-fsrs latest stable version is 5.4.1 (published ~2026-08-18); a 6.0.0-beta.7 exists on the beta dist-tag and GitHub main is already the v6 monorepo",
+        "source": "npm registry: npm view ts-fsrs (dist-tags {latest: 5.4.1, beta: 6.0.0-beta.7}); https://github.com/open-spaced-repetition/ts-fsrs",
+        "confidence": "verified"
+      },
+      {
+        "claim": "ts-fsrs 5.4.1 API: Rating {Manual=0, Again=1, Hard=2, Good=3, Easy=4}, State {New=0, Learning=1, Review=2, Relearning=3}, Grade = Exclude<Rating, Rating.Manual>; f.next(card, now, grade) returns {card, log} with card.due: Date; f.repeat(card, now) returns a RecordLog keyed by all four grades",
+        "source": "Read from published package dist/index.d.ts of ts-fsrs@5.4.1 and executed successfully with node against the installed package",
+        "confidence": "verified"
+      },
+      {
+        "claim": "ts-fsrs next()/repeat() accept CardInput, whose due/last_review are DateInput (string|number|Date) and state can be a string name \u2014 JSON-imported cards with ISO-string dates work without manual date revival",
+        "source": "ts-fsrs@5.4.1 dist/index.d.ts: repeat/next signatures take `card: CardInput | Card`; CardInput extends Omit<Card,'state'|'due'|'last_review'> with DateInput fields",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Card.elapsed_days is marked @deprecated in 5.4.1 with removal announced for 6.0.0 \u2014 do not build logic on it",
+        "source": "ts-fsrs@5.4.1 dist/index.d.ts line 47-50",
+        "confidence": "verified"
+      },
+      {
+        "claim": "f.get_retrievability(card, now) returns a formatted string like \"100.00%\" by default; pass false as the third argument to get a number",
+        "source": "Observed in node smoke test of ts-fsrs@5.4.1; documented in packages/fsrs/README.md",
+        "confidence": "verified"
+      },
+      {
+        "claim": "idb latest version is 8.0.3 (published May 2025); exports openDB, deleteDB, wrap, unwrap and the DBSchema type for typed stores",
+        "source": "npm registry: npm view idb; DBSchema export confirmed in installed idb@8.0.3 build/entry.d.ts; https://github.com/jakearchibald/idb",
+        "confidence": "verified"
+      },
+      {
+        "claim": "idb migration pattern: openDB(name, version, { upgrade(db, oldVersion, newVersion, transaction) }) with `if (oldVersion < N)` ladders; data transforms during upgrade must use the provided versionchange transaction argument",
+        "source": "https://github.com/jakearchibald/idb README (upgrade callback + version migration example)",
+        "confidence": "verified"
+      },
+      {
+        "claim": "IndexedDB stores Date objects natively via structured clone, so FSRS Card objects can be put() as-is; only JSON export/import needs date-to-string handling",
+        "source": "Structured clone algorithm (MDN) + idb README usage; ts-fsrs CardInput tolerance verified in its d.ts",
+        "confidence": "verified"
+      },
+      {
+        "claim": "navigator.storage.persist()/persisted() are Baseline Widely Available (since Dec 2021, Safari 15.2+), secure-context only, and persist() is not available in workers",
+        "source": "https://developer.mozilla.org/en-US/docs/Web/API/StorageManager/persist",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Best practice: call persist() when first saving data the user cares about, wrapped in a user gesture, after checking persisted(); Chrome never prompts (silently grants based on site engagement / PWA install / notification permission) while Firefox shows a prompt",
+        "source": "https://web.dev/articles/persistent-storage",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Chrome is significantly more likely to grant persist() after the PWA is installed, so re-requesting after the appinstalled event is worthwhile",
+        "source": "https://web.dev/articles/persistent-storage (grant heuristics list includes installation status)",
+        "confidence": "likely"
+      },
+      {
+        "claim": "Standard static-site IndexedDB backup pattern is getAll per store -> JSON envelope -> Blob -> <a download> click; import via <input type=file> -> JSON.parse -> readwrite transaction; widely-used reference implementations exist",
+        "source": "https://github.com/Polarisation/indexeddb-export-import and https://gist.github.com/loilo/ed43739361ec718129a15ae5d531095b and https://dexie.org/docs/ExportImport/dexie-export-import",
+        "confidence": "verified"
+      }
+    ],
+    "risks": [
+      "ts-fsrs 6.0 is imminent (6.0.0-beta.7 on npm, main branch is already the v6 monorepo, npm activity as recent as Aug 18 2026): pin ^5.4.1; v6 removes Card.elapsed_days and may reshape packages (@open-spaced-repetition/binding appears for optimizer). Persist raw Card objects, not derived fields, so a future migration is a data no-op.",
+      "Card.elapsed_days is deprecated in 5.4.1 \u2014 avoid using it anywhere (removed in 6.0).",
+      "f.get_retrievability() returns a formatted STRING ('100.00%') unless you pass false as the 3rd argument \u2014 easy to feed into arithmetic by mistake.",
+      "Chrome may silently DENY navigator.storage.persist() for a fresh low-engagement site \u2014 do not treat a false return as an error; retry after PWA install (appinstalled event) and surface export/backup as the reliable safety net.",
+      "Safari's storage eviction remains the most aggressive (ITP can clear script-writable storage for rarely-visited non-installed sites even though persist() is supported since 15.2) \u2014 not re-verified in this session; encourage Home-Screen install and periodic JSON export for Safari users.",
+      "JSON round-trip silently turns Dates into strings: the 'cards' store's by-due index needs real Date keys, so the import path must revive due/last_review (snippet does); forgetting this breaks getDueCards() ordering while ts-fsrs itself keeps working (masks the bug).",
+      "idb upgrade callbacks cannot open their own transactions \u2014 data migrations must use the versionchange transaction argument, and a second tab holding an old connection will block upgrades (handle the blocking() callback, e.g. reload).",
+      "The 'settings' store uses out-of-line keys, so getAll() alone loses the keys \u2014 export must pair getAllKeys() with getAll() (handled in snippet); naive per-store getAll() backup code found in blog posts gets this wrong.",
+      "Multi-store readwrite restore clears stores before writing \u2014 if the import file is corrupt mid-way the tx aborts and rolls back (good), but validate the envelope before starting to avoid a confusing failed-import UX."
+    ]
+  },
+  {
+    "key": "vercel-static",
+    "keyFacts": [
+      {
+        "claim": "A static Astro site deploys to Vercel with zero configuration and NO adapter; @astrojs/vercel is only needed for SSR/ISR or Vercel features like Web Analytics and Image Optimization.",
+        "source": "https://docs.astro.build/en/guides/deploy/vercel/ and https://docs.astro.build/en/guides/integrations-guide/vercel/",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Current npm versions (2026-08-18): astro latest = 7.2.3, @astrojs/vercel latest = 11.0.6; the adapter has a single entry point `@astrojs/vercel` (the /static and /serverless entrypoints no longer exist).",
+        "source": "https://registry.npmjs.org/astro , https://registry.npmjs.org/@astrojs%2Fvercel , https://docs.astro.build/en/guides/integrations-guide/vercel/",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Vercel's Astro framework preset auto-detects buildCommand `astro build`, outputDirectory `dist`, and its defaultRoutes automatically set `cache-control: public, max-age=31536000, immutable` on `/_astro/(.*)` and `/assets/(.*)` \u2014 hashed assets are long-cached even without vercel.json.",
+        "source": "https://raw.githubusercontent.com/vercel/vercel/main/packages/frameworks/src/frameworks.ts",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Vercel's default Cache-Control for responses is `public, max-age=0, must-revalidate`, and Vercel's own vercel.json docs example sets exactly that header on a `/service-worker.js` source \u2014 the sanctioned pattern for keeping sw.js un-cached in browsers.",
+        "source": "https://vercel.com/docs/caching/cache-control-headers and https://vercel.com/docs/project-configuration/vercel-json (headers section)",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Production-branch default order for new projects is main \u2192 master \u2192 repo default, so a repo whose default branch is `master` gets `master` as production automatically; it can be pinned under Settings \u2192 Environments \u2192 Production \u2192 Branch Tracking. Every push to any other branch creates a preview deployment.",
+        "source": "https://vercel.com/docs/git#production-branch",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Root Directory (e.g. `app/`) is a dashboard-only setting (Settings \u2192 Build and Deployment \u2192 Root Directory) \u2014 vercel.json has NO rootDirectory property; vercel.json must live inside the configured root directory (app/vercel.json), and the build cannot access files outside it unless 'Include source files outside of the Root Directory' is enabled (default-on since Aug 2020).",
+        "source": "https://vercel.com/docs/builds/configure-a-build#root-directory , https://vercel.com/docs/project-configuration/vercel-json , https://vercel.com/docs/monorepos/monorepo-faq",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Hobby tier limits relevant to a static PWA: 100 GB/month Fast Data Transfer, up to 1M Edge Requests/month, 100 deployments/day, 1 concurrent build, 45-min max build, 2 vCPU/8 GB build container, 200 projects, 50 domains/project; overages pause the resource (no billing); Hobby is restricted to non-commercial personal use.",
+        "source": "https://vercel.com/docs/plans/hobby and https://vercel.com/docs/limits",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Deployment Protection (Vercel Authentication, Standard Protection scope) has been enabled BY DEFAULT for new projects since Nov 2023; on Hobby it protects preview deployments and generated deployment URLs but production domains always remain public (protecting production requires Pro/Enterprise).",
+        "source": "https://vercel.com/changelog/deployment-protection-is-now-enabled-by-default-for-new-projects and https://vercel.com/docs/deployment-protection",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Vercel Authentication on previews redirects unauthenticated requests to Vercel SSO login, which breaks service-worker registration and PWA testing on preview URLs; disable it per-project at Settings \u2192 Deployment Protection (or API `\"ssoProtection\": null`), or bypass with Shareable Links / the protection-bypass automation header.",
+        "source": "https://vercel.com/docs/deployment-protection/methods-to-protect-deployments/vercel-authentication (SSO redirect behavior documented; SW breakage is the direct consequence)",
+        "confidence": "likely"
+      },
+      {
+        "claim": "Hobby teams cannot connect a Vercel project to a Git repository owned by a GitHub organization (personal-account repos only).",
+        "source": "https://vercel.com/docs/limits#connecting-a-project-to-a-git-repository",
+        "confidence": "verified"
+      },
+      {
+        "claim": "vercel.json `headers.source` patterns are path-to-regexp style (`/(.*)`, `/:path*`, named params with regex), case-sensitive, match pathname excluding querystring; each header/redirect/rewrite rule counts toward the routes-per-deployment limit; `s-maxage` and CDN-Cache-Control values in vercel.json are consumed by Vercel's CDN and stripped from client responses.",
+        "source": "https://vercel.com/docs/project-configuration/vercel-json and https://vercel.com/docs/caching/cache-control-headers",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Framework preset defaultRoutes and custom vercel.json headers coexist (the recommended config restates the _astro immutable rule so correctness does not depend on merge-order details).",
+        "source": "https://raw.githubusercontent.com/vercel/vercel/main/packages/frameworks/src/frameworks.ts (defaultRoutes use continue:true) \u2014 exact merge precedence not explicitly documented",
+        "confidence": "likely"
+      }
+    ],
+    "risks": [
+      "Vercel Authentication is ON by default for new projects: preview-URL service-worker registration and mobile install testing will fail with an SSO redirect until you disable it (Settings \u2192 Deployment Protection) or use a bypass \u2014 verify with `curl -sI <preview>/sw.js` expecting 200, not 30x to vercel.com/sso",
+      "Vercel deploys are atomic: after a new production deploy, OLD hashed /_astro/* URLs 404. A service worker must precache everything it needs at install time (full precache manifest), not lazily, or offline users mid-upgrade will hit failed fetches",
+      "Hobby plan is limited to non-commercial personal use (fair-use guidelines) and hard-pauses on overage (100 GB fast data transfer, 1M edge requests/month) with no paid-overflow option \u2014 a traffic spike takes the site down until the 30-day window resets",
+      "Root Directory cannot be set in vercel.json \u2014 if it is not set to `app` in the dashboard (or at import time), Vercel builds the repo root and the deploy fails or ships the wrong content; also remember vercel.json goes in app/, not the repo root",
+      "Vercel's docs page for Astro (vercel.com/docs/frameworks/astro) still shows the pre-v8 adapter API (@astrojs/vercel/serverless, output:'hybrid') \u2014 following it verbatim against @astrojs/vercel 11 / Astro 7 will not work; use Astro's integration docs instead",
+      "Do not use vercel.json `rewrites` for URL rewriting with Astro \u2014 Vercel documents it as unsupported/inconsistent for Astro projects (relevant only if SPA-style fallback routing is ever considered)",
+      "If the GitHub repo is ever moved into a GitHub organization, the Hobby project loses the git connection (org repos require Pro)",
+      "vercel.json `headers.source` is case-sensitive and matches the pathname exactly \u2014 a sw.js rule will not cover a service worker emitted under a different name/path (e.g. by a PWA plugin that outputs /service-worker.js), so keep the rule in sync with the actual SW filename"
+    ]
+  },
+  {
+    "key": "cuberpal",
+    "keyFacts": [
+      {
+        "claim": "CuberPal is iOS-only (iOS 17+); its public roadmap says an Android build is 'actively being developed' with no launch date, and never mentions a web version",
+        "source": "https://www.cuberpal.com/roadmap and https://apps.apple.com/us/app/cuberpal-cube-timer-coach/id6758110729",
+        "confidence": "verified"
+      },
+      {
+        "claim": "CuberPal has minimal traction: $180 revenue in the last 30 days, $112 MRR, 25 active subscriptions (RevenueCat-verified, updated Aug 18 2026), and ~10 App Store ratings (4.8 stars)",
+        "source": "https://trustmrr.com/startup/cuberpal",
+        "confidence": "verified"
+      },
+      {
+        "claim": "CuberPal marketing-site pricing: $4.99/week, $9.99/month, $39.99/year; App Store IAP list also shows annual $19.99\u2013$29.99 and $49.99 Lifetime, indicating active price experimentation",
+        "source": "https://www.cuberpal.com/ and https://apps.apple.com/us/app/cuberpal-cube-timer-coach/id6758110729",
+        "confidence": "verified"
+      },
+      {
+        "claim": "CuberPal's free tier allows 3 AI solve analyses per month; Premium unlocks unlimited analyses, all learning modules, and Cubey chat",
+        "source": "https://www.cuberpal.com/ (via search snippet of pricing section)",
+        "confidence": "likely"
+      },
+      {
+        "claim": "CuberPal offers 22+ lessons with interactive 3D demos, and spaced-repetition training for OLL (57), PLL (21), COLL (42), and ZBLL T&U (80+) cases with recognition quizzes",
+        "source": "https://www.cuberpal.com/",
+        "confidence": "verified"
+      },
+      {
+        "claim": "CuberPal teaches only 3x3 (through CFOP); 4x4/5x5 exist only as timer events (added v2.5, May 2026), not as lessons",
+        "source": "https://www.cuberpal.com/changelog and https://www.cuberpal.com/roadmap",
+        "confidence": "likely"
+      },
+      {
+        "claim": "CuberPal's Jun\u2013Jul 2026 releases focused on monetization/retention: free-trial paywall (v2.6), retention offer + Speed Forecast (v2.7), Daily Cube Challenge (v2.8), 'improved the paywall experience' (v2.10)",
+        "source": "https://www.cuberpal.com/changelog",
+        "confidence": "verified"
+      },
+      {
+        "claim": "CuberPal App Store reviews include reliability complaints: 'The main feature of the app doesn't even function' and button-responsiveness issues",
+        "source": "https://apps.apple.com/us/app/cuberpal-cube-timer-coach/id6758110729",
+        "confidence": "verified"
+      },
+      {
+        "claim": "JPerm's trainer lives at per-set URLs (/algs/oll, /algs/pll, /algs/2lookoll, /algs/coll, /algs/wv, /algs/2x2/cll, /algs/4x4/pll, etc.); bare /algs returns 404",
+        "source": "https://jperm.net/ and https://www.jperm.net/algs/pll",
+        "confidence": "verified"
+      },
+      {
+        "claim": "JPerm trainer case model: each case is Unlearned/Learning/Finished, cycled by clicking its image, plus a Trash to hide cases (Shift-click multi-select); settings auto-sort Learning up and Finished down",
+        "source": "https://www.jperm.net/algs/pll",
+        "confidence": "verified"
+      },
+      {
+        "claim": "JPerm trainer scramble selection: All / Groups / Status / Slowest, with probability modes 'Balanced' (equal) vs 'Realistic' (real case-frequency weighting), and Exclude/Include Trash",
+        "source": "https://www.jperm.net/algs/pll",
+        "confidence": "verified"
+      },
+      {
+        "claim": "JPerm trainer keyboard shortcuts: Space timer, arrows hide/show hint, Alt+arrows scramble nav, Alt+Z delete last time, Alt+D reset times; settings include 'Show triggers (brackets)'",
+        "source": "https://www.jperm.net/algs/pll",
+        "confidence": "verified"
+      },
+      {
+        "claim": "JPerm trainer persists everything client-side in cookies; clearing cookies resets all statuses, custom algorithms, and times \u2014 no accounts or sync",
+        "source": "https://www.jperm.net/algs/oll (help text: clearing cookies 'will also reset all info on the page, such as algorithms, times, etc.')",
+        "confidence": "verified"
+      },
+      {
+        "claim": "SpeedCubeDB case entry anatomy: case name + breadcrumb + case image + setup moves + standard algorithm + ~4 vote-sorted variants (each with notation, vote count, ETM/STM move counts, generator tag like '3GEN (R U D)', optional YouTube link) + 'More Algorithms' expander",
+        "source": "https://speedcubedb.com/a/3x3/PLL",
+        "confidence": "verified"
+      },
+      {
+        "claim": "SpeedCubeDB gates progress tracking ('Algorithms Learnt', 'Personal Algorithm Sheets') behind Google sign-in, and uses subset filter chips with n/total counters ('0/12 Adj Swap', '0/4 EPLL', '0/5 Opp Swap')",
+        "source": "https://speedcubedb.com/a/3x3/PLL",
+        "confidence": "verified"
+      },
+      {
+        "claim": "CuberPal launched around January 2026 (trustmrr 'Founded January 2026', tracked since Jan 15 2026); the App Store fetch reported 'January 27, 2025' release and 'v2.12 Aug 8, 2025', which conflicts with the site changelog showing v2.10 in July 2026 \u2014 the 2025 dates are probably a summarization year error",
+        "source": "https://trustmrr.com/startup/cuberpal vs https://apps.apple.com/us/app/cuberpal-cube-timer-coach/id6758110729",
+        "confidence": "uncertain"
+      },
+      {
+        "claim": "JPerm last-layer trainer scrambles are inverse-of-algorithm plus random AUF",
+        "source": "inference from trainer design (not documented on page)",
+        "confidence": "uncertain"
+      }
+    ],
+    "risks": [
+      "CuberPal is iterating fast on monetization and onboarding (near-weekly releases Jun\u2013Jul 2026); its Android app is in active development, and cross-platform sync is 'exploring' \u2014 the competitive gap on non-iOS platforms may narrow within months, though a web version is still unannounced.",
+      "Several WebFetch summaries came from a small summarizer model over rendered pages; the JPerm trainer pages are JS-heavy, so details like the exact Stats-view contents and scramble-generation method were not directly observable (marked uncertain). Verify in a real browser before designing stats UI 1:1.",
+      "CuberPal App Store dates conflicted between sources (2025 vs 2026 release year); treat the launch date as approximate.",
+      "SpeedCubeDB's /practice URL 404s from direct fetch \u2014 its trainer likely lives behind client-side routing; its trainer UX was not evaluated and could contain patterns worth checking.",
+      "CuberPal's '22+ lessons' depth is unverified marketing copy \u2014 do not calibrate Cubepath's curriculum size against it without installing the app.",
+      "Cloning JPerm's UX too literally (exact shortcuts, labels, layout) could read as a rip-off in the cubing community; borrow the interaction model, not the skin.",
+      "Vote counts and alg orderings on SpeedCubeDB change over time; if Cubepath curates 'community-preferred' algs from it, snapshot and attribute rather than hotlink."
+    ]
+  },
+  {
+    "key": "pwa-install",
+    "keyFacts": [
+      {
+        "claim": "iOS 26/Safari 26: every site added to the Home Screen opens as a web app by default ('Open as Web App' toggle, on by default); there are zero installability requirements (no manifest or service worker needed).",
+        "source": "https://webkit.org/blog/17333/webkit-features-in-safari-26-0/",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Safari 26.0 supports SVG icons and data-URL icons everywhere icons are used, including favicons; manifest icons are used when defined.",
+        "source": "https://webkit.org/blog/17333/webkit-features-in-safari-26-0/",
+        "confidence": "verified"
+      },
+      {
+        "claim": "On iOS, a <link rel=\"apple-touch-icon\"> overrides manifest icons for the Home Screen icon when both are present (manifest icons honored since iOS 15.4).",
+        "source": "https://firt.dev/notes/pwa-ios/",
+        "confidence": "likely"
+      },
+      {
+        "claim": "beforeinstallprompt is still not supported in Safari or Firefox (Chromium-only, non-Baseline, spec status 'Manifest Incubations'); iOS install UX must be a manual hint: Share button then Add to Home Screen.",
+        "source": "https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeinstallprompt_event",
+        "confidence": "verified"
+      },
+      {
+        "claim": "iOS/WebKit storage: origin quota up to ~60% of disk in browser apps and Home Screen web apps (15% for in-app web views); overall cap 80%/20%; storage.estimate() supported since Safari 17.",
+        "source": "https://webkit.org/blog/14403/updates-to-storage-policy/",
+        "confidence": "verified"
+      },
+      {
+        "claim": "navigator.storage.persist() in Safari shows no prompt; WebKit grants it based on heuristics such as the site running as a Home Screen web app, and persistent origins are skipped by idle eviction.",
+        "source": "https://webkit.org/blog/14403/updates-to-storage-policy/",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Safari's 7-day script-writable-storage eviction applies to Safari browsing; Home Screen web apps have their own days-of-use counter that resets on use \u2014 Apple: 'We do not expect the first-party in such a web application to have its website data deleted.'",
+        "source": "https://webkit.org/blog/10218/full-third-party-cookie-blocking-and-more/",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Chrome install criteria for beforeinstallprompt: HTTPS, not installed, user clicked page at least once ever plus 30s total viewing, manifest with name/short_name, icons incl. 192px and 512px, start_url, display in {fullscreen, standalone, minimal-ui, window-controls-overlay}, prefer_related_applications absent or false. Service worker is not listed as a requirement (doc updated 2024-09-19).",
+        "source": "https://web.dev/articles/install-criteria",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Chrome removed the service-worker+fetch-handler requirement for menu install in Chrome 108 (Android) / 112 (desktop), providing a default offline page for sites without one.",
+        "source": "https://developer.chrome.com/blog/update-install-criteria",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Set an explicit manifest 'id'; Chrome 96+ otherwise computes it from start_url (freezing start_url); verify the Computed App Id in DevTools > Application > Manifest.",
+        "source": "https://developer.chrome.com/docs/capabilities/pwa-manifest-id",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Use separate icon entries for purpose 'any' and 'maskable' (combining discouraged: maskable-as-any adds padding); maskable safe zone is a circle of 40% of icon width radius, outer 10% may be cropped.",
+        "source": "https://web.dev/articles/maskable-icon",
+        "confidence": "verified"
+      },
+      {
+        "claim": "purpose: 'monochrome' is in the W3C manifest spec (alpha channel used as mask over a solid fill) but has little consuming browser UI today \u2014 optional.",
+        "source": "https://www.w3.org/TR/appmanifest/",
+        "confidence": "likely"
+      },
+      {
+        "claim": "Workbox/vite-plugin-pwa precache defaults: globPatterns '**/*.{js,css,html}' (wasm NOT included) and maximumFileSizeToCacheInBytes 2 MiB (larger files skipped; vite-plugin-pwa >=0.20.2 fails the build on that warning) \u2014 both must be overridden to precache wasm.",
+        "source": "https://vite-pwa-org.netlify.app/guide/service-worker-precache",
+        "confidence": "verified"
+      },
+      {
+        "claim": "cubing.js latest is 0.63.3, pure ESM, module-workers-only; known Vite friction with its dynamically imported search worker/wasm \u2014 recommended workaround is optimizeDeps.exclude: ['cubing'].",
+        "source": "https://github.com/cubing/cubing.js/issues/327",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Vite's import.meta.url/worker URL rewriting breaks for workers inside pre-bundled or library dependencies (404s / build hangs), affecting packages like cubing.js.",
+        "source": "https://github.com/vitejs/vite/issues/14499",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Dynamic import() is disallowed inside service worker scripts (static imports in module SWs are fine).",
+        "source": "https://w3c.github.io/ServiceWorker/",
+        "confidence": "likely"
+      },
+      {
+        "claim": "Safari 26.6 fixed service worker registrations with missing main scripts not being auto-unregistered, which had blocked re-registering new service workers.",
+        "source": "https://webkit.org/blog/18178/webkit-features-for-safari-26-6/",
+        "confidence": "likely"
+      },
+      {
+        "claim": "@vite-pwa/astro latest is 1.2.0 (uses vite-plugin-pwa ^1.2.0); astro latest on npm is 7.2.3 \u2014 the peer range read from the registry only lists Astro ^1.6\u2013^5, so compatibility with Astro 7 must be verified at install time.",
+        "source": "https://registry.npmjs.org/@vite-pwa%2Fastro/latest",
+        "confidence": "likely"
+      },
+      {
+        "claim": "Chrome desktop (~124+) offers menu-based 'Install page as app' for any website, giving a manual install path even when the prompt criteria are unmet.",
+        "source": "https://chromeunboxed.com/chrome-124-website-app-pwa-feature-install-simple/",
+        "confidence": "likely"
+      }
+    ],
+    "risks": [
+      "@vite-pwa/astro 1.2.0's peer range (as read from the registry) tops out at Astro ^5 while npm's latest astro is 7.2.3 \u2014 verify peer compatibility (or pin Astro accordingly / check for a newer @vite-pwa/astro) before scaffolding.",
+      "firt.dev's apple-touch-icon-overrides-manifest-icons precedence was last verified for iOS 15.4\u201317 (page dated June 2023); re-test on an iOS 26 device \u2014 keep apple-touch-icon identical to the manifest icon art so precedence doesn't matter.",
+      "Non-installed Safari users are still subject to the 7-day script-writable-storage eviction; user progress stored only in IndexedDB can vanish for tab users \u2014 call navigator.storage.persist() early and nudge Home Screen install.",
+      "cubing.js resolves its search worker and wasm at runtime via dynamic import/import.meta.url; if the emitted URLs are not in the precache manifest (or covered by a runtime caching route), the app breaks offline only when scramble/solve is first used \u2014 add an explicit offline E2E test for scramble generation.",
+      "Workbox will silently skip any asset over maximumFileSizeToCacheInBytes (2 MiB default) from precache \u2014 with vite-plugin-pwa >=0.20.2 this becomes a build error, but if globPatterns omit .wasm there is no error at all, just a broken offline app.",
+      "WebAssembly.instantiateStreaming requires Content-Type: application/wasm; spot-check Vercel's header for .wasm (it normally serves it correctly, but this was not verified in this research) or use a non-streaming fallback.",
+      "Chrome's engagement heuristic (click + 30s viewing) means beforeinstallprompt often fires late or never in short first sessions \u2014 design the install button to appear whenever the deferred event exists, not on page load.",
+      "Safari never fires beforeinstallprompt and Chrome's criteria/heuristics are non-contractual and may shift again (they changed in 108/112 and docs were rewritten in 2024) \u2014 never hard-fail UX on prompt availability.",
+      "Older iOS versions in the wild (pre-26) still require the manifest/meta configuration for standalone behavior \u2014 keep display: standalone and apple-touch-icon rather than relying on iOS 26's zero-requirement install.",
+      "Do not use a combined purpose 'any maskable' icon \u2014 Chrome guidance says it degrades one context or the other; ship separate files."
+    ]
+  },
+  {
+    "key": "curriculum-sources",
+    "keyFacts": [
+      {
+        "claim": "JPerm's alg data is machine-readable at https://jperm.net/lib/oll.js, pll.js, 4x4oll.js, 4x4pll.js as `algsetAlgs` arrays with {name, alg[], group, prob}; alg[0] is the recommended algorithm",
+        "source": "https://jperm.net/lib/oll.js (downloaded and parsed: 57 OLL cases, 15 shape groups; pll.js: 21 cases)",
+        "confidence": "verified"
+      },
+      {
+        "claim": "jperm.net/algs/f2l does not exist (404); JPerm's F2L canon is the 'Best F2L Algorithms' PDF linked from jperm.net/3x3/cfop/f2l via bit.ly/bestf2l -> Google Drive id 1nzAXYUWZJ6H2wIOXaHdWXep3W57tArbR, with Section 1 = 41 basic cases grouped by both-on-top / edge-in-slot / corner-in-slot / both-in-slot",
+        "source": "https://jperm.net/3x3/cfop/f2l (redirect resolved via curl; PDF downloaded and text-extracted)",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Canonical 4x4 OLL parity is `Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'` and PLL parity is `2R2 U2 2R2 Uw2 2R2 Uw2`",
+        "source": "https://jperm.net/4x4 (verbatim grep of page HTML) and jperm.net/lib/4x4oll.js pageDetails",
+        "confidence": "verified"
+      },
+      {
+        "claim": "JPerm's 5x5 edge parity alg is `Rw U2 x Rw U2 Rw U2 3Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'` \u2014 note 3Rw' where the 4x4 form has Rw'",
+        "source": "https://jperm.net/5x5 (verbatim grep of page HTML)",
+        "confidence": "verified"
+      },
+      {
+        "claim": "OLL probabilities are out of 216 (51 cases 1/54, five cases 1/108 = OLL 1/21/55/56/57, one case 1/216 = OLL 20, skip 1/216) and PLL out of 72 (most 1/18; Z,E 1/36; H,Na,Nb 1/72); JPerm prob fields and CubeSkills PDFs agree exactly",
+        "source": "jperm.net/lib/oll.js prob sum = 215/216 (computed) + https://www.cubeskills.com/uploads/pdf/tutorials/oll-algorithms.pdf and pll-algorithms.pdf (grep of per-case Probability lines)",
+        "confidence": "verified"
+      },
+      {
+        "claim": "CubeSkills PDFs are live at cubeskills.com/uploads/pdf/tutorials/{oll-algorithms,pll-algorithms,f2l,useful-f2l-algorithms,f2l-algorithms-different-slot-positions}.pdf (all HTTP 200, application/pdf)",
+        "source": "https://www.cubeskills.com/uploads/pdf/tutorials/pll-algorithms.pdf (curl HEAD checks)",
+        "confidence": "verified"
+      },
+      {
+        "claim": "SpeedCubeDB covers all needed sets: /a/3x3/OLL, /a/3x3/PLL, /a/3x3/F2L (numbered F2L 1-41, F2L 1 = U R U' R'), /a/4x4/OLLParity, /a/4x4/PLLParity, /a/5x5/L2E, /a/5x5/L2C; community-vote-ranked, no public API found",
+        "source": "https://speedcubedb.com/a/3x3/OLL and curl of /a/4x4, /a/5x5 category indexes",
+        "confidence": "verified"
+      },
+      {
+        "claim": "SpeedCubeDB's 5x5 Last 2 Edges list has 13 cases (L2E 1-13), not 12 \u2014 e.g. L2E 4 = `Rw2 F2 U2 Rw2 U2 F2 Rw2`",
+        "source": "https://speedcubedb.com/a/5x5/L2E",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Sarah Strong's 2-sided PLL recognition guide (headlights -> corner swap type, then blocks/checker/edge patterns) is at https://sarah.cubing.net/3x3x3/pll-recognition-guide and is the standard recognition-teaching reference",
+        "source": "https://sarah.cubing.net/3x3x3/pll-recognition-guide (fetched)",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Yau method structure: two opposite centers -> 3 cross dedges on L -> last 4 centers -> last cross dedge -> z' + last 8 dedges -> 3x3 stage with parities; proposed by Patrick Jameson and Robert Yau 2008-09",
+        "source": "https://www.speedsolving.com/wiki/index.php/Yau_method + https://jperm.net/4x4",
+        "confidence": "verified"
+      },
+      {
+        "claim": "US Copyright Office: 'Copyright does not protect facts, ideas, systems, or methods of operation, although it may protect the way these things are expressed' \u2014 algorithms are safe to use; prose/diagrams must be original",
+        "source": "https://www.copyright.gov/help/faq/faq-protect.html (fetched)",
+        "confidence": "verified"
+      },
+      {
+        "claim": "Speedsolving wiki declares no content license (MediaWiki rightsinfo API returns empty url/text) \u2014 treat its prose as all-rights-reserved, use only for terminology",
+        "source": "https://www.speedsolving.com/wiki/api.php?action=query&meta=siteinfo&siprop=rightsinfo&format=json",
+        "confidence": "verified"
+      },
+      {
+        "claim": "cubing.js (0.63.3 current on npm) parses every jperm 3x3 alg string as-is, including 2R2, 3Rw, Uw2, M/S/E, rotations, and parenthesized groups; only the [*] parity placeholder in the 4x4 data files fails and must be expanded during extraction",
+        "source": "local test: npm i cubing@0.63.3 + Alg round-trip of representative strings and charset scan of all 213 jperm algs",
+        "confidence": "verified"
+      },
+      {
+        "claim": "JPerm's recommended algs are the de-facto learner standard in 2026: third-party trainers (f2l.app, f2l-trainer.top, Rouxles/Alg-Trainer) build on his sets, and SpeedCubeDB top-voted algs match his picks on flagship cases (T perm, Jb, Ua)",
+        "source": "https://speedcubedb.com/a/3x3/OLL vote data + f2l-trainer references in speedsolving.com thread 91579",
+        "confidence": "likely"
+      },
+      {
+        "claim": "jperm.net also hosts 2-look OLL/PLL, COLL, WV, VLS, ZBLL and 2x2 CLL/EG-1/PBL sets in the same /lib/*.js format (URLs enumerated from navbar hrefs)",
+        "source": "curl of https://jperm.net/algs/oll navbar (href list)",
+        "confidence": "verified"
+      }
+    ],
+    "risks": [
+      "jperm.net /lib/*.js files are an undocumented internal format (last cache-busted 2019) \u2014 run extraction once and commit the JSON; do not fetch at build/runtime. If the format changes, the extraction script breaks loudly, not the app.",
+      "JPerm's F2L PDF has no case numbers in its extracted text and its 41-case order must be manually mapped to SpeedCubeDB's F2L 1-41 numbering \u2014 this is the highest-effort, most error-prone extraction step; budget a human verification pass (or verify each alg with the repo's cube simulator pattern applied via cubing.js KPuzzle).",
+      "SpeedCubeDB has no API and no visible content license \u2014 transcribe small factual sets (13 L2E algs) manually and cross-check only; do not bulk-scrape or mirror its vote data.",
+      "5x5 L2E is 13 cases on SpeedCubeDB, not the 12 assumed in the task brief \u2014 curriculum plan should say 13 (or explicitly define which subset it teaches).",
+      "The 4x4 and 5x5 parity algs differ by one move (Rw' vs 3Rw' in slot 7) \u2014 copy-pasting the 4x4 form into the 5x5 lesson would be wrong on a real cube; keep them as two distinct data entries.",
+      "Compilation copyright is thin but real: do not reproduce JPerm's exact page structure, description HTML, or PDF layout; re-group cases into Cubepath's own curriculum order, write all prose fresh, and self-generate every diagram (cubing.js SVG or the repo's existing Python SVG pipeline).",
+      "Speedsolving wiki content has no declared license \u2014 safe for terminology/fact checking only, never for text reuse.",
+      "Scribd/DocDroid mirrors of JPerm's PDFs are unauthorized re-uploads \u2014 always source the PDF from the official bit.ly/bestf2l Drive link, and re-verify the Drive id still resolves before the extraction run."
+    ]
+  }
+]
