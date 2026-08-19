@@ -1,0 +1,47 @@
+---
+/**
+ * Wraps cubing.js's <twisty-player> web component.
+ * With `anchor="end"` (the default here) the player starts at the case state
+ * and plays the algorithm forward to solved — the core Cubepath pattern.
+ */
+interface Props {
+  alg: string;
+  puzzle?: "3x3x3" | "4x4x4" | "5x5x5";
+  stickering?: string;
+  /** "end" = show the case, play to solved; "start" = play from solved. */
+  anchor?: "start" | "end";
+  class?: string;
+}
+
+const {
+  alg,
+  puzzle = "3x3x3",
+  stickering = "full",
+  anchor = "end",
+  class: className,
+} = Astro.props;
+---
+
+<twisty-player
+  class={className}
+  puzzle={puzzle}
+  alg={alg}
+  experimental-setup-anchor={anchor}
+  experimental-stickering={stickering === "full" ? undefined : stickering}
+  hint-facelets="none"
+  background="none"
+  control-panel="bottom-row"
+  tempo-scale="2"></twisty-player>
+
+<script>
+  import "cubing/twisty";
+</script>
+
+<style>
+  twisty-player {
+    width: 100%;
+    max-width: 320px;
+    height: 280px;
+    contain: layout size;
+  }
+</style>

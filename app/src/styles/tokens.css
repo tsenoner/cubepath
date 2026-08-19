@@ -1,0 +1,116 @@
+/* Cubepath design tokens — from the design canvas (design/build_canvas.py). */
+:root {
+  --paper: #fcfbf8;
+  --card: #ffffff;
+  --ink: #1c1917;
+  --soft: #57534e;
+  --faint: #8a857d;
+  --line: #e7e4de;
+  --accent: #1565c0;
+  --accent-soft: #e8f4fd;
+  --ok: #2e7d32;
+  --ok-soft: #e8f5e9;
+  --warn: #e65100;
+  --warn-soft: #fff3e0;
+  --brand: #ffd500;
+  --trig-r: #d32f2f;
+  --trig-g: #2e7d32;
+  --trig-b: #1565c0;
+  --font-display: "Newsreader", Georgia, "Times New Roman", serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+[data-theme="dark"] {
+  --paper: #161412;
+  --card: #1e1b18;
+  --ink: #ece8e1;
+  --soft: #b3ada4;
+  --faint: #7d786f;
+  --line: #2e2a26;
+  --accent: #6faae8;
+  --accent-soft: #16283c;
+  --ok: #7cc47f;
+  --ok-soft: #16281a;
+  --warn: #f0964c;
+  --warn-soft: #2e2014;
+  --trig-r: #ef6b62;
+  --trig-g: #7cc47f;
+  --trig-b: #6faae8;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #161412;
+    --card: #1e1b18;
+    --ink: #ece8e1;
+    --soft: #b3ada4;
+    --faint: #7d786f;
+    --line: #2e2a26;
+    --accent: #6faae8;
+    --accent-soft: #16283c;
+    --ok: #7cc47f;
+    --ok-soft: #16281a;
+    --warn: #f0964c;
+    --warn-soft: #2e2014;
+    --trig-r: #ef6b62;
+    --trig-g: #7cc47f;
+    --trig-b: #6faae8;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  margin: 0;
+}
+h1 {
+  font-size: 34px;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+h2 {
+  font-size: 23px;
+  line-height: 1.2;
+}
+h3 {
+  font-size: 17px;
+  line-height: 1.3;
+}
+
+.alg {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 14.5px;
+  letter-spacing: 0.01em;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}

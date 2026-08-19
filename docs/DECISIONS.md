@@ -45,3 +45,16 @@ courses · PDF stays first-class.
   (diagram / name+recognition / alg / status / play).
 - design/ holds the generator (build_canvas.py) + artboards; re-run and
   re-seed to update the canvas.
+
+## M0
+
+- **Worker-safe preload helper**: Rolldown-Vite 8 bundles its preload helper
+  (which touches `document`) into cubing.js's search-worker chunk, killing
+  on-device scrambles in production builds (vitejs/vite#14499 class;
+  `build.modulePreload` doesn't govern worker chunks). Fixed with a small
+  Astro `astro:build:done` integration that guards the helper's DOM branch
+  behind `typeof document`. The integration throws if Vite's helper shape
+  changes, and the Playwright smoke test proves scrambles + both players
+  in every build.
+- twisty-player uses a **closed** shadow root — E2E asserts rendering via the
+  element's own `experimentalScreenshot()` instead of DOM probing.
