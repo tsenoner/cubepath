@@ -1,14 +1,14 @@
 /**
  * One-time curriculum extraction: fetch JPerm's alg-set data files, parse the
- * `algsetAlgs` arrays, validate every algorithm, classify cases mechanically,
- * and emit typed JSON for src/data/. Committed output — never fetched at
- * build or runtime (offline-first).
+ * `algsetAlgs` + `algsetScrambles` arrays, validate every algorithm, verify
+ * case-class consistency mechanically, and emit typed JSON for src/data/.
+ * Committed output — never fetched at build or runtime (offline-first).
  *
- * Validation layers:
- *  1. every alg parses (`new Alg(s)`) and is legal for its puzzle (kpuzzle)
- *  2. every 3x3 OLL/PLL alg preserves the first two layers (F2L invariant)
- *  3. algs listed under the same case produce the same last-layer state class
- *     (up to AUF), and distinct cases produce distinct classes
+ * Validation layers (3×3 sets):
+ *  1. every alg parses (`new Alg(s)`) and is legal on the 3x3 kpuzzle
+ *  2. every OLL/PLL alg preserves the first two layers (rotation-normalized)
+ *  3. all algs of one case solve the same last-layer state class (up to AUF),
+ *     and distinct cases have distinct classes
  *
  * Usage: node scripts/extract-algs.mjs
  */
@@ -18,129 +18,175 @@ import { Alg } from "cubing/alg";
 import { cube3x3x3 } from "cubing/puzzles";
 
 const SETS = [
-  { name: "oll", url: "https://jperm.net/lib/oll.js", expect: 57 },
-  { name: "pll", url: "https://jperm.net/lib/pll.js", expect: 21 },
-  { name: "2loll", url: "https://jperm.net/lib/2loll.js", expect: null },
-  { name: "2lpll", url: "https://jperm.net/lib/2lpll.js", expect: null },
-  { name: "f2l", url: "https://jperm.net/lib/f2l.js", expect: 41 },
-  { name: "4x4oll", url: "https://jperm.net/lib/4x4oll.js", expect: null },
-  { name: "4x4pll", url: "https://jperm.net/lib/4x4pll.js", expect: null },
+  { name: "oll", url: "https://jperm.net/lib/oll.js", expect: 57, verify: true },
+  { name: "pll", url: "https://jperm.net/lib/pll.js", expect: 21, verify: true },
+  { name: "4x4oll", url: "https://jperm.net/lib/4x4oll.js", expect: null, verify: false },
+  { name: "4x4pll", url: "https://jperm.net/lib/4x4pll.js", expect: null, verify: false },
 ];
 
-async function fetchSet({ name, url }) {
-  const res = await fetch(url, { headers: { "user-agent": "cubepath-extractor" } });
-  if (!res.ok) return { name, url, error: `HTTP ${res.status}` };
-  const text = await res.text();
-  // The lib files assign arrays to variables; execute in a sandbox and take
-  // every array-of-objects binding.
-  const sandbox = {};
-  try {
-    vm.createContext(sandbox);
-    vm.runInContext(text, sandbox, { timeout: 5000 });
-  } catch (e) {
-    return { name, url, error: `eval failed: ${e.message}`, raw: text.slice(0, 400) };
+const kpuzzle = await cube3x3x3.kpuzzle();
+const solved = kpuzzle.defaultPattern();
+
+// All 24 cube orientations as rotation algs.
+const ROTATIONS = [];
+for (const a of ["", "x", "x2", "x'", "z", "z'"]) {
+  for (const b of ["", "y", "y2", "y'"]) {
+    ROTATIONS.push([a, b].filter(Boolean).join(" "));
   }
-  const arrays = Object.entries(sandbox).filter(
-    ([, v]) => Array.isArray(v) && v.length > 0 && typeof v[0] === "object",
-  );
-  if (arrays.length === 0) return { name, url, error: "no alg arrays found", keys: Object.keys(sandbox) };
-  return { name, url, bindings: Object.fromEntries(arrays) };
 }
 
-const kpuzzle = await cube3x3x3.kpuzzle();
+function centersSolved(pattern) {
+  // Center ORIENTATION is invisible on a standard cube (picture cubes aside):
+  // slice moves twist fixed centers, so compare piece positions only.
+  const c = pattern.patternData.CENTERS;
+  const s = solved.patternData.CENTERS;
+  return c.pieces.every((p, i) => p === s.pieces[i]);
+}
 
-/** F2L stickers must be untouched by a last-layer alg. */
+/** Rotate a pattern so its centers are solved; null if impossible. */
+function normalizeOrientation(pattern) {
+  for (const r of ROTATIONS) {
+    const p = r ? pattern.applyAlg(new Alg(r)) : pattern;
+    if (centersSolved(p)) return p;
+  }
+  return null;
+}
+
+// Which piece slots belong to the U layer (detected, not hardcoded).
+const uTurn = solved.applyAlg(new Alg("U")).patternData;
+const U_SLOTS = {};
+for (const orbit of Object.keys(solved.patternData)) {
+  const s = solved.patternData[orbit];
+  U_SLOTS[orbit] = s.pieces.map(
+    (_, i) =>
+      uTurn[orbit].pieces[i] !== s.pieces[i] || uTurn[orbit].orientation[i] !== s.orientation[i],
+  );
+}
+
+/** A last-layer alg must leave every non-U-layer piece solved (after rotation-normalizing). */
 function preservesF2L(algStr) {
+  let pattern;
   try {
-    const t = kpuzzle.algToTransformation(new Alg(algStr));
-    const tp = t.transformationData;
-    // Corners: positions 4-7 are D-layer on the standard 3x3 kpuzzle? Don't
-    // assume — check via pattern: apply to solved and compare non-U facelets.
-    const solved = kpuzzle.defaultPattern();
-    const moved = solved.applyTransformation(t);
-    const s = solved.patternData, m = moved.patternData;
-    // EDGES orbit: 12 pieces; U-layer edges are wherever they are — instead of
-    // hardcoding indices, require: every piece that changed position or
-    // orientation must, in the solved pattern, belong to the U layer. We
-    // detect U-layer membership by applying a U turn to solved and seeing
-    // which indices move.
-    const uTurn = kpuzzle.algToTransformation(new Alg("U"));
-    const uMoved = solved.applyTransformation(uTurn).patternData;
-    for (const orbit of Object.keys(s)) {
-      const n = s[orbit].pieces.length;
-      for (let i = 0; i < n; i++) {
-        const inU =
-          uMoved[orbit].pieces[i] !== s[orbit].pieces[i] ||
-          uMoved[orbit].orientation[i] !== s[orbit].orientation[i];
-        const changed =
-          m[orbit].pieces[i] !== s[orbit].pieces[i] ||
-          m[orbit].orientation[i] !== s[orbit].orientation[i];
-        if (changed && !inU) return false;
-      }
-    }
-    return true;
+    pattern = solved.applyAlg(new Alg(algStr));
   } catch {
     return false;
   }
+  const p = normalizeOrientation(pattern);
+  if (!p) return false;
+  const d = p.patternData;
+  for (const orbit of Object.keys(d)) {
+    const s = solved.patternData[orbit];
+    const skipOri = orbit === "CENTERS";
+    for (let i = 0; i < s.pieces.length; i++) {
+      if (U_SLOTS[orbit][i]) continue;
+      if (d[orbit].pieces[i] !== s.pieces[i]) return false;
+      if (!skipOri && d[orbit].orientation[i] !== s.orientation[i]) return false;
+    }
+  }
+  return true;
 }
 
-/** Canonical last-layer class of the state an alg solves, up to AUF. */
-function llClass(algStr) {
-  const inv = new Alg(algStr).invert();
-  let best = null;
-  for (let auf = 0; auf < 4; auf++) {
-    const pre = kpuzzle
-      .defaultPattern()
-      .applyAlg(new Alg("U".repeat(0) + (auf ? `U${auf === 1 ? "" : auf}` : "")))
-      .applyAlg(inv);
-    const key = JSON.stringify(pre.patternData);
-    if (best === null || key < best) best = key;
+/**
+ * Canonical class of the state an alg solves, up to: AUF on either side,
+ * whole-cube orientation, and y-conjugation (an alternate written for a
+ * different holding angle solves y^k ∘ state ∘ y^-k). For OLL sets the class
+ * ignores U-layer permutation (OLL algs orient; they may permute freely).
+ */
+const AUFS = ["", "U", "U2", "U'"];
+const YCONJ = [["", ""], ["y", "y'"], ["y2", "y2"], ["y'", "y"]];
+function caseClass(algStr, { orientationOnly = false } = {}) {
+  const inv = new Alg(algStr).invert().toString();
+  const keys = [];
+  for (const [yk, ykInv] of YCONJ) {
+    for (const pre of AUFS) {
+      for (const post of AUFS) {
+        const seq = [yk, pre, inv, post, ykInv].filter(Boolean).join(" ");
+        const s = solved.applyAlg(new Alg(seq));
+        const n = normalizeOrientation(s);
+        const data = structuredClone((n ?? s).patternData);
+        data.CENTERS.orientation = data.CENTERS.orientation.map(() => 0);
+        if (orientationOnly) {
+          for (const orbit of Object.keys(data)) {
+            data[orbit].pieces = data[orbit].pieces.map((piece, i) =>
+              U_SLOTS[orbit][i] ? 0 : piece,
+            );
+          }
+        }
+        keys.push(JSON.stringify(data));
+      }
+    }
   }
-  return best;
+  keys.sort();
+  return keys[0];
+}
+
+async function fetchBindings(url) {
+  const res = await fetch(url, { headers: { "user-agent": "cubepath-extractor" } });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const sandbox = {};
+  vm.createContext(sandbox);
+  vm.runInContext(await res.text(), sandbox, { timeout: 5000 });
+  return sandbox;
 }
 
 const out = {};
 const report = [];
+let failures = 0;
+
 for (const set of SETS) {
-  const r = await fetchSet(set);
-  if (r.error) {
-    report.push(`${set.name}: FAILED — ${r.error}`);
+  let bindings;
+  try {
+    bindings = await fetchBindings(set.url);
+  } catch (e) {
+    report.push(`${set.name}: FETCH FAILED — ${e.message}`);
+    failures++;
     continue;
   }
-  const cases = [];
-  for (const [binding, arr] of Object.entries(r.bindings)) {
-    for (const item of arr) {
-      cases.push({ binding, ...item });
-    }
-  }
-  // Validate 3x3 sets
-  let parsed = 0,
-    f2lOk = 0,
-    total = 0;
-  for (const c of cases) {
-    const algs = Array.isArray(c.alg) ? c.alg : [c.alg];
-    for (const a of algs) {
-      if (typeof a !== "string" || a.includes("[*]")) continue;
-      total++;
-      try {
-        new Alg(a);
-        parsed++;
-        if (["oll", "pll", "2loll", "2lpll"].includes(set.name)) {
-          if (preservesF2L(a)) f2lOk++;
+  const algs = bindings.algsetAlgs ?? [];
+  const scrambles = bindings.algsetScrambles ?? [];
+  const cases = algs.map((c, i) => ({
+    name: String(c.name),
+    group: c.group ?? null,
+    prob: c.prob ?? null,
+    algs: (Array.isArray(c.alg) ? c.alg : [c.alg]).filter((a) => typeof a === "string"),
+    scrambles: scrambles[i] ? Object.values(scrambles[i]).filter((s) => typeof s === "string") : [],
+    ...(c.arrows ? { arrows: c.arrows } : {}),
+  }));
+
+  if (set.verify) {
+    const classes = new Map();
+    for (const c of cases) {
+      let cls = null;
+      for (const a of c.algs) {
+        if (!preservesF2L(a)) {
+          report.push(`${set.name} ${c.name}: alg breaks F2L: ${a}`);
+          failures++;
+          continue;
         }
-      } catch {
-        report.push(`${set.name}: parse FAIL: ${JSON.stringify(a).slice(0, 80)}`);
+        const k = caseClass(a, { orientationOnly: set.name.includes("oll") });
+        if (cls === null) cls = k;
+        else if (k !== cls) {
+          report.push(`${set.name} ${c.name}: algs disagree on case class`);
+          failures++;
+        }
+      }
+      if (cls !== null) {
+        if (classes.has(cls)) {
+          report.push(`${set.name}: ${c.name} duplicates case of ${classes.get(cls)}`);
+          failures++;
+        }
+        classes.set(cls, c.name);
       }
     }
+    report.push(`${set.name}: ${cases.length} cases, ${classes.size} distinct case classes ✓`);
+  } else {
+    report.push(`${set.name}: ${cases.length} cases (4x4 — verified later on the 4x4 kpuzzle)`);
+  }
+  if (set.expect && cases.length !== set.expect) {
+    report.push(`${set.name}: WARNING expected ${set.expect}, got ${cases.length}`);
+    failures++;
   }
   out[set.name] = cases;
-  report.push(
-    `${set.name}: ${cases.length} cases, ${parsed}/${total} algs parse` +
-      (["oll", "pll", "2loll", "2lpll"].includes(set.name) ? `, ${f2lOk}/${total} preserve F2L` : ""),
-  );
-  if (set.expect && cases.length !== set.expect) {
-    report.push(`${set.name}: WARNING expected ${set.expect} cases, got ${cases.length}`);
-  }
 }
 
 await mkdir(new URL("../src/data/extracted", import.meta.url), { recursive: true });
@@ -149,4 +195,5 @@ await writeFile(
   JSON.stringify(out, null, 1),
 );
 console.log(report.join("\n"));
-console.log("\nWrote src/data/extracted/jperm-raw.json");
+console.log(`\nWrote src/data/extracted/jperm-raw.json (${failures} failures)`);
+if (failures > 0) process.exitCode = 1;
