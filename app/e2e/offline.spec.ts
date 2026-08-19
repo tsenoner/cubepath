@@ -42,10 +42,11 @@ test("offline: whole course works in airplane mode after first visit", async ({
   });
   expect(shot).toMatch(/^data:image\/png;base64,/);
 
-  // Fresh scrambles generate offline on a page never visited before.
+  // Fresh WCA scrambles generate offline on a page never visited before.
   await page.goto("/practice/");
+  await page.getByRole("button", { name: "Full solve" }).click();
   await expect(page.getByTestId("scramble")).toHaveText(SCRAMBLE_RE, { timeout: 30_000 });
   const first = await page.getByTestId("scramble").textContent();
-  await page.getByRole("button", { name: "New scramble" }).click();
+  await page.getByRole("button", { name: "Next scramble" }).click();
   await expect(page.getByTestId("scramble")).not.toHaveText(first!, { timeout: 30_000 });
 });

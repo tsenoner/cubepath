@@ -1,62 +1,417 @@
 ---
 import Base from "../../layouts/Base.astro";
 import Header from "../../components/Header.astro";
+import AlgText from "../../components/AlgText.astro";
+import { CASES, primaryAlg } from "../../data/algs";
+import { caseIcon } from "../../data/icons";
+import { TRAINER_GROUPS } from "../../lib/trainer";
+
+const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
 ---
 
-<Base title="Practice — Cubepath" description="On-device WCA scrambles — works fully offline.">
+<Base title="Practice — Cubepath" description="Drill cases with real scrambles and spaced-repetition reviews — fully offline.">
   <Header active="practice" />
   <main>
-    <h1>Practice</h1>
-    <p class="lead">
-      Scrambles are computed on your device — airplane mode works. The full
-      trainer (case drills, spaced-repetition reviews, timer) is on its way.
-    </p>
-    <div class="card scrambler">
-      <span class="label">3×3 · WCA random-state scramble</span>
-      <p class="alg" id="scramble-out" data-testid="scramble">…</p>
-      <button id="scramble-btn" type="button">New scramble</button>
+    <div class="columns">
+      <aside class="card panel">
+        <h3>Case sets</h3>
+        <div id="group-list">
+          {
+            TRAINER_GROUPS.map((g) => (
+              <label class="group-row" data-group={g.key}>
+                <input type="checkbox" data-group-box={g.key} />
+                <span class="group-name">{g.name}</span>
+                <span class="group-count">
+                  {CASES.filter((c) => c.group === g.key).length} cases
+                </span>
+              </label>
+            ))
+          }
+        </div>
+        <h3 class="spaced">Frequencies</h3>
+        <div class="chip-row" id="freq-row">
+          <button class="chip" data-freq="realistic" type="button">Realistic</button>
+          <button class="chip" data-freq="balanced" type="button">Balanced</button>
+        </div>
+        <p class="tiny">Realistic weights cases by how often they appear in real solves.</p>
+      </aside>
+
+      <section class="main-col">
+        <div class="chip-row center" id="mode-row">
+          <button class="chip" data-mode="drill" type="button">Drill</button>
+          <button class="chip" data-mode="solve" type="button">Full solve</button>
+          <button class="chip" data-mode="review" type="button">
+            Review <span id="due-badge" class="badge" hidden></span>
+          </button>
+        </div>
+
+        <div class="card stage" id="drill-stage">
+          <span class="label">SCRAMBLE · HOLD YELLOW UP</span>
+          <p class="alg scramble" id="drill-scramble" data-testid="scramble">…</p>
+          <p class="mono timer" id="timer">0.00</p>
+          <div class="chip-row center" id="stats-row">
+            <span class="chip ghost" id="stat-ao5">ao5 · —</span>
+            <span class="chip ghost" id="stat-ao12">ao12 · —</span>
+            <span class="chip ok" id="stat-best" hidden></span>
+          </div>
+          <div class="chip-row center">
+            <button class="btn primary" id="next-btn" type="button">Next scramble</button>
+            <button class="btn" id="show-case-btn" type="button">Show case</button>
+          </div>
+          <div id="case-reveal" hidden>
+            <img id="case-img" alt="Case diagram" width="84" height="84" />
+            <div>
+              <p class="case-name" id="case-name"></p>
+              <p id="case-alg"></p>
+            </div>
+          </div>
+          <p class="tiny">Space starts and stops the timer · works in airplane mode</p>
+        </div>
+
+        <div class="card stage" id="review-stage" hidden>
+          <span class="label">REVIEW · RECALL THE ALGORITHM</span>
+          <div id="review-body">
+            <img id="review-img" alt="Case diagram" width="110" height="110" />
+            <p class="case-name" id="review-name"></p>
+            <button class="btn primary" id="reveal-btn" type="button">Reveal algorithm</button>
+            <div id="review-answer" hidden>
+              <p id="review-alg" class="review-alg"></p>
+              <div class="chip-row center" id="grade-row">
+                <button class="btn grade again" data-grade="1" type="button">Again <small></small></button>
+                <button class="btn grade" data-grade="2" type="button">Hard <small></small></button>
+                <button class="btn grade good" data-grade="3" type="button">Good <small></small></button>
+                <button class="btn grade" data-grade="4" type="button">Easy <small></small></button>
+              </div>
+            </div>
+          </div>
+          <p id="review-empty" hidden>
+            Nothing due. Reviews appear here after you drill cases — spaced repetition keeps
+            algorithms from fading with a few reviews a day.
+          </p>
+        </div>
+      </section>
+
+      <aside class="card panel">
+        <h3>Your cases</h3>
+        <div id="case-status-list">
+          {
+            trainable.map((c) => (
+              <button class="status-row" data-case={c.id} type="button" title="Click to cycle status">
+                {caseIcon(c.id) && <img src={caseIcon(c.id)} alt="" width="34" height="34" loading="lazy" />}
+                <span class="status-name">{c.name}</span>
+                <span class="status-chip" data-status-chip={c.id}>unseen</span>
+              </button>
+            ))
+          }
+        </div>
+      </aside>
     </div>
   </main>
 </Base>
 
 <script>
-  import { randomScrambleForEvent } from "cubing/scramble";
-  import { setSearchDebug } from "cubing/search";
+  import { caseById, primaryAlg } from "../../data/algs";
+  import { caseIcon } from "../../data/icons";
+  import {
+    averageOf,
+    formatTime,
+    loadSettings,
+    pickCase,
+    poolFor,
+    saveSettings,
+    setupScramble,
+    type TrainerSettings,
+  } from "../../lib/trainer";
+  import { allProgress, ensurePersistence, setStatus, type CaseStatus } from "../../lib/db";
+  import { dueQueue, previewIntervals, review } from "../../lib/srs";
 
-  setSearchDebug({ showWorkerInstantiationWarnings: false });
+  const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
-  const out = document.getElementById("scramble-out")!;
-  const btn = document.getElementById("scramble-btn")! as HTMLButtonElement;
+  let settings: TrainerSettings = await loadSettings();
+  let mode: "drill" | "solve" | "review" = "drill";
+  let currentCase = "";
+  let lastCase: string | undefined;
+  let times: number[] = [];
+  let timerStart = 0;
+  let timerTick: number | undefined;
 
-  async function newScramble() {
-    btn.disabled = true;
-    out.textContent = "thinking…";
-    try {
-      const s = await randomScrambleForEvent("333");
-      out.textContent = s.toString();
-    } catch (e) {
-      out.textContent = `scramble failed: ${e}`;
-    } finally {
-      btn.disabled = false;
+  // ── Settings UI ─────────────────────────────────────────────────────
+  function renderSettings() {
+    for (const box of document.querySelectorAll<HTMLInputElement>("[data-group-box]")) {
+      box.checked = settings.groups.includes(box.dataset.groupBox!);
+    }
+    for (const chip of document.querySelectorAll<HTMLElement>("[data-freq]")) {
+      chip.classList.toggle("active", chip.dataset.freq === settings.frequencies);
     }
   }
+  for (const box of document.querySelectorAll<HTMLInputElement>("[data-group-box]")) {
+    box.addEventListener("change", async () => {
+      const key = box.dataset.groupBox!;
+      settings.groups = box.checked
+        ? [...settings.groups, key]
+        : settings.groups.filter((g) => g !== key);
+      await saveSettings(settings);
+      nextScramble();
+    });
+  }
+  for (const chip of document.querySelectorAll<HTMLElement>("[data-freq]")) {
+    chip.addEventListener("click", async () => {
+      settings.frequencies = chip.dataset.freq as TrainerSettings["frequencies"];
+      await saveSettings(settings);
+      renderSettings();
+    });
+  }
 
-  btn.addEventListener("click", newScramble);
-  newScramble();
+  // ── Drill ───────────────────────────────────────────────────────────
+  async function nextScramble() {
+    if (mode === "solve") {
+      $("drill-scramble").textContent = "thinking…";
+      $("show-case-btn").hidden = true;
+      const { randomScrambleForEvent } = await import("cubing/scramble");
+      const s = await randomScrambleForEvent("333");
+      $("drill-scramble").textContent = s.toString();
+      $("case-reveal").hidden = true;
+      return;
+    }
+    $("show-case-btn").hidden = false;
+    const pool = poolFor(settings.groups);
+    if (pool.length === 0) {
+      $("drill-scramble").textContent = "Select at least one case set.";
+      return;
+    }
+    const def = pickCase(pool, settings.frequencies, lastCase);
+    currentCase = def.id;
+    lastCase = def.id;
+    $("drill-scramble").textContent = setupScramble(def);
+    $("case-reveal").hidden = true;
+    $<HTMLImageElement>("case-img").src = caseIcon(def.id) ?? "";
+    $("case-name").textContent = def.name;
+    $("case-alg").innerHTML = "";
+    const algSpan = document.createElement("span");
+    algSpan.className = "alg";
+    algSpan.textContent = primaryAlg(def);
+    $("case-alg").append(algSpan);
+  }
+  $("next-btn").addEventListener("click", nextScramble);
+  $("show-case-btn").addEventListener("click", () => {
+    $("case-reveal").hidden = !$("case-reveal").hidden;
+  });
+
+  function stopTimer() {
+    if (timerTick === undefined) return;
+    clearInterval(timerTick);
+    timerTick = undefined;
+    const elapsed = performance.now() - timerStart;
+    times.push(elapsed);
+    $("timer").textContent = formatTime(elapsed);
+    const ao5 = averageOf(times, 5);
+    const ao12 = averageOf(times, 12);
+    $("stat-ao5").textContent = `ao5 · ${ao5 ? formatTime(ao5) : "—"}`;
+    $("stat-ao12").textContent = `ao12 · ${ao12 ? formatTime(ao12) : "—"}`;
+    const best = Math.min(...times);
+    const bestEl = $("stat-best");
+    bestEl.hidden = false;
+    bestEl.textContent = `best · ${formatTime(best)}`;
+    void ensurePersistence();
+    nextScramble();
+  }
+  function startTimer() {
+    timerStart = performance.now();
+    timerTick = window.setInterval(() => {
+      $("timer").textContent = formatTime(performance.now() - timerStart);
+    }, 47);
+  }
+  document.addEventListener("keydown", (e) => {
+    if (e.code !== "Space" || mode === "review") return;
+    const target = e.target as HTMLElement;
+    if (target.tagName === "INPUT" || target.tagName === "BUTTON") target.blur();
+    e.preventDefault();
+    timerTick === undefined ? startTimer() : stopTimer();
+  });
+  $("timer").addEventListener("click", () => {
+    timerTick === undefined ? startTimer() : stopTimer();
+  });
+
+  // ── Case status list ────────────────────────────────────────────────
+  const STATUS_ORDER: CaseStatus[] = ["unseen", "learning", "learned"];
+  async function renderStatuses() {
+    const progress = new Map((await allProgress()).map((p) => [p.caseId, p.status]));
+    for (const chip of document.querySelectorAll<HTMLElement>("[data-status-chip]")) {
+      const status = progress.get(chip.dataset.statusChip!) ?? "unseen";
+      chip.textContent = status;
+      chip.dataset.value = status;
+    }
+  }
+  for (const row of document.querySelectorAll<HTMLElement>("[data-case]")) {
+    row.addEventListener("click", async () => {
+      const id = row.dataset.case!;
+      const chip = document.querySelector<HTMLElement>(`[data-status-chip="${id}"]`)!;
+      const current = (chip.dataset.value ?? "unseen") as CaseStatus;
+      const next = STATUS_ORDER[(STATUS_ORDER.indexOf(current) + 1) % 3]!;
+      await setStatus(id, next);
+      void ensurePersistence();
+      await renderStatuses();
+    });
+  }
+
+  // ── Review (FSRS) ───────────────────────────────────────────────────
+  let reviewQueue: string[] = [];
+  async function refreshDueBadge() {
+    const due = await dueQueue(new Date());
+    const badge = $("due-badge");
+    badge.hidden = due.length === 0;
+    badge.textContent = String(due.length);
+    return due;
+  }
+  async function nextReview() {
+    reviewQueue = await refreshDueBadge();
+    const empty = reviewQueue.length === 0;
+    $("review-body").hidden = empty;
+    $("review-empty").hidden = !empty;
+    if (empty) return;
+    const id = reviewQueue[0]!;
+    const def = caseById.get(id);
+    if (!def) return;
+    $<HTMLImageElement>("review-img").src = caseIcon(id) ?? "";
+    $("review-name").textContent = def.name;
+    $("review-answer").hidden = true;
+    $("reveal-btn").hidden = false;
+    const labels = await previewIntervals(id, new Date());
+    for (const btn of document.querySelectorAll<HTMLElement>("[data-grade]")) {
+      const name = { 1: "Again", 2: "Hard", 3: "Good", 4: "Easy" }[Number(btn.dataset.grade)]!;
+      btn.querySelector("small")!.textContent = labels[name] ?? "";
+    }
+    const algP = $("review-alg");
+    algP.textContent = primaryAlg(def);
+    algP.className = "alg review-alg";
+  }
+  $("reveal-btn").addEventListener("click", () => {
+    $("review-answer").hidden = false;
+    $("reveal-btn").hidden = true;
+  });
+  for (const btn of document.querySelectorAll<HTMLElement>("[data-grade]")) {
+    btn.addEventListener("click", async () => {
+      const id = reviewQueue[0];
+      if (!id) return;
+      await review(id, Number(btn.dataset.grade) as 1 | 2 | 3, new Date());
+      void ensurePersistence();
+      await nextReview();
+    });
+  }
+
+  // Seed review cards when a case is drilled and revealed? Keep explicit:
+  // drilling adds nothing; the "learning" status click and grading do.
+
+  // ── Mode switching ──────────────────────────────────────────────────
+  for (const chip of document.querySelectorAll<HTMLElement>("[data-mode]")) {
+    chip.addEventListener("click", async () => {
+      mode = chip.dataset.mode as typeof mode;
+      for (const c of document.querySelectorAll<HTMLElement>("[data-mode]")) {
+        c.classList.toggle("active", c === chip);
+      }
+      $("drill-stage").hidden = mode === "review";
+      $("review-stage").hidden = mode !== "review";
+      if (mode === "review") await nextReview();
+      else await nextScramble();
+    });
+  }
+
+  // ── Boot ────────────────────────────────────────────────────────────
+  renderSettings();
+  document.querySelector<HTMLElement>('[data-mode="drill"]')!.classList.add("active");
+  await nextScramble();
+  await renderStatuses();
+  await refreshDueBadge();
+  void currentCase;
 </script>
 
 <style>
   main {
-    max-width: 720px;
+    max-width: 1200px;
     margin: 0 auto;
-    padding: 34px 20px 60px;
+    padding: 26px 20px 60px;
   }
-  .lead {
+  .columns {
+    display: grid;
+    grid-template-columns: 250px minmax(0, 1fr) 260px;
+    gap: 18px;
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    .columns {
+      grid-template-columns: 1fr;
+    }
+  }
+  .panel {
+    padding: 16px 18px;
+  }
+  .panel h3 {
+    margin-bottom: 8px;
+  }
+  .spaced {
+    margin-top: 18px;
+  }
+  .group-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-top: 1px solid var(--line);
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .group-name {
+    font-weight: 600;
+    flex-grow: 1;
+  }
+  .group-count {
+    color: var(--faint);
+    font-size: 12px;
+  }
+  .chip-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .chip-row.center {
+    justify-content: center;
+  }
+  .chip {
+    font: 600 12.5px var(--font-body);
+    border: 1px solid var(--line);
     color: var(--soft);
-    margin: 8px 0 22px;
+    background: transparent;
+    border-radius: 999px;
+    padding: 4px 12px;
+    cursor: pointer;
   }
-  .scrambler {
-    padding: 24px;
+  .chip.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .chip.ghost {
+    cursor: default;
+  }
+  .chip.ok {
+    background: var(--ok-soft);
+    border-color: transparent;
+    color: var(--ok);
+    cursor: default;
+  }
+  .badge {
+    background: #fff3;
+    border-radius: 999px;
+    padding: 0 6px;
+    margin-left: 4px;
+  }
+  .main-col {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .stage {
+    padding: 26px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -64,27 +419,117 @@ import Header from "../../components/Header.astro";
     text-align: center;
   }
   .label {
-    font-size: 12px;
+    font-size: 11.5px;
     font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    letter-spacing: 0.09em;
     color: var(--faint);
   }
-  .alg {
-    font-size: 17px;
+  .scramble {
+    font-size: 18px;
     margin: 0;
     overflow-wrap: anywhere;
   }
-  button {
+  .timer {
+    font-size: 58px;
+    font-weight: 600;
+    margin: 0;
+    cursor: pointer;
+    user-select: none;
+  }
+  .btn {
     font: 600 14px var(--font-body);
-    color: #fff;
-    background: var(--accent);
-    border: 0;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--ink);
     border-radius: 8px;
-    padding: 10px 18px;
+    padding: 9px 16px;
     cursor: pointer;
   }
-  button:disabled {
-    opacity: 0.6;
+  .btn.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .btn.grade small {
+    display: block;
+    font-weight: 500;
+    color: inherit;
+    opacity: 0.75;
+    font-size: 11px;
+  }
+  .btn.grade.again {
+    border-color: var(--warn);
+    color: var(--warn);
+  }
+  .btn.grade.good {
+    background: var(--ok);
+    border-color: var(--ok);
+    color: #fff;
+  }
+  #case-reveal {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+  }
+  #case-reveal[hidden] {
+    display: none;
+  }
+  .case-name {
+    font-weight: 600;
+    margin: 0 0 4px;
+  }
+  #review-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  #review-body[hidden] {
+    display: none;
+  }
+  .review-alg {
+    font-size: 16px;
+  }
+  .tiny {
+    color: var(--faint);
+    font-size: 12px;
+    margin: 0;
+  }
+  .status-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 6px 0;
+    border: 0;
+    border-top: 1px solid var(--line);
+    background: transparent;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+  }
+  .status-name {
+    font-weight: 600;
+    font-size: 13.5px;
+    flex-grow: 1;
+  }
+  .status-chip {
+    font-size: 11.5px;
+    font-weight: 600;
+    border-radius: 999px;
+    padding: 2px 9px;
+    border: 1px solid var(--line);
+    color: var(--faint);
+  }
+  .status-chip[data-value="learning"] {
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-color: transparent;
+  }
+  .status-chip[data-value="learned"] {
+    background: var(--ok-soft);
+    color: var(--ok);
+    border-color: transparent;
   }
 </style>

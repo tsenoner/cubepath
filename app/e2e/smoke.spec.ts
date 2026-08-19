@@ -20,7 +20,10 @@ test("lesson page renders its case players", async ({ page }) => {
   expect(shot).toMatch(/^data:image\/png;base64,/);
 });
 
-test("practice page generates on-device scrambles", async ({ page }) => {
+test("practice: drill scrambles + WCA full-solve scrambles on-device", async ({ page }) => {
   await page.goto("/practice/");
+  await expect(page.getByTestId("scramble")).not.toHaveText("…", { timeout: 15_000 });
+  await expect(page.getByTestId("scramble")).not.toContainText("thinking");
+  await page.getByRole("button", { name: "Full solve" }).click();
   await expect(page.getByTestId("scramble")).toHaveText(SCRAMBLE_RE, { timeout: 30_000 });
 });
