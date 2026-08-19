@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "astro/config";
 import mdx from "@astrojs/mdx";
+import AstroPWA from "@vite-pwa/astro";
 
 /**
  * Vite's preload helper touches `document` unguarded, which crashes when it
@@ -43,7 +44,40 @@ function workerSafePreloadHelper() {
 export default defineConfig({
   site: "https://cubepath.vercel.app",
   output: "static",
-  integrations: [mdx(), workerSafePreloadHelper()],
+  integrations: [
+    mdx(),
+    AstroPWA({
+      registerType: "prompt",
+      includeAssets: ["favicon.svg", "apple-touch-icon.png"],
+      manifest: {
+        id: "/",
+        name: "Cubepath",
+        short_name: "Cubepath",
+        description: "Learn to solve the cube: zero to full CFOP, plus 4×4 and 5×5. Free, offline, interactive.",
+        start_url: "/",
+        scope: "/",
+        display: "standalone",
+        theme_color: "#fcfbf8",
+        background_color: "#fcfbf8",
+        icons: [
+          { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+          { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+          { src: "/icons/maskable-192.png", sizes: "192x192", type: "image/png", purpose: "maskable" },
+          { src: "/icons/maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+        ],
+      },
+      workbox: {
+        // Precache EVERYTHING — the whole course must work in airplane mode,
+        // including cubing.js's lazy worker/wasm/3D chunks.
+        globPatterns: ["**/*.{css,js,html,svg,png,ico,txt,json,webmanifest,woff2,wasm}"],
+        maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
+        navigateFallback: null,
+      },
+      experimental: { directoryAndTrailingSlashHandler: true },
+      devOptions: { enabled: false },
+    }),
+    workerSafePreloadHelper(),
+  ],
   vite: {
     // Known-good cubing.js setup (cubing.js#323/#327)
     optimizeDeps: { exclude: ["cubing"] },

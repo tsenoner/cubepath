@@ -1,0 +1,126 @@
+---
+/**
+ * PWA plumbing rendered once in the base layout:
+ * - service-worker registration with "prompt" update flow
+ * - "available offline" + "update available" toasts
+ * - install affordances (Android/desktop button, iOS hint)
+ */
+---
+
+<div id="pwa-toast" hidden>
+  <span id="pwa-toast-msg"></span>
+  <button id="pwa-toast-reload" type="button" hidden>Reload</button>
+  <button id="pwa-toast-close" type="button" aria-label="Dismiss">✕</button>
+</div>
+
+<div id="ios-install-hint" hidden>
+  <span>Install Cubepath: tap <strong>Share</strong> → <strong>Add to Home Screen</strong> — the whole course works offline.</span>
+  <button id="ios-hint-close" type="button" aria-label="Dismiss">✕</button>
+</div>
+
+<script>
+  import { registerSW } from "virtual:pwa-register";
+
+  const toast = document.getElementById("pwa-toast")!;
+  const msg = document.getElementById("pwa-toast-msg")!;
+  const reloadBtn = document.getElementById("pwa-toast-reload")! as HTMLButtonElement;
+  const closeBtn = document.getElementById("pwa-toast-close")!;
+
+  function showToast(text: string, withReload: boolean) {
+    msg.textContent = text;
+    reloadBtn.hidden = !withReload;
+    toast.hidden = false;
+  }
+  closeBtn.addEventListener("click", () => (toast.hidden = true));
+
+  const refreshSW = registerSW({
+    immediate: true,
+    onOfflineReady() {
+      if (!localStorage.getItem("cubepath.offline-toast-shown")) {
+        localStorage.setItem("cubepath.offline-toast-shown", "1");
+        showToast("Cubepath is ready to work offline.", false);
+      }
+    },
+    onNeedRefresh() {
+      showToast("A new version is available.", true);
+    },
+  });
+  reloadBtn.addEventListener("click", () => refreshSW(true));
+
+  // iOS install hint: Safari on iOS, not yet installed, shown once.
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const standalone =
+    matchMedia("(display-mode: standalone)").matches || (navigator as any).standalone === true;
+  const hint = document.getElementById("ios-install-hint")!;
+  if (isIOS && !standalone && !localStorage.getItem("cubepath.ios-hint-dismissed")) {
+    hint.hidden = false;
+  }
+  document.getElementById("ios-hint-close")!.addEventListener("click", () => {
+    localStorage.setItem("cubepath.ios-hint-dismissed", "1");
+    hint.hidden = true;
+  });
+
+  // Android/desktop install: surface a button in any [data-install-slot].
+  let deferredPrompt: any = null;
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    for (const slot of document.querySelectorAll<HTMLElement>("[data-install-slot]")) {
+      slot.hidden = false;
+      slot.addEventListener("click", async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        slot.hidden = true;
+      });
+    }
+  });
+  window.addEventListener("appinstalled", () => {
+    for (const slot of document.querySelectorAll<HTMLElement>("[data-install-slot]")) {
+      slot.hidden = true;
+    }
+    void navigator.storage?.persist?.();
+  });
+</script>
+
+<style>
+  #pwa-toast,
+  #ios-install-hint {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: min(92vw, 480px);
+    padding: 12px 16px;
+    background: var(--card);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: 0 4px 24px rgb(0 0 0 / 0.12);
+    font-size: 14px;
+    z-index: 50;
+  }
+  #pwa-toast[hidden],
+  #ios-install-hint[hidden] {
+    display: none;
+  }
+  #pwa-toast button,
+  #ios-install-hint button {
+    font: 600 13px var(--font-body);
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--ink);
+    border-radius: 7px;
+    padding: 6px 10px;
+    cursor: pointer;
+  }
+  #pwa-toast-reload {
+    background: var(--accent);
+    color: #fff;
+    border-color: transparent;
+  }
+</style>
