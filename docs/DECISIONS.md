@@ -58,3 +58,15 @@ courses · PDF stays first-class.
   in every build.
 - twisty-player uses a **closed** shadow root — E2E asserts rendering via the
   element's own `experimentalScreenshot()` instead of DOM probing.
+
+## Deploys
+
+- The Vercel **GitHub App is not installed** on the user's GitHub account
+  (interactive web authorization required — cannot be done autonomously), and
+  the local Vercel CLI token is expired. Deploys therefore go through the
+  authenticated Vercel MCP (`deploy_to_vercel`, source-file deploys) per
+  milestone. Production alias: https://cubepath-six.vercel.app.
+  TODO for the user: install https://github.com/apps/vercel on tsenoner/cubepath
+  and link the project (Root Directory = `app`) for automatic git deploys.
+- Vercel Deployment Protection (SSO) disabled on the project — required for a
+  public PWA and service-worker testing.
