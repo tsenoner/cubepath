@@ -8,7 +8,8 @@ import { Alg } from "cubing/alg";
 import { puzzles } from "cubing/puzzles";
 import type { KPuzzle } from "cubing/kpuzzle";
 
-import { CASES, primaryAlg } from "../src/data/algs";
+import { ALL_CASES, CASES, primaryAlg } from "../src/data/algs";
+import { CASE_SCRAMBLES } from "../src/data/fullsets.gen";
 
 const kpuzzleCache = new Map<string, Promise<KPuzzle>>();
 
@@ -32,7 +33,7 @@ async function algSolvesItsInverse(puzzle: string, moves: string): Promise<boole
 }
 
 describe("every case's algorithms are valid and solve their own case", () => {
-  for (const def of CASES) {
+  for (const def of ALL_CASES) {
     for (const [i, variant] of def.algs.entries()) {
       test(`${def.id} alg[${i}] (${variant.moves})`, async () => {
         // Parses as a real alg for this puzzle (throws on unknown moves)…
@@ -47,22 +48,45 @@ describe("every case's algorithms are valid and solve their own case", () => {
 
 describe("dataset invariants", () => {
   test("ids are unique", () => {
-    const ids = CASES.map((k) => k.id);
+    const ids = ALL_CASES.map((k) => k.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
 
   test("every case has exactly one primary algorithm", () => {
-    for (const def of CASES) {
+    for (const def of ALL_CASES) {
       expect(def.algs.filter((a) => a.primary).length, def.id).toBe(1);
       expect(primaryAlg(def)).toBeTruthy();
     }
   });
 
   test("prereqs reference existing cases", () => {
-    const ids = new Set(CASES.map((k) => k.id));
-    for (const def of CASES) {
+    const ids = new Set(ALL_CASES.map((k) => k.id));
+    for (const def of ALL_CASES) {
       for (const p of def.prereqs ?? []) {
         expect(ids.has(p), `${def.id} prereq ${p}`).toBe(true);
+      }
+    }
+  });
+
+  test("full OLL/PLL coverage present", () => {
+    expect(ALL_CASES.filter((k) => k.id.startsWith("oll.")).length).toBe(57);
+    expect(ALL_CASES.filter((k) => k.id.startsWith("pll.")).length).toBe(21);
+  });
+
+  test("curated course cases survive the merge", () => {
+    for (const def of CASES) {
+      expect(ALL_CASES.some((k) => k.id === def.id && k.recognition === def.recognition)).toBe(true);
+    }
+  });
+
+  test("scrambles parse and reference existing cases", async () => {
+    const ids = new Set(ALL_CASES.map((k) => k.id));
+    for (const [id, list] of Object.entries(CASE_SCRAMBLES)) {
+      expect(ids.has(id), id).toBe(true);
+      const def = ALL_CASES.find((k) => k.id === id)!;
+      const kpuzzle = await kpuzzleFor(def.puzzle);
+      for (const s of list) {
+        kpuzzle.algToTransformation(new Alg(s));
       }
     }
   });

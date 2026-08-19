@@ -261,7 +261,20 @@ export const CASES: CaseDef[] = [
   }),
 ];
 
-export const caseById = new Map(CASES.map((k) => [k.id, k]));
+import { GENERATED_CASES } from "./fullsets.gen";
+
+/**
+ * The complete dataset: curated course cases take precedence over generated
+ * entries with the same id (they carry hand-written recognition + phases);
+ * generated entries fill in the full OLL/PLL/4x4 sets.
+ */
+const curatedIds = new Set(CASES.map((k) => k.id));
+export const ALL_CASES: CaseDef[] = [
+  ...CASES,
+  ...GENERATED_CASES.filter((k) => !curatedIds.has(k.id)),
+];
+
+export const caseById = new Map(ALL_CASES.map((k) => [k.id, k]));
 
 export function primaryAlg(def: CaseDef): string {
   const p = def.algs.find((a) => a.primary) ?? def.algs[0];

@@ -2,7 +2,8 @@
 import Base from "../../layouts/Base.astro";
 import Header from "../../components/Header.astro";
 import CaseRow from "../../components/CaseRow.astro";
-import { CASES } from "../../data/algs";
+import { ALL_CASES, CASES } from "../../data/algs";
+import { caseIcon } from "../../data/icons";
 
 const GROUPS: { key: string; name: string }[] = [
   { key: "cross-eo", name: "Yellow Cross" },
@@ -11,6 +12,21 @@ const GROUPS: { key: string; name: string }[] = [
   { key: "2look-pll-edges", name: "Edge Permutation (2-Look PLL)" },
   { key: "444-parity", name: "4×4 Parity" },
 ];
+
+// Full sets, grouped by shape/type, linking to per-case pages.
+function fullSet(prefix: string) {
+  const items = ALL_CASES.filter((k) => k.id.startsWith(prefix) && k.phase.startsWith("full"));
+  const groups = new Map<string, typeof items>();
+  for (const k of items) {
+    if (!groups.has(k.group)) groups.set(k.group, []);
+    groups.get(k.group)!.push(k);
+  }
+  return [...groups.entries()];
+}
+const fullOLL = fullSet("oll.");
+const fullPLL = fullSet("pll.");
+const groupTitle = (g: string) =>
+  g.replace(/^(oll|pll)-/, "").replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 ---
 
 <Base title="Algorithm Reference — Cubepath" description="Every Cubepath algorithm — machine-verified, tap to play in 3D.">
@@ -38,6 +54,46 @@ const GROUPS: { key: string; name: string }[] = [
         );
       })
     }
+
+    <section>
+      <h2>Full OLL — all 57 cases by shape</h2>
+      <p class="lead">The complete orientation set, grouped the way you recognize them.</p>
+      {
+        fullOLL.map(([group, items]) => (
+          <div class="full-group">
+            <h3>{groupTitle(group)}</h3>
+            <div class="icon-grid">
+              {items.map((k) => (
+                <a href={`/case/${k.id}/`} class="icon-cell" title={k.name}>
+                  <img src={caseIcon(k.id)} alt={k.name} width="72" height="72" loading="lazy" />
+                  <span>{k.name.replace("OLL ", "")}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        ))
+      }
+    </section>
+
+    <section>
+      <h2>Full PLL — all 21 cases</h2>
+      <p class="lead">Permutations with their piece-movement arrows.</p>
+      {
+        fullPLL.map(([group, items]) => (
+          <div class="full-group">
+            <h3>{groupTitle(group)}</h3>
+            <div class="icon-grid">
+              {items.map((k) => (
+                <a href={`/case/${k.id}/`} class="icon-cell" title={k.name}>
+                  <img src={caseIcon(k.id)} alt={k.name} width="72" height="72" loading="lazy" />
+                  <span>{k.name.replace("-Perm", "")}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        ))
+      }
+    </section>
   </main>
 </Base>
 
@@ -60,5 +116,36 @@ const GROUPS: { key: string; name: string }[] = [
   }
   .case-list {
     overflow: hidden;
+  }
+  .full-group {
+    margin: 14px 0;
+  }
+  .full-group h3 {
+    font-size: 15px;
+    color: var(--soft);
+    margin-bottom: 8px;
+  }
+  .icon-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .icon-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 8px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--card);
+    color: var(--soft);
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .icon-cell:hover {
+    text-decoration: none;
+    border-color: var(--accent);
+    color: var(--accent);
   }
 </style>

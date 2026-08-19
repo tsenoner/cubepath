@@ -4,7 +4,7 @@ import Header from "../../components/Header.astro";
 import AlgText from "../../components/AlgText.astro";
 import { CASES, primaryAlg } from "../../data/algs";
 import { caseIcon } from "../../data/icons";
-import { TRAINER_GROUPS } from "../../lib/trainer";
+import { TRAINER_GROUPS, groupSize } from "../../lib/trainer";
 
 const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
 ---
@@ -21,9 +21,7 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
               <label class="group-row" data-group={g.key}>
                 <input type="checkbox" data-group-box={g.key} />
                 <span class="group-name">{g.name}</span>
-                <span class="group-count">
-                  {CASES.filter((c) => c.group === g.key).length} cases
-                </span>
+                <span class="group-count">{groupSize(g.key)} cases</span>
               </label>
             ))
           }

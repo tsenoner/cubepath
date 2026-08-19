@@ -18,6 +18,16 @@ const ICONS: Record<string, string> = {
   "pll.z": "/diagrams/pll/pll_zperm.svg",
 };
 
+function fullSetIcon(id: string): string | undefined {
+  const oll = id.match(/^oll\.(\d+)$/);
+  if (oll) return `/diagrams/oll-full/oll_${oll[1]!.padStart(2, "0")}.svg`;
+  const pll = id.match(/^pll\.([a-z]+)$/);
+  if (pll) return `/diagrams/pll-full/pll_full_${pll[1]}.svg`;
+  return undefined;
+}
+
 export function caseIcon(id: string): string | undefined {
-  return ICONS[id];
+  // Curated 2-look icons keep the course's original diagrams; everything
+  // else falls back to the generated full-set diagrams.
+  return ICONS[id] ?? fullSetIcon(id);
 }

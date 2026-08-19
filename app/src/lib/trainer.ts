@@ -4,7 +4,8 @@
  */
 import { Alg } from "cubing/alg";
 
-import { CASES, primaryAlg, type CaseDef } from "../data/algs";
+import { ALL_CASES, primaryAlg, type CaseDef } from "../data/algs";
+import { CASE_SCRAMBLES } from "../data/fullsets.gen";
 import { getDB } from "./db";
 
 export interface TrainerSettings {
@@ -30,17 +31,42 @@ export async function saveSettings(settings: TrainerSettings): Promise<void> {
   await db.put("settings", settings, "trainer");
 }
 
-/** Trainable groups in course order, with display names. */
-export const TRAINER_GROUPS: { key: string; name: string }[] = [
-  { key: "cross-eo", name: "Yellow cross" },
-  { key: "2look-oll-corners", name: "2-Look OLL corners" },
-  { key: "2look-pll-corners", name: "2-Look PLL corners" },
-  { key: "2look-pll-edges", name: "2-Look PLL edges" },
+/** Trainable sets in course order, with display names and case predicates. */
+export const TRAINER_GROUPS: {
+  key: string;
+  name: string;
+  member: (c: CaseDef) => boolean;
+}[] = [
+  { key: "cross-eo", name: "Yellow cross", member: (c) => c.group === "cross-eo" },
+  {
+    key: "2look-oll-corners",
+    name: "2-Look OLL corners",
+    member: (c) => c.group === "2look-oll-corners",
+  },
+  {
+    key: "2look-pll-corners",
+    name: "2-Look PLL corners",
+    member: (c) => c.group === "2look-pll-corners",
+  },
+  {
+    key: "2look-pll-edges",
+    name: "2-Look PLL edges",
+    member: (c) => c.group === "2look-pll-edges",
+  },
+  { key: "full-oll", name: "Full OLL (57)", member: (c) => c.phase === "full-oll" },
+  { key: "full-pll", name: "Full PLL (all 21)", member: (c) => c.phase === "full-pll" },
 ];
 
+export function groupSize(key: string): number {
+  const g = TRAINER_GROUPS.find((t) => t.key === key);
+  return g ? ALL_CASES.filter((c) => c.puzzle === "3x3x3" && g.member(c)).length : 0;
+}
+
 export function poolFor(groups: string[]): CaseDef[] {
-  const keys = new Set(groups);
-  return CASES.filter((c) => keys.has(c.group) && c.puzzle === "3x3x3");
+  const members = TRAINER_GROUPS.filter((t) => groups.includes(t.key)).map((t) => t.member);
+  const pool = ALL_CASES.filter((c) => c.puzzle === "3x3x3" && members.some((m) => m(c)));
+  // The 2-look sets overlap with the full sets by id — dedupe.
+  return [...new Map(pool.map((c) => [c.id, c])).values()];
 }
 
 function probabilityWeight(def: CaseDef): number {
@@ -73,8 +99,15 @@ export function pickCase(
 
 const AUFS = ["", "U ", "U2 ", "U' "];
 
-/** Setup scramble: random AUF + inverse of the case's algorithm + random AUF. */
+/**
+ * Setup scramble for a case: prefer the verified per-case scramble pool
+ * (varied U-layer permutations); fall back to inverse-of-alg with random AUFs.
+ */
 export function setupScramble(def: CaseDef, random: () => number = Math.random): string {
+  const pool = CASE_SCRAMBLES[def.id];
+  if (pool && pool.length > 0) {
+    return pool[Math.floor(random() * pool.length)]!;
+  }
   const inv = new Alg(primaryAlg(def)).invert().toString();
   const pre = AUFS[Math.floor(random() * 4)]!;
   const post = AUFS[Math.floor(random() * 4)]!;
