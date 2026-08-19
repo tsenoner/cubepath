@@ -17,7 +17,13 @@ uv run ruff check src/ tests/
 uv run ruff format src/ tests/
 ```
 
-**Prerequisites:** uv, pandoc (>=3.0), typst
+**Prerequisites:** uv, pandoc (>=3.0), typst, Node >= 22.12 (app/)
+
+**Local CI gate:** run `git config core.hooksPath .githooks` once per clone.
+The pre-push hook runs the full CI-equivalent check (ruff, pytest, astro
+check, vitest, astro build) — a push that would fail CI is rejected locally.
+Deploy payloads are built ONLY by `scripts/build-deploy-payload.py`, which
+refuses incomplete file sets.
 
 ## Architecture
 

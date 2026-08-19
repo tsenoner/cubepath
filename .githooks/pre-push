@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Local CI-equivalent gate: nothing that would fail CI may be pushed.
+# Installed via: git config core.hooksPath .githooks
+set -euo pipefail
+ROOT="$(git rev-parse --show-toplevel)"
+
+echo "[pre-push] python pipeline (ruff + pytest)…"
+(cd "$ROOT/tools/diagrams" && uv run ruff check src/ tests/ -q && uv run ruff format --check -q src/ tests/ && uv run pytest tests/ -q)
+
+if [ -d "$ROOT/app/node_modules" ]; then
+  echo "[pre-push] app (astro check + vitest + build)…"
+  (cd "$ROOT/app" && npx astro check && npx vitest run --silent && npx astro build > /dev/null)
+else
+  echo "[pre-push] app: node_modules missing — run npm install in app/ first" >&2
+  exit 1
+fi
+echo "[pre-push] all gates green ✓"
