@@ -40,7 +40,9 @@ for dirpath, dirnames, filenames in os.walk(APP):
         rel = os.path.relpath(path, APP).replace(os.sep, "/")
         ext = os.path.splitext(f)[1]
         if ext in BIN_EXT:
-            files.append({"file": rel, "data": base64.b64encode(open(path, "rb").read()).decode(), "encoding": "base64"})
+            b64 = base64.b64encode(open(path, "rb").read()).decode()
+            wrapped = "\n".join(b64[i : i + 96] for i in range(0, len(b64), 96))
+            files.append({"file": rel, "data": wrapped, "encoding": "base64"})
         elif ext in TEXT_EXT:
             files.append({"file": rel, "data": open(path, encoding="utf-8").read()})
 

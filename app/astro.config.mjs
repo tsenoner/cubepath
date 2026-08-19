@@ -42,7 +42,7 @@ function workerSafePreloadHelper() {
 
 // https://astro.build/config
 export default defineConfig({
-  site: "https://cubepath.vercel.app",
+  site: "https://cubepath-six.vercel.app",
   output: "static",
   integrations: [
     mdx(),
