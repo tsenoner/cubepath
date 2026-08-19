@@ -1,31 +1,57 @@
 /**
  * One-time curriculum extraction: fetch JPerm's alg-set data files, parse the
- * `algsetAlgs` + `algsetScrambles` arrays, validate every algorithm, verify
- * case-class consistency mechanically, and emit typed JSON for src/data/.
- * Committed output — never fetched at build or runtime (offline-first).
+ * `algsetAlgs` + `algsetScrambles` arrays, validate every algorithm and
+ * scramble, verify case-class consistency mechanically, and emit typed JSON
+ * for src/data/. Committed output — never fetched at build or runtime
+ * (offline-first). The JSON is written only when validation is fully clean;
+ * on any failure the report prints and the committed file is left untouched.
  *
- * Validation layers (3×3 sets):
+ * Validation layers — 3×3 sets (oll, pll):
  *  1. every alg parses (`new Alg(s)`) and is legal on the 3x3 kpuzzle
- *  2. every OLL/PLL alg preserves the first two layers (rotation-normalized)
- *  3. all algs of one case solve the same last-layer state class (up to AUF),
- *     and distinct cases have distinct classes
+ *  2. every alg preserves the first two layers (rotation-normalized)
+ *  3. all algs of one case solve the same case class (up to AUF), and
+ *     distinct cases have distinct classes — classBy "orientation" (OLL:
+ *     U-layer permutation is free) or "full" (PLL: exact state)
+ *  4. every scramble parses and produces its case: scramble (+ optional AUF —
+ *     a case is an AUF-equivalence class, and a handful of JPerm scrambles
+ *     present the case pre-rotated) + primary alg lands in the identity
+ *     class under the set's classBy
+ *
+ * 4×4 sets (4x4oll, 4x4pll):
+ *  1. the file's `specialAlg` matches the parity alg pinned by
+ *     docs/research/tech-brief.md §8, and every `[*]` placeholder is expanded
+ *     with it — each lib file declares its own: 4x4oll → OLL parity,
+ *     4x4pll → PLL parity (a case whose alg is just "[*]" IS "apply parity")
+ *  2. after expansion, every alg parses and is legal on the 4x4 kpuzzle
+ *     (M/M'/M2 → SiGN m/m'/m2; see translate4x4Slices)
+ *  3. every scramble parses and is legal on the 4x4 kpuzzle
+ *  TODO(M3): full 4x4 case-class + scramble-produces-case checks on the
+ *  4x4 kpuzzle (needs an orientation-mask class model for 4x4 OLL).
  *
  * Usage: node scripts/extract-algs.mjs
  */
-import { writeFile, mkdir } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import vm from "node:vm";
 import { Alg } from "cubing/alg";
-import { cube3x3x3 } from "cubing/puzzles";
+import { cube3x3x3, puzzles } from "cubing/puzzles";
 
+// Parity algs pinned by docs/research/tech-brief.md §8 (jperm.net/4x4 verbatim).
+const OLL_PARITY = "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'";
+const PLL_PARITY = "2R2 U2 2R2 Uw2 2R2 Uw2";
+
+// classBy: how a 3x3 case's class is computed — "orientation" (OLL) or "full"
+// (PLL). 4x4 sets carry `parity` (their `[*]` expansion, cross-checked against
+// the file's own `specialAlg`) instead and get parse/legality checks only.
 const SETS = [
-  { name: "oll", url: "https://jperm.net/lib/oll.js", expect: 57, verify: true },
-  { name: "pll", url: "https://jperm.net/lib/pll.js", expect: 21, verify: true },
-  { name: "4x4oll", url: "https://jperm.net/lib/4x4oll.js", expect: null, verify: false },
-  { name: "4x4pll", url: "https://jperm.net/lib/4x4pll.js", expect: null, verify: false },
+  { name: "oll", url: "https://jperm.net/lib/oll.js", expect: 57, classBy: "orientation" },
+  { name: "pll", url: "https://jperm.net/lib/pll.js", expect: 21, classBy: "full" },
+  { name: "4x4oll", url: "https://jperm.net/lib/4x4oll.js", expect: 27, parity: OLL_PARITY },
+  { name: "4x4pll", url: "https://jperm.net/lib/4x4pll.js", expect: 22, parity: PLL_PARITY },
 ];
 
 const kpuzzle = await cube3x3x3.kpuzzle();
 const solved = kpuzzle.defaultPattern();
+const kpuzzle4 = await puzzles["4x4x4"].kpuzzle();
 
 // All 24 cube orientations as rotation algs.
 const ROTATIONS = [];
@@ -34,22 +60,27 @@ for (const a of ["", "x", "x2", "x'", "z", "z'"]) {
     ROTATIONS.push([a, b].filter(Boolean).join(" "));
   }
 }
+const ROTATION_ALGS = ROTATIONS.map((r) => (r ? new Alg(r) : null));
 
 function centersSolved(pattern) {
-  // Center ORIENTATION is invisible on a standard cube (picture cubes aside):
-  // slice moves twist fixed centers, so compare piece positions only.
+  // The 3x3 kpuzzle pins center orientation (CENTERS orientationMod is all
+  // 1s, so pattern orientation is always 0) — pieces are the whole story.
   const c = pattern.patternData.CENTERS;
   const s = solved.patternData.CENTERS;
   return c.pieces.every((p, i) => p === s.pieces[i]);
 }
 
-/** Rotate a pattern so its centers are solved; null if impossible. */
+/**
+ * Rotate a pattern so its centers are solved. Every pattern reachable from
+ * solved by algs normalizes (centers only ever move as a rigid frame), so
+ * failure is an internal bug — throw, never fall back.
+ */
 function normalizeOrientation(pattern) {
-  for (const r of ROTATIONS) {
-    const p = r ? pattern.applyAlg(new Alg(r)) : pattern;
+  for (const r of ROTATION_ALGS) {
+    const p = r ? pattern.applyAlg(r) : pattern;
     if (centersSolved(p)) return p;
   }
-  return null;
+  throw new Error("normalizeOrientation: no rotation brings centers home");
 }
 
 // Which piece slots belong to the U layer (detected, not hardcoded).
@@ -65,22 +96,14 @@ for (const orbit of Object.keys(solved.patternData)) {
 
 /** A last-layer alg must leave every non-U-layer piece solved (after rotation-normalizing). */
 function preservesF2L(algStr) {
-  let pattern;
-  try {
-    pattern = solved.applyAlg(new Alg(algStr));
-  } catch {
-    return false;
-  }
-  const p = normalizeOrientation(pattern);
-  if (!p) return false;
+  const p = normalizeOrientation(solved.applyAlg(new Alg(algStr)));
   const d = p.patternData;
   for (const orbit of Object.keys(d)) {
     const s = solved.patternData[orbit];
-    const skipOri = orbit === "CENTERS";
     for (let i = 0; i < s.pieces.length; i++) {
       if (U_SLOTS[orbit][i]) continue;
       if (d[orbit].pieces[i] !== s.pieces[i]) return false;
-      if (!skipOri && d[orbit].orientation[i] !== s.orientation[i]) return false;
+      if (d[orbit].orientation[i] !== s.orientation[i]) return false;
     }
   }
   return true;
@@ -91,21 +114,53 @@ function preservesF2L(algStr) {
  * whole-cube orientation, and y-conjugation (an alternate written for a
  * different holding angle solves y^k ∘ state ∘ y^-k). For OLL sets the class
  * ignores U-layer permutation (OLL algs orient; they may permute freely).
+ *
+ * Frame correctness: kpuzzle moves act in the fixed spatial frame, so an alg
+ * with a NET ROTATION (leading x/y/z, unbalanced wide moves) has
+ * pattern(A) = Pure ∘ Rot — but pattern(A⁻¹) = Rot⁻¹ ∘ Pure⁻¹ carries the
+ * rotation on the LEFT, where a right-multiplied normalization rotation can
+ * only conjugate the state onto the wrong face (and any moves appended after
+ * the inverse would turn the wrong physical face). The true case state is
+ * S = R ∘ A⁻¹ with the rotation R LEFT-composed so centers are home; AUFs and
+ * y-conjugation are then composed around S itself, all in the home frame.
+ * Transformation composition is execution order: t1.applyTransformation(t2)
+ * means "t1 then t2" (verified: T("R U") ≡ T("R")∘T("U")).
  */
 const AUFS = ["", "U", "U2", "U'"];
-const YCONJ = [["", ""], ["y", "y'"], ["y2", "y2"], ["y'", "y"]];
+const AUF_ALGS = AUFS.map((u) => (u ? new Alg(u) : null));
+const IDENTITY_T = kpuzzle.identityTransformation();
+const toTransformation = (s) => (s ? kpuzzle.algToTransformation(new Alg(s)) : IDENTITY_T);
+const AUF_T = AUFS.map(toTransformation);
+const ROTATION_T = ROTATIONS.map(toTransformation);
+const YCONJ_T = ["", "y", "y2", "y'"].map((y) => {
+  const t = toTransformation(y);
+  return [t, t.invert()];
+});
+
+/** Left-compose the rotation that brings CENTERS home; throws if impossible. */
+function leftRotNormalize(t) {
+  for (const r of ROTATION_T) {
+    const cand = r.applyTransformation(t);
+    if (centersSolved(solved.applyTransformation(cand))) return cand;
+  }
+  throw new Error("leftRotNormalize: no rotation brings centers home");
+}
+
 function caseClass(algStr, { orientationOnly = false } = {}) {
-  const inv = new Alg(algStr).invert().toString();
+  const S = leftRotNormalize(toTransformation(algStr).invert());
   const keys = [];
-  for (const [yk, ykInv] of YCONJ) {
-    for (const pre of AUFS) {
-      for (const post of AUFS) {
-        const seq = [yk, pre, inv, post, ykInv].filter(Boolean).join(" ");
-        const s = solved.applyAlg(new Alg(seq));
-        const n = normalizeOrientation(s);
-        const data = structuredClone((n ?? s).patternData);
-        data.CENTERS.orientation = data.CENTERS.orientation.map(() => 0);
+  for (const [yk, ykInv] of YCONJ_T) {
+    for (const pre of AUF_T) {
+      for (const post of AUF_T) {
+        // y^k ∘ preAUF ∘ S ∘ postAUF ∘ y^-k — centers stay home throughout.
+        const t = yk
+          .applyTransformation(pre)
+          .applyTransformation(S)
+          .applyTransformation(post)
+          .applyTransformation(ykInv);
+        let data = solved.applyTransformation(t).patternData;
         if (orientationOnly) {
+          data = structuredClone(data);
           for (const orbit of Object.keys(data)) {
             data[orbit].pieces = data[orbit].pieces.map((piece, i) =>
               U_SLOTS[orbit][i] ? 0 : piece,
@@ -119,6 +174,67 @@ function caseClass(algStr, { orientationOnly = false } = {}) {
   keys.sort();
   return keys[0];
 }
+
+/** OLL-solved: every non-U piece home and everything oriented (U permutation free). */
+function ollSolvedState(p) {
+  const d = p.patternData;
+  for (const orbit of Object.keys(d)) {
+    const s = solved.patternData[orbit];
+    for (let i = 0; i < s.pieces.length; i++) {
+      if (d[orbit].orientation[i] !== 0) return false;
+      if (!U_SLOTS[orbit][i] && d[orbit].pieces[i] !== s.pieces[i]) return false;
+    }
+  }
+  return true;
+}
+
+function solvedUpToAUF(p) {
+  return AUF_ALGS.some((u) => (u ? p.applyAlg(u) : p).isIdentical(solved));
+}
+
+/**
+ * A trainer scramble must actually produce its case: scramble (+ optional
+ * pre-AUF) followed by the case's primary alg must land in the identity
+ * class — fully solved up to a final AUF (classBy "full"), or F2L intact +
+ * everything oriented (classBy "orientation": the OLL alg orients, and JPerm's
+ * OLL scrambles leave a deliberately random U permutation behind). Whole-cube
+ * rotation is normalized away by normalizeOrientation.
+ */
+function scrambleProducesCase(scrambleStr, primaryAlg, classBy) {
+  const scrambled = solved.applyAlg(new Alg(scrambleStr));
+  for (const auf of AUF_ALGS) {
+    const end = (auf ? scrambled.applyAlg(auf) : scrambled).applyAlg(primaryAlg);
+    const p = normalizeOrientation(end);
+    if (classBy === "orientation" ? ollSolvedState(p) : solvedUpToAUF(p)) return true;
+  }
+  return false;
+}
+
+/** Why an alg string is unusable on kpuzzle `kp` (parse or legality); null if fine. */
+function illegalReason(kp, s) {
+  let alg;
+  try {
+    alg = new Alg(s);
+  } catch (e) {
+    return `does not parse (${e.message})`;
+  }
+  try {
+    kp.algToTransformation(alg);
+  } catch (e) {
+    return `is illegal (${e.message})`;
+  }
+  return null;
+}
+
+const expandParity = (s, parity) => s.split("[*]").join(parity).replace(/\s+/g, " ").trim();
+
+/**
+ * The 4x4 kpuzzle rejects bare M ("Bad grip in move M"): on a 4x4, JPerm's M
+ * means the inner two layers. SiGN lowercase `m` is exactly that move with the
+ * same direction (verified on the kpuzzle: m ≡ 2-3Rw' ≡ 3Rw' R), so translate
+ * M/M'/M2 → m/m'/m2. E and S never appear in the 4x4 sets.
+ */
+const translate4x4Slices = (s) => s.replace(/(^|[\s(])M/g, "$1m");
 
 async function fetchBindings(url) {
   const res = await fetch(url, { headers: { "user-agent": "cubepath-extractor" } });
@@ -134,66 +250,155 @@ const report = [];
 let failures = 0;
 
 for (const set of SETS) {
-  let bindings;
+  let setFailures = 0;
+  const fail = (msg) => {
+    report.push(`${set.name}: ${msg}`);
+    setFailures++;
+  };
+
+  let bindings = null;
   try {
     bindings = await fetchBindings(set.url);
   } catch (e) {
-    report.push(`${set.name}: FETCH FAILED — ${e.message}`);
-    failures++;
-    continue;
+    fail(`FETCH FAILED — ${e.message}`);
   }
-  const algs = bindings.algsetAlgs ?? [];
-  const scrambles = bindings.algsetScrambles ?? [];
-  const cases = algs.map((c, i) => ({
-    name: String(c.name),
-    group: c.group ?? null,
-    prob: c.prob ?? null,
-    algs: (Array.isArray(c.alg) ? c.alg : [c.alg]).filter((a) => typeof a === "string"),
-    scrambles: scrambles[i] ? Object.values(scrambles[i]).filter((s) => typeof s === "string") : [],
-    ...(c.arrows ? { arrows: c.arrows } : {}),
-  }));
+  if (bindings && !(Array.isArray(bindings.algsetAlgs) && bindings.algsetAlgs.length > 0)) {
+    fail("fetched file has no algsetAlgs bindings (or they are empty)");
+    bindings = null;
+  }
 
-  if (set.verify) {
-    const classes = new Map();
-    for (const c of cases) {
-      let cls = null;
-      for (const a of c.algs) {
-        if (!preservesF2L(a)) {
-          report.push(`${set.name} ${c.name}: alg breaks F2L: ${a}`);
-          failures++;
+  if (bindings) {
+    const rawAlgs = bindings.algsetAlgs;
+    const rawScrambles = bindings.algsetScrambles;
+    if (!Array.isArray(rawScrambles) || rawScrambles.length !== rawAlgs.length) {
+      fail(
+        `algsetScrambles (${Array.isArray(rawScrambles) ? rawScrambles.length : "missing"}) ` +
+          `does not match algsetAlgs (${rawAlgs.length}) — scramble join is broken`,
+      );
+    }
+    const cases = rawAlgs.map((c, i) => {
+      const entry = Array.isArray(rawScrambles) ? rawScrambles[i] : undefined;
+      if (typeof entry === "string") {
+        fail(`${c.name}: scrambles entry is a bare string, not a list`);
+      }
+      return {
+        name: String(c.name),
+        group: c.group ?? null,
+        prob: c.prob ?? null,
+        algs: (Array.isArray(c.alg) ? c.alg : [c.alg]).filter((a) => typeof a === "string"),
+        scrambles:
+          entry && typeof entry === "object"
+            ? Object.values(entry).filter((s) => typeof s === "string")
+            : [],
+        ...(c.arrows ? { arrows: c.arrows } : {}),
+      };
+    });
+    if (cases.length !== set.expect) fail(`expected ${set.expect} cases, got ${cases.length}`);
+
+    let nAlgs = 0;
+    let nScrambles = 0;
+    if (set.classBy) {
+      // 3×3: F2L preservation + case classes + scrambles produce their case.
+      const classes = new Map();
+      for (const c of cases) {
+        if (c.algs.length === 0) {
+          fail(`${c.name}: no algorithm strings`);
           continue;
         }
-        const k = caseClass(a, { orientationOnly: set.name.includes("oll") });
-        if (cls === null) cls = k;
-        else if (k !== cls) {
-          report.push(`${set.name} ${c.name}: algs disagree on case class`);
-          failures++;
+        let cls = null;
+        let primaryAlg = null;
+        for (const [j, a] of c.algs.entries()) {
+          nAlgs++;
+          const err = illegalReason(kpuzzle, a);
+          if (err) {
+            fail(`${c.name}: alg ${err}: ${a}`);
+            continue;
+          }
+          if (j === 0) primaryAlg = new Alg(a);
+          if (!preservesF2L(a)) {
+            fail(`${c.name}: alg breaks F2L: ${a}`);
+            continue;
+          }
+          const k = caseClass(a, { orientationOnly: set.classBy === "orientation" });
+          if (cls === null) cls = k;
+          else if (k !== cls) fail(`${c.name}: algs disagree on case class`);
+        }
+        if (cls !== null) {
+          if (classes.has(cls)) fail(`${c.name} duplicates case of ${classes.get(cls)}`);
+          classes.set(cls, c.name);
+        }
+        if (!primaryAlg) {
+          fail(`${c.name}: primary alg unusable — scrambles unverifiable`);
+          continue;
+        }
+        for (const s of c.scrambles) {
+          nScrambles++;
+          const err = illegalReason(kpuzzle, s);
+          if (err) fail(`${c.name}: scramble ${err}: ${s}`);
+          else if (!scrambleProducesCase(s, primaryAlg, set.classBy)) {
+            fail(`${c.name}: scramble does not produce the case: ${s}`);
+          }
         }
       }
-      if (cls !== null) {
-        if (classes.has(cls)) {
-          report.push(`${set.name}: ${c.name} duplicates case of ${classes.get(cls)}`);
-          failures++;
+      if (setFailures === 0) {
+        report.push(
+          `✓ ${set.name}: ${cases.length} cases, ${classes.size} distinct case classes, ` +
+            `${nAlgs} algs F2L-safe, ${nScrambles} scrambles produce their case`,
+        );
+      }
+    } else {
+      // 4×4: expand `[*]` with the set's parity alg, then parse/legality-check
+      // everything on the 4x4 kpuzzle. TODO(M3): full 4x4 case-class checks.
+      if (bindings.specialAlg !== set.parity) {
+        fail(
+          `specialAlg ${JSON.stringify(bindings.specialAlg)} does not match the pinned ` +
+            `parity alg ${JSON.stringify(set.parity)}`,
+        );
+      }
+      for (const c of cases) {
+        if (c.algs.length === 0) {
+          fail(`${c.name}: no algorithm strings`);
+          continue;
         }
-        classes.set(cls, c.name);
+        c.algs = c.algs.map((a) => translate4x4Slices(expandParity(a, set.parity)));
+        for (const a of c.algs) {
+          nAlgs++;
+          const err = illegalReason(kpuzzle4, a);
+          if (err) fail(`${c.name}: alg ${err}: ${a}`);
+        }
+        for (const s of c.scrambles) {
+          nScrambles++;
+          const err = illegalReason(kpuzzle4, s);
+          if (err) fail(`${c.name}: scramble ${err}: ${s}`);
+        }
+      }
+      if (setFailures === 0) {
+        report.push(
+          `✓ ${set.name}: ${cases.length} cases, ${nAlgs} algs parity-expanded & 4x4-legal, ` +
+            `${nScrambles} scrambles 4x4-legal (case classes: TODO M3)`,
+        );
       }
     }
-    report.push(`${set.name}: ${cases.length} cases, ${classes.size} distinct case classes ✓`);
-  } else {
-    report.push(`${set.name}: ${cases.length} cases (4x4 — verified later on the 4x4 kpuzzle)`);
+
+    out[set.name] = cases;
   }
-  if (set.expect && cases.length !== set.expect) {
-    report.push(`${set.name}: WARNING expected ${set.expect}, got ${cases.length}`);
-    failures++;
-  }
-  out[set.name] = cases;
+
+  if (setFailures > 0) report.push(`✗ ${set.name}: ${setFailures} failure(s)`);
+  failures += setFailures;
 }
 
+console.log(report.join("\n"));
+const allPresent = SETS.every((s) => Array.isArray(out[s.name]) && out[s.name].length > 0);
+if (failures > 0 || !allPresent) {
+  console.error(
+    `\nValidation failed (${failures} failures` +
+      `${allPresent ? "" : ", missing/empty sets"}) — src/data/extracted/jperm-raw.json left untouched`,
+  );
+  process.exit(1);
+}
 await mkdir(new URL("../src/data/extracted", import.meta.url), { recursive: true });
 await writeFile(
   new URL("../src/data/extracted/jperm-raw.json", import.meta.url),
   JSON.stringify(out, null, 1),
 );
-console.log(report.join("\n"));
-console.log(`\nWrote src/data/extracted/jperm-raw.json (${failures} failures)`);
-if (failures > 0) process.exitCode = 1;
+console.log(`\nWrote src/data/extracted/jperm-raw.json (0 failures)`);

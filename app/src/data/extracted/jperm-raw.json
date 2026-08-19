@@ -5858,9 +5858,9 @@
    "group": "4 Corners",
    "prob": 4,
    "algs": [
-    "R U2 R' U' [*] F R' F' R",
-    "y' [*] U' F U R U' R' F'",
-    "y2 R U R' F' [*] F R U' R'"
+    "R U2 R' U' Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' F R' F' R",
+    "y' Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' U' F U R U' R' F'",
+    "y2 R U R' F' Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' F R U' R'"
    ],
    "scrambles": [
     "U' B2 R2 B2 R2 U' F2 D' B2 D F U B U2 L2 F U' B'",
@@ -5874,7 +5874,7 @@
    "group": "2 Corners",
    "prob": 4,
    "algs": [
-    "[*]"
+    "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'"
    ],
    "scrambles": [
     "R2 B2 D F2 D' R2 D B2 R2 U F2 L' R' U2 L' R'",
@@ -5888,7 +5888,7 @@
    "group": "2 Corners",
    "prob": 4,
    "algs": [
-    "[*] U' R U R' U R U2 R'"
+    "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' U' R U R' U R U2 R'"
    ],
    "scrambles": [
     "U B2 R2 D F2 R2 B2 U L2 U L' U' L U' R' F2 R",
@@ -5902,7 +5902,7 @@
    "group": "2 Corners",
    "prob": 4,
    "algs": [
-    "[*] R U2 R' U' R U' R'"
+    "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' R U2 R' U' R U' R'"
    ],
    "scrambles": [
     "U2 B2 U L2 U' R2 U L2 U' R2 B' U' F' U B' U' F",
@@ -5916,7 +5916,7 @@
    "group": "2 Corners",
    "prob": 4,
    "algs": [
-    "M [*] M'"
+    "m Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' m'"
    ],
    "scrambles": [
     "U F2 R2 F2 U2 F2 R2 F2 R' U2 R U2 R U2 R U2 R'",
@@ -5930,7 +5930,7 @@
    "group": "2 Corners",
    "prob": 4,
    "algs": [
-    "R U R' U' R [*] R' U R U' R'"
+    "R U R' U' R Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' R' U R U' R'"
    ],
    "scrambles": [
     "U' R2 D' R2 U L2 U' L2 U' R2 D' R' F' L B2 L' F R'",
@@ -5944,9 +5944,9 @@
    "group": "2 Corners",
    "prob": 4,
    "algs": [
-    "[*] R U R' U' R' F R F'",
-    "y2 F' L' U L U L' U' L F [*]",
-    "y2 L2 B2 L2 [*] L2 B2 L2"
+    "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' R U R' U' R' F R F'",
+    "y2 F' L' U L U L' U' L F Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'",
+    "y2 L2 B2 L2 Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' L2 B2 L2"
    ],
    "scrambles": [
     "D L2 D' B2 U B2 L2 U L2 U' B2 L' F2 L B2 L' F2 L'",
@@ -5960,9 +5960,9 @@
    "group": "2 Corners",
    "prob": 4,
    "algs": [
-    "F R U' R' U' R U R' F' [*]",
-    "R2 B2 R2 [*] R2 B2 R2",
-    "y2 [*] U2 R U R' U' R' F R F'"
+    "F R U' R' U' R U R' F' Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'",
+    "R2 B2 R2 Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' R2 B2 R2",
+    "y2 Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' U2 R U R' U' R' F R F'"
    ],
    "scrambles": [
     "U' R2 D L2 R2 F2 U L2 U' F2 R' D L2 D' R U F2",
@@ -5976,7 +5976,7 @@
    "group": "2 Corners",
    "prob": 4,
    "algs": [
-    "[*] U R U2 (R2 U' R2 U' R2) U2 R"
+    "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' U R U2 (R2 U' R2 U' R2) U2 R"
    ],
    "scrambles": [
     "U B2 U B2 D' B2 D2 L2 U' L' D' L' B2 U L' U2 L",
@@ -5990,7 +5990,7 @@
    "group": "2 Corners",
    "prob": 4,
    "algs": [
-    "R' U' R [*] R' U R"
+    "R' U' R Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' R' U R"
    ],
    "scrambles": [
     "U' L2 U' L2 D L2 U' L2 U L2 U R2 D' L' D R2 D' L'",
@@ -6004,7 +6004,7 @@
    "group": "2 Corners",
    "prob": 4,
    "algs": [
-    "L U L' [*] L U' L'"
+    "L U L' Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' L U' L'"
    ],
    "scrambles": [
     "R2 D R2 U' R2 D B2 L2 D2 R2 F2 U R' D' L2 D R",
@@ -6018,7 +6018,7 @@
    "group": "2 Corners",
    "prob": 4,
    "algs": [
-    "[*] U R' U2 R U R' U R"
+    "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' U R' U2 R U R' U R"
    ],
    "scrambles": [
     "L2 U L2 B2 U F2 U' B2 U F2 U' B' U' B U' F' L2 F",
@@ -6032,7 +6032,7 @@
    "group": "2 Corners",
    "prob": 4,
    "algs": [
-    "[*] R' U' R U' R' U2 R"
+    "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' R' U' R U' R' U2 R"
    ],
    "scrambles": [
     "R2 D' F2 D B2 D' F2 D B2 R2 U' R' U2 R U R' U R",
@@ -6046,9 +6046,9 @@
    "group": "1 Corner",
    "prob": 4,
    "algs": [
-    "M' U R U' 3Rw' [*] U R U2 R'",
-    "y2 [*] U2 F R U R' U' F'",
-    "[*] U2 R U2 (R2 U' R2 U' R2) U2 R"
+    "m' U R U' 3Rw' Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' U R U2 R'",
+    "y2 Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' U2 F R U R' U' F'",
+    "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' U2 R U2 (R2 U' R2 U' R2) U2 R"
    ],
    "scrambles": [
     "R2 U B2 R2 U' B2 U R2 B2 R2 B U' B' R2 U F' U2 F",
@@ -6062,7 +6062,7 @@
    "group": "1 Corner",
    "prob": 4,
    "algs": [
-    "[*] R U R' U R U2 R'"
+    "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' R U R' U R U2 R'"
    ],
    "scrambles": [
     "D R2 D' F2 U F2 R2 U R2 U' R' U2 R' U' R U' R'",
@@ -6076,7 +6076,7 @@
    "group": "1 Corner",
    "prob": 4,
    "algs": [
-    "L F' L' F [*] L' U L"
+    "L F' L' F Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' L' U L"
    ],
    "scrambles": [
     "D B2 L2 D F2 U' F2 L2 D F2 U2 F2 D F D B2 D' F'",
@@ -6090,7 +6090,7 @@
    "group": "1 Corner",
    "prob": 4,
    "algs": [
-    "F' L' U' L U F [*]"
+    "F' L' U' L U F Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'"
    ],
    "scrambles": [
     "B2 D L2 D' L2 U L2 U2 R' U L2 U' R U B2",
@@ -6104,7 +6104,7 @@
    "group": "1 Corner",
    "prob": 4,
    "algs": [
-    "[*] U' R U2 R' U' R U' R'"
+    "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' U' R U2 R' U' R U' R'"
    ],
    "scrambles": [
     "U' R2 U2 F2 L2 B2 D B2 L2 F2 U' R' U' L' U R' U' L",
@@ -6118,9 +6118,9 @@
    "group": "1 Corner",
    "prob": 4,
    "algs": [
-    "[*] R U2 (R2 U' R2 U' R2) U2 R",
-    "y2 [*] F R U R' U' F'",
-    "M' U' L' U 3Lw [*] U' L' U2 L"
+    "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' R U2 (R2 U' R2 U' R2) U2 R",
+    "y2 Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' F R U R' U' F'",
+    "m' U' L' U 3Lw Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' U' L' U2 L"
    ],
    "scrambles": [
     "R2 D2 B2 D R2 U' L2 U' F2 R D2 L2 B2 U B2 D' U' R'",
@@ -6134,7 +6134,7 @@
    "group": "1 Corner",
    "prob": 4,
    "algs": [
-    "F R U R' U' F' [*]"
+    "F R U R' U' F' Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'"
    ],
    "scrambles": [
     "U L2 F2 U' L2 D R2 F2 R2 F2 U R' D' L2 D R' D' F2",
@@ -6148,7 +6148,7 @@
    "group": "1 Corner",
    "prob": 4,
    "algs": [
-    "R' F R F' [*] R U' R'"
+    "R' F R F' Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' R U' R'"
    ],
    "scrambles": [
     "L2 D' B2 D B2 U' B2 U B2 U L2 U' R' U L2 U' L2 R",
@@ -6162,8 +6162,8 @@
    "group": "0 Corners",
    "prob": 4,
    "algs": [
-    "[*] R2 D' R U2 R' D R U2 R",
-    "y2 [*] U R' U' R' F R F' U R"
+    "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' R2 D' R U2 R' D R U2 R",
+    "y2 Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' U R' U' R' F R F' U R"
    ],
    "scrambles": [
     "D' F2 D' L2 F2 D2 B2 U R2 U' B2 R U' B2 U' B2 U R'",
@@ -6177,7 +6177,7 @@
    "group": "0 Corners",
    "prob": 4,
    "algs": [
-    "[*] R U R' U R U' R' U R U2 R'"
+    "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' R U R' U R U' R' U R U2 R'"
    ],
    "scrambles": [
     "F2 U R2 D L2 D' F2 U2 B' D U2 L2 U' R2 B2 D' F'",
@@ -6191,7 +6191,7 @@
    "group": "0 Corners",
    "prob": 4,
    "algs": [
-    "[*] U' R U2 (R2 U' R2 U' R2) U2 R"
+    "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' U' R U2 (R2 U' R2 U' R2) U2 R"
    ],
    "scrambles": [
     "B2 U' L2 D2 R2 D' B2 U R2 D F' U' B L2 B U F' R2",
@@ -6205,7 +6205,7 @@
    "group": "0 Corners",
    "prob": 4,
    "algs": [
-    "[*] U R' U' R U' R' U2 R"
+    "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' U R' U' R U' R' U2 R"
    ],
    "scrambles": [
     "D' F2 D L2 F2 D' U' R2 F2 L' U B2 D F2 D2 U' R'",
@@ -6219,7 +6219,7 @@
    "group": "0 Corners",
    "prob": 4,
    "algs": [
-    "[*] R' U2 R U R' U R"
+    "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' R' U2 R U R' U R"
    ],
    "scrambles": [
     "U2 R2 U F2 L2 B2 D' B2 L2 F2 U2 R U' R U' R' U2 R",
@@ -6233,7 +6233,7 @@
    "group": "0 Corners",
    "prob": 4,
    "algs": [
-    "[*] U' 3Rw U R' U' 3Rw' F R F'"
+    "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' U' 3Rw U R' U' 3Rw' F R F'"
    ],
    "scrambles": [
     "U2 F2 D F2 L2 D' B2 U B2 L' F2 U' R U R' F2 L'",
@@ -6249,7 +6249,7 @@
    "group": "Edges Only",
    "prob": 2,
    "algs": [
-    "[*]"
+    "2R2 U2 2R2 Uw2 2R2 Uw2"
    ],
    "scrambles": [
     "U R2 B2 D2 F2 R2 B2 U2 R2 F2 L' R' U2 L' R'",
@@ -6263,7 +6263,7 @@
    "group": "Edges Only",
    "prob": 4,
    "algs": [
-    "R U R' U' [*] U' R U' R'"
+    "R U R' U' 2R2 U2 2R2 Uw2 2R2 Uw2 U' R U' R'"
    ],
    "scrambles": [
     "R2 B2 R2 U2 F2 D R2 U' B2 U R2 F2 U L' R U2 L' R'",
@@ -6277,7 +6277,7 @@
    "group": "Edges Only",
    "prob": 1,
    "algs": [
-    "M' U' M2 U' M2 U' M' U2 M2 [*]"
+    "m' U' m2 U' m2 U' m' U2 m2 2R2 U2 2R2 Uw2 2R2 Uw2"
    ],
    "scrambles": [
     "U L2 R2 U' F2 R2 D2 L2 F2 R2 U2 B2 R2 U' L' R' U2 L' R'",
@@ -6291,7 +6291,7 @@
    "group": "Edges Only",
    "prob": 1,
    "algs": [
-    "M' U' M2 U' M2 U' M' U2 M2 U' [*]"
+    "m' U' m2 U' m2 U' m' U2 m2 U' 2R2 U2 2R2 Uw2 2R2 Uw2"
    ],
    "scrambles": [
     "L2 R2 U' F2 R2 D2 L2 F2 R2 U2 B2 R2 U' L' R' U2 L' R'",
@@ -6305,7 +6305,7 @@
    "group": "Edges Only",
    "prob": 4,
    "algs": [
-    "R U' R U R U R U' R' U' R2 [*]"
+    "R U' R U R U R U' R' U' R2 2R2 U2 2R2 Uw2 2R2 Uw2"
    ],
    "scrambles": [
     "U R2 B2 F2 R2 D' B2 R2 F2 U' L' R' U2 L' R'",
@@ -6319,7 +6319,7 @@
    "group": "Adjacent Corner Swap",
    "prob": 4,
    "algs": [
-    "[*] U R U R' F' R U R' U' R' F R2 U' R'"
+    "2R2 U2 2R2 Uw2 2R2 Uw2 U R U R' F' R U R' U' R' F R2 U' R'"
    ],
    "scrambles": [
     "U B2 L2 D' B2 D F2 D' L2 R2 F2 R2 U' L R' U2 L' R'",
@@ -6333,7 +6333,7 @@
    "group": "Adjacent Corner Swap",
    "prob": 4,
    "algs": [
-    "R U R' U' R' F R2 U' R' [*] U R U R' F'"
+    "R U R' U' R' F R2 U' R' 2R2 U2 2R2 Uw2 2R2 Uw2 U R U R' F'"
    ],
    "scrambles": [
     "D B2 D' L2 R2 B2 U L2 U' B2 L2 R2 U L R' U2 L' R'",
@@ -6347,7 +6347,7 @@
    "group": "Adjacent Corner Swap",
    "prob": 4,
    "algs": [
-    "[*] U R' U2 R U2 R' F R U R' U' R' F' R2"
+    "2R2 U2 2R2 Uw2 2R2 Uw2 U R' U2 R U2 R' F R U R' U' R' F' R2"
    ],
    "scrambles": [
     "U' D B2 D' L2 R2 B2 U L2 U' B2 L2 R2 U L R' U2 L' R'",
@@ -6361,7 +6361,7 @@
    "group": "Adjacent Corner Swap",
    "prob": 4,
    "algs": [
-    "[*] R U R' F' R U2 R' U2 R' F R U R U2 R'"
+    "2R2 U2 2R2 Uw2 2R2 Uw2 R U R' F' R U2 R' U2 R' F R U R U2 R'"
    ],
    "scrambles": [
     "U' D' B2 D R2 L2 B2 U' R2 U B2 R2 L2 U' R' L U2 R L",
@@ -6375,7 +6375,7 @@
    "group": "Adjacent Corner Swap",
    "prob": 4,
    "algs": [
-    "R' U L' U2 R U' R' U2 R L U' [*]"
+    "R' U L' U2 R U' R' U2 R L U' 2R2 U2 2R2 Uw2 2R2 Uw2"
    ],
    "scrambles": [
     "U2 R2 U' F2 U L2 R2 F2 L2 R2 U' F2 U L R' U2 L' R'",
@@ -6389,7 +6389,7 @@
    "group": "Adjacent Corner Swap",
    "prob": 4,
    "algs": [
-    "R U R' F' R U R' U' R' F R2 U' R' [*]"
+    "R U R' F' R U R' U' R' F R2 U' R' 2R2 U2 2R2 Uw2 2R2 Uw2"
    ],
    "scrambles": [
     "L2 U F2 U' F2 R2 F2 L2 U' R2 U L2 F2 L' R' U2 L' R'",
@@ -6403,7 +6403,7 @@
    "group": "Adjacent Corner Swap",
    "prob": 4,
    "algs": [
-    "R U R' F' R U R' U' R' F R2 U' R' U' [*]"
+    "R U R' F' R U R' U' R' F R2 U' R' U' 2R2 U2 2R2 Uw2 2R2 Uw2"
    ],
    "scrambles": [
     "L2 D' F2 D B2 L2 B2 F2 U F2 U' L2 F2 R L U2 R L",
@@ -6417,7 +6417,7 @@
    "group": "Adjacent Corner Swap",
    "prob": 4,
    "algs": [
-    "[*] R U R' F' R U R' U' R' F R2 U' R'"
+    "2R2 U2 2R2 Uw2 2R2 Uw2 R U R' F' R U R' U' R' F R2 U' R'"
    ],
    "scrambles": [
     "R2 D F2 D' B2 R2 B2 F2 U' F2 U R2 F2 L' R' U2 L' R'",
@@ -6431,7 +6431,7 @@
    "group": "Adjacent Corner Swap",
    "prob": 4,
    "algs": [
-    "[*] x R2 D2 R U R' D2 R U' R"
+    "2R2 U2 2R2 Uw2 2R2 Uw2 x R2 D2 R U R' D2 R U' R"
    ],
    "scrambles": [
     "R2 U B2 U R2 U' R2 U2 B2 U B2 U L R' U2 L' R'",
@@ -6445,7 +6445,7 @@
    "group": "Adjacent Corner Swap",
    "prob": 4,
    "algs": [
-    "[*] U x R' U R' D2 R U' R' D2 R2"
+    "2R2 U2 2R2 Uw2 2R2 Uw2 U x R' U R' D2 R U' R' D2 R2"
    ],
    "scrambles": [
     "D F2 U R2 F2 U B2 U' F2 R2 D' R2 U2 L' R' U2 L' R'",
@@ -6459,7 +6459,7 @@
    "group": "Diagonal Corner Swap",
    "prob": 1,
    "algs": [
-    "x' R U' R' D R U R' D' R U R' D R U' R' D' x U [*]"
+    "x' R U' R' D R U R' D' R U R' D R U' R' D' x U 2R2 U2 2R2 Uw2 2R2 Uw2"
    ],
    "scrambles": [
     "B2 U' L2 U2 F2 U R2 U' F2 U2 L2 U' B F R2 B' F'",
@@ -6473,7 +6473,7 @@
    "group": "Diagonal Corner Swap",
    "prob": 1,
    "algs": [
-    "F R U' R' U' R U R' F' R U R' U' R' F R F' U' [*]"
+    "F R U' R' U' R U R' F' R U R' U' R' F R F' U' 2R2 U2 2R2 Uw2 2R2 Uw2"
    ],
    "scrambles": [
     "U' B2 U' L2 U2 F2 U R2 U' F2 U2 L2 U' B F R2 B' F'",
@@ -6487,7 +6487,7 @@
    "group": "Diagonal Corner Swap",
    "prob": 4,
    "algs": [
-    "F R U' R' U' R U R' F' R U R' U' R' F R F' [*]"
+    "F R U' R' U' R U R' F' R U R' U' R' F R F' 2R2 U2 2R2 Uw2 2R2 Uw2"
    ],
    "scrambles": [
     "U B2 D F2 D' R2 U F2 D F2 U' B2 U L' R U2 L' R'",
@@ -6501,7 +6501,7 @@
    "group": "Diagonal Corner Swap",
    "prob": 1,
    "algs": [
-    "x' R U' R' D R U R' D' R U R' D R U' R' D' x [*]"
+    "x' R U' R' D R U R' D' R U R' D R U' R' D' x 2R2 U2 2R2 Uw2 2R2 Uw2"
    ],
    "scrambles": [
     "U2 B2 D F2 D' R2 U F2 D F2 U' B2 U L' R U2 L' R'",
@@ -6515,7 +6515,7 @@
    "group": "Adjacent Corner Swap",
    "prob": 4,
    "algs": [
-    "R U R' U' R' F R2 U' R' U' R U R' F' [*]"
+    "R U R' U' R' F R2 U' R' U' R U R' F' 2R2 U2 2R2 Uw2 2R2 Uw2"
    ],
    "scrambles": [
     "R2 D' L2 B2 R2 U2 F2 R2 D' B2 U B2 U' L R' U2 L' R'",
@@ -6529,7 +6529,7 @@
    "group": "Adjacent Corner Swap",
    "prob": 4,
    "algs": [
-    "R U R' U' R' F R2 U' R' U' R U R' F' U' [*]"
+    "R U R' U' R' F R2 U' R' U' R U R' F' U' 2R2 U2 2R2 Uw2 2R2 Uw2"
    ],
    "scrambles": [
     "R2 B2 R2 U2 F2 D R2 U' B2 U R2 F2 U L' R U2 L' R'",
@@ -6543,7 +6543,7 @@
    "group": "Diagonal Corner Swap",
    "prob": 2,
    "algs": [
-    "F R U' R' U' R U R' F' U' [*] U' R U R' U' R' F R F'"
+    "F R U' R' U' R U R' F' U' 2R2 U2 2R2 Uw2 2R2 Uw2 U' R U R' U' R' F R F'"
    ],
    "scrambles": [
     "B2 L2 U2 R2 D R2 F2 D2 F2 U F2 L2 U2 L R' U2 L' R'",

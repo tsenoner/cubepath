@@ -285,7 +285,10 @@ def diagram_to_sim(face: str, a: int, b: int) -> tuple[str, int, int]:
     raise ValueError(f"Unknown visible face: {face!r}")
 
 
-_TOKEN_RE = re.compile(r"[RLUDFBMSExyz][w]?[2']?|[rudfb][2']?|\(|\)|×\d+")
+# SiGN wide-move aliases: Rw == r etc.
+_WIDE_ALIASES = {f"{u}w{s}": f"{u.lower()}{s}" for u in "RLUDFB" for s in ("", "'", "2")}
+
+_TOKEN_RE = re.compile(r"[RLUDFBMSExyz][w]?[2']?|[rludfb][2']?|\(|\)|×\d+")
 
 
 def parse_algorithm(alg: str) -> list[str]:
@@ -294,7 +297,7 @@ def parse_algorithm(alg: str) -> list[str]:
     Supports: R U R' U' R2, lowercase wide (r, f), parenthesized repeats (R U)×2.
     Strips parentheses that aren't followed by a repeat count.
     """
-    tokens = _TOKEN_RE.findall(alg)
+    tokens = [_WIDE_ALIASES.get(t, t) for t in _TOKEN_RE.findall(alg)]
     result: list[str] = []
     group: list[str] | None = None
 

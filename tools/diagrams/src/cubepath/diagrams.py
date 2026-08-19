@@ -350,6 +350,10 @@ def _draw_cycle(
 
 def _case_subdir(category: str) -> str:
     """Return subdirectory name for a diagram category."""
+    if category == "oll_full":
+        return "oll-full"
+    if category == "pll_full":
+        return "pll-full"
     if category.startswith("oll"):
         return "oll"
     if category.startswith("pll"):
@@ -1413,6 +1417,11 @@ def main() -> None:
         path = render(case, output_dir)
         print(f"  {path.relative_to(output_dir)}")
         total += 1
+
+    # Full OLL/PLL sets, derived from the extracted (machine-verified) dataset.
+    from cubepath.fullsets import render_fullsets
+
+    total += render_fullsets(output_dir)
 
     for move in _notation_moves():
         path = render_notation(move, output_dir)

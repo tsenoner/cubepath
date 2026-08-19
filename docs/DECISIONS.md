@@ -70,3 +70,10 @@ courses · PDF stays first-class.
   and link the project (Root Directory = `app`) for automatic git deploys.
 - Vercel Deployment Protection (SSO) disabled on the project — required for a
   public PWA and service-worker testing.
+
+## M3
+
+- **JPerm's f2l/2loll/2lpll lib files 404** (verified 2026-08-19:
+  jperm.net/lib/{f2l,2loll,2lpll}.js all return HTTP 404), so the 41 F2L cases
+  will be sourced semi-manually from JPerm's Best-F2L PDF in M3 (per the
+  research brief §8); the extractor covers oll/pll/4x4oll/4x4pll only.
