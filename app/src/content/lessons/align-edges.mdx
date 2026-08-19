@@ -1,0 +1,70 @@
+---
+title: "Step 5: Align the Yellow Edges"
+description: "Turn U until two edges match their centers, then Sune + U swaps the other two into place."
+phase: "phase-1"
+order: 70
+---
+
+import Callout from "../../components/Callout.astro";
+import AlgText from "../../components/AlgText.astro";
+import TwistyPlayer from "../../components/TwistyPlayer.astro";
+
+The yellow cross is up, but from the side the cube still looks chaotic. Each
+cross edge has a second sticker facing outwards, and it belongs above the
+center of the same color. This step puts all four home — white stays on the
+bottom, yellow on top, as always.
+
+<img src="/diagrams/steps/step_5_yedges.svg" alt="Goal state: yellow cross with every edge's side sticker matching the center below it" width="60" />
+
+## Find the matching pair
+
+Turn **U** one click at a time, a full circle, and at each stop count how many
+edge side stickers match the center directly below them. One angle gives you
+either:
+
+- **All four match** — this step is done, go to Step 6.
+- **Exactly two match** — every other outcome. Three is impossible: if three
+  edges are home, the fourth has only one place left to be.
+
+Leave U at the two-match angle and check whether the matching pair sits
+**adjacent** (side by side) or **opposite** (facing across the cube).
+
+## The tool: Sune + U
+
+<AlgText moves="R U R' U R U2 R'" /> followed by a single `U`.
+
+Held normally, this swaps the **front and left** edges while leaving the back
+and right edges — and the entire yellow cross — untouched. It scrambles the
+corners; ignore them completely, they are Steps 6 and 7.
+
+<TwistyPlayer alg="R U R' U R U2 R' U" anchor="start" />
+
+*Sune + U — watch the front and left edges trade places.*
+
+## Adjacent pair
+
+<img src="/diagrams/steps/align_adjacent.svg" alt="Two matching edges side by side — hold them at the back and right" width="60" />
+
+Hold the cube so the two matching edges sit at the **back and right**. Run
+Sune, then `U`. The front and left edges trade places, and all four edges are
+home.
+
+## Opposite pair
+
+<img src="/diagrams/steps/align_diagonal.svg" alt="Two matching edges facing each other across the cube" width="60" />
+
+No grip puts an opposite pair at back-and-right, so run Sune + `U` from
+**any** angle. It won't solve the edges — it converts the case: turn U again
+to find the new matching pair, which is now adjacent, hold it back-and-right,
+and apply once more.
+
+<Callout type="caution">
+  The yellow cross must survive this step untouched. If yellow stickers have
+  left the top face, a turn slipped mid-algorithm — rebuild the cross
+  (Step 4) and retry.
+</Callout>
+
+Repeat the loop — turn U to count matches, hold the matching pair
+back-and-right, Sune + `U` — until all four side stickers match their
+centers. Adjacent takes one round, opposite takes two. Step 6 then positions
+the corners.

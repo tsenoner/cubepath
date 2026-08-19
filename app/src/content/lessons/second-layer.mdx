@@ -1,0 +1,76 @@
+---
+title: "Step 3: Second-Layer Edges"
+description: "Fill the four middle-layer edges by matching an upside-down T, then inserting with the two triggers you already know."
+phase: "phase-1"
+order: 50
+---
+
+import Callout from "../../components/Callout.astro";
+import AlgText from "../../components/AlgText.astro";
+
+<img src="/diagrams/steps/step_3_edges.svg" alt="Cube with the first two layers solved" width="60" />
+
+First layer done. Hold the cube **white on the bottom, yellow on top** — the
+solved layer stays at the bottom from here on. This step fills the four
+middle-layer edges. No new algorithms: every insert is built from righty and
+lefty.
+
+## Find an edge
+
+Scan the four top-layer edges for one with **no yellow on either sticker** —
+that edge belongs in the middle layer. Any edge showing yellow lives on top;
+skip it.
+
+Turn **U** until that edge's **front sticker** sits directly above the center
+of the same color, and turn the whole cube so that face is toward you.
+Together with the solved bottom row, the front face now shows an
+**upside-down T** in one color. That T is your starting position for every
+insert.
+
+## Read the direction, then insert
+
+Now look at the edge's **top sticker**. It matches either the right or the
+left center — that is the slot it belongs in, and it picks the insert:
+
+### Points right
+
+<img src="/diagrams/steps/edge_right.svg" alt="Edge inserting into the front-right slot" width="60" />
+
+`U`, then <AlgText moves="R U R' U'" /> (righty), then `y`, then
+<AlgText moves="L' U' L U" /> (lefty).
+
+### Points left
+
+<img src="/diagrams/steps/edge_left.svg" alt="Edge inserting into the front-left slot" width="60" />
+
+`U'`, then <AlgText moves="L' U' L U" /> (lefty), then `y'`, then
+<AlgText moves="R U R' U'" /> (righty).
+
+`y` rotates the whole cube like a `U` turn — the right face swings round to
+face you; `y'` is the reverse.
+
+Why two triggers? No move drops an edge straight into a middle-layer slot,
+so the insert borrows the solved white corner beside the slot: the first
+trigger drags the edge in and pops that corner out, the rotation hands the
+slot to your other hand, and the mirror trigger puts the corner back.
+
+<Callout type="caution">
+  Match the **front** sticker first, every time. If you line up the top
+  sticker instead, the edge goes in flipped — and you'll be prying it back
+  out.
+</Callout>
+
+## When the edge is stuck in a slot
+
+Sometimes an edge you need is already in the middle layer — wrong slot, or
+right slot but flipped — and nothing usable is left on top. Evict it: hold
+the cube with that slot at the **front-right**, put any top-layer edge above
+the front center, and run the points-right insert. Inserting the new edge
+pops the stuck one out to the top layer, where you can solve it properly.
+
+## Repeat until
+
+Loop the step — find a yellow-free edge, form the T, read the top sticker,
+insert — until all four middle edges are home. You are done when every edge
+left in the top layer shows yellow: the first two layers are solid, and only
+the yellow face remains.

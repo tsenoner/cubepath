@@ -1,0 +1,94 @@
+---
+title: "Permute Everything: Y-Perm + the Edge Set"
+description: "Four final algorithms — Y-Perm plus the M-slice edge set — finish 2-look CFOP: every OLL and PLL case solved in one algorithm."
+phase: "phase-3"
+order: 130
+---
+
+import CaseRow from "../../components/CaseRow.astro";
+import Callout from "../../components/Callout.astro";
+
+Phase 2 left gaps: a diagonal corner swap cost you two T-Perms, and a
+wrong-direction edge cycle cost two Ubs. Four algorithms close them all —
+and finish the method.
+
+## Y-Perm: the diagonal swap, solved directly
+
+Yellow face done, corners next. Check every side for headlights — two
+matching corner stickers on one face. Headlights: hold them at the left,
+T-Perm, as in Phase 2. No headlights anywhere: the corners swap diagonally,
+and Y-Perm solves that in one go.
+
+Hold the cube however it already sits. A diagonal swap looks identical from
+all four sides, so there is no angle to hunt for. One algorithm replaces the
+chained double T-Perm.
+
+<div class="case-list">
+  <CaseRow id="pll.y" open />
+</div>
+
+<Callout type="tip">
+  Y-Perm is trigger-built: the sexy move `R U R' U'` sits in the back half.
+  Read the algorithm as three or four chunks, not seventeen letters.
+</Callout>
+
+## The M slice
+
+One piece of new notation before the edges.
+
+<img src="/diagrams/notation/move_m.svg" alt="M slice turn — middle layer follows the L direction" width="90" />
+
+**M** turns the middle layer — the slice between L and R — in the **same
+direction as L**. `M2` is the double turn. Drill `M2` on its own: repeat it
+until the two flicks feel like one motion and the cube stays square in your
+hands. All three edge algorithms below are built entirely from M-slice and
+`U` turns.
+
+Why the M slice? It contains only edges and centers — no corners. M moves
+cannot touch a corner, and in each algorithm below the U turns cancel out,
+so your finished corners are physically safe. That is the whole trick behind
+the edge set.
+
+<Callout type="caution">
+  M moves the centers too. If an edge algorithm ends with the centers
+  displaced, you dropped a quarter turn inside an `M2` — count them out
+  loud until the rhythm is automatic.
+</Callout>
+
+## The edge set
+
+Corners permuted. Turn U until the corners line up with the side centers,
+then count edges that match their face:
+
+- **All four** — the cube is solved. Stop.
+- **Exactly one** — hold it at the **back**. Front edge needs to go
+  **right**: Ua. Needs to go **left**: Ub, from Phase 2.
+- **None** — H-Perm or Z-Perm; recognition below.
+
+<div class="case-list">
+  <CaseRow id="pll.ua" />
+  <CaseRow id="pll.h" />
+  <CaseRow id="pll.z" />
+</div>
+
+## H or Z?
+
+No edge matches after any U turn — that alone rules out the U-perms. To
+split the last two, read any side face:
+
+- **Opposite colors facing each other** (orange edge on the red face) —
+  every edge has jumped straight across the cube: **H-Perm**.
+- **Adjacent colors facing each other** (green edge on the red face) —
+  the edges have swapped around the corners: **Z-Perm**.
+
+H looks identical from all four sides — any grip works. Z needs one check:
+hold the cube so the front edge shows the right-hand face's color (the
+front and right edges swap). A quarter turn off, the algorithm leaves an
+H-Perm instead of a solved cube.
+
+## That's full 2-look CFOP
+
+Count what you now hold: 3 cross cases, 7 corner orientations, 2 corner
+permutations, 4 edge permutations — **every OLL and PLL case, one algorithm
+each**. No chaining, no repeats, at most two looks per stage. The next speed
+jump is not more algorithms — it is F2L.

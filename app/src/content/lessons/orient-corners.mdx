@@ -1,0 +1,57 @@
+---
+title: "Step 7: Orient the Last Corners"
+description: "Twist the final corners in place with repeated righty triggers — while the cube looks like it's falling apart."
+phase: "phase-1"
+order: 90
+---
+
+import Callout from "../../components/Callout.astro";
+import AlgText from "../../components/AlgText.astro";
+
+After step 6 every piece sits in its correct slot — the only flaw left is
+that some yellow corners are twisted in place. This step untwists them with
+nothing but the righty trigger.
+
+## Flip the cube
+
+Turn the whole cube over: `x2`. Yellow is now on the **bottom**, white back
+on top. Keep exactly this grip for the entire step.
+
+## The routine
+
+<img src="/diagrams/steps/orient_corner.svg" alt="Cube held yellow-down with a twisted corner at the front-right" width="60" />
+
+1. Turn `D` until a twisted corner — one whose yellow sticker does **not**
+   point straight down — sits at the **front-right**.
+2. Do the righty: <AlgText moves="R U R' U'" />. Work in pairs: after two
+   triggers, look under the corner. Yellow facing down? Done. Not yet? Two
+   more. Every corner takes exactly two or four.
+3. Turn **only `D`** to bring the next twisted corner to the front-right.
+   Repeat.
+4. When all four corners show yellow underneath, turn `D` to line the bottom
+   layer up with the rest. Solved.
+
+<Callout type="caution">
+  Mid-step the cube looks scrambled — white corners drift off, the sides
+  break apart. **This is normal.** Never rotate the whole cube and never turn
+  any face except `D` until every corner is done. One stray turn and the mess
+  stops repairing itself.
+</Callout>
+
+## Why the mess repairs itself
+
+Six righty triggers in a row return the cube exactly to where it started.
+Each corner costs two or four, and across a full set of twisted corners the
+total is always a multiple of six — so everything the trigger disturbs cycles
+home by the time the last corner is done. The "only `D` between
+corners" rule exists to protect that cycle.
+
+<img src="/diagrams/steps/step_7_solved.svg" alt="Fully solved cube" width="60" />
+
+## You can solve the cube
+
+Congratulations — that's the whole method: cross, corners, edges, yellow
+cross, align edges, position corners, orient corners. Before moving on, do
+**five full solves without looking anything up** — the steps must come from
+your hands, not the page. Then Phase 1.5 makes the same solve faster with
+zero new algorithms.

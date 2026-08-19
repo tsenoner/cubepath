@@ -1,0 +1,68 @@
+---
+title: "Step 4: The Yellow Cross"
+description: "One algorithm — F-sexy-F' — drives the top face from Dot through Hook and Line to the yellow cross."
+phase: "phase-1"
+order: 60
+---
+
+import AlgText from "../../components/AlgText.astro";
+import Callout from "../../components/Callout.astro";
+import TwistyPlayer from "../../components/TwistyPlayer.astro";
+
+Two layers down. From here you stop chasing individual pieces and start
+reading **patterns** on the top face. The goal: all four yellow edges
+pointing up — a yellow plus.
+
+Hold the cube white on bottom, yellow on top. Look only at the yellow
+center and the four edges around it. Corners don't matter yet — grey in
+the diagrams means "don't care", so ignore any yellow corners you happen
+to see.
+
+## One algorithm, three states
+
+The whole step is **F-sexy-F'**: an F, the sexy move you already own, F'
+to undo:
+
+<AlgText moves="F R U R' U' F'" />
+
+The F hides a top edge inside the front layer, the sexy move kicks it
+back out flipped and tucks a second one in, and F' restores everything
+else — net effect, exactly two edges reoriented per pass. Ignoring
+corners, only three starting patterns exist:
+
+| <img src="/diagrams/oll/oll_dot.svg" alt="Dot case — only the yellow center faces up" width="60" /> | <img src="/diagrams/oll/oll_hook.svg" alt="Hook case — yellow center plus two adjacent edges forming an L" width="60" /> | <img src="/diagrams/oll/oll_line.svg" alt="Line case — yellow center plus two opposite edges in a row" width="60" /> |
+| :-------------: | :--------------: | :--------------: |
+| **Dot** — ×3    | **Hook** — ×2    | **Line** — ×1    |
+
+The count is how many passes you need: each pass advances one state,
+**Dot → Hook → Line → Cross**.
+
+## The angle matters
+
+<Callout type="caution">
+  Set the angle *before* each pass — spin the top face with U turns until
+  the pattern sits right:
+
+  - **Dot** — any angle.
+  - **Hook** — the L in the **back-left**: the two yellow edges point to
+    the back and to the left.
+  - **Line** — **horizontal**, running left to right.
+
+  Re-read the top face after every pass. The next state rarely lands at
+  the correct angle on its own.
+</Callout>
+
+Repeat — read the state, set the angle, run the algorithm — until the
+yellow plus appears. The side colors of those edges won't match the side
+centers yet; that's correct, and it's exactly what Step 5 fixes. Already
+have the cross? Skip ahead.
+
+<TwistyPlayer alg="F R U R' U' F'" anchor="end" stickering="OLL" />
+
+*The Line case: held horizontal, one pass completes the cross.*
+
+<Callout type="tip">
+  Hook feels slow at two passes — Phase 1.5 gives it a dedicated one-pass
+  algorithm. For now, one algorithm covering every case beats memorizing
+  a second one.
+</Callout>

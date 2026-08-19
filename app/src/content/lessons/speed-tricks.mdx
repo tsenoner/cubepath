@@ -1,0 +1,91 @@
+---
+title: "Speed Tricks: Same Method, Fewer Moves"
+description: "Three Phase 1 upgrades — cross on the bottom, a wide-f Hook, corner twists without the flip — and not one new algorithm to learn."
+phase: "phase-1.5"
+order: 100
+---
+
+import CaseRow from "../../components/CaseRow.astro";
+import Callout from "../../components/Callout.astro";
+import AlgText from "../../components/AlgText.astro";
+
+Phase 1 gets you solving; this lesson strips the wasted motion out of it.
+Three upgrades, and none is genuinely new — each reuses a trigger you already
+own. Hold the cube with **white on the bottom, yellow on top** from the first
+move to the last: after this lesson you never flip it again.
+
+## 1. Build the white cross on the bottom
+
+Stop building the cross on top and turning the cube over. Build it straight
+onto the bottom face, with yellow up the whole time.
+
+The recipe: get a white edge into the **top layer** with its white sticker
+facing up, turn U until its side color sits directly above the matching
+center, then double-turn that face — the edge drops home without disturbing
+the others. An edge stuck in the bottom layer facing the wrong way? Double-turn
+its face to pop it up, then place it properly. If the white sticker faces
+sideways instead of up, insert it the way you did in Phase 1 — intuitively —
+just aimed downwards.
+
+Why bother: the flip cost you a whole-cube rotation *and* a re-read of every
+face. Killing it means one grip for the entire solve, and the solved cross
+stays safely out of sight while you work above it.
+
+## 2. Yellow cross: give the Hook its own algorithm
+
+Lowercase means **wide**: `f` turns the front *two* layers together — the F
+face plus the slice behind it. So f-sexy-f',
+<AlgText moves="f R U R' U' f'" />, is just F-sexy-F' with a deeper grip.
+Same fingers, same trigger, nothing new to memorize — but it solves the Hook
+in one go instead of two.
+
+<div class="case-list">
+  <CaseRow id="eo.hook" open />
+  <CaseRow id="eo.line" />
+  <CaseRow id="eo.dot" />
+</div>
+
+- **Hook** — hold the yellow L in the **front-right**, run f-sexy-f'. Done in
+  one algorithm instead of Phase 1's two.
+- **Line** — unchanged: hold it horizontal, F-sexy-F'.
+- **Dot** — Line algorithm, then Hook algorithm, back to back with no re-grip
+  in between. Two algorithms instead of three, and no re-reading the cube
+  mid-case.
+
+<Callout type="tip">
+  The Dot chain works because F-sexy-F' turns a Dot into a Hook that is
+  already sitting at the correct angle — start the wide-f version immediately.
+</Callout>
+
+## 3. Orient corners without the flip
+
+Everything up to the last step is unchanged: yellow cross, edges aligned,
+corners positioned. The old Step 7 flipped the cube; skip that. Yellow stays
+on top.
+
+Turn U until an unsolved corner — one with no yellow on top — sits at the
+**front-right**. Read where its yellow sticker points:
+
+- <img src="/diagrams/steps/orient_right.svg" alt="Front-right corner with yellow sticker facing right" width="60" />
+  Yellow faces **right** → <AlgText moves="R' D' R D" /> **twice**.
+- <img src="/diagrams/steps/orient_front.svg" alt="Front-right corner with yellow sticker facing front" width="60" />
+  Yellow faces **front** → <AlgText moves="D' R' D R" /> **twice** — the
+  first algorithm undone: the same moves inverted, in reverse order.
+
+Then turn **only U** to bring the next unsolved corner to the front-right and
+repeat. When all four corners show yellow, a final U turn or two lines the
+side colors up — solved.
+
+<Callout type="caution">
+  The bottom two layers look wrecked between corners. This is normal. Turn
+  only U between corners — never rotate the cube or touch any other face —
+  and everything snaps back once the last corner is done.
+</Callout>
+
+<Callout type="info">
+  Why it repairs itself: each round of <AlgText moves="R' D' R D" /> borrows
+  pieces from the bottom layers, and six identical rounds return the cube
+  exactly to where it started. Corner twists always cancel in multiples of
+  three, so by the time the last corner shows yellow the borrowed pieces have
+  landed back home. Any move other than U in between breaks that accounting.
+</Callout>

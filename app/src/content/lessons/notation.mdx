@@ -1,0 +1,154 @@
+---
+title: "Notation: Reading the Moves"
+description: "One letter, one quarter turn — the fifteen symbols every algorithm on this site is written in."
+phase: "basics"
+order: 20
+---
+
+import AlgText from "../../components/AlgText.astro";
+import Callout from "../../components/Callout.astro";
+import TwistyPlayer from "../../components/TwistyPlayer.astro";
+
+Every algorithm is a string of symbols, and every symbol is one turn. Hold the
+cube **white on bottom, yellow on top** — the grip for the whole course — and
+note that letters name *positions*, not colours: `F` is whichever face points
+at you right now.
+
+## The six faces
+
+A bare letter means one quarter turn (90°) of that face, **clockwise as if you
+were looking at it head-on**.
+
+<div style="display: flex; flex-wrap: wrap; gap: 1rem; text-align: center;">
+  <figure style="margin: 0; width: 100px;">
+    <img src="/diagrams/notation/move_r.svg" alt="R — the right face turns one quarter clockwise" style="width: 100%;" />
+    <figcaption><strong>R</strong>ight</figcaption>
+  </figure>
+  <figure style="margin: 0; width: 100px;">
+    <img src="/diagrams/notation/move_l.svg" alt="L — the left face turns one quarter clockwise" style="width: 100%;" />
+    <figcaption><strong>L</strong>eft</figcaption>
+  </figure>
+  <figure style="margin: 0; width: 100px;">
+    <img src="/diagrams/notation/move_u.svg" alt="U — the top face turns one quarter clockwise" style="width: 100%;" />
+    <figcaption><strong>U</strong>p</figcaption>
+  </figure>
+  <figure style="margin: 0; width: 100px;">
+    <img src="/diagrams/notation/move_d.svg" alt="D — the bottom face turns one quarter clockwise" style="width: 100%;" />
+    <figcaption><strong>D</strong>own</figcaption>
+  </figure>
+  <figure style="margin: 0; width: 100px;">
+    <img src="/diagrams/notation/move_f.svg" alt="F — the front face turns one quarter clockwise" style="width: 100%;" />
+    <figcaption><strong>F</strong>ront</figcaption>
+  </figure>
+  <figure style="margin: 0; width: 100px;">
+    <img src="/diagrams/notation/move_b.svg" alt="B — the back face turns one quarter clockwise" style="width: 100%;" />
+    <figcaption><strong>B</strong>ack</figcaption>
+  </figure>
+</div>
+
+<Callout type="caution">
+  "Head-on" is the trap. `B` is clockwise for someone standing behind the
+  cube — from where you sit it looks counter-clockwise. Opposite faces always
+  spin opposite ways from your seat: `L` mirrors `R`, `D` mirrors `U`.
+</Callout>
+
+## Prime, double, wide
+
+Three marks modify any letter:
+
+<div style="display: flex; flex-wrap: wrap; gap: 1rem; text-align: center;">
+  <figure style="margin: 0; width: 100px;">
+    <img src="/diagrams/notation/move_r_prime.svg" alt="R prime — the right face turns one quarter counter-clockwise" style="width: 100%;" />
+    <figcaption><strong>R'</strong> counter-clockwise</figcaption>
+  </figure>
+  <figure style="margin: 0; width: 100px;">
+    <img src="/diagrams/notation/move_r2.svg" alt="R2 — the right face turns a half turn" style="width: 100%;" />
+    <figcaption><strong>R2</strong> half turn</figcaption>
+  </figure>
+  <figure style="margin: 0; width: 100px;">
+    <img src="/diagrams/notation/move_rw.svg" alt="Lowercase r — the right two layers turn together" style="width: 100%;" />
+    <figcaption><strong>r</strong> wide</figcaption>
+  </figure>
+</div>
+
+- **' (prime)** — counter-clockwise instead. `R'` exactly undoes `R`.
+- **2** — a half turn (180°). Direction doesn't matter; both ways land the same.
+- **lowercase** — wide: turn *two* layers, the face plus the slice behind it.
+
+## Slices
+
+The three middle layers have their own letters:
+
+<div style="display: flex; flex-wrap: wrap; gap: 1rem; text-align: center;">
+  <figure style="margin: 0; width: 100px;">
+    <img src="/diagrams/notation/move_m.svg" alt="M — the middle slice between L and R, turning in the direction of L" style="width: 100%;" />
+    <figcaption><strong>M</strong>iddle (as L)</figcaption>
+  </figure>
+  <figure style="margin: 0; width: 100px;">
+    <img src="/diagrams/notation/move_s.svg" alt="S — the standing slice between F and B, turning in the direction of F" style="width: 100%;" />
+    <figcaption><strong>S</strong>tanding (as F)</figcaption>
+  </figure>
+  <figure style="margin: 0; width: 100px;">
+    <img src="/diagrams/notation/move_e.svg" alt="E — the equator slice between U and D, turning in the direction of D" style="width: 100%;" />
+    <figcaption><strong>E</strong>quator (as D)</figcaption>
+  </figure>
+</div>
+
+- `M` — between `L` and `R`, turns the same direction as `L`.
+- `S` — between `F` and `B`, follows `F`.
+- `E` — between `U` and `D`, follows `D`.
+
+Slices move centers, so mid-algorithm the whole cube looks recoloured — that's
+normal. Only `M` appears in this course, in the Phase 3 edge algorithms.
+
+## Rotations
+
+`x`, `y`, `z` turn the **whole cube** in your hands. No piece moves relative to
+any other — a rotation is just "regrip", which is why algorithms sometimes
+start with one.
+
+<div style="display: flex; flex-wrap: wrap; gap: 1rem; text-align: center;">
+  <figure style="margin: 0; width: 100px;">
+    <img src="/diagrams/notation/move_x.svg" alt="x — rotate the whole cube in the direction of an R turn" style="width: 100%;" />
+    <figcaption><strong>x</strong> rotate (as R)</figcaption>
+  </figure>
+  <figure style="margin: 0; width: 100px;">
+    <img src="/diagrams/notation/move_y.svg" alt="y — rotate the whole cube in the direction of a U turn" style="width: 100%;" />
+    <figcaption><strong>y</strong> rotate (as U)</figcaption>
+  </figure>
+  <figure style="margin: 0; width: 100px;">
+    <img src="/diagrams/notation/move_z.svg" alt="z — rotate the whole cube in the direction of an F turn" style="width: 100%;" />
+    <figcaption><strong>z</strong> rotate (as F)</figcaption>
+  </figure>
+</div>
+
+- `x` — like `R`: the front face tips up. `x2` flips the cube upside down —
+  Phase 1's "flip".
+- `y` — like `U`: the right face swings round to the front.
+- `z` — like `F`. You'll rarely need it.
+
+## Your first trigger
+
+Read <AlgText moves="R U R' U'" />: four symbols, four turns — `R`, `U`, `R'`,
+`U'`. This is the **sexy move**, and it's the spine of nearly every algorithm
+you'll learn here.
+
+<TwistyPlayer alg="R U R' U'" anchor="start" />
+
+*The sexy move, played from a solved cube — step through it turn by turn.*
+
+**Drill:** from a solved cube, repeat <AlgText moves="R U R' U'" /> six times.
+The cube returns to solved — any fixed sequence eventually cycles back, and the
+sexy move's cycle is exactly six. If it doesn't come back, one of your 24 turns
+was wrong: slow down and re-read. Repeat until your hands run it without your
+eyes.
+
+That drill is also why notation matters less than it looks. You won't read
+algorithms letter by letter for long: <AlgText moves="F R U R' U' F'" /> is
+written as six symbols but read as three chunks — `F`, sexy move, `F'`. Nearly
+every algorithm in this course decomposes into triggers like that.
+
+<figure style="margin: 2rem auto 0; text-align: center; max-width: 360px;">
+  <img src="/diagrams/notation/overview.svg" alt="The six faces of the cube and the x, y, z rotation axes" style="width: 100%;" />
+  <figcaption>The six faces and the three rotation axes.</figcaption>
+</figure>

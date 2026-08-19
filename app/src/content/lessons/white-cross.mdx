@@ -1,0 +1,60 @@
+---
+title: "Step 1: The White Cross"
+description: "Four white edges around the white center, placed intuitively — then flip the cube for good."
+phase: "phase-1"
+order: 30
+---
+
+import Callout from "../../components/Callout.astro";
+
+<img src="/diagrams/steps/step_1_cross.svg" alt="White cross on top: four white edges around the white center, each side color matching its center" width="60" />
+
+Hold the cube **white center up** — for this step only. The goal: four white
+edges around the white center, each edge's second color sitting directly
+above its matching center. A white plus with wrong side colors is not a
+cross — check the sides, not just the top.
+
+## The direct method
+
+One edge at a time:
+
+1. **Find a white edge**, anywhere on the cube.
+2. **Read its other color.** That color names its home — the white-red
+   edge belongs above the red center, nowhere else.
+3. **Bring it under that center**, in the bottom layer with white facing
+   down. Turn the bottom layer until the edge sits directly below its
+   matching center.
+4. **Turn that face twice.** The edge travels straight up into the cross,
+   white on top, color matching the center.
+
+If an edge arrives at the top with white facing sideways instead of up,
+it's flipped: one turn drops it back out, and you re-approach it through
+the bottom layer as above.
+
+## Why there's no algorithm
+
+Nothing else is solved yet, so every turn is free — you cannot break what
+does not exist. Algorithms exist to change one piece of the cube while
+preserving the rest; with nothing to preserve, plain turns are enough.
+The only constraint grows as you work: don't knock out edges you've
+already placed. If a move would, turn the blocker out of the way first,
+insert, then restore it.
+
+Repeat until all four edges are in. Done means: white cross on top, and
+each side face shows its edge sticker matching the center below it.
+
+## Flip it
+
+<img src="/diagrams/steps/step_flip.svg" alt="Cube flipped upside down so white faces the table and yellow faces up" width="60" />
+
+Turn the whole cube upside down: `x2`. White is now on the bottom, yellow
+on top — **and stays that way for the rest of the solve**. Every later
+step assumes this grip: you work in the top layer, where you can see
+pieces coming, and drop them down into place.
+
+<Callout type="tip">
+  Once the cross feels easy, stop pausing between edges: while inserting
+  one, find the next with your eyes. Eventually you'll place all four in
+  one flow — the seed of cross planning, where speedcubers map the entire
+  cross before their first turn.
+</Callout>

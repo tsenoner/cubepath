@@ -1,0 +1,73 @@
+---
+title: "Step 2: White Corners"
+description: "One trigger, three cases — read where the white sticker points and righty does the rest."
+phase: "phase-1"
+order: 40
+---
+
+import Callout from "../../components/Callout.astro";
+import AlgText from "../../components/AlgText.astro";
+import TwistyPlayer from "../../components/TwistyPlayer.astro";
+
+Cross done, cube flipped (`x2`): white on the bottom, yellow on top, and it
+stays that way for the rest of the solve. Now place the four white corners.
+Each belongs in the bottom layer between the two centers that match its side
+colors — all four in, and the first layer is complete.
+
+<img src="/diagrams/steps/step_2_corners.svg" alt="Goal state: white face down with the first layer's side colors matching their centers" width="60" />
+
+## The righty trigger
+
+<AlgText moves="R U R' U'" />
+
+Four moves you will use in every phase of this course — learn it as one
+motion, not four letters. `R` lifts the front-right corner slot into the top
+layer, `U` feeds a corner in (or swings one out of the way), `R'` `U'` puts
+everything back. Watch it run:
+
+<TwistyPlayer alg="R U R' U'" anchor="start" />
+
+## Fetch a corner
+
+Find any corner in the top layer with a white sticker. Its other two colors
+name its home — white-red-green lives between the red and green centers. Turn
+**only U** until the corner sits directly above that slot, then turn the whole
+cube so corner and slot are at the front-right.
+
+## Three cases
+
+Look at where the white sticker points:
+
+| | White faces | Do |
+| :---: | :--- | :--- |
+| <img src="/diagrams/steps/corner_right.svg" alt="Corner at front-right with the white sticker facing right" width="60" /> | **Right** | righty ×1 |
+| <img src="/diagrams/steps/corner_front.svg" alt="Corner at front-right with the white sticker facing front" width="60" /> | **Front** | `y` — corner and slot are now front-left — then lefty ×1 |
+| <img src="/diagrams/steps/corner_up.svg" alt="Corner at front-right with the white sticker facing up" width="60" /> | **Up** | righty ×3 |
+
+Lefty is righty in the mirror, run with the left hand:
+
+<AlgText moves="L' U' L U" />
+
+## The loop
+
+Can't recall the cases? Repeat righty until the corner drops in with white
+facing down — it always does. Each pass swaps the corner between the slot and
+the top layer, twisting it as it goes: white-right lands in one pass, white-up
+in three, white-front in five (which is why the `y` + lefty shortcut exists).
+Then turn **only U** to bring the next white corner above its slot, and go
+again until all four are in.
+
+<Callout type="caution">
+  Mid-trigger the cross looks broken. It isn't — every full pass of righty
+  restores the cross and every corner you've already placed. Always finish
+  all four moves; between corners, turn only `U`.
+</Callout>
+
+<Callout type="tip">
+  A corner stuck in the bottom layer — wrong slot, or white not facing down?
+  Hold that slot at the front-right and do righty once: the corner pops into
+  the top layer. Fetch it as normal.
+</Callout>
+
+Done when the bottom face is solid white and each side face's bottom row
+matches its center.

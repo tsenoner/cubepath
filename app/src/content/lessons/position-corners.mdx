@@ -1,0 +1,79 @@
+---
+title: "Step 6: Position the Yellow Corners"
+description: "Niklas cycles three corners around the top while a fourth stays put — place all four, ignore the twist."
+phase: "phase-1"
+order: 80
+---
+
+import AlgText from "../../components/AlgText.astro";
+import Callout from "../../components/Callout.astro";
+import TwistyPlayer from "../../components/TwistyPlayer.astro";
+
+<img src="/diagrams/steps/step_6_ycorners_pos.svg" alt="Cube solved except the four yellow corners" width="60" />
+
+Yellow cross done, edges matched to their centers — the cube is four corners
+from solved. This step drags each corner into its correct **slot**; making
+yellow face up is Step 7's job. Keep white on the bottom, yellow on top.
+
+## What "positioned" means
+
+A corner is **positioned** when its three sticker colors match the three
+faces it touches. The corner sitting between the red and green faces must be
+the yellow-red-green piece — in *any* twist. Red or green on top still
+counts: right place, wrong rotation, and rotation waits until Step 7.
+
+Check all four top corners this way. The edges are already aligned, so every
+side face shows its true color and you can read each slot straight off the
+centers.
+
+<Callout type="caution">
+  While you check, turn the **whole cube** (`y`), never the top layer alone —
+  a bare `U` turn wrecks the edges you aligned in Step 5.
+</Callout>
+
+## Niklas
+
+One algorithm handles everything:
+
+<AlgText moves="R U' L' U R' U' L" />
+
+**Niklas** holds the front-left corner in its seat and cycles the other
+three: front-right → back-right → back-left → front-right. The bottom two
+layers come back untouched.
+
+![Front-left corner held in place while the other three top corners cycle](/diagrams/steps/corner_cycle.svg)
+
+In the diagram the held corner shows red on top and blue in front — right
+place, wrong twist. It still counts as positioned, and Niklas leaves it
+alone.
+
+<TwistyPlayer alg="R U' L' U R' U' L" anchor="start" />
+
+Play it from solved: after the seven moves the top layer sits a quarter-turn
+off — turn `U` once so the edges line back up with the centers. Re-squared,
+three corners have traded seats and the front-left corner is back where it
+started.
+
+## The routine
+
+1. **Find a positioned corner** and turn the whole cube until it sits at the
+   **front-left** of the top layer.
+2. **Apply Niklas**, then square the top with `U` so the edges match again.
+3. **Look again.** All four positioned → Step 7. Otherwise the front-left
+   corner is still home — apply Niklas once more. A second pass sends the
+   three corners around the other way, so two passes always finish it.
+
+**No positioned corner anywhere?** Apply Niklas from any angle and re-square
+with `U`. Exactly one corner is now positioned — hold it front-left and
+carry on.
+
+<Callout type="info">
+  Why this always works: with the edges solved, the four corners can only be
+  all placed, exactly one placed (a three-corner cycle), or none placed (two
+  pairs swapped). Niklas is itself a three-corner cycle, so it turns "none"
+  into "one" — you never need more than three applications in total.
+</Callout>
+
+You are done when every corner's three colors match its three faces. The top
+still looks scrambled — most corners won't show yellow upward yet. That's
+expected: Step 7 twists them in place without moving them.

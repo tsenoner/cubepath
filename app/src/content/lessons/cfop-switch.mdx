@@ -1,0 +1,96 @@
+---
+title: "The CFOP Switch"
+description: "Reorder the last layer to orientation-first — two new algorithms, and the order never changes again."
+phase: "phase-2"
+order: 110
+---
+
+import CaseRow from "../../components/CaseRow.astro";
+import Callout from "../../components/Callout.astro";
+
+Today the last-layer order changes, permanently: **orient edges → orient
+corners → permute corners → permute edges**. All orientation first, then all
+permutation. This is the CFOP order, and nothing you learn later will
+rearrange it again.
+
+Why it wins: in the beginner order the yellow face came together last, so
+every step meant re-scanning a half-scrambled top. Orientation-first means
+that once the corners are done, the top is solid yellow — every remaining
+decision reads off side stickers alone. The finished method is still only
+about eighteen algorithms all told; the switch itself costs two.
+
+Grip stays the same throughout: **white on the bottom, yellow on top**.
+Nothing changes before the last layer — solve the cross, the first two
+layers, and the yellow cross exactly as before. The switch starts here.
+
+## 1. Orient corners: chain Sune
+
+Yellow cross done. Look at the four top corners: some show yellow on top,
+the rest have their yellow sticker twisted onto a side. You already own the
+tool that fixes this.
+
+<div class="case-list">
+  <CaseRow id="oll.27" open />
+</div>
+
+If you see exactly the Sune case — one yellow corner in the front-left, the
+other three twisted clockwise — one Sune finishes the top. For **any other
+corner pattern**, apply Sune from any angle, then look again. Repeat until
+the top is solid yellow or the Sune case appears. It always converges within
+a few passes, because Sune twists three corners at once while leaving the
+fourth alone.
+
+<Callout type="tip">
+  Don't hunt for patterns yet. Phase 3 gives the remaining six corner cases
+  their own algorithms; chaining `R U R' U R U2 R'` trades a few extra
+  repetitions for zero new memorization.
+</Callout>
+
+## 2. Permute corners: T-Perm
+
+The top is all yellow, but the corners may sit in each other's slots. Read
+the **side** stickers: on each side face, check the two corner stickers. Two
+matching corner stickers on one face are **headlights** — a car seen head-on.
+The edge between them doesn't have to match.
+
+Hold the headlights on the **left**, then run T-Perm — it swaps the two
+right-hand corners and leaves the yellow face untouched.
+
+<div class="case-list">
+  <CaseRow id="pll.t" />
+</div>
+
+- **Headlights on one face** — hold them left, T-Perm once.
+- **No headlights anywhere** — that's a diagonal swap. T-Perm from any
+  angle creates headlights; hold them left, T-Perm again.
+- **Headlights on every face** — corners are already permuted. Skip ahead.
+
+<Callout type="caution">
+  Niklas, your Phase 1 corner tool, would destroy the yellow face you just
+  finished — it belongs before orientation, never after. T-Perm swaps corners
+  while preserving every top sticker; that is exactly why it takes over here.
+</Callout>
+
+Y-Perm, the dedicated diagonal solver, arrives in Phase 3.
+
+## 3. Permute edges: Ub
+
+Turn U until every corner matches its side center. All that remains is three
+or four top edges out of place. Find the **solved edge** — the one whose
+side sticker matches the face it sits on — and hold it at the **back**.
+
+<div class="case-list">
+  <CaseRow id="pll.ub" />
+</div>
+
+- **No solved edge?** Apply Ub once from any angle — one appears. Find it,
+  hold it at the back, apply again.
+- **Front edge wants to go right, not left?** That's Ua, whose M-slice
+  algorithm arrives in Phase 3. Until then, Ub from the same grip still
+  works — it converts the case into its mirror; one more Ub finishes.
+
+Repeat the routine — find the solved edge, back, Ub — until the cube is
+solved. You will never need more than three passes.
+
+That's the switch complete. Same solve, two new algorithms — Phase 3 only
+fills in the remaining cases so each look becomes a single algorithm.
