@@ -1,0 +1,64 @@
+---
+import Base from "../../layouts/Base.astro";
+import Header from "../../components/Header.astro";
+import CaseRow from "../../components/CaseRow.astro";
+import { CASES } from "../../data/algs";
+
+const GROUPS: { key: string; name: string }[] = [
+  { key: "cross-eo", name: "Yellow Cross" },
+  { key: "2look-oll-corners", name: "Corner Orientation (2-Look OLL)" },
+  { key: "2look-pll-corners", name: "Corner Permutation (2-Look PLL)" },
+  { key: "2look-pll-edges", name: "Edge Permutation (2-Look PLL)" },
+  { key: "444-parity", name: "4×4 Parity" },
+];
+---
+
+<Base title="Algorithm Reference — Cubepath" description="Every Cubepath algorithm — machine-verified, tap to play in 3D.">
+  <Header active="reference" />
+  <main>
+    <h1>Algorithm Reference</h1>
+    <p class="lead">
+      Every algorithm on this site is machine-verified against a cube simulator
+      before it ships. Tap a case to play it in 3D. Prefer paper?
+      <a href="/cubepath.pdf">Download the PDF guide</a>.
+    </p>
+    {
+      GROUPS.map((g) => {
+        const items = CASES.filter((k) => k.group === g.key);
+        if (items.length === 0) return null;
+        return (
+          <section>
+            <h2>{g.name}</h2>
+            <div class="case-list card">
+              {items.map((k) => (
+                <CaseRow id={k.id} />
+              ))}
+            </div>
+          </section>
+        );
+      })
+    }
+  </main>
+</Base>
+
+<style>
+  main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 34px 20px 60px;
+  }
+  .lead {
+    color: var(--soft);
+    margin: 8px 0 10px;
+  }
+  section {
+    margin-top: 26px;
+  }
+  h2 {
+    font-size: 20px;
+    margin-bottom: 10px;
+  }
+  .case-list {
+    overflow: hidden;
+  }
+</style>

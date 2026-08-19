@@ -1,0 +1,52 @@
+---
+/**
+ * Renders an algorithm with the guide's trigger coloring:
+ * sexy move (red), Sune trigger (green), F R F' family (blue).
+ */
+interface Props {
+  moves: string;
+  class?: string;
+}
+const { moves, class: className } = Astro.props;
+
+const TRIGGERS: [string, string][] = [
+  ["R U R' U'", "tr"],
+  ["R U R' U", "tg"],
+  ["R' F R F'", "tb"],
+  ["F R F'", "tb"],
+];
+
+type Part = { text: string; cls?: string };
+const parts: Part[] = [];
+let rest = moves;
+while (rest.length > 0) {
+  const hit = TRIGGERS.find(
+    ([pat]) => rest.startsWith(pat) && (rest.length === pat.length || rest[pat.length] === " "),
+  );
+  if (hit) {
+    parts.push({ text: hit[0], cls: hit[1] });
+    rest = rest.slice(hit[0].length).trimStart();
+  } else {
+    const sp = rest.indexOf(" ");
+    const tok = sp === -1 ? rest : rest.slice(0, sp);
+    parts.push({ text: tok });
+    rest = sp === -1 ? "" : rest.slice(sp + 1).trimStart();
+  }
+}
+---
+
+<span class:list={["alg", className]}
+  >{parts.map((p, i) => <span class={p.cls}>{(i > 0 ? " " : "") + p.text}</span>)}</span
+>
+
+<style>
+  .tr {
+    color: var(--trig-r);
+  }
+  .tg {
+    color: var(--trig-g);
+  }
+  .tb {
+    color: var(--trig-b);
+  }
+</style>

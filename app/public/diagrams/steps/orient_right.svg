@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xlink="http://www.w3.org/1999/xlink" baseProfile="full" height="101px" version="1.1" viewBox="39.1 20.0 91.5 101.4" width="92px">
+  <defs/>
+  <rect fill="#FFFFFF" height="101.4" rx="6" ry="6" width="91.5" x="39.1" y="20.0"/>
+  <polygon fill="#009E60" points="126.6,77.8 115.2,84.3 115.2,104.3 126.6,97.8" stroke="#333333" stroke-width="1.2"/>
+  <polygon fill="#009E60" points="126.6,57.8 115.2,64.3 115.2,84.3 126.6,77.8" stroke="#333333" stroke-width="1.2"/>
+  <polygon fill="#009E60" points="126.6,37.8 115.2,44.3 115.2,64.3 126.6,57.8" stroke="#333333" stroke-width="1.2"/>
+  <polygon fill="#009E60" points="115.2,84.3 103.7,90.9 103.7,110.9 115.2,104.3" stroke="#333333" stroke-width="1.2"/>
+  <polygon fill="#009E60" points="115.2,64.3 103.7,70.9 103.7,90.9 115.2,84.3" stroke="#333333" stroke-width="1.2"/>
+  <polygon fill="#009E60" points="115.2,44.3 103.7,50.9 103.7,70.9 115.2,64.3" stroke="#333333" stroke-width="1.2"/>
+  <polygon fill="#009E60" points="103.7,90.9 92.2,97.4 92.2,117.4 103.7,110.9" stroke="#333333" stroke-width="1.2"/>
+  <polygon fill="#009E60" points="103.7,70.9 92.2,77.4 92.2,97.4 103.7,90.9" stroke="#333333" stroke-width="1.2"/>
+  <polygon fill="#FFD500" points="103.7,50.9 92.2,57.4 92.2,77.4 103.7,70.9" stroke="#333333" stroke-width="1.2"/>
+  <polygon fill="#E00000" points="43.1,83.7 59.5,88.2 59.5,108.2 43.1,103.7" stroke="#333333" stroke-width="1.2"/>
+  <polygon fill="#E00000" points="43.1,63.7 59.5,68.2 59.5,88.2 43.1,83.7" stroke="#333333" stroke-width="1.2"/>
+  <polygon fill="#E00000" points="43.1,43.7 59.5,48.2 59.5,68.2 43.1,63.7" stroke="#333333" stroke-width="1.2"/>
+  <polygon fill="#E00000" points="59.5,88.2 75.9,92.8 75.9,112.8 59.5,108.2" stroke="#333333" stroke-width="1.2"/>
+  <polygon fill="#E00000" points="59.5,68.2 75.9,72.8 75.9,92.8 59.5,88.2" stroke="#333333" stroke-width="1.2"/>
+  <polygon fill="#E00000" points="59.5,48.2 75.9,52.8 75.9,72.8 59.5,68.2" stroke="#333333" stroke-width="1.2"/>
+  <polygon fill="#E00000" points="75.9,92.8 92.2,97.4 92.2,117.4 75.9,112.8" stroke="#333333" stroke-width="1.2"/>
+  <polygon fill="#E00000" points="75.9,72.8 92.2,77.4 92.2,97.4 75.9,92.8" stroke="#333333" stroke-width="1.2"/>
+  <polygon fill="#009E60" points="75.9,52.8 92.2,57.4 92.2,77.4 75.9,72.8" stroke="#333333" stroke-width="1.2"/>
+  <polygon fill="#C0C0C0" points="77.5,24.0 93.9,28.6 82.4,35.1 66.0,30.6" stroke="#333333" stroke-width="1.2"/>
+  <polygon fill="#FFD500" points="66.0,30.6 82.4,35.1 70.9,41.7 54.6,37.1" stroke="#333333" stroke-width="1.2"/>
+  <polygon fill="#FFD500" points="54.6,37.1 70.9,41.7 59.5,48.2 43.1,43.7" stroke="#333333" stroke-width="1.2"/>
+  <polygon fill="#FFD500" points="93.9,28.6 110.3,33.2 98.8,39.7 82.4,35.1" stroke="#333333" stroke-width="1.2"/>
+  <polygon fill="#FFD500" points="82.4,35.1 98.8,39.7 87.3,46.3 70.9,41.7" stroke="#333333" stroke-width="1.2"/>
+  <polygon fill="#FFD500" points="70.9,41.7 87.3,46.3 75.9,52.8 59.5,48.2" stroke="#333333" stroke-width="1.2"/>
+  <polygon fill="#C0C0C0" points="110.3,33.2 126.6,37.8 115.2,44.3 98.8,39.7" stroke="#333333" stroke-width="1.2"/>
+  <polygon fill="#FFD500" points="98.8,39.7 115.2,44.3 103.7,50.9 87.3,46.3" stroke="#333333" stroke-width="1.2"/>
+  <polygon fill="#E00000" points="87.3,46.3 103.7,50.9 92.2,57.4 75.9,52.8" stroke="#333333" stroke-width="1.2"/>
+  <line stroke="#333333" stroke-width="1.5" x1="77.5" x2="126.6" y1="24.0" y2="37.8"/>
+  <line stroke="#333333" stroke-width="1.5" x1="126.6" x2="126.6" y1="37.8" y2="97.8"/>
+  <line stroke="#333333" stroke-width="1.5" x1="126.6" x2="92.2" y1="97.8" y2="117.4"/>
+  <line stroke="#333333" stroke-width="1.5" x1="92.2" x2="43.1" y1="117.4" y2="103.7"/>
+  <line stroke="#333333" stroke-width="1.5" x1="43.1" x2="43.1" y1="103.7" y2="43.7"/>
+  <line stroke="#333333" stroke-width="1.5" x1="43.1" x2="77.5" y1="43.7" y2="24.0"/>
+  <line stroke="#333333" stroke-width="1.5" x1="92.2" x2="43.1" y1="57.4" y2="43.7"/>
+  <line stroke="#333333" stroke-width="1.5" x1="92.2" x2="126.6" y1="57.4" y2="37.8"/>
+  <line stroke="#333333" stroke-width="1.5" x1="92.2" x2="92.2" y1="57.4" y2="117.4"/>
+</svg>

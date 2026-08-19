@@ -1,0 +1,65 @@
+---
+interface Props {
+  type?: "algorithm" | "tip" | "caution" | "info";
+  title?: string;
+}
+const { type = "info", title } = Astro.props;
+const LABELS = { algorithm: "Algorithm", tip: "Tip", caution: "Caution", info: "Info" };
+const label = title ?? LABELS[type];
+---
+
+<aside class={`callout ${type}`}>
+  <span class="label">{label}</span>
+  <div class="body"><slot /></div>
+</aside>
+
+<style>
+  .callout {
+    padding: 12px 16px;
+    border-radius: 6px;
+    border-left: 4px solid;
+    margin: 14px 0;
+  }
+  .label {
+    display: block;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .body {
+    font-size: 14px;
+  }
+  .body :global(p) {
+    margin: 4px 0;
+  }
+  .algorithm {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+  }
+  .algorithm .label {
+    color: var(--accent);
+  }
+  .tip {
+    background: var(--ok-soft);
+    border-color: var(--ok);
+  }
+  .tip .label {
+    color: var(--ok);
+  }
+  .caution {
+    background: var(--warn-soft);
+    border-color: var(--warn);
+  }
+  .caution .label {
+    color: var(--warn);
+  }
+  .info {
+    background: var(--card);
+    border-color: var(--faint);
+  }
+  .info .label {
+    color: var(--soft);
+  }
+</style>

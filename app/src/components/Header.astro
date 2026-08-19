@@ -1,0 +1,102 @@
+---
+interface Props {
+  active?: "learn" | "practice" | "reference";
+}
+const { active } = Astro.props;
+const links = [
+  { href: "/", label: "Learn", key: "learn" },
+  { href: "/practice/", label: "Practice", key: "practice" },
+  { href: "/reference/", label: "Reference", key: "reference" },
+];
+---
+
+<header class="site-header">
+  <a href="/" class="brand">
+    <svg width="20" height="20" viewBox="0 0 22 22" aria-hidden="true">
+      {
+        [0, 1, 2].flatMap((i) =>
+          [0, 1, 2].map((j) => (
+            <rect
+              x={j * 7.33 + 0.8}
+              y={i * 7.33 + 0.8}
+              width="5.7"
+              height="5.7"
+              rx="1.5"
+              fill="#FFD500"
+              stroke="#333"
+              stroke-width="0.9"
+            />
+          )),
+        )
+      }
+    </svg>
+    <span class="wordmark">cubepath</span>
+  </a>
+  <nav>
+    {
+      links.map((l) => (
+        <a href={l.href} class:list={["navlink", { active: l.key === active }]}>
+          {l.label}
+        </a>
+      ))
+    }
+  </nav>
+  <div class="spacer"></div>
+  <button data-install-slot hidden class="install">Install</button>
+</header>
+
+<style>
+  .site-header {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--line);
+    background: var(--card);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    color: var(--ink);
+  }
+  .brand:hover {
+    text-decoration: none;
+  }
+  .wordmark {
+    font-family: var(--font-display);
+    font-size: 19px;
+    font-weight: 700;
+  }
+  nav {
+    display: flex;
+    gap: 18px;
+  }
+  .navlink {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--soft);
+  }
+  .navlink.active {
+    color: var(--ink);
+  }
+  .navlink:hover {
+    text-decoration: none;
+    color: var(--ink);
+  }
+  .spacer {
+    flex-grow: 1;
+  }
+  .install {
+    font: 600 13px var(--font-body);
+    color: var(--accent);
+    background: var(--accent-soft);
+    border: 0;
+    border-radius: 999px;
+    padding: 5px 12px;
+    cursor: pointer;
+  }
+</style>

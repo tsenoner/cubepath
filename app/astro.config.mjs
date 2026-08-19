@@ -69,7 +69,7 @@ export default defineConfig({
       workbox: {
         // Precache EVERYTHING — the whole course must work in airplane mode,
         // including cubing.js's lazy worker/wasm/3D chunks.
-        globPatterns: ["**/*.{css,js,html,svg,png,ico,txt,json,webmanifest,woff2,wasm}"],
+        globPatterns: ["**/*.{css,js,html,svg,png,ico,txt,json,webmanifest,woff2,wasm,pdf}"],
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
         navigateFallback: null,
       },

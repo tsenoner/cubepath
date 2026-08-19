@@ -1,0 +1,50 @@
+---
+title: "Orient Corners: Anti-Sune + 5 New Cases"
+description: "Every corner-orientation case gets its own algorithm — all built from triggers you already know."
+phase: "phase-3"
+order: 120
+---
+
+import CaseRow from "../../components/CaseRow.astro";
+import Callout from "../../components/Callout.astro";
+
+In Phase 2 you chained Sune until the corners fell into place. Now you finish
+the job properly: **one look, one algorithm**. Anti-Sune completes the Sune
+pair, and the remaining five cases each get a dedicated algorithm.
+
+Recognition comes first. After the yellow cross, look at the four corners and
+count how many already show yellow on top — that number narrows it to one or
+two cases, and the side stickers settle it.
+
+## The seven corner cases
+
+You already know Sune. Tap any case to see it solve in 3D.
+
+<div class="case-list">
+  <CaseRow id="oll.27" />
+  <CaseRow id="oll.26" open />
+  <CaseRow id="oll.22" />
+  <CaseRow id="oll.23" />
+  <CaseRow id="oll.21" />
+  <CaseRow id="oll.24" />
+  <CaseRow id="oll.25" />
+</div>
+
+<Callout type="caution">
+  Hold the cube exactly the way the picture shows — orientation algorithms
+  care about the angle. The recognition text tells you what should face you.
+</Callout>
+
+## How to tell the look-alikes apart
+
+- **0 yellow corners** — check the headlights: on the left *and* right it's
+  **Double Headlights**; on the left only, it's **Pi**.
+- **2 yellow corners** — adjacent (right column) is **Chameleon**; diagonal is
+  **Bowtie**; if the two unsolved corners show headlights facing you, it's
+  **Headlights**.
+- **1 yellow corner** — Sune or Anti-Sune, by where the solved corner sits.
+
+<Callout type="tip">
+  Anti-Sune is Sune backwards. If you can already do Sune smoothly, practice
+  reading `R U2 R' U' R U' R'` as one motion rather than seven letters.
+</Callout>

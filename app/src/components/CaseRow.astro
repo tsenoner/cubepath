@@ -1,0 +1,122 @@
+---
+/**
+ * A case row: diagram icon, name + recognition, colored algorithm, and an
+ * inline 3D player that shows the case and plays it to solved.
+ */
+import AlgText from "./AlgText.astro";
+import TwistyPlayer from "./TwistyPlayer.astro";
+import { caseById, primaryAlg } from "../data/algs";
+import { caseIcon } from "../data/icons";
+
+interface Props {
+  id: string;
+  /** Show the 3D player expanded instead of behind a toggle. */
+  open?: boolean;
+}
+const { id, open = false } = Astro.props;
+const def = caseById.get(id);
+if (!def) throw new Error(`CaseRow: unknown case id ${id}`);
+const icon = caseIcon(id);
+const alg = primaryAlg(def);
+---
+
+<details class="case-row" open={open}>
+  <summary>
+    {icon && <img src={icon} alt={`${def.name} case diagram`} width="62" height="62" loading="lazy" />}
+    <span class="meta">
+      <span class="name">{def.name}</span>
+      <span class="recognition">{def.recognition}</span>
+    </span>
+    <AlgText moves={alg} class="row-alg" />
+    <span class="play" aria-hidden="true">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5l10 7-10 7z"></path></svg>
+    </span>
+  </summary>
+  <div class="player-slot">
+    <TwistyPlayer alg={alg} puzzle={def.puzzle} stickering={def.stickering} />
+    <p class="hint">The player starts at the case and solves it — drag to rotate, scrub to step.</p>
+  </div>
+</details>
+
+<style>
+  .case-row {
+    border-top: 1px solid var(--line);
+  }
+  .case-row:first-of-type {
+    border-top: 0;
+  }
+  summary {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 16px;
+    cursor: pointer;
+    list-style: none;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  img {
+    flex-shrink: 0;
+  }
+  .meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 230px;
+    flex-shrink: 0;
+  }
+  .name {
+    font-weight: 600;
+    font-size: 15.5px;
+  }
+  .recognition {
+    color: var(--soft);
+    font-size: 13px;
+  }
+  :global(.row-alg) {
+    flex-grow: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .play {
+    display: inline-flex;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .case-row[open] .play {
+    background: var(--accent);
+    color: #fff;
+  }
+  .player-slot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px 18px;
+  }
+  .hint {
+    margin: 0;
+    color: var(--faint);
+    font-size: 12px;
+  }
+  @media (max-width: 640px) {
+    summary {
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .meta {
+      width: calc(100% - 130px);
+    }
+    :global(.row-alg) {
+      width: 100%;
+      order: 3;
+    }
+  }
+</style>

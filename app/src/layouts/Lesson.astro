@@ -1,0 +1,153 @@
+---
+/**
+ * Lesson page shell: breadcrumb, title, MDX body, prev/next navigation.
+ */
+import { getCollection } from "astro:content";
+import Base from "./Base.astro";
+import Header from "../components/Header.astro";
+
+interface Props {
+  id: string;
+  title: string;
+  description: string;
+  phase: string;
+  order: number;
+}
+const { id, title, description, phase, order } = Astro.props;
+
+const PHASE_NAMES: Record<string, string> = {
+  basics: "Basics",
+  "phase-1": "Phase 1 — Beginner",
+  "phase-1.5": "Phase 1.5 — Speed Tricks",
+  "phase-2": "Phase 2 — CFOP Switch",
+  "phase-3": "Phase 3 — Full 2-Look",
+};
+
+const all = (await getCollection("lessons")).sort((a, b) => a.data.order - b.data.order);
+const idx = all.findIndex((l) => l.id === id);
+const prev = idx > 0 ? all[idx - 1] : undefined;
+const next = idx >= 0 && idx < all.length - 1 ? all[idx + 1] : undefined;
+---
+
+<Base title={`${title} — Cubepath`} description={description}>
+  <Header active="learn" />
+  <main>
+    <nav class="crumbs">
+      <a href="/">3×3 course</a>
+      <span class="sep">›</span>
+      <span>{PHASE_NAMES[phase] ?? phase}</span>
+    </nav>
+    <h1>{title}</h1>
+    <p class="description">{description}</p>
+    <article class="prose">
+      <slot />
+    </article>
+    <nav class="pager">
+      {
+        prev ? (
+          <a class="pager-link" href={`/learn/${prev.id}/`}>
+            ← {prev.data.title}
+          </a>
+        ) : (
+          <span />
+        )
+      }
+      {
+        next ? (
+          <a class="pager-link next" href={`/learn/${next.id}/`}>
+            {next.data.title} →
+          </a>
+        ) : (
+          <a class="pager-link next" href="/">
+            Course overview →
+          </a>
+        )
+      }
+    </nav>
+  </main>
+</Base>
+
+<style>
+  main {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 26px 20px 70px;
+  }
+  .crumbs {
+    font-size: 13px;
+    color: var(--soft);
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .sep {
+    color: var(--faint);
+  }
+  h1 {
+    font-size: 30px;
+    margin-bottom: 6px;
+  }
+  .description {
+    color: var(--soft);
+    margin: 0 0 22px;
+  }
+  .prose :global(h2) {
+    margin: 26px 0 10px;
+  }
+  .prose :global(h3) {
+    margin: 20px 0 8px;
+  }
+  .prose :global(p) {
+    margin: 10px 0;
+  }
+  .prose :global(ul),
+  .prose :global(ol) {
+    padding-left: 22px;
+  }
+  .prose :global(li) {
+    margin: 4px 0;
+  }
+  .prose :global(strong) {
+    font-weight: 600;
+  }
+  .prose :global(code) {
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+    background: var(--accent-soft);
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+  .prose :global(.case-list) {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 14px 0;
+  }
+  .pager {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 34px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+  }
+  .pager-link {
+    font-weight: 600;
+    font-size: 14px;
+    padding: 10px 16px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--ink);
+  }
+  .pager-link:hover {
+    text-decoration: none;
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .pager-link.next {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+</style>

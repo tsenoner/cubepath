@@ -1,143 +1,153 @@
 ---
+import { getCollection } from "astro:content";
 import Base from "../layouts/Base.astro";
-import TwistyPlayer from "../components/TwistyPlayer.astro";
-import { caseById, primaryAlg } from "../data/algs";
+import Header from "../components/Header.astro";
 
-const tperm = caseById.get("pll.t")!;
-const ollParity = caseById.get("444.oll-parity")!;
+const lessons = (await getCollection("lessons")).sort((a, b) => a.data.order - b.data.order);
+
+const SECTIONS: { key: string; name: string; blurb: string }[] = [
+  { key: "basics", name: "Basics", blurb: "Know the cube, read the moves." },
+  { key: "phase-1", name: "Phase 1 — Beginner", blurb: "Solve the cube reliably with one trigger." },
+  { key: "phase-1.5", name: "Phase 1.5 — Speed Tricks", blurb: "Same method, fewer moves." },
+  { key: "phase-2", name: "Phase 2 — CFOP Switch", blurb: "The last-layer order that never changes again." },
+  { key: "phase-3", name: "Phase 3 — Full 2-Look", blurb: "Every case, one look, one algorithm." },
+];
 ---
 
 <Base title="Cubepath — speedcubing from zero">
+  <Header active="learn" />
   <main>
-    <header>
-      <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
-        {
-          [0, 1, 2].flatMap((i) =>
-            [0, 1, 2].map((j) => (
-              <rect
-                x={j * 7.33 + 0.8}
-                y={i * 7.33 + 0.8}
-                width="5.7"
-                height="5.7"
-                rx="1.5"
-                fill="#FFD500"
-                stroke="#333"
-                stroke-width="0.9"
-              />
-            )),
-          )
-        }
-      </svg>
-      <span class="wordmark">cubepath</span>
-      <span class="tag">speedcubing from zero — build preview (M0)</span>
-    </header>
-
-    <section class="proof">
-      <div class="card demo">
-        <h2>{tperm.name}</h2>
-        <p class="recognition">{tperm.recognition}</p>
-        <TwistyPlayer alg={primaryAlg(tperm)} stickering={tperm.stickering} />
-        <p class="alg">{primaryAlg(tperm)}</p>
-      </div>
-
-      <div class="card demo">
-        <h2>{ollParity.name}</h2>
-        <p class="recognition">{ollParity.recognition}</p>
-        <TwistyPlayer alg={primaryAlg(ollParity)} puzzle="4x4x4" />
-        <p class="alg">{primaryAlg(ollParity)}</p>
-      </div>
-
-      <div class="card demo">
-        <h2>Scramble (on-device)</h2>
-        <p class="recognition">WCA random-state 3×3 scramble, generated in a worker — works offline.</p>
-        <p class="alg" id="scramble-out" data-testid="scramble">…</p>
-        <button id="scramble-btn" type="button">New scramble</button>
+    <section class="hero">
+      <h1>Speedcubing from zero.</h1>
+      <p>
+        One unbroken ladder from your first solve to full CFOP — every algorithm
+        machine-verified, every case interactive in 3D. Free, offline, no account.
+      </p>
+      <div class="cta">
+        <a class="btn primary" href={`/learn/${lessons[0]?.id}/`}>Start learning</a>
+        <a class="btn" href="/reference/">All algorithms</a>
       </div>
     </section>
+
+    <section class="ladder">
+      {
+        SECTIONS.map((s) => {
+          const items = lessons.filter((l) => l.data.phase === s.key);
+          if (items.length === 0) return null;
+          return (
+            <div class="section card">
+              <div class="section-head">
+                <h2>{s.name}</h2>
+                <span class="blurb">{s.blurb}</span>
+              </div>
+              <ol>
+                {items.map((l) => (
+                  <li>
+                    <a href={`/learn/${l.id}/`}>{l.data.title}</a>
+                    <span class="desc">{l.data.description}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          );
+        })
+      }
+      <div class="section card coming">
+        <div class="section-head">
+          <h2>Full CFOP · 4×4 · 5×5</h2>
+          <span class="blurb">Intuitive F2L, all 57 OLL + 21 PLL cases, and the big-cube courses — in progress.</span>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <span>Free forever · MIT + CC BY 4.0 · <a href="https://github.com/tsenoner/cubepath">Open source</a></span>
+    </footer>
   </main>
 </Base>
 
-<script>
-  import { randomScrambleForEvent } from "cubing/scramble";
-  import { setSearchDebug } from "cubing/search";
-
-  setSearchDebug({ showWorkerInstantiationWarnings: false });
-
-  const out = document.getElementById("scramble-out")!;
-  const btn = document.getElementById("scramble-btn")! as HTMLButtonElement;
-
-  async function newScramble() {
-    btn.disabled = true;
-    out.textContent = "thinking…";
-    try {
-      const s = await randomScrambleForEvent("333");
-      out.textContent = s.toString();
-    } catch (e) {
-      out.textContent = `scramble failed: ${e}`;
-    } finally {
-      btn.disabled = false;
-    }
-  }
-
-  btn.addEventListener("click", newScramble);
-  newScramble();
-</script>
-
 <style>
   main {
-    max-width: 1100px;
+    max-width: 900px;
     margin: 0 auto;
-    padding: 24px 20px 60px;
+    padding: 34px 20px 60px;
   }
-  header {
+  .hero {
+    max-width: 640px;
+    margin-bottom: 30px;
+  }
+  .hero h1 {
+    margin-bottom: 8px;
+  }
+  .hero p {
+    color: var(--soft);
+    font-size: 16px;
+    margin: 0 0 16px;
+  }
+  .cta {
     display: flex;
-    align-items: center;
-    gap: 10px;
-    padding-bottom: 18px;
-    border-bottom: 1px solid var(--line);
-    margin-bottom: 28px;
+    gap: 12px;
   }
-  .wordmark {
-    font-family: var(--font-display);
-    font-size: 21px;
-    font-weight: 700;
+  .btn {
+    font-weight: 600;
+    font-size: 14px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: 1px solid var(--accent);
+    color: var(--accent);
   }
-  .tag {
+  .btn:hover {
+    text-decoration: none;
+  }
+  .btn.primary {
+    background: var(--accent);
+    color: #fff;
+  }
+  .ladder {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .section {
+    padding: 18px 22px;
+  }
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .section h2 {
+    font-size: 19px;
+  }
+  .blurb {
     color: var(--faint);
     font-size: 13px;
   }
-  .proof {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 16px;
+  ol {
+    margin: 0;
+    padding-left: 22px;
   }
-  .demo {
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    text-align: center;
+  li {
+    margin: 6px 0;
   }
-  .recognition {
+  li a {
+    font-weight: 600;
+  }
+  .desc {
     color: var(--soft);
     font-size: 13px;
-    margin: 0;
+    margin-left: 8px;
   }
-  .alg {
-    margin: 0;
-    overflow-wrap: anywhere;
+  .coming {
+    opacity: 0.75;
   }
-  button {
-    font: 600 14px var(--font-body);
-    color: #fff;
-    background: var(--accent);
-    border: 0;
-    border-radius: 8px;
-    padding: 10px 18px;
-    cursor: pointer;
-  }
-  button:disabled {
-    opacity: 0.6;
+  footer {
+    margin-top: 30px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+    color: var(--faint);
+    font-size: 12.5px;
   }
 </style>

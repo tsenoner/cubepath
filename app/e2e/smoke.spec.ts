@@ -1,21 +1,26 @@
 import { expect, test } from "@playwright/test";
 
-test("M0 proof: players render and scrambles generate on-device", async ({ page }) => {
+const SCRAMBLE_RE = /^([RLUDFB][2']? ){10,}[RLUDFB][2']?$/;
+
+test("home shows the course ladder", async ({ page }) => {
   await page.goto("/");
+  await expect(page.locator("h1")).toContainText("Speedcubing from zero");
+  await expect(page.locator('a[href^="/learn/"]').first()).toBeVisible();
+});
 
-  // On-device WCA scramble resolves to a real move sequence.
-  const scramble = page.getByTestId("scramble");
-  await expect(scramble).not.toHaveText("…", { timeout: 30_000 });
-  await expect(scramble).not.toContainText("failed", { timeout: 30_000 });
-  await expect(scramble).toHaveText(/^([RLUDFB][2']? ){10,}[RLUDFB][2']?$/, { timeout: 30_000 });
-
-  // Both twisty-players actually render (closed shadow DOM — use the
-  // player's own screenshot API as the rendering proof).
-  await page.waitForFunction(() => document.querySelectorAll("twisty-player").length === 2);
-  const shots = await page.evaluate(async () => {
-    const players = [...document.querySelectorAll("twisty-player")] as any[];
-    return Promise.all(players.map((p) => p.experimentalScreenshot({ width: 64, height: 64 })));
+test("lesson page renders its case players", async ({ page }) => {
+  await page.goto("/learn/two-look-oll/");
+  await expect(page.locator("h1")).toContainText("Anti-Sune");
+  await page.waitForFunction(() => document.querySelectorAll("twisty-player").length >= 7);
+  // The lesson opens one case by default — its player must actually render.
+  const shot = await page.evaluate(async () => {
+    const open = document.querySelector("details[open] twisty-player") as any;
+    return open?.experimentalScreenshot({ width: 48, height: 48 });
   });
-  expect(shots).toHaveLength(2);
-  for (const s of shots) expect(s).toMatch(/^data:image\/png;base64,/);
+  expect(shot).toMatch(/^data:image\/png;base64,/);
+});
+
+test("practice page generates on-device scrambles", async ({ page }) => {
+  await page.goto("/practice/");
+  await expect(page.getByTestId("scramble")).toHaveText(SCRAMBLE_RE, { timeout: 30_000 });
 });
