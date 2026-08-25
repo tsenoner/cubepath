@@ -4,11 +4,26 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Build Commands
 
-```bash
-# Full build: generate diagrams + PDF
-bash scripts/build.sh
+The root `Makefile` is the single source of truth for the repo's command
+surface. The pre-push hook and CI call its targets instead of re-listing
+commands, so the two gates cannot drift apart. Run `make` for the full list.
 
-# Python tooling lives in tools/diagrams/ — run from there:
+```bash
+make install   # install app + Python dependencies
+make dev       # app dev server -> http://localhost:4321
+make check     # local gate: check-py + check-app (what the pre-push hook runs)
+make ci        # check + Playwright E2E (what GitHub Actions runs)
+make build     # PDF guide + app
+make diagrams  # regenerate SVG diagrams + sync into the app
+```
+
+Two gates, deliberately different: `make check` is fast and runs on every push;
+`make ci` adds the Playwright E2E suite and runs in CI. Changing a command means
+editing the Makefile — never re-list commands in the hook or the workflow.
+
+Individual tools still run directly when working inside one subtree:
+
+```bash
 cd tools/diagrams
 uv run cubepath-diagrams   # generate SVG diagrams
 uv run pytest tests/       # run tests
@@ -20,10 +35,9 @@ uv run ruff format src/ tests/
 **Prerequisites:** uv, pandoc (>=3.0), typst, Node >= 22.12 (app/)
 
 **Local CI gate:** run `git config core.hooksPath .githooks` once per clone.
-The pre-push hook runs the full CI-equivalent check (ruff, pytest, astro
-check, vitest, astro build) — a push that would fail CI is rejected locally.
-Deploy payloads are built ONLY by `scripts/build-deploy-payload.py`, which
-refuses incomplete file sets.
+The pre-push hook runs `make check` — a push that would fail CI is rejected
+locally. Deploy payloads are built ONLY by `scripts/build-deploy-payload.py`,
+which refuses incomplete file sets.
 
 ## App (app/)
 

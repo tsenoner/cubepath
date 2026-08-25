@@ -1,17 +1,13 @@
 #!/usr/bin/env bash
 # Local CI-equivalent gate: nothing that would fail CI may be pushed.
 # Installed via: git config core.hooksPath .githooks
+#
+# The command list lives in the root Makefile so this hook and CI cannot
+# drift apart. This deliberately runs `make check` (fast) rather than
+# `make ci` — the latter adds Playwright E2E, which CI runs instead.
 set -euo pipefail
-ROOT="$(git rev-parse --show-toplevel)"
+cd "$(git rev-parse --show-toplevel)"
 
-echo "[pre-push] python pipeline (ruff + pytest)…"
-(cd "$ROOT/tools/diagrams" && uv run ruff check src/ tests/ -q && uv run ruff format --check -q src/ tests/ && uv run pytest tests/ -q)
-
-if [ -d "$ROOT/app/node_modules" ]; then
-  echo "[pre-push] app (astro check + vitest + data verify + build)…"
-  (cd "$ROOT/app" && npx astro check && npx vitest run --silent && npm run --silent verify:data && npx astro build > /dev/null)
-else
-  echo "[pre-push] app: node_modules missing — run npm install in app/ first" >&2
-  exit 1
-fi
+echo "[pre-push] running 'make check'…"
+make check
 echo "[pre-push] all gates green ✓"
