@@ -1,0 +1,73 @@
+---
+title: "4×4: The 3×3 Stage and Parity"
+description: "The outer layers are a 3×3 you already solve — plus two parity cases that show up on schedule, not by accident."
+phase: "444"
+order: 320
+---
+
+import CaseRow from "../../components/CaseRow.astro";
+import Callout from "../../components/Callout.astro";
+
+Centers built, edges paired — your 4×4 is now a scaled-up 3×3. Every edge
+pair moves as one piece, every center block is a fixed color. Solve it with
+the method you already own: cross, first two layers, yellow cross, corners,
+permutation.
+
+## Outer layers only
+
+From here, turn **only the outer layers**. R, U, F mean the outermost layer,
+exactly as on a 3×3. An inner-slice turn splits your paired edges and undoes
+reduction — if a pair ever comes apart mid-solve, you turned the wrong layer.
+
+## Parity is expected, not broken
+
+Reduction hides two coin flips. It can leave the cube in a state no 3×3 can
+reach — and each of the two parities does so half the time, independently.
+When your last layer matches no case you know, nothing is wrong with your
+cube. It's parity: run the fix, then continue as normal.
+
+<Callout type="info">
+  Per solve: **25%** no parity, **25%** OLL parity only, **25%** PLL parity
+  only, **25%** both. A parity-free 4×4 solve is the exception, not the rule.
+</Callout>
+
+## OLL parity: an odd number of flipped edges
+
+On a 3×3, the yellow-cross stage always shows 0, 2, or 4 oriented edges —
+Dot, Hook, Line, or cross. On a 4×4 you can see **1 or 3**. An odd count is
+OLL parity: one edge pair is flipped in place, and no edge-orientation
+algorithm will ever resolve it. Apply the fix the moment you count an odd
+number — before any other last-layer work — then build the yellow cross as
+usual.
+
+<div class="case-list">
+  <CaseRow id="444.oll-parity" open />
+</div>
+
+<Callout type="tip">
+  The longest algorithm in the course, but rhythmic — almost all wide and
+  double turns. Drill it in slow motion first; at one solve in two, it earns
+  the practice.
+</Callout>
+
+## PLL parity: two pieces swapped
+
+The second parity surfaces at the very end: exactly **two edge pairs
+swapped** — a straight 2-swap that's impossible on a 3×3, which is why no
+PLL you know matches it. Its two faces, by where the swapped pair sits:
+
+<div class="case-list">
+  <CaseRow id="444.pll.pure-e" />
+  <CaseRow id="444.pll.adj-e" />
+</div>
+
+Any other unmatchable ending reduces to these: a lone corner swap, for
+instance, is one T- or Y-perm from an edge swap. Permute what you can with
+your normal PLLs, and one of the two cases above remains.
+
+## Two looks is enough
+
+The [Reference](/reference/) holds the full parity-embedded case sets —
+every last-layer orientation and permutation with the parity fix folded into
+a single algorithm. Worth mining later for speed. For now, 2-Look OLL and
+PLL plus the parity algorithms above finish **any** 4×4.

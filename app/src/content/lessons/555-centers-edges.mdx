@@ -1,0 +1,72 @@
+---
+title: "5×5: Centers and Freeslice Edges"
+description: "Fixed centers hand you the color scheme back — build them in bars, then pair every edge with freeslice."
+phase: "555"
+order: 340
+---
+
+import Callout from "../../components/Callout.astro";
+import TwistyPlayer from "../../components/TwistyPlayer.astro";
+
+The 5×5 is your 4×4 toolkit with one gift attached: an odd layer count. Odd
+cubes have a true middle layer everywhere, so every face carries a **fixed
+center sticker** again — just like the 3×3. Same plan as the 4×4: build
+centers, pair edges, solve as a 3×3. Only the sizes changed.
+
+<Callout type="info">
+  On the 4×4 you had to read a corner to work out where the colors belong. The
+  5×5 hands the answer back: each blank face already names its color with its
+  fixed middle sticker. No corner-reading, no adjacency check — build what you
+  see.
+</Callout>
+
+One notation addition: a number in front of a wide move widens the grab.
+`Rw` still turns two layers; `3Rw` turns three.
+
+<TwistyPlayer alg="3Rw" puzzle="5x5x5" anchor="start" />
+
+## Centers: three bars each
+
+A 5×5 center is a 3×3 block of nine stickers — one fixed, eight to place.
+Don't place them one by one; build **bars**:
+
+1. **Middle bar** — a line of three through the fixed center.
+2. **Side bars** — build a line of three on a free face, attach it beside the
+   middle bar. Repeat on the other side.
+
+Order: **white → yellow → the ring.** Solve white, then yellow directly
+opposite. Then hold white and yellow on left and right — the four remaining
+faces form a ring around the cube, and every move you make stays on unsolved
+faces. Finish the ring one center at a time; the last two complete together.
+
+## Edges: a midge and two wings
+
+Each edge slot holds three pieces: the **midge** in the middle — this is your
+3×3 edge — and two **wings** flanking it. An edge is paired when both wings
+sit beside their midge, matching colors on both faces. Twelve edges to pair,
+then the cube reduces to a 3×3.
+
+## Freeslice pairing
+
+Pair edges with inner-slice turns, and don't repair the centers in between —
+that's the "free":
+
+- **Slice** — turn an inner layer so a wing rides next to its matching midge.
+  The pair forms at a front edge.
+- **Store** — move the finished edge into the top or bottom layer, out of the
+  working zone, and drop an unpaired edge into its place.
+- **Repeat** — keep slicing and storing. The centers look wrecked mid-run.
+  Ignore them.
+- **Restore** — when no pairable edges remain, turn the slices back. The
+  centers snap back with them.
+
+The top and bottom layers hold eight finished edges between them; the rest
+pair in the middle as you go. When only **two unpaired edges** remain, there
+is nowhere left to store spares — the last two edges get their own technique,
+next lesson.
+
+<Callout type="tip">
+  Centers dominate 5×5 solve time — often half the solve. Practice them
+  deliberately: scramble, solve all six centers, scramble again. That drill
+  buys more speed than any algorithm in this course.
+</Callout>

@@ -1,0 +1,90 @@
+---
+title: "4×4: Edge Pairing"
+description: "Join 24 wings into 12 full edges with one slice move — after this, your 4×4 is a 3×3."
+phase: "444"
+order: 310
+---
+
+import Callout from "../../components/Callout.astro";
+import TwistyPlayer from "../../components/TwistyPlayer.astro";
+
+Centers banked — skill two of two: **edge pairing**. A 4×4 edge slot holds
+**two wing pieces**: 24 wings, each with exactly one partner. Join all twelve
+pairs and the cube is, functionally, a 3×3.
+
+## One move does all the work
+
+Slice out with `Uw` — the top two layers turn together. Watch the middle band:
+
+<TwistyPlayer alg="Uw" puzzle="4x4x4" anchor="start" />
+
+Two things happen at once:
+
+- The **upper wings** shift one slot around the cube — this is what carries a
+  wing next to its partner.
+- The **top row of every side center** shifts with them — your centers break.
+
+That's a loan, not damage. `Uw'` puts every center piece straight back — as
+long as every side face sits where it started when you close.
+
+<Callout type="info">
+  The rule while sliced out: `U` and `D` turns are always free — they never
+  touch the borrowed center row. A side-face turn (`F`, `R`, `B`, `L`) spins
+  that row off course, so return each side face to where it started before
+  the closing `Uw'`. Lift–turn–lower patterns do this on their own: the lift
+  and the lower cancel.
+</Callout>
+
+## The pairing loop
+
+1. **Line up a match** — place a wing and its partner on neighboring slots of
+   the middle band so one slice drives them together.
+2. **Slice out** — `Uw`. The pair joins.
+3. **Store it** — lift the finished pair into the top or bottom layer, turn
+   that layer to carry the pair aside, then lower the face again. The lift
+   cancels, and an unpaired edge drops into the slot the pair left.
+4. **Repeat** — line up the next match the same way, store again.
+5. **Slice back** — `Uw'`. Centers restore; stored pairs survive.
+
+Storage is safe by construction: a pair lying in the top or bottom layer has
+both wings in the same layer, so no turn — not even the closing `Uw'` — can
+split it.
+
+## The rhythm: 2, then 3–2–3
+
+One slice per pair works but wastes moves. Chain instead — every stored pair
+frees the slot for the next unpaired edge, so one slice-out feeds several
+matches:
+
+- **First pass: 2 pairs.** Learn the motion — join, store, join, store, close.
+- **Then 3–2–3.** Three more passes: three pairs, then two, then three.
+
+That's ten edges. The last two are special.
+
+## The last two edges: the flip trick
+
+With only two unpaired edges left there is no spare edge to feed the slot —
+storing stops working. New exit:
+
+1. Bring both unfinished edges to the front of the middle band, one left,
+   one right.
+2. **Slice out** — `Uw`. Nothing joins yet — the slice stages the wings for
+   the return trip. One front slot now holds one wing of *each* edge,
+   mismatched.
+3. **Flip that edge in place** — lift it out of the band, roll it over the
+   top, and reinsert it into the same slot, side faces back where they
+   started. Flipping swaps its wings between the two inner layers — each now
+   sits in its partner's path.
+4. **Slice back** — `Uw'` completes *both* edges at once and snaps the
+   centers home.
+
+<Callout type="tip">
+  Pairing order does not matter — no edge is "first," and a pair stored on the
+  bottom is worth exactly one stored on top. The only thing to protect is the
+  centers: every `Uw` must meet its `Uw'`, and every side-face turn between
+  them must be undone before you close.
+</Callout>
+
+Twelve edges closed: six one-color centers, twelve fat edges, eight corners.
+Hold it like a 3×3 and solve. Along the way you should expect cases no 3×3
+can produce — that's **parity**, it's normal, and it's the next lesson.

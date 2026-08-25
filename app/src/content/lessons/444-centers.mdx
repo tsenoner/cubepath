@@ -1,0 +1,76 @@
+---
+title: "4×4: Centers First"
+description: "No fixed centers on a 4×4 — the corners carry the color scheme, and you rebuild all six centers before anything else."
+phase: "444"
+order: 300
+---
+
+import Callout from "../../components/Callout.astro";
+import TwistyPlayer from "../../components/TwistyPlayer.astro";
+
+A 4×4 is your 3×3 plus two new skills, plus parity you'll learn to expect.
+Skill one is **centers**; skill two, pairing edges, comes next. On a 3×3
+the center *was* the face's color — fixed, unarguable. On a 4×4 every
+center is four loose pieces that travel like anything else. Nothing on the
+cube tells you which face is white — except the corners.
+
+## Wide moves
+
+Big-cube algorithms turn layers in groups. `Rw` turns the outer **two**
+right layers together; `3Rw` turns **three** — on a 4×4, everything but the
+left layer. The number counts layers in from the named face, and plain `R`
+is still just the outer layer. Everything else — `'`, `2`, other faces like
+`Uw` — works exactly as on the 3×3.
+
+<TwistyPlayer alg="Rw" puzzle="4x4x4" anchor="start" />
+<TwistyPlayer alg="3Rw" puzzle="4x4x4" anchor="start" />
+
+## The corners carry the color scheme
+
+A corner's three colors are molded together: white-red-green stays
+white-red-green forever, and exactly one corner has that triple. Centers
+can lie about where a color belongs; corners can't. Every center you build
+gets checked against them.
+
+## Build order
+
+1. **White first.** Collect the four white center pieces into one 2×2
+   block on any face. Two pieces make a 1×2 bar; build a second bar and
+   join them with a wide turn.
+2. **Yellow opposite.** Same technique, forced destination: yellow sits
+   directly across from white, always.
+3. **Read the sides from a corner.** Hold white down. Take any corner with
+   a white sticker and turn the cube until it sits in the bottom
+   front-right with white facing the floor. Its two side stickers *name*
+   those faces: the white-red-green corner says red front, green right.
+   Opposites fill in the rest — orange back, blue left.
+4. **Build the four side centers** where the corner said they belong. Bars
+   again: form one, park it with a face turn, form the second, join. When
+   a wide turn borrows a slice from a finished center, give it back with
+   the inverse before touching anything else on that axis. Build two
+   *adjacent* sides first, so the final pair is adjacent too.
+
+<Callout type="tip">
+  One reading is enough: with white down, the side colors always run
+  **red → green → orange → blue** clockwise around the white face. Learn
+  that ring once and any single white corner orients the whole cube.
+</Callout>
+
+## The last two centers
+
+Rotate the whole cube so the two unfinished centers sit **front** and
+**top** — the four finished ones are now safe on the other faces. The
+insert is a three-beat rhythm: a wide turn lifts a column of the front
+center into the top, a top turn drops the piece you need into that column
+(or clears one you don't), and the inverse wide turn brings the column
+home. The four finished centers come back untouched. Repeat until both
+faces are solid.
+
+<Callout type="caution">
+  A misplaced center is cheap now and brutal later: two colors built on
+  swapped faces look fine until the 3×3 stage refuses to finish, and by
+  then the fix is tearing the swapped centers back down — and re-pairing
+  every edge the repair breaks. Before you pair a single edge, hold white
+  down, find a white corner, and confirm every side center matches the
+  corner stickers beside it.
+</Callout>

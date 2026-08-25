@@ -77,3 +77,17 @@ courses · PDF stays first-class.
   jperm.net/lib/{f2l,2loll,2lpll}.js all return HTTP 404), so the 41 F2L cases
   will be sourced semi-manually from JPerm's Best-F2L PDF in M3 (per the
   research brief §8); the extractor covers oll/pll/4x4oll/4x4pll only.
+
+## M5/M6
+
+- **F2L-41 dataset**: JPerm Best-F2L PDF algs mapped to SCDB numbering purely
+  mechanically (kpuzzle case-class matching); 14 PDF algs excluded on
+  principle (multi-slot or left-slot executions). 105 algs verified.
+- **5×5 L2E**: 13 cases (SCDB is right, not 12); invariant allows rigid
+  transport of intact non-target edge groups (harmless during reduction);
+  4×4-vs-5×5 parity confusion regression-tested.
+- **i18n**: v1 ships EN-only; the content collection layout (one MDX per
+  lesson, typed data separate from prose) is the i18n-ready structure the
+  plan asked for — a locale dimension can be added to the collection without
+  restructuring.
+- Cheat cards ship both in guide/build (source of truth) and app/public.
