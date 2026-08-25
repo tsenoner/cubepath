@@ -2287,6 +2287,255 @@ export const GENERATED_CASES: CaseDef[] = [
     "phase": "full-f2l"
   },
   {
+    "id": "555.l2e-1",
+    "group": "555-l2e",
+    "name": "L2E 1",
+    "recognition": "Last two edges (5×5)",
+    "algs": [
+      {
+        "moves": "Rw' U' R' U R' F R F' Rw",
+        "primary": true
+      }
+    ],
+    "stickering": "full",
+    "puzzle": "5x5x5",
+    "phase": "555"
+  },
+  {
+    "id": "555.l2e-2",
+    "group": "555-l2e",
+    "name": "L2E 2",
+    "recognition": "Last two edges (5×5)",
+    "algs": [
+      {
+        "moves": "Lw U' R' U R' F R F' Lw'",
+        "primary": true
+      },
+      {
+        "moves": "z y Uw F' D' F D' L D L' Uw' y' z'"
+      }
+    ],
+    "stickering": "full",
+    "puzzle": "5x5x5",
+    "phase": "555"
+  },
+  {
+    "id": "555.l2e-3",
+    "group": "555-l2e",
+    "name": "L2E 3",
+    "recognition": "Last two edges (5×5)",
+    "algs": [
+      {
+        "moves": "x' M' U' R' U R' F R F' M x",
+        "primary": true
+      },
+      {
+        "moves": "r' l U' R' U R' F R F' r l'"
+      },
+      {
+        "moves": "x' z' E' L' U' L U' F U F' E z x"
+      }
+    ],
+    "stickering": "full",
+    "puzzle": "5x5x5",
+    "phase": "555"
+  },
+  {
+    "id": "555.l2e-4",
+    "group": "555-l2e",
+    "name": "L2E 4",
+    "recognition": "Last two edges (5×5)",
+    "algs": [
+      {
+        "moves": "Rw2 F2 U2 Rw2 U2 F2 Rw2",
+        "primary": true
+      },
+      {
+        "moves": "Rw2 F2 U2 r2 U2 F2 Rw2"
+      },
+      {
+        "moves": "z' y' Uw2' R2 F2 Uw2' F2 R2' Uw2'"
+      },
+      {
+        "moves": "y x' Uw2 L2 F2 Uw2 F2 L2 Uw2"
+      }
+    ],
+    "stickering": "full",
+    "puzzle": "5x5x5",
+    "phase": "555"
+  },
+  {
+    "id": "555.l2e-5",
+    "group": "555-l2e",
+    "name": "L2E 5",
+    "recognition": "Last two edges (5×5)",
+    "algs": [
+      {
+        "moves": "Rw2 B2 Rw' U2 Rw' U2' x' U2 Rw' U2' Rw U2 Rw' U2' Rw2 U2 x",
+        "primary": true
+      },
+      {
+        "moves": "r2 B2 r' U2 r' U2 x' U2 r' U2 r U2 r' U2 r2 U2"
+      }
+    ],
+    "stickering": "full",
+    "puzzle": "5x5x5",
+    "phase": "555"
+  },
+  {
+    "id": "555.l2e-6",
+    "group": "555-l2e",
+    "name": "L2E 6",
+    "recognition": "Last two edges (5×5)",
+    "algs": [
+      {
+        "moves": "Rw' U2 3Rw U2 3Rw' F2 Rw2 U2 Rw U2 Rw' U2 F2 Rw2 F2",
+        "primary": true
+      },
+      {
+        "moves": "Rw U2 x Rw U2 Rw U2 3Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'"
+      },
+      {
+        "moves": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 3Rw' U2 Rw U2 Rw' U2 Rw'"
+      },
+      {
+        "moves": "Rw2 B2 U2 Lw U2 Rw' U2 Rw U2 F2 Rw F2 Lw' B2 Rw2"
+      }
+    ],
+    "stickering": "full",
+    "puzzle": "5x5x5",
+    "phase": "555"
+  },
+  {
+    "id": "555.l2e-7",
+    "group": "555-l2e",
+    "name": "L2E 7",
+    "recognition": "Last two edges (5×5)",
+    "algs": [
+      {
+        "moves": "y2 Rw U2 Rw U2' x U2 Rw U2' 3Rw' U2 Lw U2' Rw2",
+        "primary": true
+      },
+      {
+        "moves": "Lw' U2 Lw' U2 F2 Lw' F2 Rw U2 Rw' U2 Lw2"
+      }
+    ],
+    "stickering": "full",
+    "puzzle": "5x5x5",
+    "phase": "555"
+  },
+  {
+    "id": "555.l2e-8",
+    "group": "555-l2e",
+    "name": "L2E 8",
+    "recognition": "Last two edges (5×5)",
+    "algs": [
+      {
+        "moves": "Lw2 F2 U2 Lw' U2 Lw2 F2 Lw' U2 Lw2 U2 F2 Lw' F2",
+        "primary": true
+      },
+      {
+        "moves": "l2 F2 U2 r U2 r2 F2 r U2 l2 U2 F2 l' F2"
+      },
+      {
+        "moves": "F2 Rw U2 Rw U2' Rw' F2 Rw' U2 Rw' U2' Rw U2 Rw' U2' Rw2"
+      }
+    ],
+    "stickering": "full",
+    "puzzle": "5x5x5",
+    "phase": "555"
+  },
+  {
+    "id": "555.l2e-9",
+    "group": "555-l2e",
+    "name": "L2E 9",
+    "recognition": "Last two edges (5×5)",
+    "algs": [
+      {
+        "moves": "B2 Rw' U2 Rw' U2' Rw B2 Rw U2 Rw U2' Rw' U2 Rw U2' Rw2",
+        "primary": true
+      },
+      {
+        "moves": "r2 F2 U2 r U2 r2 F2 r U2 r2 U2 F2 r F2"
+      },
+      {
+        "moves": "x' U2 Rw U2 Rw U2' Rw' F2 Rw' U2 Rw' U2' Rw U2 Rw' U2' Rw2 U2 F2 U2 F2 x"
+      },
+      {
+        "moves": "Rw2 F2 U2 Lw' U2 Lw2 F2 Lw' U2 Rw2 U2 F2 Rw F2"
+      }
+    ],
+    "stickering": "full",
+    "puzzle": "5x5x5",
+    "phase": "555"
+  },
+  {
+    "id": "555.l2e-10",
+    "group": "555-l2e",
+    "name": "L2E 10",
+    "recognition": "Last two edges (5×5)",
+    "algs": [
+      {
+        "moves": "Rw' U2 Rw2 U2 Rw U2 Rw' U2 Rw U2 Rw2 U2 Rw'",
+        "primary": true
+      }
+    ],
+    "stickering": "full",
+    "puzzle": "5x5x5",
+    "phase": "555"
+  },
+  {
+    "id": "555.l2e-11",
+    "group": "555-l2e",
+    "name": "L2E 11",
+    "recognition": "Last two edges (5×5)",
+    "algs": [
+      {
+        "moves": "Rw U2 Rw2 U2 Rw' U2 Rw U2 Rw' U2 Rw2 U2 Rw",
+        "primary": true
+      }
+    ],
+    "stickering": "full",
+    "puzzle": "5x5x5",
+    "phase": "555"
+  },
+  {
+    "id": "555.l2e-12",
+    "group": "555-l2e",
+    "name": "L2E 12",
+    "recognition": "Last two edges (5×5)",
+    "algs": [
+      {
+        "moves": "Rw' U2 Rw U2 3Lw' U2 Rw U2 Rw U2' Rw' U2 Rw U2' Rw2 D2 F2 U2 D2",
+        "primary": true
+      },
+      {
+        "moves": "Rw' U2 Rw' U2 B2 Rw' B2 Rw' F2 Lw2 F2 Rw U2 Rw2"
+      }
+    ],
+    "stickering": "full",
+    "puzzle": "5x5x5",
+    "phase": "555"
+  },
+  {
+    "id": "555.l2e-13",
+    "group": "555-l2e",
+    "name": "L2E 13",
+    "recognition": "Last two edges (5×5)",
+    "algs": [
+      {
+        "moves": "r U R' U' r2 U' R' U r2 U R' U' r'",
+        "primary": true
+      },
+      {
+        "moves": "Rw U R U' Rw2 U' R U Rw2 U R U' Rw'"
+      }
+    ],
+    "stickering": "full",
+    "puzzle": "5x5x5",
+    "phase": "555"
+  },
+  {
     "id": "444.oll.solved",
     "group": "4x4oll-4-corners",
     "name": "Solved (4×4 OLL)",

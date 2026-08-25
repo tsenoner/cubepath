@@ -45,13 +45,18 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
         <div class="chip-row center" id="mode-row">
           <button class="chip" data-mode="drill" type="button">Drill</button>
           <button class="chip" data-mode="solve" type="button">Full solve</button>
+          <span class="chip-row" id="puzzle-row" hidden>
+            <button class="chip" data-puzzle="333" type="button">3×3</button>
+            <button class="chip" data-puzzle="444" type="button">4×4</button>
+            <button class="chip" data-puzzle="555" type="button">5×5</button>
+          </span>
           <button class="chip" data-mode="review" type="button">
             Review <span id="due-badge" class="badge" hidden></span>
           </button>
         </div>
 
         <div class="card stage" id="drill-stage">
-          <span class="label">SCRAMBLE · HOLD YELLOW UP</span>
+          <span class="label" id="drill-label">SCRAMBLE · HOLD YELLOW UP</span>
           <p class="alg scramble" id="drill-scramble" data-testid="scramble">…</p>
           <p class="mono timer" id="timer">0.00</p>
           <div class="chip-row center" id="stats-row">
@@ -134,6 +139,7 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
 
   let settings: TrainerSettings = await loadSettings();
   let mode: "drill" | "solve" | "review" = "drill";
+  let solvePuzzle: "333" | "444" | "555" = "333";
   let currentCase = "";
   let lastCase: string | undefined;
   let times: number[] = [];
@@ -170,10 +176,11 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
   // ── Drill ───────────────────────────────────────────────────────────
   async function nextScramble() {
     if (mode === "solve") {
+      $("drill-label").textContent = "SCRAMBLE · FULL SOLVE";
       $("drill-scramble").textContent = "thinking…";
       $("show-case-btn").hidden = true;
       const { randomScrambleForEvent } = await import("cubing/scramble");
-      const s = await randomScrambleForEvent("333");
+      const s = await randomScrambleForEvent(solvePuzzle);
       $("drill-scramble").textContent = s.toString();
       $("case-reveal").hidden = true;
       return;
@@ -187,6 +194,8 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
     const def = pickCase(pool, settings.frequencies, lastCase);
     currentCase = def.id;
     lastCase = def.id;
+    const cubeName = { "3x3x3": "3×3", "4x4x4": "4×4", "5x5x5": "5×5" }[def.puzzle];
+    $("drill-label").textContent = `SCRAMBLE · ${cubeName} · HOLD YELLOW UP`;
     $("drill-scramble").textContent = setupScramble(def);
     $("case-reveal").hidden = true;
     $<HTMLImageElement>("case-img").src = caseIcon(def.id) ?? "";
@@ -307,6 +316,17 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
   // Seed review cards when a case is drilled and revealed? Keep explicit:
   // drilling adds nothing; the "learning" status click and grading do.
 
+  // ── Full-solve puzzle picker ────────────────────────────────────────
+  for (const chip of document.querySelectorAll<HTMLElement>("[data-puzzle]")) {
+    chip.addEventListener("click", async () => {
+      solvePuzzle = chip.dataset.puzzle as typeof solvePuzzle;
+      for (const c of document.querySelectorAll<HTMLElement>("[data-puzzle]")) {
+        c.classList.toggle("active", c === chip);
+      }
+      if (mode === "solve") await nextScramble();
+    });
+  }
+
   // ── Mode switching ──────────────────────────────────────────────────
   for (const chip of document.querySelectorAll<HTMLElement>("[data-mode]")) {
     chip.addEventListener("click", async () => {
@@ -316,6 +336,7 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
       }
       $("drill-stage").hidden = mode === "review";
       $("review-stage").hidden = mode !== "review";
+      $("puzzle-row").hidden = mode !== "solve";
       if (mode === "review") await nextReview();
       else await nextScramble();
     });
@@ -353,6 +374,7 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
   // ── Boot ────────────────────────────────────────────────────────────
   renderSettings();
   document.querySelector<HTMLElement>('[data-mode="drill"]')!.classList.add("active");
+  document.querySelector<HTMLElement>('[data-puzzle="333"]')!.classList.add("active");
   await nextScramble();
   await renderStatuses();
   await refreshDueBadge();

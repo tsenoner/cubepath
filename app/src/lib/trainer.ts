@@ -56,16 +56,19 @@ export const TRAINER_GROUPS: {
   { key: "full-f2l", name: "F2L (41)", member: (c) => c.phase === "full-f2l" },
   { key: "full-oll", name: "Full OLL (57)", member: (c) => c.phase === "full-oll" },
   { key: "full-pll", name: "Full PLL (all 21)", member: (c) => c.phase === "full-pll" },
+  { key: "444-oll", name: "4×4 OLL + parity", member: (c) => c.group.startsWith("4x4oll-") },
+  { key: "444-pll", name: "4×4 PLL + parity", member: (c) => c.group.startsWith("4x4pll-") },
+  { key: "555-l2e", name: "5×5 last two edges", member: (c) => c.group === "555-l2e" },
 ];
 
 export function groupSize(key: string): number {
   const g = TRAINER_GROUPS.find((t) => t.key === key);
-  return g ? ALL_CASES.filter((c) => c.puzzle === "3x3x3" && g.member(c)).length : 0;
+  return g ? ALL_CASES.filter((c) => g.member(c)).length : 0;
 }
 
 export function poolFor(groups: string[]): CaseDef[] {
   const members = TRAINER_GROUPS.filter((t) => groups.includes(t.key)).map((t) => t.member);
-  const pool = ALL_CASES.filter((c) => c.puzzle === "3x3x3" && members.some((m) => m(c)));
+  const pool = ALL_CASES.filter((c) => members.some((m) => m(c)));
   // The 2-look sets overlap with the full sets by id — dedupe.
   return [...new Map(pool.map((c) => [c.id, c])).values()];
 }

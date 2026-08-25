@@ -16,6 +16,9 @@ const recognition = JSON.parse(
 const f2l = JSON.parse(
   await readFile(new URL("../src/data/extracted/f2l-raw.json", import.meta.url), "utf8"),
 );
+const l2e = JSON.parse(
+  await readFile(new URL("../src/data/extracted/l2e-raw.json", import.meta.url), "utf8"),
+);
 
 const slug = (s) =>
   String(s)
@@ -88,6 +91,20 @@ for (const c of f2l.f2l) {
     phase: "full-f2l",
   });
   if (c.setup) scrambles[id] = [c.setup];
+}
+
+for (const c of l2e) {
+  const id = `555.${c.slug}`;
+  cases.push({
+    id,
+    group: "555-l2e",
+    name: c.name,
+    recognition: "Last two edges (5×5)",
+    algs: c.algs.map((moves, i) => ({ moves, ...(i === 0 ? { primary: true } : {}) })),
+    stickering: "full",
+    puzzle: "5x5x5",
+    phase: "555",
+  });
 }
 
 for (const [setName, prefix, phase] of [
