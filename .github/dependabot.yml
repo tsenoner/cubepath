@@ -1,0 +1,53 @@
+version: 2
+
+# Updates are gated on release age, not on "newest available".
+#
+# A freshly published version is the least-vetted one: supply-chain
+# compromises are typically caught hours-to-days after release, and during
+# that window `npm audit` reports a clean tree. The cooldown below holds each
+# version until the ecosystem has had time to notice a bad release, so this
+# repo never adopts a same-day publish.
+#
+# Every PR raised here must still pass CI (make check-py / check-app / e2e)
+# before it can merge. Cooldown reduces exposure to the detection window; it
+# does not make a dependency trustworthy on its own.
+
+updates:
+  - package-ecosystem: "npm"
+    directory: "/app"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      semver-patch-days: 7
+      semver-minor-days: 7
+      semver-major-days: 30
+    groups:
+      npm-minor-patch:
+        update-types: ["minor", "patch"]
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: "uv"
+    directory: "/tools/diagrams"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      semver-patch-days: 7
+      semver-minor-days: 7
+      semver-major-days: 30
+    groups:
+      python-minor-patch:
+        update-types: ["minor", "patch"]
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      semver-patch-days: 7
+      semver-minor-days: 7
+      semver-major-days: 30
+    groups:
+      actions:
+        patterns: ["*"]
+    open-pull-requests-limit: 5
