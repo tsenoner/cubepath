@@ -647,7 +647,13 @@ def _step_cases() -> list[StepDiagram]:
 
 
 def _corner_case_steps() -> list[StepDiagram]:
-    """Corner insertion case diagrams: white faces right/front/up."""
+    """Corner insertion case diagrams: white faces right/front/up.
+
+    The white-red-green corner sits above its slot at up-front-right. Its
+    three legal orientations (simulator-verified — the mirror orders are
+    physically impossible) are, as (U, F, R) sticker triples:
+    white right = (G, R, W); white front = (R, W, G); white up = (W, G, R).
+    """
     # Cross done on bottom: centers + bottom edge stickers visible on F and R
     cross_done = set(_CENTERS) | {("F", 1, 0), ("R", 1, 0)}
     return [
@@ -655,19 +661,19 @@ def _corner_case_steps() -> list[StepDiagram]:
             "White Right",
             "corner_right",
             cross_done,
-            overrides={("R", 2, 2): WHITE, ("U", 2, 2): RED, ("F", 2, 2): GREEN},
+            overrides={("U", 2, 2): GREEN, ("F", 2, 2): RED, ("R", 2, 2): WHITE},
         ),
         StepDiagram(
             "White Front",
             "corner_front",
             cross_done,
-            overrides={("F", 2, 2): WHITE, ("R", 2, 2): RED, ("U", 2, 2): GREEN},
+            overrides={("U", 2, 2): RED, ("F", 2, 2): WHITE, ("R", 2, 2): GREEN},
         ),
         StepDiagram(
             "White Up",
             "corner_up",
             cross_done,
-            overrides={("U", 2, 2): WHITE, ("F", 2, 2): RED, ("R", 2, 2): GREEN},
+            overrides={("U", 2, 2): WHITE, ("F", 2, 2): GREEN, ("R", 2, 2): RED},
         ),
     ]
 

@@ -12,6 +12,7 @@
     "preview": "astro preview",
     "check": "astro check",
     "test": "vitest run",
+    "verify:data": "node scripts/verify-f2l.mjs && node scripts/verify-l2e.mjs",
     "e2e": "playwright test"
   },
   "dependencies": {

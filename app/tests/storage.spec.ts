@@ -12,7 +12,7 @@ import {
   importBackup,
   setStatus,
 } from "../src/lib/db";
-import { dueQueue, Rating, previewIntervals, review } from "../src/lib/srs";
+import { dueQueue, ensureCard, Rating, previewIntervals, review } from "../src/lib/srs";
 
 beforeEach(() => {
   // Fresh database per test.
@@ -29,6 +29,21 @@ describe("progress", () => {
       ["pll.t", "learning"],
       ["pll.y", "learned"],
     ]);
+  });
+
+  test("review upgrades unseen to learning but never demotes learned", async () => {
+    const now = new Date("2026-08-19T12:00:00Z");
+    const statusOf = async (id: string) =>
+      (await allProgress()).find((p) => p.caseId === id)?.status;
+
+    // No progress entry yet → review marks the case "learning".
+    await review("pll.t", Rating.Good, now);
+    expect(await statusOf("pll.t")).toBe("learning");
+
+    // A "learned" case stays learned after a review.
+    await setStatus("pll.y", "learned");
+    await review("pll.y", Rating.Good, now);
+    expect(await statusOf("pll.y")).toBe("learned");
   });
 });
 
@@ -55,6 +70,26 @@ describe("spaced repetition", () => {
     const labels = await previewIntervals("pll.t", new Date("2026-08-19T12:00:00Z"));
     expect(Object.keys(labels).sort()).toEqual(["Again", "Easy", "Good", "Hard"]);
   });
+
+  test("setStatus alone leaves the queue empty; ensureCard seeds a due card", async () => {
+    const now = new Date("2026-08-19T12:00:00Z");
+
+    // Status is progress metadata — it must not create a review card…
+    await setStatus("pll.t", "learning");
+    expect(await dueQueue(now)).toEqual([]);
+
+    // …ensureCard is what feeds the review queue, due immediately.
+    await ensureCard("pll.t", now);
+    expect(await dueQueue(now)).toEqual(["pll.t"]);
+
+    // Grading pushes the card into the future.
+    await review("pll.t", Rating.Good, now);
+    expect(await dueQueue(now)).toEqual([]);
+
+    // Re-seeding (e.g. cycling the status away and back) must not reset it.
+    await ensureCard("pll.t", now);
+    expect(await dueQueue(now)).toEqual([]);
+  });
 });
 
 describe("backup", () => {
@@ -65,7 +100,10 @@ describe("backup", () => {
 
     const backup = await exportBackup();
     // Simulate a fresh device + JSON serialization (dates become strings).
+    // Dropping the cached connection matters: without it the import would
+    // silently reuse the old device's connection and test nothing.
     globalThis.indexedDB = new IDBFactory();
+    _resetDBCache();
     await importBackup(JSON.parse(JSON.stringify(backup)));
 
     const card = await getCard("pll.t");

@@ -4,7 +4,7 @@
  */
 import { createEmptyCard, fsrs, Rating, type Card, type Grade } from "ts-fsrs";
 
-import { dueCards, getCard, recordReview } from "./db";
+import { dueCards, getCard, putCard, recordReview } from "./db";
 
 const scheduler = fsrs();
 
@@ -28,6 +28,16 @@ function intervalLabel(from: Date, due: Date): string {
 /** The case's stored card, or a fresh one tagged with the case id. */
 async function cardFor(caseId: string, now: Date): Promise<Card & { caseId: string }> {
   return (await getCard(caseId)) ?? { ...createEmptyCard(now), caseId };
+}
+
+/**
+ * Seed an FSRS card due immediately if the case has none — marking a case
+ * "learning" calls this so it enters the review queue. Never overwrites an
+ * existing card: cycling a status away and back must not reset scheduling.
+ */
+export async function ensureCard(caseId: string, now: Date): Promise<void> {
+  if (await getCard(caseId)) return;
+  await putCard({ ...createEmptyCard(now), caseId });
 }
 
 /** What each answer button would schedule — shown on the buttons themselves. */

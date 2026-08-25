@@ -11,12 +11,21 @@ from pathlib import Path
 from cubepath.algs import ALGORITHMS
 from cubepath.cube import Cube, parse_algorithm, state_before
 from cubepath.diagrams import (
+    _SIM_COLOR,
     GREY,
     YELLOW,
+    _align_edge_cases,
+    _corner_case_steps,
+    _corner_pos_case,
+    _edge_case_steps,
     _oll_corner_cases,
     _oll_cross_cases,
+    _orient_corner_case,
+    _orient_corner_cases_15,
     _pll_corner_cases,
     _pll_edge_cases,
+    _step_cases,
+    _step_sticker_color,
     _u_layer_views,
 )
 
@@ -192,6 +201,117 @@ def test_pll_side_colors_match_prestate():
         ]:
             expected = [_SIM_COLOR[s] for s in sides[side_name]]
             assert attr == expected, f"{case.name} {side_name}: {attr} != {expected}"
+
+
+# ── Step-diagram corner chirality ────────────────────────────────────
+# A corner's three stickers wind around it with a fixed handedness — a
+# diagram showing the mirror order depicts a physically impossible cube.
+# The legal (U, F, R) triples are DERIVED from the simulator here, never
+# hardcoded (hardcoding the set is exactly how the mirror bug shipped).
+
+_HEX_TO_SIM = {v: k for k, v in _SIM_COLOR.items()}
+
+
+def _ufr_triple(cube: Cube) -> tuple[str, str, str]:
+    """The visible (U, F, R) stickers of the corner at up-front-right."""
+    u, f, r = (cube.visible_sticker(face, 2, 2) for face in ("U", "F", "R"))
+    return (u, f, r)
+
+
+def _legal_ufr_triples() -> set[tuple[str, str, str]]:
+    """All 24 legal (corner, twist) placements at UFR, read off whole-cube
+    rotations of a solved cube — chirality-correct by construction."""
+    triples = set()
+    for r1 in ("", "x", "x2", "x'", "z", "z'"):
+        for r2 in ("", "y", "y2", "y'"):
+            c = Cube.solved()
+            for r in (r1, r2):
+                if r:
+                    c.apply(r)
+            triples.add(_ufr_triple(c))
+    assert len(triples) == 24  # 8 corners × 3 twists, all distinct
+    return triples
+
+
+def _white_corner_triples_from_moves() -> set[tuple[str, str, str]]:
+    """Every orientation the white-red-green corner reaches at UFR under face
+    moves (breadth-first to depth 3) — the mechanical ground truth."""
+    moves = [base + suffix for base in "RUFLBD" for suffix in ("", "'", "2")]
+    found = set()
+    frontier = [Cube.solved()]
+    for _ in range(3):
+        successors = []
+        for cube in frontier:
+            for m in moves:
+                c2 = cube.copy()
+                c2.apply_move(m)
+                t = _ufr_triple(c2)
+                if set(t) == {"W", "R", "G"}:
+                    found.add(t)
+                successors.append(c2)
+        frontier = successors
+    return found
+
+
+def _all_step_diagrams():
+    return (
+        _step_cases()
+        + _corner_case_steps()
+        + _edge_case_steps()
+        + [_orient_corner_case()]
+        + _orient_corner_cases_15()
+        + [_corner_pos_case()]
+        + _align_edge_cases()
+    )
+
+
+def _step_ufr_triple(step) -> tuple[str, str, str] | None:
+    """The diagram's (U, F, R) sticker triple at up-front-right, as simulator
+    color letters — or None when the corner isn't fully colored."""
+    colors = tuple(
+        _step_sticker_color(face, 2, 2, step.solved, step.face_colors, step.overrides)
+        for face in ("U", "F", "R")
+    )
+    if GREY in colors:
+        return None
+    u, f, r = (_HEX_TO_SIM[c] for c in colors)
+    return (u, f, r)
+
+
+def test_white_corner_has_exactly_three_orientations():
+    """Mechanical derivation sanity: face moves reach the white-red-green
+    corner at UFR in exactly the 3 legal twists, matching the rotation set."""
+    derived = _white_corner_triples_from_moves()
+    from_rotations = {t for t in _legal_ufr_triples() if set(t) == {"W", "R", "G"}}
+    assert len(derived) == 3
+    assert derived == from_rotations
+
+
+def test_step_diagram_corners_are_physically_possible():
+    """Every fully-colored UFR corner in a step diagram is a legal orientation
+    of a real corner — mirror-image sticker orders cannot ship."""
+    legal = _legal_ufr_triples()
+    checked = 0
+    for step in _all_step_diagrams():
+        triple = _step_ufr_triple(step)
+        if triple is None:
+            continue
+        assert triple in legal, f"{step.filename}: impossible corner {triple} at (U, F, R)"
+        checked += 1
+    # solved, 3 corner insertions, orient_corner, orient_right, orient_front
+    assert checked >= 7
+
+
+def test_corner_insertion_cases_match_captions():
+    """White Right/Front/Up show white on the R/F/U face, with the other two
+    stickers in the (simulator-derived) legal order for that twist."""
+    white_at = {"corner_right": 2, "corner_front": 1, "corner_up": 0}
+    wrg = _white_corner_triples_from_moves()
+    by_filename = {s.filename: s for s in _corner_case_steps()}
+    assert by_filename.keys() == white_at.keys()
+    for filename, w_index in white_at.items():
+        (expected,) = (t for t in wrg if t[w_index] == "W")
+        assert _step_ufr_triple(by_filename[filename]) == expected, filename
 
 
 # ── Guide ↔ data consistency ─────────────────────────────────────────

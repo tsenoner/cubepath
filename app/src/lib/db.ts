@@ -78,12 +78,21 @@ export async function recordReview(
 ): Promise<void> {
   const db = await getDB();
   const tx = db.transaction(["cards", "reviews", "progress"], "readwrite");
+  const progress = tx.objectStore("progress");
+  // Reviewing implies at least "learning" — but never demotes "learned".
+  const existing = await progress.get(card.caseId);
+  const status: CaseStatus = existing && existing.status !== "unseen" ? existing.status : "learning";
   await Promise.all([
     tx.objectStore("cards").put(card),
     tx.objectStore("reviews").add({ caseId: card.caseId, rating, review: when }),
-    tx.objectStore("progress").put({ caseId: card.caseId, status: "learning", updatedAt: Date.now() }),
+    progress.put({ caseId: card.caseId, status, updatedAt: Date.now() }),
     tx.done,
   ]);
+}
+
+/** Write a card into the cards store only — no review log, no progress change (SRS seeding). */
+export async function putCard(card: Card & { caseId: string }): Promise<void> {
+  await (await getDB()).put("cards", card);
 }
 
 export async function getCard(caseId: string): Promise<(Card & { caseId: string }) | undefined> {

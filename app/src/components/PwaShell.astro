@@ -62,25 +62,32 @@
   });
 
   // Android/desktop install: surface a button in any [data-install-slot].
+  // Click listeners are wired ONCE here — beforeinstallprompt can fire again
+  // (e.g. after a dismissed prompt), and re-adding listeners per event would
+  // stack them and call prompt() twice.
   let deferredPrompt: any = null;
+  const installSlots = document.querySelectorAll<HTMLElement>("[data-install-slot]");
+  const hideInstallSlots = () => {
+    for (const slot of installSlots) slot.hidden = true;
+  };
+  for (const slot of installSlots) {
+    slot.addEventListener("click", async () => {
+      if (!deferredPrompt) return;
+      const prompt = deferredPrompt;
+      deferredPrompt = null;
+      prompt.prompt();
+      await prompt.userChoice;
+      hideInstallSlots();
+    });
+  }
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
     deferredPrompt = e;
-    for (const slot of document.querySelectorAll<HTMLElement>("[data-install-slot]")) {
-      slot.hidden = false;
-      slot.addEventListener("click", async () => {
-        if (!deferredPrompt) return;
-        deferredPrompt.prompt();
-        await deferredPrompt.userChoice;
-        deferredPrompt = null;
-        slot.hidden = true;
-      });
-    }
+    for (const slot of installSlots) slot.hidden = false;
   });
   window.addEventListener("appinstalled", () => {
-    for (const slot of document.querySelectorAll<HTMLElement>("[data-install-slot]")) {
-      slot.hidden = true;
-    }
+    deferredPrompt = null;
+    hideInstallSlots();
     void navigator.storage?.persist?.();
   });
 </script>

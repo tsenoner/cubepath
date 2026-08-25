@@ -18,6 +18,11 @@ const DEFAULT_SETTINGS: TrainerSettings = {
   frequencies: "realistic",
 };
 
+/** A fresh copy of the default trainer settings (safe to mutate). */
+export function defaultSettings(): TrainerSettings {
+  return { ...DEFAULT_SETTINGS, groups: [...DEFAULT_SETTINGS.groups] };
+}
+
 export async function loadSettings(): Promise<TrainerSettings> {
   const db = await getDB();
   const stored = (await db.get("settings", "trainer")) as Partial<TrainerSettings> | undefined;

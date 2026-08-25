@@ -123,6 +123,7 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
   import { caseIcon } from "../../data/icons";
   import {
     averageOf,
+    defaultSettings,
     formatTime,
     loadSettings,
     pickCase,
@@ -132,12 +133,25 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
     type TrainerSettings,
   } from "../../lib/trainer";
   import { allProgress, ensurePersistence, setStatus, type CaseStatus } from "../../lib/db";
-  import { dueQueue, previewIntervals, review } from "../../lib/srs";
+  import { dueQueue, ensureCard, previewIntervals, review } from "../../lib/srs";
   import type { Grade } from "ts-fsrs";
 
   const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
-  let settings: TrainerSettings = await loadSettings();
+  /** Show a case diagram, or hide the img entirely — an empty src renders a broken image. */
+  function setCaseImage(img: HTMLImageElement, src: string | undefined) {
+    img.hidden = !src;
+    if (src) img.src = src;
+  }
+
+  // An IndexedDB failure must not kill the island — fall back to defaults.
+  let settings: TrainerSettings;
+  try {
+    settings = await loadSettings();
+  } catch (err) {
+    console.error("cubepath: failed to load trainer settings, using defaults", err);
+    settings = defaultSettings();
+  }
   let mode: "drill" | "solve" | "review" = "drill";
   let solvePuzzle: "333" | "444" | "555" = "333";
   let lastCase: string | undefined;
@@ -173,13 +187,19 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
   }
 
   // ── Drill ───────────────────────────────────────────────────────────
+  // Generation counter: a slow async scramble must not clobber the DOM after
+  // the user has already requested a newer one (or switched mode/puzzle).
+  let scrambleGen = 0;
   async function nextScramble() {
+    const gen = ++scrambleGen;
     if (mode === "solve") {
       $("drill-label").textContent = "SCRAMBLE · FULL SOLVE";
       $("drill-scramble").textContent = "thinking…";
       $("show-case-btn").hidden = true;
       const { randomScrambleForEvent } = await import("cubing/scramble");
+      if (gen !== scrambleGen) return;
       const s = await randomScrambleForEvent(solvePuzzle);
+      if (gen !== scrambleGen) return;
       $("drill-scramble").textContent = s.toString();
       $("case-reveal").hidden = true;
       return;
@@ -196,7 +216,7 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
     $("drill-label").textContent = `SCRAMBLE · ${cubeName} · HOLD YELLOW UP`;
     $("drill-scramble").textContent = setupScramble(def);
     $("case-reveal").hidden = true;
-    $<HTMLImageElement>("case-img").src = caseIcon(def.id) ?? "";
+    setCaseImage($<HTMLImageElement>("case-img"), caseIcon(def.id));
     $("case-name").textContent = def.name;
     $("case-alg").innerHTML = "";
     const algSpan = document.createElement("span");
@@ -234,7 +254,7 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
     }, 47);
   }
   document.addEventListener("keydown", (e) => {
-    if (e.code !== "Space" || mode === "review") return;
+    if (e.code !== "Space" || e.repeat || mode === "review") return;
     const target = e.target as HTMLElement;
     if (target.tagName === "INPUT" || target.tagName === "BUTTON") target.blur();
     e.preventDefault();
@@ -261,8 +281,12 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
       const current = (chip.dataset.value ?? "unseen") as CaseStatus;
       const next = STATUS_ORDER[(STATUS_ORDER.indexOf(current) + 1) % 3]!;
       await setStatus(id, next);
+      // Entering "learning" seeds the FSRS card so the case joins the review
+      // queue; leaving keeps the card (its history must survive status cycles).
+      if (next === "learning") await ensureCard(id, new Date());
       void ensurePersistence();
       await renderStatuses();
+      await refreshDueBadge();
     });
   }
 
@@ -284,7 +308,7 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
     const id = reviewQueue[0]!;
     const def = caseById.get(id);
     if (!def) return;
-    $<HTMLImageElement>("review-img").src = caseIcon(id) ?? "";
+    setCaseImage($<HTMLImageElement>("review-img"), caseIcon(id));
     $("review-name").textContent = def.name;
     $("review-answer").hidden = true;
     $("reveal-btn").hidden = false;
@@ -353,7 +377,10 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
   });
   $("import-btn").addEventListener("click", () => $("import-file").click());
   $<HTMLInputElement>("import-file").addEventListener("change", async (e) => {
-    const file = (e.target as HTMLInputElement).files?.[0];
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    // Reset so re-importing the same file fires "change" again.
+    input.value = "";
     if (!file) return;
     try {
       const { importBackup } = await import("../../lib/db");
@@ -373,7 +400,12 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
   renderSettings();
   document.querySelector<HTMLElement>('[data-mode="drill"]')!.classList.add("active");
   document.querySelector<HTMLElement>('[data-puzzle="333"]')!.classList.add("active");
-  await Promise.all([nextScramble(), renderStatuses(), refreshDueBadge()]);
+  try {
+    await Promise.all([nextScramble(), renderStatuses(), refreshDueBadge()]);
+  } catch (err) {
+    // Storage failures must not take the drill stage down with them.
+    console.error("cubepath: practice boot failed", err);
+  }
 </script>
 
 <style>

@@ -16,15 +16,19 @@ _REPO = Path(__file__).resolve().parents[4]
 _FIGS = _REPO / "guide" / "figures" / "generated"
 _OUT = _REPO / "guide" / "build"
 
-# (svg relative to figures/generated, display name, algorithm-key)
-OLL_CARD_A = [
+# (svg relative to figures/generated, display name, algorithm-key[, rotate°])
+Row = tuple[str, str, str] | tuple[str, str, str, int]
+
+OLL_CARD_A: list[Row] = [
     ("oll/oll_line.svg", "Line", "F-sexy-F'"),
-    ("oll/oll_hook.svg", "Hook", "f-sexy-f'"),
+    # Hook is drawn at the Phase-1 angle (L back-left); the f-alg beside it
+    # needs the 180°-rotated hold (L front-right) — rotate, as the guide does.
+    ("oll/oll_hook.svg", "Hook", "f-sexy-f'", 180),
     ("oll/oll_sune.svg", "Sune", "Sune"),
     ("oll/oll_antisune.svg", "Anti-Sune", "Anti-Sune"),
 ]
 
-OLL_CARD_B = [
+OLL_CARD_B: list[Row] = [
     ("oll/oll_pi.svg", "Pi", "Pi"),
     ("oll/oll_headlights.svg", "Headlights", "Headlights"),
     ("oll/oll_double_headlights.svg", "Dbl Headlights", "Double Headlights"),
@@ -32,7 +36,7 @@ OLL_CARD_B = [
     ("oll/oll_bowtie.svg", "Bowtie", "Bowtie"),
 ]
 
-PLL_CARD = [
+PLL_CARD: list[Row] = [
     ("pll/pll_tperm.svg", "T-Perm", "T-Perm"),
     ("pll/pll_yperm.svg", "Y-Perm", "Y-Perm"),
     ("pll/pll_ub.svg", "Ub", "Ub"),
@@ -42,12 +46,17 @@ PLL_CARD = [
 ]
 
 
-def _card(title: str, rows: list[tuple[str, str, str]]) -> str:
+def _diagram_cell(svg: str, rotate: int) -> str:
+    img = f'image("../figures/generated/{svg}", width: 6.5mm)'
+    return f"box(rotate({rotate}deg, {img}))" if rotate else img
+
+
+def _card(title: str, rows: list[Row]) -> str:
     body_rows = ",\n".join(
-        f'    image("../figures/generated/{svg}", width: 6.5mm), '
-        f'text(size: 5.4pt, weight: "bold")[{name}], '
-        f'text(size: 5.6pt, font: "Courier New", weight: "bold")[{ALGORITHMS[key]}]'
-        for svg, name, key in rows
+        f"    {_diagram_cell(row[0], row[3] if len(row) > 3 else 0)}, "
+        f'text(size: 5.4pt, weight: "bold")[{row[1]}], '
+        f'text(size: 5.6pt, font: "Courier New", weight: "bold")[{ALGORITHMS[row[2]]}]'
+        for row in rows
     )
     return f"""#page(width: 85.6mm, height: 54mm, margin: 2.5mm)[
   #text(size: 7pt, weight: "bold")[{title}]

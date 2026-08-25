@@ -33,6 +33,7 @@ jobs:
       - run: npm ci
       - run: npx astro check
       - run: npx vitest run
+      - run: npm run verify:data
       - run: npx astro build
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test

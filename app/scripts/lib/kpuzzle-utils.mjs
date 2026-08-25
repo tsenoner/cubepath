@@ -73,3 +73,71 @@ export function makeKit(kpuzzle, { centerOrbits = ["CENTERS"] } = {}) {
     leftRotNormalize,
   };
 }
+
+/**
+ * Slot kit: the base kit plus U-layer / FR-slot piece-slot maps and the
+ * layer-local invariant predicates shared by verify-f2l.mjs and
+ * tests/algs.spec.ts. Slots are detected mechanically, never hardcoded:
+ * the U layer is whatever moves under U; the FR slot is whatever moves
+ * under R and F but not U (3x3: the DFR corner + FR edge).
+ */
+export function makeSlotKit(kpuzzle, kit = makeKit(kpuzzle)) {
+  const { solved } = kit;
+  const uTurn = solved.applyAlg(new Alg("U")).patternData;
+  const rTurn = solved.applyAlg(new Alg("R")).patternData;
+  const fTurn = solved.applyAlg(new Alg("F")).patternData;
+  const movedBy = (turn, orbit, i) => {
+    const s = solved.patternData[orbit];
+    return turn[orbit].pieces[i] !== s.pieces[i] || turn[orbit].orientation[i] !== s.orientation[i];
+  };
+  const U_SLOTS = {};
+  const FR_SLOTS = {};
+  const FR_PIECE = {}; // orbit -> piece id of the FR-pair piece
+  for (const orbit of Object.keys(solved.patternData)) {
+    const n = solved.patternData[orbit].pieces.length;
+    U_SLOTS[orbit] = Array.from({ length: n }, (_, i) => movedBy(uTurn, orbit, i));
+    FR_SLOTS[orbit] = Array.from(
+      { length: n },
+      (_, i) => movedBy(rTurn, orbit, i) && !movedBy(uTurn, orbit, i) && movedBy(fTurn, orbit, i),
+    );
+    const idxs = FR_SLOTS[orbit].flatMap((v, i) => (v ? [i] : []));
+    if (idxs.length > 1) {
+      throw new Error(`FR-slot detection: ${orbit} matched ${idxs.length} slots`);
+    }
+    if (idxs.length === 1) FR_PIECE[orbit] = solved.patternData[orbit].pieces[idxs[0]];
+  }
+
+  /** Every piece outside the U layer solved? (allowFRSlot also exempts the FR slot.) */
+  const outsideSolved = (pattern, { allowFRSlot }) => {
+    const d = pattern.patternData;
+    for (const orbit of Object.keys(d)) {
+      const s = solved.patternData[orbit];
+      for (let i = 0; i < s.pieces.length; i++) {
+        if (U_SLOTS[orbit][i] || (allowFRSlot && FR_SLOTS[orbit][i])) continue;
+        if (d[orbit].pieces[i] !== s.pieces[i] || d[orbit].orientation[i] !== s.orientation[i]) {
+          return false;
+        }
+      }
+    }
+    return true;
+  };
+
+  /**
+   * Every U-layer edge and corner in solved orientation? (The pure-permutation
+   * half of the PLL invariant. CENTERS orbits are skipped — center twist is
+   * invisible on a standard cube.)
+   */
+  const uLayerOriented = (pattern) => {
+    for (const orbit of Object.keys(solved.patternData)) {
+      if (orbit.startsWith("CENTERS")) continue;
+      const d = pattern.patternData[orbit];
+      const s = solved.patternData[orbit];
+      for (let i = 0; i < s.pieces.length; i++) {
+        if (U_SLOTS[orbit][i] && d.orientation[i] !== s.orientation[i]) return false;
+      }
+    }
+    return true;
+  };
+
+  return { ...kit, U_SLOTS, FR_SLOTS, FR_PIECE, outsideSolved, uLayerOriented };
+}

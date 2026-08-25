@@ -284,29 +284,45 @@ def parse_algorithm(alg: str) -> list[str]:
     """Parse an algorithm string into move tokens.
 
     Supports: R U R' U' R2, lowercase wide (r, f), parenthesized repeats (R U)×2.
-    Strips parentheses that aren't followed by a repeat count.
+    Parentheses not followed by a repeat count are visual grouping only: a
+    closed group is held until the next token — a ×N multiplies it, anything
+    else (a move, another "(", or the end of the string) flushes it in order.
     """
     tokens = [_WIDE_ALIASES.get(t, t) for t in _TOKEN_RE.findall(alg)]
     result: list[str] = []
-    group: list[str] | None = None
+    group: list[str] | None = None  # open "(… " being collected
+    closed: list[str] | None = None  # "(…)" seen, awaiting a possible ×N
+
+    def flush_closed() -> None:
+        nonlocal closed
+        if closed is not None:
+            result.extend(closed)
+            closed = None
 
     for tok in tokens:
         if tok == "(":
+            flush_closed()
+            if group is not None:  # unbalanced "(" — keep the open group's moves
+                result.extend(group)
             group = []
         elif tok == ")":
-            # Group ends — look for ×N in next token
-            continue
-        elif tok.startswith("×") and group is not None:
-            count = int(tok[1:])
-            result.extend(group * count)
-            group = None
+            if group is None:
+                flush_closed()  # stray ")" — nothing to close
+            else:
+                closed, group = group, None
+        elif tok.startswith("×"):
+            if closed is not None:
+                result.extend(closed * int(tok[1:]))
+                closed = None
+            # a ×N with no closed group is malformed — drop it
         elif group is not None:
             group.append(tok)
         else:
+            flush_closed()
             result.append(tok)
 
-    # If group was opened but not repeated, just append
-    if group is not None:
+    flush_closed()
+    if group is not None:  # unclosed "(" — keep its moves
         result.extend(group)
 
     return result

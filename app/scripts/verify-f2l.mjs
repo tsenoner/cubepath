@@ -25,10 +25,9 @@
  * Usage: node scripts/verify-f2l.mjs   (exits nonzero on any failure)
  */
 import { readFile } from "node:fs/promises";
-import { Alg } from "cubing/alg";
 import { cube3x3x3 } from "cubing/puzzles";
 
-import { makeKit } from "./lib/kpuzzle-utils.mjs";
+import { makeSlotKit } from "./lib/kpuzzle-utils.mjs";
 
 // Numbering ground truth: SpeedCubeDB case setups (setup applied to a solved
 // cube produces the case at the FR slot). https://speedcubedb.com/a/3x3/F2L
@@ -78,53 +77,24 @@ const SCDB_SETUPS = {
 
 const kpuzzle = await cube3x3x3.kpuzzle();
 
-// Shared rotation/normalization kit. Left- vs right-rotation-normalize
-// matters: forward patterns rotate back AFTER (right-compose), inverted
-// transformations (pre-states, alg⁻¹) carry any net rotation on the LEFT —
-// using the wrong side conjugates the state onto the wrong slot for algs
-// with net rotation (leading y etc.).
-const { solved, ID: IDENTITY_T, toT, AUF_T, rightRotNormalize, leftRotNormalize } = makeKit(kpuzzle);
-
-// U-layer and FR-slot piece slots (detected, not hardcoded): FR slot = moves
-// under R and F but not U (corners: DFR; edges: FR).
-const uTurn = solved.applyAlg(new Alg("U")).patternData;
-const rTurn = solved.applyAlg(new Alg("R")).patternData;
-const fTurn = solved.applyAlg(new Alg("F")).patternData;
-const movedBy = (turn, orbit, i) => {
-  const s = solved.patternData[orbit];
-  return turn[orbit].pieces[i] !== s.pieces[i] || turn[orbit].orientation[i] !== s.orientation[i];
-};
-const U_SLOTS = {};
-const FR_SLOTS = {};
-const FR_PIECE = {}; // orbit -> piece id of the FR-pair piece
-for (const orbit of Object.keys(solved.patternData)) {
-  const n = solved.patternData[orbit].pieces.length;
-  U_SLOTS[orbit] = Array.from({ length: n }, (_, i) => movedBy(uTurn, orbit, i));
-  FR_SLOTS[orbit] = Array.from(
-    { length: n },
-    (_, i) => movedBy(rTurn, orbit, i) && !movedBy(uTurn, orbit, i) && movedBy(fTurn, orbit, i),
-  );
-  const idxs = FR_SLOTS[orbit].flatMap((v, i) => (v ? [i] : []));
-  if (idxs.length > 1) throw new Error(`FR-slot detection: ${orbit} matched ${idxs.length} slots`);
-  if (idxs.length === 1) FR_PIECE[orbit] = solved.patternData[orbit].pieces[idxs[0]];
-}
+// Shared rotation/normalization + slot kit (slot detection and outsideSolved
+// live in lib/kpuzzle-utils.mjs — also the vitest alg gate's helpers).
+// Left- vs right-rotation-normalize matters: forward patterns rotate back
+// AFTER (right-compose), inverted transformations (pre-states, alg⁻¹) carry
+// any net rotation on the LEFT — using the wrong side conjugates the state
+// onto the wrong slot for algs with net rotation (leading y etc.).
+const {
+  solved,
+  ID: IDENTITY_T,
+  toT,
+  AUF_T,
+  rightRotNormalize,
+  leftRotNormalize,
+  FR_PIECE,
+  outsideSolved,
+} = makeSlotKit(kpuzzle);
 if (!("CORNERS" in FR_PIECE) || !("EDGES" in FR_PIECE)) {
   throw new Error("FR-slot detection failed to find the corner+edge slots");
-}
-
-/** Every piece outside the U layer solved? (setUnion=false) — or outside U ∪ FR slot (true). */
-function outsideSolved(pattern, { allowFRSlot }) {
-  const d = pattern.patternData;
-  for (const orbit of Object.keys(d)) {
-    const s = solved.patternData[orbit];
-    for (let i = 0; i < s.pieces.length; i++) {
-      if (U_SLOTS[orbit][i] || (allowFRSlot && FR_SLOTS[orbit][i])) continue;
-      if (d[orbit].pieces[i] !== s.pieces[i] || d[orbit].orientation[i] !== s.orientation[i]) {
-        return false;
-      }
-    }
-  }
-  return true;
 }
 
 /** Where the FR corner + FR edge pieces sit, and their twist/flip. */

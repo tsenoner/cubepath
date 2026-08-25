@@ -102,6 +102,31 @@ def test_parse_parenthesized_repeat():
     assert parse_algorithm("(R U)×2") == ["R", "U", "R", "U"]
 
 
+def test_parse_multiple_repeat_groups():
+    assert parse_algorithm("(R U)×2 (L D)×2") == ["R", "U", "R", "U", "L", "D", "L", "D"]
+
+
+def test_parse_visual_group_without_repeat():
+    """A "(…)" with no ×N is visual grouping — its moves must not be dropped."""
+    assert parse_algorithm("(R U) L") == ["R", "U", "L"]
+
+
+def test_parse_visual_groups_keep_all_moves_in_order():
+    """A later "(" must not discard an earlier unrepeated group (old flush bug)."""
+    assert parse_algorithm("(r U r') U R U' R' (r U' r')") == [
+        "r",
+        "U",
+        "r'",
+        "U",
+        "R",
+        "U'",
+        "R'",
+        "r",
+        "U'",
+        "r'",
+    ]
+
+
 def test_compound_wide_moves():
     """Wide f = F + S."""
     c1 = Cube.solved()

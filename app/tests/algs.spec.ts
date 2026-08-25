@@ -1,17 +1,27 @@
 /**
  * Machine-verification of every published algorithm on the cubing.js kpuzzle.
- * A case's primary algorithm must solve the state its own inverse creates.
- * This is the CI gate that makes a wrong algorithm a build failure.
+ * Every 3x3 alg must satisfy its stickering's REAL invariant (an inverse
+ * round-trip is true of any alg, so it gates nothing):
+ *  - OLL/OCLL: forward-applied to solved (rotation-normalized), every piece
+ *    outside the U layer stays solved — the alg preserves F2L;
+ *  - PLL: preserves F2L AND leaves every U-layer edge/corner in solved
+ *    orientation — a pure permutation;
+ *  - F2L: touches only the U layer + the FR slot (slot detected mechanically
+ *    in scripts/lib/kpuzzle-utils.mjs, shared with scripts/verify-f2l.mjs).
+ * One verified scramble per 3x3 case must be solved by the primary alg.
+ * 4x4/5x5 algs are parse+legality checked here — their deep checks live in
+ * scripts/verify-f2l.mjs / verify-l2e.mjs (npm run verify:data).
  */
 import { describe, expect, test } from "vitest";
 import { Alg } from "cubing/alg";
 import { puzzles } from "cubing/puzzles";
 import type { KPuzzle } from "cubing/kpuzzle";
 
-import { ALL_CASES, CASES, caseById, primaryAlg } from "../src/data/algs";
+import { ALL_CASES, CASES, caseById, primaryAlg, type CaseDef } from "../src/data/algs";
 import { CASE_SCRAMBLES } from "../src/data/fullsets.gen";
 import { RICH } from "../src/data/fullsets.rich.gen";
 import { groupSize } from "../src/lib/trainer";
+import { makeSlotKit, type SlotKit } from "../scripts/lib/kpuzzle-utils.mjs";
 
 const kpuzzleCache = new Map<string, Promise<KPuzzle>>();
 
@@ -24,41 +34,98 @@ function kpuzzleFor(puzzle: string): Promise<KPuzzle> {
   return p;
 }
 
-async function algSolvesItsInverse(puzzle: string, moves: string): Promise<boolean> {
-  const kpuzzle = await kpuzzleFor(puzzle);
-  const alg = new Alg(moves);
-  return kpuzzle
-    .defaultPattern()
-    .applyAlg(alg.invert())
-    .applyAlg(alg)
-    .experimentalIsSolved({ ignorePuzzleOrientation: true, ignoreCenterOrientation: true });
+let slotKit: Promise<SlotKit> | undefined;
+
+function kit3(): Promise<SlotKit> {
+  slotKit ??= kpuzzleFor("3x3x3").then((kp) => makeSlotKit(kp));
+  return slotKit;
 }
 
-describe("every case's algorithms are valid and solve their own case", () => {
-  for (const def of ALL_CASES) {
+/** Assert the stickering's invariant on the forward-applied, rotation-normalized state. */
+async function checkStickeringInvariant(def: CaseDef, moves: string): Promise<void> {
+  const kit = await kit3();
+  const t = kit.rightRotNormalize(kit.toT(moves)); // toT throws on illegal moves
+  const pattern = kit.solved.applyTransformation(t);
+  switch (def.stickering) {
+    case "OLL":
+    case "OCLL":
+      expect(kit.outsideSolved(pattern, { allowFRSlot: false }), "preserves F2L").toBe(true);
+      break;
+    case "PLL":
+      expect(kit.outsideSolved(pattern, { allowFRSlot: false }), "preserves F2L").toBe(true);
+      expect(kit.uLayerOriented(pattern), "pure U-layer permutation").toBe(true);
+      break;
+    case "F2L":
+      expect(
+        kit.outsideSolved(pattern, { allowFRSlot: true }),
+        "touches only U layer + FR slot",
+      ).toBe(true);
+      break;
+    default:
+      throw new Error(`no invariant for 3x3 stickering "${def.stickering}" (${def.id})`);
+  }
+}
+
+describe("every 3x3 algorithm satisfies its stickering's invariant", () => {
+  for (const def of ALL_CASES.filter((k) => k.puzzle === "3x3x3")) {
     for (const [i, variant] of def.algs.entries()) {
-      test(`${def.id} alg[${i}] (${variant.moves})`, async () => {
-        // Parses as a real alg for this puzzle (throws on unknown moves)…
-        const kpuzzle = await kpuzzleFor(def.puzzle);
-        kpuzzle.algToTransformation(new Alg(variant.moves));
-        // …and round-trips to solved.
-        expect(await algSolvesItsInverse(def.puzzle, variant.moves)).toBe(true);
+      test(`${def.id} [${def.stickering}] alg[${i}] (${variant.moves})`, async () => {
+        await checkStickeringInvariant(def, variant.moves);
       });
     }
   }
 });
 
-describe("every rich alternate algorithm is valid and solves its case", () => {
+describe("every big-cube algorithm parses and is legal on its puzzle", () => {
+  for (const def of ALL_CASES.filter((k) => k.puzzle !== "3x3x3")) {
+    for (const [i, variant] of def.algs.entries()) {
+      test(`${def.id} alg[${i}] (${variant.moves})`, async () => {
+        const kpuzzle = await kpuzzleFor(def.puzzle);
+        kpuzzle.algToTransformation(new Alg(variant.moves)); // throws on unknown moves
+      });
+    }
+  }
+});
+
+describe("every rich alternate algorithm passes the same gate as its case", () => {
   for (const [id, rich] of Object.entries(RICH)) {
     const def = caseById.get(id);
     for (const [i, variant] of rich.alternates.entries()) {
       test(`${id} alt[${i}] (${variant.moves})`, async () => {
         expect(def, `RICH id ${id} missing from ALL_CASES`).toBeTruthy();
-        const kpuzzle = await kpuzzleFor(def!.puzzle);
-        kpuzzle.algToTransformation(new Alg(variant.moves));
-        expect(await algSolvesItsInverse(def!.puzzle, variant.moves)).toBe(true);
+        if (def!.puzzle === "3x3x3") {
+          await checkStickeringInvariant(def!, variant.moves);
+        } else {
+          (await kpuzzleFor(def!.puzzle)).algToTransformation(new Alg(variant.moves));
+        }
       });
     }
+  }
+});
+
+describe("one verified scramble per 3x3 case is solved by its primary alg", () => {
+  for (const [id, scrambles] of Object.entries(CASE_SCRAMBLES)) {
+    const def = caseById.get(id);
+    if (!def || def.puzzle !== "3x3x3" || scrambles.length === 0) continue;
+    test(`${id} scramble[0] + primary alg completes F2L`, async () => {
+      const kit = await kit3();
+      const sT = kit.toT(scrambles[0]!);
+      const aT = kit.toT(primaryAlg(def));
+      // A case is an AUF-equivalence class: a scramble may set it up a U turn
+      // away from the alg's execution angle, so enumerate the pre-AUF. Final
+      // U turns need no enumeration — they cannot move non-U-layer pieces,
+      // which is all this asserts (last-layer completion is each stickering's
+      // own gate above).
+      const ok = kit.AUF_T.some((u) =>
+        kit.outsideSolved(
+          kit.solved.applyTransformation(
+            kit.rightRotNormalize(sT.applyTransformation(u).applyTransformation(aT)),
+          ),
+          { allowFRSlot: false },
+        ),
+      );
+      expect(ok, "scramble + (pre-AUF) + primary alg leaves F2L solved").toBe(true);
+    });
   }
 });
 

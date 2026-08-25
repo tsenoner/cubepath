@@ -2,7 +2,8 @@
 import Base from "../../layouts/Base.astro";
 import Header from "../../components/Header.astro";
 import CaseRow from "../../components/CaseRow.astro";
-import { ALL_CASES, CASES, isFullOll, isFullPll, type CaseDef } from "../../data/algs";
+import { CASES, type CaseDef } from "../../data/algs";
+import { GENERATED_CASES } from "../../data/fullsets.gen";
 import { caseIcon } from "../../data/icons";
 
 const GROUPS: { key: string; name: string }[] = [
@@ -13,19 +14,22 @@ const GROUPS: { key: string; name: string }[] = [
   { key: "444-parity", name: "4×4 Parity" },
 ];
 
-// Full sets, grouped by shape/type, linking to per-case pages. Membership is
-// by id shape (isFullOll/isFullPll) so the curated 2-look cases count too.
-function grouped(predicate: (k: CaseDef) => boolean) {
+// Full sets, grouped by shape/type, linking to per-case pages. The grids
+// iterate GENERATED_CASES: every case carries its true shape group there,
+// so the 2-look overlap ids (oll.21–27, pll.*) appear exactly once, under
+// their shape heading — never under a curated "2look-…" group. The /case/
+// pages still resolve curated content for the overlap ids.
+function grouped(cases: CaseDef[]) {
   const groups = new Map<string, CaseDef[]>();
-  for (const k of ALL_CASES.filter(predicate)) {
+  for (const k of cases) {
     if (!groups.has(k.group)) groups.set(k.group, []);
     groups.get(k.group)!.push(k);
   }
   return [...groups.entries()];
 }
-const fullOLL = grouped(isFullOll);
-const fullPLL = grouped(isFullPll);
-const f2lGroups = grouped((k) => k.phase === "full-f2l");
+const fullOLL = grouped(GENERATED_CASES.filter((k) => /^oll\.\d+$/.test(k.id)));
+const fullPLL = grouped(GENERATED_CASES.filter((k) => k.id.startsWith("pll.")));
+const f2lGroups = grouped(GENERATED_CASES.filter((k) => k.phase === "full-f2l"));
 const groupTitle = (g: string) =>
   g.replace(/^(oll|pll)-/, "").replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 ---
