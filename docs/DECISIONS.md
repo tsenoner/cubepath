@@ -91,3 +91,15 @@ courses · PDF stays first-class.
   plan asked for — a locale dimension can be added to the collection without
   restructuring.
 - Cheat cards ship both in guide/build (source of truth) and app/public.
+
+## v1.0
+
+- Tagged v1.0.0 at 27761e1 after two full review cycles (/simplify: 18 fixes;
+  /code-review: 10 verified findings incl. the unreachable-review-mode bug,
+  learned-status clobbering, mirror-chirality step diagrams, and a vacuous
+  test gate replaced by real kpuzzle invariants). 487 app tests + 65 python
+  tests + 4 E2E green.
+- Production deploy remains pending the one-time Vercel GitHub App install
+  (see cubepath-deploy-blocker memory / Deploys section above). The deploy
+  payload for the exact v1.0.0 tree is staged and the root vercel.json makes
+  git-linked deploys work the moment the app is installed.
