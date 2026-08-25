@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "astro/config";
 import mdx from "@astrojs/mdx";
+import sitemap from "@astrojs/sitemap";
 import AstroPWA from "@vite-pwa/astro";
 
 /**
@@ -46,6 +47,7 @@ export default defineConfig({
   output: "static",
   integrations: [
     mdx(),
+    sitemap(),
     AstroPWA({
       registerType: "prompt",
       includeAssets: ["favicon.svg", "apple-touch-icon.png"],
