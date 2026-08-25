@@ -61,13 +61,15 @@ courses · PDF stays first-class.
 
 ## Deploys
 
-- The Vercel **GitHub App is not installed** on the user's GitHub account
-  (interactive web authorization required — cannot be done autonomously), and
-  the local Vercel CLI token is expired. Deploys therefore go through the
-  authenticated Vercel MCP (`deploy_to_vercel`, source-file deploys) per
-  milestone. Production alias: https://cubepath-six.vercel.app.
-  TODO for the user: install https://github.com/apps/vercel on tsenoner/cubepath
-  and link the project (Root Directory = `app`) for automatic git deploys.
+- During the build, the Vercel **GitHub App was not installed** (interactive
+  web authorization required — cannot be done autonomously) and the local
+  Vercel CLI token was expired, so milestone deploys went through the
+  authenticated Vercel MCP (`deploy_to_vercel`, source-file deploys).
+  **Resolved 2026-08-25**: the user installed https://github.com/apps/vercel
+  on tsenoner/cubepath; the project is git-linked (root `vercel.json` builds
+  from `app/`) and **every push to master now auto-deploys**. The MCP
+  file-payload path and `scripts/build-deploy-payload.py` are retained only
+  as a manual fallback. Production alias: https://cubepath-six.vercel.app.
 - Vercel Deployment Protection (SSO) disabled on the project — required for a
   public PWA and service-worker testing.
 
@@ -99,7 +101,7 @@ courses · PDF stays first-class.
   learned-status clobbering, mirror-chirality step diagrams, and a vacuous
   test gate replaced by real kpuzzle invariants). 487 app tests + 65 python
   tests + 4 E2E green.
-- Production deploy remains pending the one-time Vercel GitHub App install
-  (see cubepath-deploy-blocker memory / Deploys section above). The deploy
-  payload for the exact v1.0.0 tree is staged and the root vercel.json makes
-  git-linked deploys work the moment the app is installed.
+- Production deploy was initially blocked on the one-time Vercel GitHub App
+  install; the user completed it on 2026-08-25 and v1.0.0 deployed
+  automatically from git (see Deploys section above). Live and verified at
+  https://cubepath-six.vercel.app.

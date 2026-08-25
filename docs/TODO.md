@@ -1,2 +1,2 @@
-- [ ] cretae small portable credit card size cheetsheets for each step similar to: https://mastercubestore.de/anleitungen-ratgeber/1923-z-cube-cfop-cards-algorithm-set-f2l-oll-and-pll.html
-- [ ] extend with different guids, can be found here: https://www.kungfoomanchu.com/home.html#333
+- [x] create small portable credit-card size cheatsheets for each step similar to: https://mastercubestore.de/anleitungen-ratgeber/1923-z-cube-cfop-cards-algorithm-set-f2l-oll-and-pll.html — done in M6: `uv run cubepath-cheatcards` (from `tools/diagrams/`) generates them from the canonical alg data (`guide/build/cheat-cards.pdf`, also served in-app at `/cheat-cards.pdf`)
+- [ ] extend with different guides, can be found here: https://www.kungfoomanchu.com/home.html#333

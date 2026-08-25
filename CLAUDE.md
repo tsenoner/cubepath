@@ -26,6 +26,7 @@ Individual tools still run directly when working inside one subtree:
 ```bash
 cd tools/diagrams
 uv run cubepath-diagrams   # generate SVG diagrams
+uv run cubepath-cheatcards # generate credit-card cheat sheets (Typst PDF)
 uv run pytest tests/       # run tests
 uv run pytest tests/test_diagrams.py::test_all_cases_count   # single test
 uv run ruff check src/ tests/
@@ -36,8 +37,7 @@ uv run ruff format src/ tests/
 
 **Local CI gate:** run `git config core.hooksPath .githooks` once per clone.
 The pre-push hook runs `make check` — a push that would fail CI is rejected
-locally. Deploy payloads are built ONLY by `scripts/build-deploy-payload.py`,
-which refuses incomplete file sets.
+locally.
 
 ## App (app/)
 
@@ -60,8 +60,11 @@ alternates, build-time only) → merged with curated entries in `src/data/algs.t
 (`ALL_CASES`). Never hand-edit generated files; never retype algorithms — every
 alg is kpuzzle-verified in `tests/algs.spec.ts`.
 
-Deploys: Vercel project `cubepath` (team in docs/DECISIONS.md). Production
-deploys are currently manual — see the deploy-blocker note in DECISIONS.md.
+Deploys: Vercel project `cubepath` (team in docs/DECISIONS.md), git-linked via
+the Vercel GitHub App — **every push to master auto-deploys** to
+https://cubepath-six.vercel.app (root `vercel.json` builds from `app/`).
+Manual fallback only: `scripts/build-deploy-payload.py` (refuses incomplete
+file sets) + the Vercel MCP.
 
 ## Diagram pipeline (tools/diagrams/)
 
@@ -86,6 +89,8 @@ Four case groups: `_oll_cross_cases()` (3), `_oll_corner_cases()` (8), `_pll_cor
 ### Guide Build
 
 `guide/cubepath.md` is the single source file. Pandoc builds PDF using `guide/defaults/pdf.yaml` (Typst output), passing through `guide/filters/callouts.lua`.
+
+`cubepath-cheatcards` (`tools/diagrams/src/cubepath/cheatcards.py`) generates the credit-card cheat sheets from the canonical alg data (Typst, `typst compile --root guide/`) into `guide/build/cheat-cards.pdf`. Both PDFs also ship in-app from `app/public/` (`/cubepath.pdf`, `/cheat-cards.pdf`).
 
 ### Lua Filter (`guide/filters/callouts.lua`)
 
