@@ -25,9 +25,33 @@ check, vitest, astro build) — a push that would fail CI is rejected locally.
 Deploy payloads are built ONLY by `scripts/build-deploy-payload.py`, which
 refuses incomplete file sets.
 
-## Architecture
+## App (app/)
 
-This is a Rubik's Cube guide with a Python SVG diagram pipeline and Pandoc-based PDF output (via Typst).
+Astro + TypeScript strict PWA (offline-first). Commands, from `app/`:
+
+```bash
+npm run dev / build / preview
+npx astro check          # strict type gate
+npx vitest run           # every algorithm machine-verified on the cubing.js kpuzzle
+npx playwright test      # smoke + airplane-mode E2E (the PWA gate)
+node scripts/gen-cases.mjs      # regenerate src/data/fullsets.gen.ts + .rich.gen.ts
+node scripts/extract-algs.mjs   # re-extract + verify the JPerm dataset (gated write)
+node scripts/verify-f2l.mjs     # F2L-41 verifier
+node scripts/verify-l2e.mjs     # 5x5 L2E verifier
+```
+
+Data flow: `src/data/extracted/*.json` (verified extractions) → `gen-cases.mjs` →
+`fullsets.gen.ts` (lean, ships to client) + `fullsets.rich.gen.ts` (recognition +
+alternates, build-time only) → merged with curated entries in `src/data/algs.ts`
+(`ALL_CASES`). Never hand-edit generated files; never retype algorithms — every
+alg is kpuzzle-verified in `tests/algs.spec.ts`.
+
+Deploys: Vercel project `cubepath` (team in docs/DECISIONS.md). Production
+deploys are currently manual — see the deploy-blocker note in DECISIONS.md.
+
+## Diagram pipeline (tools/diagrams/)
+
+Python SVG generator + cube simulator feeding both the guide PDF and the app.
 
 ### Cube Simulator
 
