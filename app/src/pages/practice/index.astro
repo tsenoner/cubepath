@@ -32,6 +32,13 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
           <button class="chip" data-freq="balanced" type="button">Balanced</button>
         </div>
         <p class="tiny">Realistic weights cases by how often they appear in real solves.</p>
+        <h3 class="spaced">Your data</h3>
+        <div class="chip-row">
+          <button class="chip" id="export-btn" type="button">Export backup</button>
+          <button class="chip" id="import-btn" type="button">Import</button>
+        </div>
+        <input type="file" id="import-file" accept="application/json" hidden />
+        <p class="tiny" id="persist-note">Progress lives on this device.</p>
       </aside>
 
       <section class="main-col">
@@ -313,6 +320,35 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
       else await nextScramble();
     });
   }
+
+  // ── Backup ──────────────────────────────────────────────────────────
+  $("export-btn").addEventListener("click", async () => {
+    const { exportBackup } = await import("../../lib/db");
+    const data = await exportBackup();
+    const blob = new Blob([JSON.stringify(data, null, 1)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `cubepath-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+  $("import-btn").addEventListener("click", () => $("import-file").click());
+  $<HTMLInputElement>("import-file").addEventListener("change", async (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    try {
+      const { importBackup } = await import("../../lib/db");
+      await importBackup(JSON.parse(await file.text()));
+      await renderStatuses();
+      await refreshDueBadge();
+      $("persist-note").textContent = "Backup imported.";
+    } catch (err) {
+      $("persist-note").textContent = `Import failed: ${err}`;
+    }
+  });
+  void navigator.storage?.persisted?.().then((p) => {
+    if (p) $("persist-note").textContent = "Progress protected on this device.";
+  });
 
   // ── Boot ────────────────────────────────────────────────────────────
   renderSettings();
