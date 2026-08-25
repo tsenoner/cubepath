@@ -10,6 +10,12 @@ import { readFile, writeFile } from "node:fs/promises";
 const raw = JSON.parse(
   await readFile(new URL("../src/data/extracted/jperm-raw.json", import.meta.url), "utf8"),
 );
+const recognition = JSON.parse(
+  await readFile(new URL("../src/data/recognition.json", import.meta.url), "utf8"),
+);
+const f2l = JSON.parse(
+  await readFile(new URL("../src/data/extracted/f2l-raw.json", import.meta.url), "utf8"),
+);
 
 const slug = (s) =>
   String(s)
@@ -42,7 +48,7 @@ for (const c of raw.oll) {
     id,
     group: `oll-${slug(c.group)}`,
     name: `OLL ${c.name}`,
-    recognition: `${c.group} shape`, // placeholder — replaced by the recognition workflow
+    recognition: recognition[id] ?? `${c.group} shape`,
     algs: c.algs.map((moves, i) => ({ moves, ...(i === 0 ? { primary: true } : {}) })),
     stickering: "OLL",
     puzzle: "3x3x3",
@@ -58,7 +64,7 @@ for (const c of raw.pll) {
     id,
     group: `pll-${slug(c.group)}`,
     name: `${c.name}-Perm`,
-    recognition: `${c.group}`, // placeholder — replaced by the recognition workflow
+    recognition: recognition[id] ?? c.group,
     algs: c.algs.map((moves, i) => ({ moves, ...(i === 0 ? { primary: true } : {}) })),
     stickering: "PLL",
     puzzle: "3x3x3",
@@ -66,6 +72,22 @@ for (const c of raw.pll) {
     phase: "full-pll",
   });
   scrambles[id] = c.scrambles.slice(0, MAX_SCRAMBLES);
+}
+
+for (const c of f2l.f2l) {
+  if (!c.number) continue;
+  const id = `f2l.${c.number}`;
+  cases.push({
+    id,
+    group: `f2l-${slug(c.group)}`,
+    name: `F2L ${c.number}`,
+    recognition: c.group,
+    algs: c.algs.map((moves, i) => ({ moves, ...(i === 0 ? { primary: true } : {}) })),
+    stickering: "F2L",
+    puzzle: "3x3x3",
+    phase: "full-f2l",
+  });
+  if (c.setup) scrambles[id] = [c.setup];
 }
 
 for (const [setName, prefix, phase] of [

@@ -16,13 +16,12 @@ test("offline: whole course works in airplane mode after first visit", async ({
     const reg = await navigator.serviceWorker?.getRegistration();
     return !!reg?.active;
   }, undefined, { timeout: 30_000 });
-  // Give workbox a beat to finish precaching all routes.
-  await page.waitForFunction(async () => {
-    const keys = await caches.keys();
-    if (keys.length === 0) return false;
-    const cache = await caches.open(keys.find((k) => k.includes("precache")) ?? keys[0]);
-    return (await cache.keys()).length > 30;
-  }, undefined, { timeout: 30_000 });
+  // Wait for workbox to finish precaching EVERYTHING (the app flags it).
+  await page.waitForFunction(
+    () => document.documentElement.dataset.offlineReady === "1",
+    undefined,
+    { timeout: 120_000 },
+  );
 
   // Airplane mode — and abort any service-worker-originated network request:
   // Playwright's setOffline does not intercept SW fetches (playwright#2311),

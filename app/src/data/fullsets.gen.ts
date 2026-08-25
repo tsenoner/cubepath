@@ -10,7 +10,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.1",
     "group": "oll-dot",
     "name": "OLL 1",
-    "recognition": "Dot shape",
+    "recognition": "Dot; full yellow bars on both the left and right faces.",
     "algs": [
       {
         "moves": "R U2 R' R' F R F' U2 R' F R F'",
@@ -26,7 +26,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.2",
     "group": "oll-dot",
     "name": "OLL 2",
-    "recognition": "Dot shape",
+    "recognition": "Dot; one full yellow bar, on the back face only.",
     "algs": [
       {
         "moves": "r U r' U2 r U2 R' U2 R U' r'",
@@ -48,7 +48,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.3",
     "group": "oll-dot",
     "name": "OLL 3",
-    "recognition": "Dot shape",
+    "recognition": "Dot plus one yellow corner at front-left; back face yellow on its left half.",
     "algs": [
       {
         "moves": "r' R2 U R' U r U2 r' U M'",
@@ -70,7 +70,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.4",
     "group": "oll-dot",
     "name": "OLL 4",
-    "recognition": "Dot shape",
+    "recognition": "Dot plus one yellow corner at front-right; back face yellow on its right half.",
     "algs": [
       {
         "moves": "M U' r U2 r' U' R U' R' M'",
@@ -92,7 +92,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.5",
     "group": "oll-square-shape",
     "name": "OLL 5",
-    "recognition": "Square Shape shape",
+    "recognition": "Yellow 2x2 square in the back-left; two side yellows on the right face toward the back.",
     "algs": [
       {
         "moves": "l' U2 L U L' U l",
@@ -111,7 +111,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.6",
     "group": "oll-square-shape",
     "name": "OLL 6",
-    "recognition": "Square Shape shape",
+    "recognition": "Yellow 2x2 square in the back-right; two side yellows on the left face toward the back.",
     "algs": [
       {
         "moves": "r U2 R' U' R U' r'",
@@ -127,7 +127,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.7",
     "group": "oll-small-lightning-bolt",
     "name": "OLL 7",
-    "recognition": "Small Lightning Bolt shape",
+    "recognition": "Small bolt down the left, tip corner at front-left; front face yellow on its right half.",
     "algs": [
       {
         "moves": "r U R' U R U2 r'",
@@ -143,7 +143,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.8",
     "group": "oll-small-lightning-bolt",
     "name": "OLL 8",
-    "recognition": "Small Lightning Bolt shape",
+    "recognition": "Small bolt down the right, tip corner at front-right; front face yellow on its left half.",
     "algs": [
       {
         "moves": "l' U' L U' L' U2 l",
@@ -165,7 +165,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.9",
     "group": "oll-fish-shape",
     "name": "OLL 9",
-    "recognition": "Fish Shape shape",
+    "recognition": "Small fish hugging back-left, lone corner front-right; front face yellow on its left half.",
     "algs": [
       {
         "moves": "R U R' U' R' F R2 U R' U' F'",
@@ -181,7 +181,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.10",
     "group": "oll-fish-shape",
     "name": "OLL 10",
-    "recognition": "Fish Shape shape",
+    "recognition": "Small fish hugging front-left, lone corner back-right; back face yellow on its left half.",
     "algs": [
       {
         "moves": "R U R' U R' F R F' R U2 R'",
@@ -200,7 +200,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.11",
     "group": "oll-small-lightning-bolt",
     "name": "OLL 11",
-    "recognition": "Small Lightning Bolt shape",
+    "recognition": "Small bolt along the back, tip corner at back-right; front face yellow on its right half.",
     "algs": [
       {
         "moves": "r U R' U R' F R F' R U2 r'",
@@ -219,7 +219,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.12",
     "group": "oll-small-lightning-bolt",
     "name": "OLL 12",
-    "recognition": "Small Lightning Bolt shape",
+    "recognition": "Small bolt along the back, tip corner at back-left; front face yellow on its left half.",
     "algs": [
       {
         "moves": "M' R' U' R U' R' U2 R U' R r'",
@@ -235,7 +235,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.13",
     "group": "oll-knight-move-shape",
     "name": "OLL 13",
-    "recognition": "Knight Move Shape shape",
+    "recognition": "Middle bar with corner at front-left; back face yellow on its left half.",
     "algs": [
       {
         "moves": "F U R U' R2 F' R U R U' R'",
@@ -254,7 +254,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.14",
     "group": "oll-knight-move-shape",
     "name": "OLL 14",
-    "recognition": "Knight Move Shape shape",
+    "recognition": "Middle bar with corner at front-right; back face yellow on its right half.",
     "algs": [
       {
         "moves": "R' F R U R' F' R F U' F'",
@@ -270,7 +270,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.15",
     "group": "oll-knight-move-shape",
     "name": "OLL 15",
-    "recognition": "Knight Move Shape shape",
+    "recognition": "Middle bar with corner at back-left; front face yellow on its right half.",
     "algs": [
       {
         "moves": "l' U' l L' U' L U l' U l",
@@ -289,7 +289,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.16",
     "group": "oll-knight-move-shape",
     "name": "OLL 16",
-    "recognition": "Knight Move Shape shape",
+    "recognition": "Middle bar with corner at back-right; front face yellow on its left half.",
     "algs": [
       {
         "moves": "r U r' R U R' U' r U' r'",
@@ -305,7 +305,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.17",
     "group": "oll-dot",
     "name": "OLL 17",
-    "recognition": "Dot shape",
+    "recognition": "Dot with two corners up on the diagonal: back-left and front-right.",
     "algs": [
       {
         "moves": "F R' F' R2 r' U R U' R' U' M'",
@@ -324,7 +324,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.18",
     "group": "oll-dot",
     "name": "OLL 18",
-    "recognition": "Dot shape",
+    "recognition": "Dot with both back corners up; full yellow bar on the front face.",
     "algs": [
       {
         "moves": "r U R' U R U2 r' r' U' R U' R' U2 r",
@@ -343,7 +343,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.19",
     "group": "oll-dot",
     "name": "OLL 19",
-    "recognition": "Dot shape",
+    "recognition": "Dot, both back corners up; left and right faces yellow at middle and front (no bar).",
     "algs": [
       {
         "moves": "r' R U R U R' U' M' R' F R F'",
@@ -359,7 +359,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.20",
     "group": "oll-dot",
     "name": "OLL 20",
-    "recognition": "Dot shape",
+    "recognition": "Dot with all four corners up; every side face shows a single mid yellow.",
     "algs": [
       {
         "moves": "r U R' U' M2 U R U' R' U' M'",
@@ -378,7 +378,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.21",
     "group": "oll-cross",
     "name": "OLL 21",
-    "recognition": "Cross shape",
+    "recognition": "Cross only: yellow headlights face you and repeat on the back; left and right show none.",
     "algs": [
       {
         "moves": "R U2 R' U' R U R' U' R U' R'",
@@ -397,7 +397,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.22",
     "group": "oll-cross",
     "name": "OLL 22",
-    "recognition": "Cross shape",
+    "recognition": "Cross only: headlights on the left face; front and back each show one yellow, right end.",
     "algs": [
       {
         "moves": "R U2 (R2 U' R2 U' R2) U2 R",
@@ -413,7 +413,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.23",
     "group": "oll-cross",
     "name": "OLL 23",
-    "recognition": "Cross shape",
+    "recognition": "Cross plus both front corners solved; headlights on the back, no other side yellows.",
     "algs": [
       {
         "moves": "R2 D' R U2 R' D R U2 R",
@@ -432,7 +432,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.24",
     "group": "oll-cross",
     "name": "OLL 24",
-    "recognition": "Cross shape",
+    "recognition": "Cross plus both right corners solved; front and back each show a yellow at the left end.",
     "algs": [
       {
         "moves": "r U R' U' r' F R F'",
@@ -451,7 +451,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.25",
     "group": "oll-cross",
     "name": "OLL 25",
-    "recognition": "Cross shape",
+    "recognition": "Cross plus a diagonal pair; yellow faces you front-right, another at the back of the left face.",
     "algs": [
       {
         "moves": "F' r U R' U' r' F R",
@@ -470,7 +470,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.26",
     "group": "oll-cross",
     "name": "OLL 26",
-    "recognition": "Cross shape",
+    "recognition": "Cross plus one corner, back-right; a lone yellow faces you at the front-left.",
     "algs": [
       {
         "moves": "(R U2 R') U' R U' R'",
@@ -489,7 +489,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.27",
     "group": "oll-cross",
     "name": "OLL 27",
-    "recognition": "Cross shape",
+    "recognition": "Cross plus one corner, front-left; a lone yellow faces you at the front-right.",
     "algs": [
       {
         "moves": "R U R' U R U2 R'",
@@ -508,7 +508,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.28",
     "group": "oll-corners-oriented",
     "name": "OLL 28",
-    "recognition": "Corners Oriented shape",
+    "recognition": "All corners up; two adjacent edges (right and front) flipped, middle yellows on those faces.",
     "algs": [
       {
         "moves": "r U R' U' r' R U R U' R'",
@@ -524,7 +524,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.29",
     "group": "oll-awkward-shape",
     "name": "OLL 29",
-    "recognition": "Awkward Shape shape",
+    "recognition": "Both right-side corners up with back and left edges; front face yellow on its left half.",
     "algs": [
       {
         "moves": "R U R' U' R U' R' F' U' F R U R'",
@@ -540,7 +540,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.30",
     "group": "oll-awkward-shape",
     "name": "OLL 30",
-    "recognition": "Awkward Shape shape",
+    "recognition": "Both front corners up, back and left edges; back face shows no yellow.",
     "algs": [
       {
         "moves": "F R' F R2 U' R' U' R U R' F2",
@@ -559,7 +559,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.31",
     "group": "oll-p-shape",
     "name": "OLL 31",
-    "recognition": "P Shape shape",
+    "recognition": "P along the right edge; no solid side bar — yellow pair on the front's left.",
     "algs": [
       {
         "moves": "R' U' F U R U' R' F' R",
@@ -575,7 +575,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.32",
     "group": "oll-p-shape",
     "name": "OLL 32",
-    "recognition": "P Shape shape",
+    "recognition": "P along the left edge; no solid side bar — yellow pair on the front's right.",
     "algs": [
       {
         "moves": "L U F' U' L' U L F L'",
@@ -594,7 +594,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.33",
     "group": "oll-t-shape",
     "name": "OLL 33",
-    "recognition": "T Shape shape",
+    "recognition": "Sideways T, stem left; left face clean, front and back each show a pair on the left half.",
     "algs": [
       {
         "moves": "R U R' U' R' F R F'",
@@ -610,7 +610,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.34",
     "group": "oll-c-shape",
     "name": "OLL 34",
-    "recognition": "C Shape shape",
+    "recognition": "C shape opening toward the front; lone mid yellow on both the back and front faces.",
     "algs": [
       {
         "moves": "R U R2 U' R' F R U R U' F'",
@@ -629,7 +629,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.35",
     "group": "oll-fish-shape",
     "name": "OLL 35",
-    "recognition": "Fish Shape shape",
+    "recognition": "2x2 yellow block at front-right, lone corner back-left; one yellow on every side face.",
     "algs": [
       {
         "moves": "R U2 R' R' F R F' R U2 R'",
@@ -645,7 +645,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.36",
     "group": "oll-w-shape",
     "name": "OLL 36",
-    "recognition": "W Shape shape",
+    "recognition": "W runs back-left to front-right; right face clean, left face pair toward the front.",
     "algs": [
       {
         "moves": "L' U' L U' L' U L U L F' L' F",
@@ -664,7 +664,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.37",
     "group": "oll-fish-shape",
     "name": "OLL 37",
-    "recognition": "Fish Shape shape",
+    "recognition": "2x2 yellow block at back-left, lone corner front-right; no yellow on the back or left faces.",
     "algs": [
       {
         "moves": "F R' F' R U R U' R'",
@@ -683,7 +683,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.38",
     "group": "oll-w-shape",
     "name": "OLL 38",
-    "recognition": "W Shape shape",
+    "recognition": "W runs back-right to front-left; left face clean, right face pair toward the front.",
     "algs": [
       {
         "moves": "R U R' U R U' R' U' R' F R F'",
@@ -699,7 +699,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.39",
     "group": "oll-big-lightning-bolt",
     "name": "OLL 39",
-    "recognition": "Big Lightning Bolt shape",
+    "recognition": "Big bolt, corners at back-right and front-left; back face yellow on its left half.",
     "algs": [
       {
         "moves": "L F' L' U' L U F U' L'",
@@ -718,7 +718,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.40",
     "group": "oll-big-lightning-bolt",
     "name": "OLL 40",
-    "recognition": "Big Lightning Bolt shape",
+    "recognition": "Big bolt, corners at back-left and front-right; back face yellow on its right half.",
     "algs": [
       {
         "moves": "R' F R U R' U' F' U R",
@@ -734,7 +734,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.41",
     "group": "oll-awkward-shape",
     "name": "OLL 41",
-    "recognition": "Awkward Shape shape",
+    "recognition": "Both front corners up, back and left edges; yellow headlights on the back face.",
     "algs": [
       {
         "moves": "R U R' U R U2 R' F R U R' U' F'",
@@ -750,7 +750,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.42",
     "group": "oll-awkward-shape",
     "name": "OLL 42",
-    "recognition": "Awkward Shape shape",
+    "recognition": "Both back corners up, left and front edges; yellow headlights on the front face.",
     "algs": [
       {
         "moves": "R' U' R U' R' U2 R F R U R' U' F'",
@@ -766,7 +766,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.43",
     "group": "oll-p-shape",
     "name": "OLL 43",
-    "recognition": "P Shape shape",
+    "recognition": "P along the right edge; solid yellow bar on the left face.",
     "algs": [
       {
         "moves": "F' U' L' U L F",
@@ -785,7 +785,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.44",
     "group": "oll-p-shape",
     "name": "OLL 44",
-    "recognition": "P Shape shape",
+    "recognition": "P along the left edge; solid yellow bar on the right face.",
     "algs": [
       {
         "moves": "F U R U' R' F'",
@@ -804,7 +804,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.45",
     "group": "oll-t-shape",
     "name": "OLL 45",
-    "recognition": "T Shape shape",
+    "recognition": "Sideways T, stem left; headlights on the left face, single mid yellows on front and back.",
     "algs": [
       {
         "moves": "F R U R' U' F'",
@@ -820,7 +820,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.46",
     "group": "oll-c-shape",
     "name": "OLL 46",
-    "recognition": "C Shape shape",
+    "recognition": "C shape opening toward the left; full yellow bar on the right face.",
     "algs": [
       {
         "moves": "R' U' R' F R F' U R",
@@ -836,7 +836,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.47",
     "group": "oll-small-l-shape",
     "name": "OLL 47",
-    "recognition": "Small L Shape shape",
+    "recognition": "L in the back-right; right face shows yellow at both ends, no solid bar anywhere.",
     "algs": [
       {
         "moves": "R' U' R' F R F' R' F R F' U R",
@@ -858,7 +858,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.48",
     "group": "oll-small-l-shape",
     "name": "OLL 48",
-    "recognition": "Small L Shape shape",
+    "recognition": "L in the back-left; left face shows yellow at both ends, no solid bar anywhere.",
     "algs": [
       {
         "moves": "F R U R' U' R U R' U' F'",
@@ -874,7 +874,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.49",
     "group": "oll-small-l-shape",
     "name": "OLL 49",
-    "recognition": "Small L Shape shape",
+    "recognition": "L in the back-right; solid yellow bar on the left face, yellow pair on the front's right.",
     "algs": [
       {
         "moves": "r U' r2 U r2 U r2 U' r",
@@ -890,7 +890,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.50",
     "group": "oll-small-l-shape",
     "name": "OLL 50",
-    "recognition": "Small L Shape shape",
+    "recognition": "L in the front-right; solid yellow bar on the left face, yellow pair on the back's right.",
     "algs": [
       {
         "moves": "r' U r2 U' r2 U' r2 U r'",
@@ -906,7 +906,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.51",
     "group": "oll-i-shape",
     "name": "OLL 51",
-    "recognition": "I Shape shape",
+    "recognition": "Middle bar; back and front faces yellow on their left halves, headlights on the right.",
     "algs": [
       {
         "moves": "F U R U' R' U R U' R' F'",
@@ -925,7 +925,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.52",
     "group": "oll-i-shape",
     "name": "OLL 52",
-    "recognition": "I Shape shape",
+    "recognition": "Vertical bar running back to front; full yellow bar on the right face.",
     "algs": [
       {
         "moves": "R U R' U R U' B U' B' R'",
@@ -947,7 +947,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.53",
     "group": "oll-small-l-shape",
     "name": "OLL 53",
-    "recognition": "Small L Shape shape",
+    "recognition": "L in the back-right; solid yellow bar faces you on the front, headlights on the back.",
     "algs": [
       {
         "moves": "l' U2 L U L' U' L U L' U l",
@@ -969,7 +969,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.54",
     "group": "oll-small-l-shape",
     "name": "OLL 54",
-    "recognition": "Small L Shape shape",
+    "recognition": "L in the back-left; solid yellow bar faces you on the front, headlights on the back.",
     "algs": [
       {
         "moves": "(r U2 R' U') R U R' U' R U' r'",
@@ -988,7 +988,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.55",
     "group": "oll-i-shape",
     "name": "OLL 55",
-    "recognition": "I Shape shape",
+    "recognition": "Middle bar; full yellow bars on both the back and front faces.",
     "algs": [
       {
         "moves": "R' F R U R U' R2 F' R2 U' R' U R U R'",
@@ -1007,7 +1007,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.56",
     "group": "oll-i-shape",
     "name": "OLL 56",
-    "recognition": "I Shape shape",
+    "recognition": "Middle bar; headlights on both left and right faces, lone mid yellow front and back.",
     "algs": [
       {
         "moves": "(r' U' r) U' R' U R U' R' U R r' U r",
@@ -1029,7 +1029,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "oll.57",
     "group": "oll-corners-oriented",
     "name": "OLL 57",
-    "recognition": "Corners Oriented shape",
+    "recognition": "All corners up, H on top; two opposite edges (back and front) flipped, middle yellows there.",
     "algs": [
       {
         "moves": "R U R' U' M' U R U' r'",
@@ -1045,7 +1045,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "pll.h",
     "group": "pll-edges-only",
     "name": "H-Perm",
-    "recognition": "Edges Only",
+    "recognition": "Headlights on all four sides with the opposite color between them; each edge swaps across.",
     "algs": [
       {
         "moves": "M2 U M2 U2 M2 U M2",
@@ -1064,7 +1064,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "pll.z",
     "group": "pll-edges-only",
     "name": "Z-Perm",
-    "recognition": "Edges Only",
+    "recognition": "Headlights on every side with an adjacent color between them—H shows the opposite instead.",
     "algs": [
       {
         "moves": "M' U M2 U M2 U M' U2 M2",
@@ -1089,7 +1089,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "pll.ua",
     "group": "pll-edges-only",
     "name": "Ua-Perm",
-    "recognition": "Edges Only",
+    "recognition": "3-bar at the back; the other three edges cycle counterclockwise—front edge goes right.",
     "algs": [
       {
         "moves": "M2 U M U2 M' U M2",
@@ -1111,7 +1111,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "pll.ub",
     "group": "pll-edges-only",
     "name": "Ub-Perm",
-    "recognition": "Edges Only",
+    "recognition": "3-bar at the back; the other three edges cycle clockwise—front edge goes left.",
     "algs": [
       {
         "moves": "M2 U' M U2 M' U' M2",
@@ -1136,7 +1136,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "pll.aa",
     "group": "pll-adjacent-corner-swap",
     "name": "Aa-Perm",
-    "recognition": "Adjacent Corner Swap",
+    "recognition": "Left headlights, all edges solved; 2-blocks meet at the front-right corner, which stays.",
     "algs": [
       {
         "moves": "x L2 D2 L' U' L D2 L' U L'",
@@ -1161,7 +1161,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "pll.ab",
     "group": "pll-adjacent-corner-swap",
     "name": "Ab-Perm",
-    "recognition": "Adjacent Corner Swap",
+    "recognition": "Left headlights, all edges solved; 2-blocks meet at the back-right corner, which stays.",
     "algs": [
       {
         "moves": "x' L2 D2 L U L' D2 L U' L",
@@ -1186,7 +1186,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "pll.e",
     "group": "pll-diagonal-corner-swap",
     "name": "E-Perm",
-    "recognition": "Diagonal Corner Swap",
+    "recognition": "No headlights anywhere; every edge already matches its center—corners swap front to back.",
     "algs": [
       {
         "moves": "x' L' U L D' L' U' L D L' U' L D' L' U L D",
@@ -1205,7 +1205,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "pll.f",
     "group": "pll-adjacent-corner-swap",
     "name": "F-Perm",
-    "recognition": "Adjacent Corner Swap",
+    "recognition": "Solved 3-bar on the left, nothing else pairs; the right corners and front/back edges swap.",
     "algs": [
       {
         "moves": "R' U' F' R U R' U' R' F R2 U' R' U' R U R' U R",
@@ -1221,7 +1221,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "pll.ja",
     "group": "pll-adjacent-corner-swap",
     "name": "Ja-Perm",
-    "recognition": "Adjacent Corner Swap",
+    "recognition": "Bar on the left joins the front 2-block—solved L around front-left; right corners swap.",
     "algs": [
       {
         "moves": "x R2 F R F' R U2 r' U r U2",
@@ -1243,7 +1243,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "pll.jb",
     "group": "pll-adjacent-corner-swap",
     "name": "Jb-Perm",
-    "recognition": "Adjacent Corner Swap",
+    "recognition": "Bar on the left joins the back 2-block—the L wraps back-left, not front-left as in Ja.",
     "algs": [
       {
         "moves": "R U R' F' R U R' U' R' F R2 U' R'",
@@ -1259,7 +1259,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "pll.ra",
     "group": "pll-adjacent-corner-swap",
     "name": "Ra-Perm",
-    "recognition": "Adjacent Corner Swap",
+    "recognition": "Headlights on the left with a 2-block on the front beside them; Rb's block is on the back.",
     "algs": [
       {
         "moves": "R U' R' U' R U R D R' U' R D' R' U2 R'",
@@ -1281,7 +1281,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "pll.rb",
     "group": "pll-adjacent-corner-swap",
     "name": "Rb-Perm",
-    "recognition": "Adjacent Corner Swap",
+    "recognition": "Headlights on the left with a 2-block on the back beside them; Ra's block is on the front.",
     "algs": [
       {
         "moves": "R2 F R U R U' R' F' R U2 R' U2 R",
@@ -1303,7 +1303,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "pll.t",
     "group": "pll-adjacent-corner-swap",
     "name": "T-Perm",
-    "recognition": "Adjacent Corner Swap",
+    "recognition": "Headlights on the left with 2-blocks on both front and back; the two right corners swap.",
     "algs": [
       {
         "moves": "R U R' U' R' F R2 U' R' U' (R U R') F'",
@@ -1319,7 +1319,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "pll.y",
     "group": "pll-diagonal-corner-swap",
     "name": "Y-Perm",
-    "recognition": "Diagonal Corner Swap",
+    "recognition": "No headlights; solved 2-blocks at front-left and back-right; the other two corners swap.",
     "algs": [
       {
         "moves": "F R U' R' U' R U R' F' R U R' U' R' F R F'",
@@ -1338,7 +1338,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "pll.v",
     "group": "pll-diagonal-corner-swap",
     "name": "V-Perm",
-    "recognition": "Diagonal Corner Swap",
+    "recognition": "No headlights; solved blocks wrap the front-left corner; back-left and front-right swap.",
     "algs": [
       {
         "moves": "R' U R' U' y R' F' R2 U' R' U R' F R F",
@@ -1366,7 +1366,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "pll.na",
     "group": "pll-diagonal-corner-swap",
     "name": "Na-Perm",
-    "recognition": "Diagonal Corner Swap",
+    "recognition": "Every side has a 2-block; the front block is on the right—back-right and front-left swap.",
     "algs": [
       {
         "moves": "R U R' U R U R' F' R U R' U' R' F R2 U' R' U2 R U' R'",
@@ -1385,7 +1385,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "pll.nb",
     "group": "pll-diagonal-corner-swap",
     "name": "Nb-Perm",
-    "recognition": "Diagonal Corner Swap",
+    "recognition": "Every side has a 2-block; the front block is on the left—back-left and front-right swap.",
     "algs": [
       {
         "moves": "R' (U R U' R') F' U' F R U R' F R' F' R U' R",
@@ -1404,7 +1404,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "pll.ga",
     "group": "pll-adjacent-corner-swap",
     "name": "Ga-Perm",
-    "recognition": "Adjacent Corner Swap",
+    "recognition": "Headlights left; lone 2-block on the front's right side; back color between the lights.",
     "algs": [
       {
         "moves": "R2 U R' U R' U' R U' R2 (U' D) R' U R D'",
@@ -1423,7 +1423,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "pll.gb",
     "group": "pll-adjacent-corner-swap",
     "name": "Gb-Perm",
-    "recognition": "Adjacent Corner Swap",
+    "recognition": "Headlights left; lone 2-block on the back end of the right face (Gd: front end).",
     "algs": [
       {
         "moves": "R' U' R (U D') R2 U R' U R U' R U' R2 D",
@@ -1442,7 +1442,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "pll.gc",
     "group": "pll-adjacent-corner-swap",
     "name": "Gc-Perm",
-    "recognition": "Adjacent Corner Swap",
+    "recognition": "Headlights left; lone 2-block on the back's right side; front color between the lights.",
     "algs": [
       {
         "moves": "R2 U' R U' R U R' U R2 (U D') R U' R' D",
@@ -1464,7 +1464,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "id": "pll.gd",
     "group": "pll-adjacent-corner-swap",
     "name": "Gd-Perm",
-    "recognition": "Adjacent Corner Swap",
+    "recognition": "Headlights left; lone 2-block on the front end of the right face (Gb: back end).",
     "algs": [
       {
         "moves": "R U R' (U' D) R2 U' R U' R' U R' U R2 D'",
@@ -1478,6 +1478,813 @@ export const GENERATED_CASES: CaseDef[] = [
     "puzzle": "3x3x3",
     "probability": "4/18",
     "phase": "full-pll"
+  },
+  {
+    "id": "f2l.1",
+    "group": "f2l-free-pairs",
+    "name": "F2L 1",
+    "recognition": "Free Pairs",
+    "algs": [
+      {
+        "moves": "U (R U' R')",
+        "primary": true
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.2",
+    "group": "f2l-free-pairs",
+    "name": "F2L 2",
+    "recognition": "Free Pairs",
+    "algs": [
+      {
+        "moves": "y U' (L' U L)",
+        "primary": true
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.3",
+    "group": "f2l-free-pairs",
+    "name": "F2L 3",
+    "recognition": "Free Pairs",
+    "algs": [
+      {
+        "moves": "y (L' U' L)",
+        "primary": true
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.4",
+    "group": "f2l-free-pairs",
+    "name": "F2L 4",
+    "recognition": "Free Pairs",
+    "algs": [
+      {
+        "moves": "(R U R')",
+        "primary": true
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.5",
+    "group": "f2l-disconnected-pairs",
+    "name": "F2L 5",
+    "recognition": "Disconnected Pairs",
+    "algs": [
+      {
+        "moves": "U' (R U R') U2 (R U' R')",
+        "primary": true
+      },
+      {
+        "moves": "y U l' U L U' L' U' l"
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.6",
+    "group": "f2l-disconnected-pairs",
+    "name": "F2L 6",
+    "recognition": "Disconnected Pairs",
+    "algs": [
+      {
+        "moves": "y U (L' U' L) U2 (L' U L)",
+        "primary": true
+      },
+      {
+        "moves": "U' r U' R' U R U r'"
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.7",
+    "group": "f2l-disconnected-pairs",
+    "name": "F2L 7",
+    "recognition": "Disconnected Pairs",
+    "algs": [
+      {
+        "moves": "U' (R U2 R') U2 (R U' R')",
+        "primary": true
+      },
+      {
+        "moves": "y l U2 L2' U' L2 U' l'"
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.8",
+    "group": "f2l-disconnected-pairs",
+    "name": "F2L 8",
+    "recognition": "Disconnected Pairs",
+    "algs": [
+      {
+        "moves": "y U (L' U2 L) U2 (L' U L)",
+        "primary": true
+      },
+      {
+        "moves": "r' U2 R2 U R2' U r"
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.9",
+    "group": "f2l-disconnected-pairs",
+    "name": "F2L 9",
+    "recognition": "Disconnected Pairs",
+    "algs": [
+      {
+        "moves": "y U (L' U' L) U' (L' U' L)",
+        "primary": true
+      },
+      {
+        "moves": "y U2 (L' U L) U (L' U' L)"
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.10",
+    "group": "f2l-disconnected-pairs",
+    "name": "F2L 10",
+    "recognition": "Disconnected Pairs",
+    "algs": [
+      {
+        "moves": "U' (R U R') U (R U R')",
+        "primary": true
+      },
+      {
+        "moves": "U2 (R U' R') U' (R U R')"
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.11",
+    "group": "f2l-connected-pairs",
+    "name": "F2L 11",
+    "recognition": "Connected Pairs",
+    "algs": [
+      {
+        "moves": "y L U2 L2' U' L2 U' L'",
+        "primary": true
+      },
+      {
+        "moves": "y (L' U L) U' (L' U L) U2 (L' U L)"
+      },
+      {
+        "moves": "U' (R U2 R') U y (L' U' L)"
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.12",
+    "group": "f2l-connected-pairs",
+    "name": "F2L 12",
+    "recognition": "Connected Pairs",
+    "algs": [
+      {
+        "moves": "R' U2 R2 U R2' U R",
+        "primary": true
+      },
+      {
+        "moves": "(R U' R') U (R U' R') U2 (R U' R')"
+      },
+      {
+        "moves": "y U L' U2 L U' y' R U R'"
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.13",
+    "group": "f2l-connected-pairs",
+    "name": "F2L 13",
+    "recognition": "Connected Pairs",
+    "algs": [
+      {
+        "moves": "y U (L' U L) U' (L' U' L)",
+        "primary": true
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.14",
+    "group": "f2l-connected-pairs",
+    "name": "F2L 14",
+    "recognition": "Connected Pairs",
+    "algs": [
+      {
+        "moves": "U' (R U' R') U (R U R')",
+        "primary": true
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.15",
+    "group": "f2l-connected-pairs",
+    "name": "F2L 15",
+    "recognition": "Connected Pairs",
+    "algs": [
+      {
+        "moves": "M U (L F' L') U' M'",
+        "primary": true
+      },
+      {
+        "moves": "y (L' U L) y' U2 (R U R')"
+      },
+      {
+        "moves": "y' (R2' F R F' R) U2 (R' U R)"
+      },
+      {
+        "moves": "y2 (f' L f) U2 (L U L')"
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.16",
+    "group": "f2l-connected-pairs",
+    "name": "F2L 16",
+    "recognition": "Connected Pairs",
+    "algs": [
+      {
+        "moves": "y M U' (R' F R) U M'",
+        "primary": true
+      },
+      {
+        "moves": "(R U' R') y U2 (L' U' L)"
+      },
+      {
+        "moves": "y2 (L2 F' L' F L') U2 (L U' L')"
+      },
+      {
+        "moves": "y' (f R' f') U2 R' U' R"
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.17",
+    "group": "f2l-connected-pairs",
+    "name": "F2L 17",
+    "recognition": "Connected Pairs",
+    "algs": [
+      {
+        "moves": "(R U2 R') U' (R U R')",
+        "primary": true
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.18",
+    "group": "f2l-connected-pairs",
+    "name": "F2L 18",
+    "recognition": "Connected Pairs",
+    "algs": [
+      {
+        "moves": "y (L' U2 L) U (L' U' L)",
+        "primary": true
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.19",
+    "group": "f2l-disconnected-pairs",
+    "name": "F2L 19",
+    "recognition": "Disconnected Pairs",
+    "algs": [
+      {
+        "moves": "U (R U2 R') U (R U' R')",
+        "primary": true
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.20",
+    "group": "f2l-disconnected-pairs",
+    "name": "F2L 20",
+    "recognition": "Disconnected Pairs",
+    "algs": [
+      {
+        "moves": "y U' (L' U2 L) U' (L' U L)",
+        "primary": true
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.21",
+    "group": "f2l-disconnected-pairs",
+    "name": "F2L 21",
+    "recognition": "Disconnected Pairs",
+    "algs": [
+      {
+        "moves": "U2 (R U R') U (R U' R')",
+        "primary": true
+      },
+      {
+        "moves": "y F R U2 R' F'"
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.22",
+    "group": "f2l-disconnected-pairs",
+    "name": "F2L 22",
+    "recognition": "Disconnected Pairs",
+    "algs": [
+      {
+        "moves": "y U2 (L' U' L) U' (L' U L)",
+        "primary": true
+      },
+      {
+        "moves": "F' L' U2 L F"
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.23",
+    "group": "f2l-connected-pairs",
+    "name": "F2L 23",
+    "recognition": "Connected Pairs",
+    "algs": [
+      {
+        "moves": "U (R U' R') U' (R U' R' U R U' R')",
+        "primary": true
+      },
+      {
+        "moves": "U (F R' F' R) U (R U R')"
+      },
+      {
+        "moves": "y U L' U' (L2 F' L' F) (L' U L)"
+      },
+      {
+        "moves": "y F' (U' L' U L) F (L' U L)"
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.24",
+    "group": "f2l-connected-pairs",
+    "name": "F2L 24",
+    "recognition": "Connected Pairs",
+    "algs": [
+      {
+        "moves": "y U' (L' U L) U (L' U L U' L' U L)",
+        "primary": true
+      },
+      {
+        "moves": "y U' (F' L F L') U' (L' U' L)"
+      },
+      {
+        "moves": "U' R U (R2' F R F') (R U' R')"
+      },
+      {
+        "moves": "F (U R U' R') F' (R U' R')"
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.25",
+    "group": "f2l-corner-in-slot",
+    "name": "F2L 25",
+    "recognition": "Corner In Slot",
+    "algs": [
+      {
+        "moves": "U' (R' F R F') (R U R')",
+        "primary": true
+      },
+      {
+        "moves": "(R' F' R) (U R U' R') F"
+      },
+      {
+        "moves": "U' F' (R U R' U') (R' F R)"
+      },
+      {
+        "moves": "y U' (L' U L) (F' L F L')"
+      },
+      {
+        "moves": "y2 U' M U L U' M' U L'"
+      },
+      {
+        "moves": "y' U' R' U M U' R U M'"
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.26",
+    "group": "f2l-corner-in-slot",
+    "name": "F2L 26",
+    "recognition": "Corner In Slot",
+    "algs": [
+      {
+        "moves": "y U (L F' L' F) (L' U' L)",
+        "primary": true
+      },
+      {
+        "moves": "y (L F L') (U' L' U L) F'"
+      },
+      {
+        "moves": "y U F (L' U' L U) (L F' L')"
+      },
+      {
+        "moves": "U (R U' R') (F R' F' R)"
+      },
+      {
+        "moves": "y' U M U' R' U M' U' R"
+      },
+      {
+        "moves": "y2 U L U' M U L' U' M'"
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.27",
+    "group": "f2l-corner-in-slot",
+    "name": "F2L 27",
+    "recognition": "Corner In Slot",
+    "algs": [
+      {
+        "moves": "(R U' R') U (R U' R')",
+        "primary": true
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.28",
+    "group": "f2l-corner-in-slot",
+    "name": "F2L 28",
+    "recognition": "Corner In Slot",
+    "algs": [
+      {
+        "moves": "y (L' U L) U' (L' U L)",
+        "primary": true
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.29",
+    "group": "f2l-corner-in-slot",
+    "name": "F2L 29",
+    "recognition": "Corner In Slot",
+    "algs": [
+      {
+        "moves": "y (L' U' L) U (L' U' L)",
+        "primary": true
+      },
+      {
+        "moves": "M' (U R U' R') (U R U' r')"
+      },
+      {
+        "moves": "(R' F R F')2"
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.30",
+    "group": "f2l-corner-in-slot",
+    "name": "F2L 30",
+    "recognition": "Corner In Slot",
+    "algs": [
+      {
+        "moves": "(R U R') U' (R U R')",
+        "primary": true
+      },
+      {
+        "moves": "y M' (U' L' U L) (U' L' U l)"
+      },
+      {
+        "moves": "y (L F' L' F)2"
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.31",
+    "group": "f2l-edge-in-slot",
+    "name": "F2L 31",
+    "recognition": "Edge In Slot",
+    "algs": [
+      {
+        "moves": "U' (R' F R F') (R U' R')",
+        "primary": true
+      },
+      {
+        "moves": "(R U' R') (F' U2 F)"
+      },
+      {
+        "moves": "y' R' U R' F R F' R"
+      },
+      {
+        "moves": "y' U' (R' U2 R) (f R f')"
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.32",
+    "group": "f2l-edge-in-slot",
+    "name": "F2L 32",
+    "recognition": "Edge In Slot",
+    "algs": [
+      {
+        "moves": "(U R U' R')3",
+        "primary": true
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.33",
+    "group": "f2l-edge-in-slot",
+    "name": "F2L 33",
+    "recognition": "Edge In Slot",
+    "algs": [
+      {
+        "moves": "y U' (L' U' L) U2 (L' U' L)",
+        "primary": true
+      },
+      {
+        "moves": "y U (L' U2 L) U' (L' U' L)"
+      },
+      {
+        "moves": "U' R U' R' U2 R U' R'"
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.34",
+    "group": "f2l-edge-in-slot",
+    "name": "F2L 34",
+    "recognition": "Edge In Slot",
+    "algs": [
+      {
+        "moves": "U (R U R') U2 (R U R')",
+        "primary": true
+      },
+      {
+        "moves": "U' (R U2 R') U (R U R')"
+      },
+      {
+        "moves": "y U (L' U L) U2 (L' U L)"
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.35",
+    "group": "f2l-edge-in-slot",
+    "name": "F2L 35",
+    "recognition": "Edge In Slot",
+    "algs": [
+      {
+        "moves": "y U' (F U F') U (L' U' L)",
+        "primary": true
+      },
+      {
+        "moves": "U2 (R U R') (F R' F' R)"
+      },
+      {
+        "moves": "U M' (U R U' r') (R U' R')"
+      },
+      {
+        "moves": "y2 U2 (L U L') y' U' (L' U L)"
+      },
+      {
+        "moves": "y2 U2 L U M U L' U' M'"
+      },
+      {
+        "moves": "y' U' (f R f') U (R' U' R)"
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.36",
+    "group": "f2l-edge-in-slot",
+    "name": "F2L 36",
+    "recognition": "Edge In Slot",
+    "algs": [
+      {
+        "moves": "U (F' U' F) U' (R U R')",
+        "primary": true
+      },
+      {
+        "moves": "y U2 (L' U' L) (F' L F L')"
+      },
+      {
+        "moves": "y U' M' (U' L' U l) (L' U L)"
+      },
+      {
+        "moves": "y' U2 (R' U' R) y U (R U' R')"
+      },
+      {
+        "moves": "y' U2 R' U' M U' R U M'"
+      },
+      {
+        "moves": "y2 U (f' L' f) U' (L U L')"
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.37",
+    "group": "f2l-pieces-in-slot",
+    "name": "F2L 37",
+    "recognition": "Pieces In Slot",
+    "algs": [
+      {
+        "moves": "R2' U2' F R2 F' U2' R' U R'",
+        "primary": true
+      },
+      {
+        "moves": "y L2 U2 F' L2' F U2 L U' L"
+      },
+      {
+        "moves": "y' (f R' f') U (R' U2' R) U (R' U2' R)"
+      },
+      {
+        "moves": "y2 (f' L f) U' (L U2 L') U' (L U2 L')"
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.38",
+    "group": "f2l-pieces-in-slot",
+    "name": "F2L 38",
+    "recognition": "Pieces In Slot",
+    "algs": [
+      {
+        "moves": "(R U' R') U' (R U R' U2 R U' R')",
+        "primary": true
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.39",
+    "group": "f2l-pieces-in-slot",
+    "name": "F2L 39",
+    "recognition": "Pieces In Slot",
+    "algs": [
+      {
+        "moves": "(R U' R') U (R U2 R' U R U' R')",
+        "primary": true
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.40",
+    "group": "f2l-pieces-in-slot",
+    "name": "F2L 40",
+    "recognition": "Pieces In Slot",
+    "algs": [
+      {
+        "moves": "y (L' U L) (F R U2' R' F')",
+        "primary": true
+      },
+      {
+        "moves": "(F' L' U2 L F) (R U R')"
+      },
+      {
+        "moves": "y' R2' F' U' F U R U' R"
+      },
+      {
+        "moves": "y2 L U' L U F U' F' L2'"
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
+  },
+  {
+    "id": "f2l.41",
+    "group": "f2l-pieces-in-slot",
+    "name": "F2L 41",
+    "recognition": "Pieces In Slot",
+    "algs": [
+      {
+        "moves": "(R U' R') (F' L' U2 L F)",
+        "primary": true
+      },
+      {
+        "moves": "y (F R U2' R' F') (L' U' L)"
+      },
+      {
+        "moves": "y2 L2 F U F' U' L' U L'"
+      },
+      {
+        "moves": "y' R' U R' U' F' U F R2"
+      }
+    ],
+    "stickering": "F2L",
+    "puzzle": "3x3x3",
+    "phase": "full-f2l"
   },
   {
     "id": "444.oll.solved",
@@ -2946,6 +3753,129 @@ export const CASE_SCRAMBLES: Record<string, string[]> = {
     "F B U2 F B' D' L2 U L2 B2 D F2 D' B2 D R2 F2 R2",
     "B F U2 B F' U B2 R2 U R2 U' F2 U B2 U' B2 R2 F2",
     "L R U2 L R' F2 U B2 U' R2 U B2 L2 B2 F2 D B2 U'"
+  ],
+  "f2l.1": [
+    "F R' F' R"
+  ],
+  "f2l.2": [
+    "R' F R F'"
+  ],
+  "f2l.3": [
+    "F' U F"
+  ],
+  "f2l.4": [
+    "R U' R'"
+  ],
+  "f2l.5": [
+    "R U R' U2' R U' R' U"
+  ],
+  "f2l.6": [
+    "F' U' F U2' F' U F U'"
+  ],
+  "f2l.7": [
+    "R U R' U2' R U2' R' U"
+  ],
+  "f2l.8": [
+    "r' U' R2 U' R2' U2' r"
+  ],
+  "f2l.9": [
+    "F' U F U' R U R' U"
+  ],
+  "f2l.10": [
+    "R U' R' U' R U' R' U"
+  ],
+  "f2l.11": [
+    "F' U F U' R U2' R' U"
+  ],
+  "f2l.12": [
+    "R U R' U2' R U R' U' R U R'"
+  ],
+  "f2l.13": [
+    "r U2' R' U R U' R' U M"
+  ],
+  "f2l.14": [
+    "R U' R' U' R U R' U"
+  ],
+  "f2l.15": [
+    "R U R' U' R U R' U2' R U' R'"
+  ],
+  "f2l.16": [
+    "F' U F U2' R U R'"
+  ],
+  "f2l.17": [
+    "R U' R' U R U2' R'"
+  ],
+  "f2l.18": [
+    "R U R' U' R U R' F R' F' R"
+  ],
+  "f2l.19": [
+    "R U R' U' R U2' R' U'"
+  ],
+  "f2l.20": [
+    "R U R' F R' F' R2' U R' U"
+  ],
+  "f2l.21": [
+    "R U' R' U2' R U R'"
+  ],
+  "f2l.22": [
+    "F' L' U2' L F"
+  ],
+  "f2l.23": [
+    "R U' R' U R U' R' U2' R U' R'"
+  ],
+  "f2l.24": [
+    "R U R' F R U R' U' F'"
+  ],
+  "f2l.25": [
+    "F' R U R' U' R' F R"
+  ],
+  "f2l.26": [
+    "F' U' F U R U R' U'"
+  ],
+  "f2l.27": [
+    "R U R' U' R U R'"
+  ],
+  "f2l.28": [
+    "R' F R F' U R U' R'"
+  ],
+  "f2l.29": [
+    "F R' F' R F R' F' R"
+  ],
+  "f2l.30": [
+    "R U' R' U R U' R'"
+  ],
+  "f2l.31": [
+    "R U R' F R' F' R U"
+  ],
+  "f2l.32": [
+    "R U' R' U R U' R' U R U' R'"
+  ],
+  "f2l.33": [
+    "R U R' U2' R U R' U"
+  ],
+  "f2l.34": [
+    "R U' R' U2' R U' R' U'"
+  ],
+  "f2l.35": [
+    "F' U F U' R U' R' U"
+  ],
+  "f2l.36": [
+    "R U' R' U2' F R' F' R U2'"
+  ],
+  "f2l.37": [
+    "R U' R U2' F R2' F' U2' R2'"
+  ],
+  "f2l.38": [
+    "R U' R' U R U2' R' U R U' R'"
+  ],
+  "f2l.39": [
+    "R U' R' U' R U R' U2' R U' R'"
+  ],
+  "f2l.40": [
+    "R U R' F U R U' R' F' R U R'"
+  ],
+  "f2l.41": [
+    "R F U R U' R' F' U' R'"
   ],
   "444.oll.solved": [
     "U' B2 R2 B2 R2 U' F2 D' B2 D F U B U2 L2 F U' B'",

@@ -1,0 +1,98 @@
+---
+title: "Full PLL: 21 Cases as Upgrades"
+description: "You already one-look over a quarter of PLLs — fifteen upgrades collapse every remaining two-alg finish into one."
+phase: "full-cfop"
+order: 210
+---
+
+import CaseRow from "../../components/CaseRow.astro";
+import Callout from "../../components/Callout.astro";
+
+The last layer permutes in 21 ways. You already own six of them —
+[T-Perm](/case/pll.t/), [Y-Perm](/case/pll.y/), [Ua](/case/pll.ua/),
+[Ub](/case/pll.ub/), [H-Perm](/case/pll.h/), [Z-Perm](/case/pll.z/) — plus
+the skip. Seven outcomes, 20 of every 72 solves, finished in one look.
+
+The other 15 cases you currently solve in two stages: permute corners,
+re-recognize, permute edges. Each algorithm below deletes one of those
+two-stage finishes. Nothing becomes obsolete — T and Y stay your workhorses.
+
+## Reading two sides
+
+You never need to see the back of the cube. The front and right faces show
+six stickers, and those six identify all 21 cases. Read three shapes:
+
+- **3-bar** — corner, edge, corner all match: that face is solved as a unit.
+- **Headlights** — the two corner stickers match, the edge between them
+  doesn't.
+- **2-bar** — a corner matches only its neighboring edge.
+
+Shapes narrow the case; colors settle it — check whether a sticker matches,
+sits adjacent to, or sits opposite its neighbors. Learn each case's
+front-plus-right picture together with its algorithm. Rotating the cube to
+hunt the back face costs more than the algorithm saves.
+
+## Corners only: A and E
+
+Edges already solved, corners cycling. Today an A case costs T-Perm plus an
+edge algorithm — you break the solved edges, then repair them. One A-Perm
+keeps them intact. Aa and Ab are mirror cycles: same headlights, opposite
+direction. E is the corners-only case with no headlights anywhere — today it
+masquerades as a diagonal swap, costing Y-Perm plus edge repair.
+
+<div class="case-list">
+  <CaseRow id="pll.aa" open />
+  <CaseRow id="pll.ab" />
+  <CaseRow id="pll.e" />
+</div>
+
+## The adjacent-swap family
+
+Two corners trade across one face — [T-Perm](/case/pll.t/)'s home turf. The
+J, R, and F perms are the same corner swap with different edge motion; each
+one replaces a T-plus-edge-algorithm pair with a single execution.
+
+<div class="case-list">
+  <CaseRow id="pll.ja" />
+  <CaseRow id="pll.jb" />
+  <CaseRow id="pll.ra" />
+  <CaseRow id="pll.rb" />
+  <CaseRow id="pll.f" />
+</div>
+
+## The diagonal family
+
+No headlights on any side — today that means [Y-Perm](/case/pll.y/), then
+edge cleanup. V and the N perms finish these in one. The N perms are the
+easiest recognition on the sheet — the layer looks identical from every
+angle — and, at 1 in 72 each, tied with H-Perm for the rarest in PLL.
+
+<div class="case-list">
+  <CaseRow id="pll.v" />
+  <CaseRow id="pll.na" />
+  <CaseRow id="pll.nb" />
+</div>
+
+## The G family — last, and one at a time
+
+Four cases, 16 of every 72 solves, and the hardest recognition in PLL: both
+corners and edges cycle, so the two-sided patterns are subtle. Every G is
+currently T-Perm plus an edge case, and that fallback stays perfectly
+serviceable. Make the other eleven upgrades automatic first. Then add one G
+at a time — drill its front-plus-right pattern until recognition is instant
+before touching the next. Learning all four in a week guarantees mixing them
+up in solves.
+
+<div class="case-list">
+  <CaseRow id="pll.ga" />
+  <CaseRow id="pll.gb" />
+  <CaseRow id="pll.gc" />
+  <CaseRow id="pll.gd" />
+</div>
+
+<Callout type="tip">
+  Learning order: A-Perms → J-Perms → F → R-Perms → V → E → N-Perms →
+  G-Perms. Frequent-and-easy first, rare-but-instant next, hardest last.
+  One new case per session, and it must survive a real solve before you
+  start the next.
+</Callout>

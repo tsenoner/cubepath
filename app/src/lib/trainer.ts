@@ -53,6 +53,7 @@ export const TRAINER_GROUPS: {
     name: "2-Look PLL edges",
     member: (c) => c.group === "2look-pll-edges",
   },
+  { key: "full-f2l", name: "F2L (41)", member: (c) => c.phase === "full-f2l" },
   { key: "full-oll", name: "Full OLL (57)", member: (c) => c.phase === "full-oll" },
   { key: "full-pll", name: "Full PLL (all 21)", member: (c) => c.phase === "full-pll" },
 ];

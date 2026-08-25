@@ -1,0 +1,67 @@
+---
+title: "Finger Tricks and Lookahead"
+description: "Turn without regripping and read the cube while your hands work — pauses, not turn speed, are where solves lose time."
+phase: "full-cfop"
+order: 240
+---
+
+import AlgText from "../../components/AlgText.astro";
+import Callout from "../../components/Callout.astro";
+import TwistyPlayer from "../../components/TwistyPlayer.astro";
+
+Fast solvers do not turn much faster than you — they stop less. Two skills
+make that possible: hands that execute without regripping, and eyes that are
+already on the next piece.
+
+## Finger tricks
+
+One goal: **never regrip mid-algorithm**. Home grip — thumbs on the front,
+index fingers resting on top. Every common turn has a finger that reaches it
+from there:
+
+- **U turns** — index flicks. Left index pushes U, right index pushes U'.
+  For U2, roll index then middle in one motion.
+- **R and L** — from the wrist. The whole hand rotates the face; the grip
+  never changes.
+- **F turns** — thumb pushes. Reach the thumb down to the front layer and
+  push, rather than rotating the cube into a new hold.
+
+Practice on the trigger you know best. <AlgText moves="R U R' U'" /> should
+collapse into one gesture: wrist, flick, wrist, flick — four turns, zero
+regrips.
+
+<TwistyPlayer alg="R U R' U'" anchor="start" />
+
+<Callout type="tip">
+  Drill in bursts of six repetitions. When six run clean — no regrip, no
+  fumble — speed arrives on its own. Forcing it only teaches lockups.
+</Callout>
+
+## Lookahead
+
+While your hands run an algorithm they know, your eyes have nothing to do
+there. Send them ahead: during each F2L insertion, find the next pair;
+during the last pair, read the top for OLL. An algorithm only frees your
+eyes once it runs without thought — if you still watch your hands through
+[T-Perm](/case/pll.t/), drill it blind first.
+
+The drill is **deliberately slow solving**. Set a metronome pace — about one
+turn per second — and solve without ever stopping. If you must pause to find
+the next piece, you were turning faster than your eyes. Slow the hands until
+the solve is one continuous stream, then let the pace creep up.
+
+<Callout type="info">
+  Pauses, not turn speed, cost the most time. Three turns per second with no
+  stops beats six turns per second with a pause before every pair.
+</Callout>
+
+## Honest metrics
+
+| Average | What it actually takes                                                                          |
+| ------- | ----------------------------------------------------------------------------------------------- |
+| 60s     | 2-Look OLL/PLL from memory, beginner-speed F2L, pauses everywhere. No finger tricks required.   |
+| 40s     | Intuitive F2L and clean finger tricks. You still stop before every pair. Full PLL not needed.   |
+| 25s     | Cross planned in inspection; lookahead carries F2L with only brief stops. Full PLL helps here.  |
+
+Each level is reached by removing pauses, not by adding hand speed — which
+is exactly what the slow-solving drill trains.

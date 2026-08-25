@@ -36,6 +36,7 @@
   const refreshSW = registerSW({
     immediate: true,
     onOfflineReady() {
+      document.documentElement.dataset.offlineReady = "1";
       if (!localStorage.getItem("cubepath.offline-toast-shown")) {
         localStorage.setItem("cubepath.offline-toast-shown", "1");
         showToast("Cubepath is ready to work offline.", false);

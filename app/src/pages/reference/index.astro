@@ -25,6 +25,15 @@ function fullSet(prefix: string) {
 }
 const fullOLL = fullSet("oll.");
 const fullPLL = fullSet("pll.");
+const f2lGroups = (() => {
+  const items = ALL_CASES.filter((k) => k.phase === "full-f2l");
+  const groups = new Map<string, typeof items>();
+  for (const k of items) {
+    if (!groups.has(k.group)) groups.set(k.group, []);
+    groups.get(k.group)!.push(k);
+  }
+  return [...groups.entries()];
+})();
 const groupTitle = (g: string) =>
   g.replace(/^(oll|pll)-/, "").replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 ---
@@ -67,6 +76,25 @@ const groupTitle = (g: string) =>
                 <a href={`/case/${k.id}/`} class="icon-cell" title={k.name}>
                   <img src={caseIcon(k.id)} alt={k.name} width="72" height="72" loading="lazy" />
                   <span>{k.name.replace("OLL ", "")}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        ))
+      }
+    </section>
+
+    <section>
+      <h2>F2L — all 41 cases</h2>
+      <p class="lead">First-two-layers pairs for the front-right slot; learn intuitively first, look up the awkward ones here.</p>
+      {
+        f2lGroups.map(([group, items]) => (
+          <div class="full-group">
+            <h3>{groupTitle(group.replace("f2l-", ""))}</h3>
+            <div class="icon-grid">
+              {items.map((k) => (
+                <a href={`/case/${k.id}/`} class="icon-cell f2l-cell" title={k.name}>
+                  <span>{k.name.replace("F2L ", "")}</span>
                 </a>
               ))}
             </div>
@@ -142,6 +170,12 @@ const groupTitle = (g: string) =>
     color: var(--soft);
     font-size: 12px;
     font-weight: 600;
+  }
+  .f2l-cell {
+    min-width: 48px;
+    min-height: 44px;
+    justify-content: center;
+    font-size: 14px;
   }
   .icon-cell:hover {
     text-decoration: none;

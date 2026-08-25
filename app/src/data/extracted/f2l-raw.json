@@ -1,0 +1,486 @@
+{
+ "meta": {
+  "description": "Standard 41 F2L cases (FR slot), numbered per SpeedCubeDB. All algs from JPerm's Best F2L PDF Section 1, mapped to case numbers mechanically (kpuzzle case-class match against SpeedCubeDB setups). Only strict single-slot algs kept: PDF algs that net-affect a second slot (highlighted there) or solve the mirror into FL are excluded. setup = SpeedCubeDB case setup (applies the case to a solved cube). Verify: node scripts/verify-f2l.mjs",
+  "numbering": "https://speedcubedb.com/a/3x3/F2L",
+  "sources": {
+   "jperm-bestf2l": "JPerm Best F2L PDF (bit.ly/bestf2l, updated 2021-08-08), Section 1",
+   "speedcubedb": "https://speedcubedb.com/a/3x3/F2L Front Right alternatives"
+  }
+ },
+ "f2l": [
+  {
+   "number": 1,
+   "name": "F2L 1",
+   "group": "Free Pairs",
+   "setup": "F R' F' R",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "U (R U' R')"
+   ]
+  },
+  {
+   "number": 2,
+   "name": "F2L 2",
+   "group": "Free Pairs",
+   "setup": "R' F R F'",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "y U' (L' U L)"
+   ]
+  },
+  {
+   "number": 3,
+   "name": "F2L 3",
+   "group": "Free Pairs",
+   "setup": "F' U F",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "y (L' U' L)"
+   ]
+  },
+  {
+   "number": 4,
+   "name": "F2L 4",
+   "group": "Free Pairs",
+   "setup": "R U' R'",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "(R U R')"
+   ]
+  },
+  {
+   "number": 5,
+   "name": "F2L 5",
+   "group": "Disconnected Pairs",
+   "setup": "R U R' U2' R U' R' U",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "U' (R U R') U2 (R U' R')",
+    "y U l' U L U' L' U' l"
+   ]
+  },
+  {
+   "number": 6,
+   "name": "F2L 6",
+   "group": "Disconnected Pairs",
+   "setup": "F' U' F U2' F' U F U'",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "y U (L' U' L) U2 (L' U L)",
+    "U' r U' R' U R U r'"
+   ]
+  },
+  {
+   "number": 7,
+   "name": "F2L 7",
+   "group": "Disconnected Pairs",
+   "setup": "R U R' U2' R U2' R' U",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "U' (R U2 R') U2 (R U' R')",
+    "y l U2 L2' U' L2 U' l'"
+   ]
+  },
+  {
+   "number": 8,
+   "name": "F2L 8",
+   "group": "Disconnected Pairs",
+   "setup": "r' U' R2 U' R2' U2' r",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "y U (L' U2 L) U2 (L' U L)",
+    "r' U2 R2 U R2' U r"
+   ]
+  },
+  {
+   "number": 9,
+   "name": "F2L 9",
+   "group": "Disconnected Pairs",
+   "setup": "F' U F U' R U R' U",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "y U (L' U' L) U' (L' U' L)",
+    "y U2 (L' U L) U (L' U' L)"
+   ]
+  },
+  {
+   "number": 10,
+   "name": "F2L 10",
+   "group": "Disconnected Pairs",
+   "setup": "R U' R' U' R U' R' U",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "U' (R U R') U (R U R')",
+    "U2 (R U' R') U' (R U R')"
+   ]
+  },
+  {
+   "number": 11,
+   "name": "F2L 11",
+   "group": "Connected Pairs",
+   "setup": "F' U F U' R U2' R' U",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "y L U2 L2' U' L2 U' L'",
+    "y (L' U L) U' (L' U L) U2 (L' U L)",
+    "U' (R U2 R') U y (L' U' L)"
+   ]
+  },
+  {
+   "number": 12,
+   "name": "F2L 12",
+   "group": "Connected Pairs",
+   "setup": "R U R' U2' R U R' U' R U R'",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "R' U2 R2 U R2' U R",
+    "(R U' R') U (R U' R') U2 (R U' R')",
+    "y U L' U2 L U' y' R U R'"
+   ]
+  },
+  {
+   "number": 13,
+   "name": "F2L 13",
+   "group": "Connected Pairs",
+   "setup": "r U2' R' U R U' R' U M",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "y U (L' U L) U' (L' U' L)"
+   ]
+  },
+  {
+   "number": 14,
+   "name": "F2L 14",
+   "group": "Connected Pairs",
+   "setup": "R U' R' U' R U R' U",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "U' (R U' R') U (R U R')"
+   ]
+  },
+  {
+   "number": 15,
+   "name": "F2L 15",
+   "group": "Connected Pairs",
+   "setup": "R U R' U' R U R' U2' R U' R'",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "M U (L F' L') U' M'",
+    "y (L' U L) y' U2 (R U R')",
+    "y' (R2' F R F' R) U2 (R' U R)",
+    "y2 (f' L f) U2 (L U L')"
+   ]
+  },
+  {
+   "number": 16,
+   "name": "F2L 16",
+   "group": "Connected Pairs",
+   "setup": "F' U F U2' R U R'",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "y M U' (R' F R) U M'",
+    "(R U' R') y U2 (L' U' L)",
+    "y2 (L2 F' L' F L') U2 (L U' L')",
+    "y' (f R' f') U2 R' U' R"
+   ]
+  },
+  {
+   "number": 17,
+   "name": "F2L 17",
+   "group": "Connected Pairs",
+   "setup": "R U' R' U R U2' R'",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "(R U2 R') U' (R U R')"
+   ]
+  },
+  {
+   "number": 18,
+   "name": "F2L 18",
+   "group": "Connected Pairs",
+   "setup": "R U R' U' R U R' F R' F' R",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "y (L' U2 L) U (L' U' L)"
+   ]
+  },
+  {
+   "number": 19,
+   "name": "F2L 19",
+   "group": "Disconnected Pairs",
+   "setup": "R U R' U' R U2' R' U'",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "U (R U2 R') U (R U' R')"
+   ]
+  },
+  {
+   "number": 20,
+   "name": "F2L 20",
+   "group": "Disconnected Pairs",
+   "setup": "R U R' F R' F' R2' U R' U",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "y U' (L' U2 L) U' (L' U L)"
+   ]
+  },
+  {
+   "number": 21,
+   "name": "F2L 21",
+   "group": "Disconnected Pairs",
+   "setup": "R U' R' U2' R U R'",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "U2 (R U R') U (R U' R')",
+    "y F R U2 R' F'"
+   ]
+  },
+  {
+   "number": 22,
+   "name": "F2L 22",
+   "group": "Disconnected Pairs",
+   "setup": "F' L' U2' L F",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "y U2 (L' U' L) U' (L' U L)",
+    "F' L' U2 L F"
+   ]
+  },
+  {
+   "number": 23,
+   "name": "F2L 23",
+   "group": "Connected Pairs",
+   "setup": "R U' R' U R U' R' U2' R U' R'",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "U (R U' R') U' (R U' R' U R U' R')",
+    "U (F R' F' R) U (R U R')",
+    "y U L' U' (L2 F' L' F) (L' U L)",
+    "y F' (U' L' U L) F (L' U L)"
+   ]
+  },
+  {
+   "number": 24,
+   "name": "F2L 24",
+   "group": "Connected Pairs",
+   "setup": "R U R' F R U R' U' F'",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "y U' (L' U L) U (L' U L U' L' U L)",
+    "y U' (F' L F L') U' (L' U' L)",
+    "U' R U (R2' F R F') (R U' R')",
+    "F (U R U' R') F' (R U' R')"
+   ]
+  },
+  {
+   "number": 25,
+   "name": "F2L 25",
+   "group": "Corner In Slot",
+   "setup": "F' R U R' U' R' F R",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "U' (R' F R F') (R U R')",
+    "(R' F' R) (U R U' R') F",
+    "U' F' (R U R' U') (R' F R)",
+    "y U' (L' U L) (F' L F L')",
+    "y2 U' M U L U' M' U L'",
+    "y' U' R' U M U' R U M'"
+   ]
+  },
+  {
+   "number": 26,
+   "name": "F2L 26",
+   "group": "Corner In Slot",
+   "setup": "F' U' F U R U R' U'",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "y U (L F' L' F) (L' U' L)",
+    "y (L F L') (U' L' U L) F'",
+    "y U F (L' U' L U) (L F' L')",
+    "U (R U' R') (F R' F' R)",
+    "y' U M U' R' U M' U' R",
+    "y2 U L U' M U L' U' M'"
+   ]
+  },
+  {
+   "number": 27,
+   "name": "F2L 27",
+   "group": "Corner In Slot",
+   "setup": "R U R' U' R U R'",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "(R U' R') U (R U' R')"
+   ]
+  },
+  {
+   "number": 28,
+   "name": "F2L 28",
+   "group": "Corner In Slot",
+   "setup": "R' F R F' U R U' R'",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "y (L' U L) U' (L' U L)"
+   ]
+  },
+  {
+   "number": 29,
+   "name": "F2L 29",
+   "group": "Corner In Slot",
+   "setup": "F R' F' R F R' F' R",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "y (L' U' L) U (L' U' L)",
+    "M' (U R U' R') (U R U' r')",
+    "(R' F R F')2"
+   ]
+  },
+  {
+   "number": 30,
+   "name": "F2L 30",
+   "group": "Corner In Slot",
+   "setup": "R U' R' U R U' R'",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "(R U R') U' (R U R')",
+    "y M' (U' L' U L) (U' L' U l)",
+    "y (L F' L' F)2"
+   ]
+  },
+  {
+   "number": 31,
+   "name": "F2L 31",
+   "group": "Edge In Slot",
+   "setup": "R U R' F R' F' R U",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "U' (R' F R F') (R U' R')",
+    "(R U' R') (F' U2 F)",
+    "y' R' U R' F R F' R",
+    "y' U' (R' U2 R) (f R f')"
+   ]
+  },
+  {
+   "number": 32,
+   "name": "F2L 32",
+   "group": "Edge In Slot",
+   "setup": "R U' R' U R U' R' U R U' R'",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "(U R U' R')3"
+   ]
+  },
+  {
+   "number": 33,
+   "name": "F2L 33",
+   "group": "Edge In Slot",
+   "setup": "R U R' U2' R U R' U",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "y U' (L' U' L) U2 (L' U' L)",
+    "y U (L' U2 L) U' (L' U' L)",
+    "U' R U' R' U2 R U' R'"
+   ]
+  },
+  {
+   "number": 34,
+   "name": "F2L 34",
+   "group": "Edge In Slot",
+   "setup": "R U' R' U2' R U' R' U'",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "U (R U R') U2 (R U R')",
+    "U' (R U2 R') U (R U R')",
+    "y U (L' U L) U2 (L' U L)"
+   ]
+  },
+  {
+   "number": 35,
+   "name": "F2L 35",
+   "group": "Edge In Slot",
+   "setup": "F' U F U' R U' R' U",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "y U' (F U F') U (L' U' L)",
+    "U2 (R U R') (F R' F' R)",
+    "U M' (U R U' r') (R U' R')",
+    "y2 U2 (L U L') y' U' (L' U L)",
+    "y2 U2 L U M U L' U' M'",
+    "y' U' (f R f') U (R' U' R)"
+   ]
+  },
+  {
+   "number": 36,
+   "name": "F2L 36",
+   "group": "Edge In Slot",
+   "setup": "R U' R' U2' F R' F' R U2'",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "U (F' U' F) U' (R U R')",
+    "y U2 (L' U' L) (F' L F L')",
+    "y U' M' (U' L' U l) (L' U L)",
+    "y' U2 (R' U' R) y U (R U' R')",
+    "y' U2 R' U' M U' R U M'",
+    "y2 U (f' L' f) U' (L U L')"
+   ]
+  },
+  {
+   "number": 37,
+   "name": "F2L 37",
+   "group": "Pieces In Slot",
+   "setup": "R U' R U2' F R2' F' U2' R2'",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "R2' U2' F R2 F' U2' R' U R'",
+    "y L2 U2 F' L2' F U2 L U' L",
+    "y' (f R' f') U (R' U2' R) U (R' U2' R)",
+    "y2 (f' L f) U' (L U2 L') U' (L U2 L')"
+   ]
+  },
+  {
+   "number": 38,
+   "name": "F2L 38",
+   "group": "Pieces In Slot",
+   "setup": "R U' R' U R U2' R' U R U' R'",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "(R U' R') U' (R U R' U2 R U' R')"
+   ]
+  },
+  {
+   "number": 39,
+   "name": "F2L 39",
+   "group": "Pieces In Slot",
+   "setup": "R U' R' U' R U R' U2' R U' R'",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "(R U' R') U (R U2 R' U R U' R')"
+   ]
+  },
+  {
+   "number": 40,
+   "name": "F2L 40",
+   "group": "Pieces In Slot",
+   "setup": "R U R' F U R U' R' F' R U R'",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "y (L' U L) (F R U2' R' F')",
+    "(F' L' U2 L F) (R U R')",
+    "y' R2' F' U' F U R U' R",
+    "y2 L U' L U F U' F' L2'"
+   ]
+  },
+  {
+   "number": 41,
+   "name": "F2L 41",
+   "group": "Pieces In Slot",
+   "setup": "R F U R U' R' F' U' R'",
+   "source": "jperm-bestf2l",
+   "algs": [
+    "(R U' R') (F' L' U2 L F)",
+    "y (F R U2' R' F') (L' U' L)",
+    "y2 L2 F U F' U' L' U L'",
+    "y' R' U R' U' F' U F R2"
+   ]
+  }
+ ]
+}

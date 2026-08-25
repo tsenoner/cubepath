@@ -1,0 +1,107 @@
+---
+title: "F2L: Solve Two Layers at Once"
+description: "Corner and edge drop in together as a pair — the single change that roughly halves your first-two-layers move count."
+phase: "full-cfop"
+order: 200
+---
+
+import Callout from "../../components/Callout.astro";
+import AlgText from "../../components/AlgText.astro";
+import TwistyPlayer from "../../components/TwistyPlayer.astro";
+
+The beginner method fills the first two layers in two passes: white corners,
+then middle edges — one algorithm each, slot by slot. **F2L** (First Two
+Layers) merges the passes: each corner travels with its middle edge as a
+**pair**, and both drop into place in one short motion. Same four slots,
+roughly half the moves — and the core of it needs no new algorithms, only
+new eyes.
+
+## What a pair is
+
+On a solved cube, every white corner sits directly under the middle-layer
+edge that shares its two side colors: the white-red-green corner lives
+below the red-green edge. Those two pieces are a **pair**; the spot they
+fill is a **slot**. Cross plus four pairs is the entire first two layers.
+
+You have been handling pairs all along. One sexy move,
+<AlgText moves="R U R' U'" />, pops the front-right pair out of its slot —
+corner and edge leave home **together** and land on top still joined:
+
+<TwistyPlayer alg="R U R' U'" stickering="F2L" anchor="start" />
+
+Played in reverse, the same motion puts the pair back. Every F2L insert is
+a version of that reversal.
+
+## The four slots: FR, FL, BR, BL
+
+Slots are named by position: **front-right, front-left, back-right,
+back-left**. Two rules of grip discipline:
+
+- The cross stays on the **bottom**. Never tilt the cube to look — read
+  the top layer and the sides.
+- Work the active slot at the **front-right**: `y` rotations bring any
+  slot there. Back slots are the same slots with worse visibility, so
+  clear them early or rotate them to the front.
+
+## The three states of a pair
+
+Find a white corner on the top layer, then find its edge. You will see one
+of three states:
+
+- **Joined, correctly** — side by side, matching colors touching, white
+  facing sideways. Ready to insert as-is.
+- **Joined, wrong** — side by side, but the touching colors clash or white
+  faces up. Pull them apart first — one face turn lifts the corner away —
+  then rejoin.
+- **Split** — corner and edge in different places on top. Steer one next
+  to the other so the matching colors meet: now it is a made pair.
+
+All roads lead to the first state. F2L in one sentence: make the pair,
+then insert it.
+
+## The two basic insertions
+
+A made pair enters its slot through one of the slot's two faces, and the
+pair itself tells you which. Read the color on top of the pair: it matches
+one of the slot's two centers — the pair goes in through the **other**
+face.
+
+- **Through the side** — the 3-move insert. Set the pair on top, to the
+  left of the slot, white pointing away. Open the slot by turning its side
+  face up, carry the pair over the opening with one turn of the top,
+  close.
+- **Through the front** — the mirror: **back, rotate, join**. Park the
+  pair at the back-right, open the slot with the front face instead, let
+  the pair fall in, close. Still three moves, mirrored.
+
+That is the whole engine. Every awkward position — white on top, corner
+stuck in a slot, flipped edge — is a short setup that produces a made pair
+pointing one of these two ways.
+
+## An empty slot is workspace
+
+Joining a split pair needs room to move without wrecking what is solved.
+An **empty slot** is that room: turns that open an unsolved slot cost
+nothing, while turns that open a solved one must be paid back. Early in
+the solve you have workspace everywhere; the last pair is the cramped
+one — another reason to clear the back slots early.
+
+## Why pairs beat the beginner method
+
+Count it. Beginner: up to three sexy moves to place the corner, then a
+full edge-insertion sequence — around twenty moves per slot. An intuitive
+pair averages seven or eight. Across four slots that is the same two
+layers for roughly **half the moves**, before any speed tricks, with
+nothing new memorized.
+
+<Callout type="tip">
+  Practice one pair at a time, slowly, no timer. Scramble, solve the
+  cross, then talk yourself through a single pair out loud: which state
+  is it in, and which face does it go in through? Speed comes from seeing
+  faster, not turning faster.
+</Callout>
+
+Intuition covers most pairs you will meet. The awkward minority — corner
+trapped in a slot, edge flipped in place — fall to the same logic plus a
+setup move, and speedsolvers have worked out efficient answers for all
+**41 F2L cases**. Learn the logic first; look up the exceptions later.
