@@ -25,14 +25,6 @@ def _rotate_face_cw(face: list[str]) -> list[str]:
     return [face[6], face[3], face[0], face[7], face[4], face[1], face[8], face[5], face[2]]
 
 
-def _rotate_face_ccw(face: list[str]) -> list[str]:
-    return [face[2], face[5], face[8], face[1], face[4], face[7], face[0], face[3], face[6]]
-
-
-def _rotate_face_180(face: list[str]) -> list[str]:
-    return [face[8], face[7], face[6], face[5], face[4], face[3], face[2], face[1], face[0]]
-
-
 # Strip definitions: list of (face, idx) tuples for a 3-sticker strip.
 # Each move cycles 4 strips CW. Order matters: strip[0]→strip[1]→strip[2]→strip[3]→strip[0].
 
@@ -162,6 +154,20 @@ def _apply_ccw(faces: dict[str, list[str]], move: str) -> None:
         _apply_cw(faces, move)
 
 
+# Compound moves: wide turns and rotations expressed in base moves.
+_COMPOUNDS: dict[str, list[str]] = {
+    "r": ["R", "M'"],
+    "l": ["L", "M"],
+    "u": ["U", "E'"],
+    "d": ["D", "E"],
+    "f": ["F", "S"],
+    "b": ["B", "S'"],
+    "x": ["R", "M'", "L'"],
+    "y": ["U", "E'", "D'"],
+    "z": ["F", "S", "B'"],
+}
+
+
 @dataclass
 class Cube:
     """Rubik's cube state."""
@@ -184,10 +190,6 @@ class Cube:
     def u_face_solved(self) -> bool:
         return all(s == COLORS["U"] for s in self.faces["U"])
 
-    def u_corners_oriented(self) -> bool:
-        """All 4 U-face corners are yellow."""
-        return all(self.faces["U"][i] == COLORS["U"] for i in (0, 2, 6, 8))
-
     def u_cross_solved(self) -> bool:
         """U-face edges + center are yellow."""
         return all(self.faces["U"][i] == COLORS["U"] for i in (1, 3, 4, 5, 7))
@@ -199,21 +201,8 @@ class Cube:
         is_prime = move_str.endswith("'")
         is_double = move_str.endswith("2")
 
-        # Compound moves
-        compounds: dict[str, list[str]] = {
-            "r": ["R", "M'"],
-            "l": ["L", "M"],
-            "u": ["U", "E'"],
-            "d": ["D", "E"],
-            "f": ["F", "S"],
-            "b": ["B", "S'"],
-            "x": ["R", "M'", "L'"],
-            "y": ["U", "E'", "D'"],
-            "z": ["F", "S", "B'"],
-        }
-
-        if base in compounds:
-            sub_moves = compounds[base]
+        if base in _COMPOUNDS:
+            sub_moves = _COMPOUNDS[base]
             times = 2 if is_double else 1
             for _ in range(times):
                 if is_prime:

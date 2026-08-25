@@ -2,19 +2,9 @@
 import { getCollection } from "astro:content";
 import Base from "../layouts/Base.astro";
 import Header from "../components/Header.astro";
+import { PHASES } from "../data/phases";
 
 const lessons = (await getCollection("lessons")).sort((a, b) => a.data.order - b.data.order);
-
-const SECTIONS: { key: string; name: string; blurb: string }[] = [
-  { key: "basics", name: "Basics", blurb: "Know the cube, read the moves." },
-  { key: "phase-1", name: "Phase 1 — Beginner", blurb: "Solve the cube reliably with one trigger." },
-  { key: "phase-1.5", name: "Phase 1.5 — Speed Tricks", blurb: "Same method, fewer moves." },
-  { key: "phase-2", name: "Phase 2 — CFOP Switch", blurb: "The last-layer order that never changes again." },
-  { key: "phase-3", name: "Phase 3 — Full 2-Look", blurb: "Every case, one look, one algorithm." },
-  { key: "full-cfop", name: "Full CFOP", blurb: "F2L pairs, all 21 PLL, all 57 OLL — the speed ceiling comes off." },
-  { key: "444", name: "4×4", blurb: "Your 3×3 + two new skills + parity." },
-  { key: "555", name: "5×5", blurb: "4×4 skills — but centers are fixed again." },
-];
 ---
 
 <Base title="Cubepath — speedcubing from zero">
@@ -34,7 +24,7 @@ const SECTIONS: { key: string; name: string; blurb: string }[] = [
 
     <section class="ladder">
       {
-        SECTIONS.map((s) => {
+        PHASES.map((s) => {
           const items = lessons.filter((l) => l.data.phase === s.key);
           if (items.length === 0) return null;
           return (
@@ -86,18 +76,12 @@ const SECTIONS: { key: string; name: string; blurb: string }[] = [
     gap: 12px;
   }
   .btn {
-    font-weight: 600;
-    font-size: 14px;
     padding: 10px 18px;
-    border-radius: 8px;
-    border: 1px solid var(--accent);
+    border-color: var(--accent);
     color: var(--accent);
   }
-  .btn:hover {
-    text-decoration: none;
-  }
+  /* The scoped .btn color would out-cascade the global .btn.primary. */
   .btn.primary {
-    background: var(--accent);
     color: #fff;
   }
   .ladder {
@@ -136,9 +120,6 @@ const SECTIONS: { key: string; name: string; blurb: string }[] = [
     color: var(--soft);
     font-size: 13px;
     margin-left: 8px;
-  }
-  .coming {
-    opacity: 0.75;
   }
   footer {
     margin-top: 30px;

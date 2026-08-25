@@ -1,8 +1,7 @@
 ---
 import Base from "../../layouts/Base.astro";
 import Header from "../../components/Header.astro";
-import AlgText from "../../components/AlgText.astro";
-import { CASES, primaryAlg } from "../../data/algs";
+import { CASES } from "../../data/algs";
 import { caseIcon } from "../../data/icons";
 import { TRAINER_GROUPS, groupSize } from "../../lib/trainer";
 
@@ -134,13 +133,13 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
   } from "../../lib/trainer";
   import { allProgress, ensurePersistence, setStatus, type CaseStatus } from "../../lib/db";
   import { dueQueue, previewIntervals, review } from "../../lib/srs";
+  import type { Grade } from "ts-fsrs";
 
   const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
   let settings: TrainerSettings = await loadSettings();
   let mode: "drill" | "solve" | "review" = "drill";
   let solvePuzzle: "333" | "444" | "555" = "333";
-  let currentCase = "";
   let lastCase: string | undefined;
   let times: number[] = [];
   let timerStart = 0;
@@ -192,7 +191,6 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
       return;
     }
     const def = pickCase(pool, settings.frequencies, lastCase);
-    currentCase = def.id;
     lastCase = def.id;
     const cubeName = { "3x3x3": "3×3", "4x4x4": "4×4", "5x5x5": "5×5" }[def.puzzle];
     $("drill-label").textContent = `SCRAMBLE · ${cubeName} · HOLD YELLOW UP`;
@@ -307,7 +305,7 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
     btn.addEventListener("click", async () => {
       const id = reviewQueue[0];
       if (!id) return;
-      await review(id, Number(btn.dataset.grade) as 1 | 2 | 3, new Date());
+      await review(id, Number(btn.dataset.grade) as Grade, new Date());
       void ensurePersistence();
       await nextReview();
     });
@@ -375,10 +373,7 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
   renderSettings();
   document.querySelector<HTMLElement>('[data-mode="drill"]')!.classList.add("active");
   document.querySelector<HTMLElement>('[data-puzzle="333"]')!.classList.add("active");
-  await nextScramble();
-  await renderStatuses();
-  await refreshDueBadge();
-  void currentCase;
+  await Promise.all([nextScramble(), renderStatuses(), refreshDueBadge()]);
 </script>
 
 <style>
@@ -433,12 +428,6 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
     justify-content: center;
   }
   .chip {
-    font: 600 12.5px var(--font-body);
-    border: 1px solid var(--line);
-    color: var(--soft);
-    background: transparent;
-    border-radius: 999px;
-    padding: 4px 12px;
     cursor: pointer;
   }
   .chip.active {
@@ -474,12 +463,6 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
     gap: 14px;
     text-align: center;
   }
-  .label {
-    font-size: 11.5px;
-    font-weight: 600;
-    letter-spacing: 0.09em;
-    color: var(--faint);
-  }
   .scramble {
     font-size: 18px;
     margin: 0;
@@ -491,20 +474,6 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
     margin: 0;
     cursor: pointer;
     user-select: none;
-  }
-  .btn {
-    font: 600 14px var(--font-body);
-    border: 1px solid var(--line);
-    background: transparent;
-    color: var(--ink);
-    border-radius: 8px;
-    padding: 9px 16px;
-    cursor: pointer;
-  }
-  .btn.primary {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #fff;
   }
   .btn.grade small {
     display: block;

@@ -18,6 +18,8 @@ This guide bridges the gap from beginner to CFOP in 3 phases:
 
 Hold the cube with **white on bottom, yellow on top** throughout.
 
+Interactive version — every case playable in 3D, plus trainer and full CFOP: **cubepath-six.vercel.app** (free, works offline).
+
 ```{=typst}
 #pagebreak()
 ```

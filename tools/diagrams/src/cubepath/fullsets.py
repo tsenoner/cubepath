@@ -8,15 +8,16 @@ are computed from the actual piece permutation.
 
 from __future__ import annotations
 
+import functools
 import json
 import re
 from pathlib import Path
 
 from cubepath.cube import Cube
 from cubepath.diagrams import (
-    _SIM_COLOR,
     YELLOW,
     CubeDiagram,
+    _colorize,
     _u_layer_views,
     _yellow_mask,
     render,
@@ -57,14 +58,6 @@ def case_state(alg: str) -> Cube:
 # Slugs for PLL case names ("Ja" -> "ja", "H" -> "h").
 def _slug(name: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
-
-
-def _normalize_alg(alg: str) -> str:
-    """Map JPerm notation to the simulator's parser (Rw -> r etc.)."""
-    out = alg
-    for wide, low in (("Rw", "r"), ("Lw", "l"), ("Uw", "u"), ("Dw", "d"), ("Fw", "f"), ("Bw", "b")):
-        out = out.replace(wide, low)
-    return out
 
 
 # ── Piece-permutation → arrows (mirrors tests/test_derivation.py) ──────
@@ -114,6 +107,7 @@ def _arrows_from_permutation(perm: dict[str, str]) -> tuple[list, list]:
     return swaps, cycles
 
 
+@functools.cache
 def _load() -> dict:
     return json.loads(_DATA.read_text())
 
@@ -122,8 +116,7 @@ def full_oll_cases() -> list[CubeDiagram]:
     """57 OLL diagrams: yellow/grey mask of the state each primary alg solves."""
     cases = []
     for c in _load()["oll"]:
-        alg = _normalize_alg(c["algs"][0])
-        cube = case_state(alg)
+        cube = case_state(c["algs"][0])
         u, sides = _u_layer_views(cube)
         cases.append(
             CubeDiagram(
@@ -144,22 +137,20 @@ def full_pll_cases() -> list[CubeDiagram]:
     """21 PLL diagrams: true side colors + arrows derived from the permutation."""
     cases = []
     for c in _load()["pll"]:
-        alg = _normalize_alg(c["algs"][0])
-        cube = case_state(alg)
+        cube = case_state(c["algs"][0])
         u, sides = _u_layer_views(cube)
         assert all(s == "Y" for s in u), f"PLL {c['name']}: U face not oriented"
         swaps, cycles = _arrows_from_permutation(_u_layer_permutation(cube))
-        colorize = lambda strip: [_SIM_COLOR[s] for s in strip]  # noqa: E731
         cases.append(
             CubeDiagram(
                 name=f"pll_full_{_slug(c['name'])}",
                 label=f"{c['name']} Perm",
                 category="pll_full",
                 u_face=[YELLOW] * 9,
-                top_side=colorize(sides["top"]),
-                right_side=colorize(sides["right"]),
-                bottom_side=colorize(sides["bottom"]),
-                left_side=colorize(sides["left"]),
+                top_side=_colorize(sides["top"]),
+                right_side=_colorize(sides["right"]),
+                bottom_side=_colorize(sides["bottom"]),
+                left_side=_colorize(sides["left"]),
                 swaps=swaps,
                 cycles=cycles,
             )

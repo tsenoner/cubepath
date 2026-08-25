@@ -3,8 +3,9 @@ import Base from "../../layouts/Base.astro";
 import Header from "../../components/Header.astro";
 import AlgText from "../../components/AlgText.astro";
 import TwistyPlayer from "../../components/TwistyPlayer.astro";
-import { ALL_CASES, primaryAlg } from "../../data/algs";
+import { ALL_CASES, CURATED_IDS, primaryAlg } from "../../data/algs";
 import { CASE_SCRAMBLES } from "../../data/fullsets.gen";
+import { RICH } from "../../data/fullsets.rich.gen";
 import { caseIcon } from "../../data/icons";
 
 export async function getStaticPaths() {
@@ -13,11 +14,15 @@ export async function getStaticPaths() {
 
 const { def } = Astro.props;
 const icon = caseIcon(def.id);
-const alternates = def.algs.filter((a) => !a.primary);
+// Lean generated entries carry only the primary alg; RICH holds the rest.
+const recognition = def.recognition ?? RICH[def.id]?.recognition ?? "";
+const alternates = CURATED_IDS.has(def.id)
+  ? def.algs.filter((a) => !a.primary)
+  : (RICH[def.id]?.alternates ?? []);
 const scrambles = (CASE_SCRAMBLES[def.id] ?? []).slice(0, 4);
 ---
 
-<Base title={`${def.name} — Cubepath`} description={def.recognition}>
+<Base title={`${def.name} — Cubepath`} description={recognition}>
   <Header active="reference" />
   <main>
     <nav class="crumbs"><a href="/reference/">Reference</a> <span>›</span> <span>{def.name}</span></nav>
@@ -31,7 +36,7 @@ const scrambles = (CASE_SCRAMBLES[def.id] ?? []).slice(0, 4);
           {icon && <img src={icon} alt={`${def.name} diagram`} width="84" height="84" />}
           <div>
             <h1>{def.name}</h1>
-            <p class="recognition">{def.recognition}</p>
+            <p class="recognition">{recognition}</p>
           </div>
         </div>
         <div class="chips">
@@ -82,10 +87,6 @@ const scrambles = (CASE_SCRAMBLES[def.id] ?? []).slice(0, 4);
     padding: 26px 20px 60px;
   }
   .crumbs {
-    font-size: 13px;
-    color: var(--soft);
-    display: flex;
-    gap: 8px;
     margin-bottom: 16px;
   }
   .layout {
@@ -104,11 +105,6 @@ const scrambles = (CASE_SCRAMBLES[def.id] ?? []).slice(0, 4);
     flex-direction: column;
     align-items: center;
     gap: 6px;
-  }
-  .hint {
-    color: var(--faint);
-    font-size: 12px;
-    margin: 0;
   }
   .title-row {
     display: flex;
@@ -129,11 +125,6 @@ const scrambles = (CASE_SCRAMBLES[def.id] ?? []).slice(0, 4);
     margin-bottom: 14px;
   }
   .chip {
-    font-size: 12.5px;
-    font-weight: 600;
-    border: 1px solid var(--line);
-    color: var(--soft);
-    border-radius: 999px;
     padding: 3px 10px;
   }
   .block {
@@ -141,8 +132,6 @@ const scrambles = (CASE_SCRAMBLES[def.id] ?? []).slice(0, 4);
     margin-bottom: 12px;
   }
   .label {
-    font-size: 11.5px;
-    font-weight: 600;
     letter-spacing: 0.08em;
     color: var(--accent);
   }

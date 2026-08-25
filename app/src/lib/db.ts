@@ -62,10 +62,6 @@ export function getDB(): Promise<IDBPDatabase<CubepathDB>> {
   return dbPromise;
 }
 
-export async function getProgress(caseId: string): Promise<ProgressEntry | undefined> {
-  return (await getDB()).get("progress", caseId);
-}
-
 export async function allProgress(): Promise<ProgressEntry[]> {
   return (await getDB()).getAll("progress");
 }
@@ -148,25 +144,29 @@ export async function importBackup(raw: unknown): Promise<void> {
   }
   const db = await getDB();
   const tx = db.transaction(["progress", "cards", "reviews", "settings"], "readwrite");
-  await Promise.all([
+  // Queue everything without awaiting each request — IndexedDB executes
+  // requests of one transaction in order, so the clears run before the puts.
+  const ops: Promise<unknown>[] = [
     tx.objectStore("progress").clear(),
     tx.objectStore("cards").clear(),
     tx.objectStore("reviews").clear(),
     tx.objectStore("settings").clear(),
-  ]);
-  for (const p of env.data.progress ?? []) await tx.objectStore("progress").put(p);
+  ];
+  for (const p of env.data.progress ?? []) ops.push(tx.objectStore("progress").put(p));
   for (const c of env.data.cards ?? []) {
     // Revive dates: the by-due index needs real Date objects (ts-fsrs itself
     // tolerates ISO strings, which would silently break the due queue).
-    await tx.objectStore("cards").put({
-      ...c,
-      due: new Date(c.due),
-      last_review: c.last_review ? new Date(c.last_review) : undefined,
-    });
+    ops.push(
+      tx.objectStore("cards").put({
+        ...c,
+        due: new Date(c.due),
+        last_review: c.last_review ? new Date(c.last_review) : undefined,
+      }),
+    );
   }
   for (const r of env.data.reviews ?? []) {
-    await tx.objectStore("reviews").add({ ...r, review: new Date(r.review) });
+    ops.push(tx.objectStore("reviews").add({ ...r, review: new Date(r.review) }));
   }
-  for (const s of env.data.settings ?? []) await tx.objectStore("settings").put(s.value, s.key);
-  await tx.done;
+  for (const s of env.data.settings ?? []) ops.push(tx.objectStore("settings").put(s.value, s.key));
+  await Promise.all([...ops, tx.done]);
 }

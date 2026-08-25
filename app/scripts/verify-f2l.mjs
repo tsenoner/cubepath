@@ -28,6 +28,8 @@ import { readFile } from "node:fs/promises";
 import { Alg } from "cubing/alg";
 import { cube3x3x3 } from "cubing/puzzles";
 
+import { makeKit } from "./lib/kpuzzle-utils.mjs";
+
 // Numbering ground truth: SpeedCubeDB case setups (setup applied to a solved
 // cube produces the case at the FR slot). https://speedcubedb.com/a/3x3/F2L
 const SCDB_SETUPS = {
@@ -75,45 +77,13 @@ const SCDB_SETUPS = {
 };
 
 const kpuzzle = await cube3x3x3.kpuzzle();
-const solved = kpuzzle.defaultPattern();
 
-// All 24 cube orientations as rotation transformations.
-const ROTATIONS = [];
-for (const a of ["", "x", "x2", "x'", "z", "z'"]) {
-  for (const b of ["", "y", "y2", "y'"]) ROTATIONS.push([a, b].filter(Boolean).join(" "));
-}
-const IDENTITY_T = kpuzzle.identityTransformation();
-const toT = (s) => (s ? kpuzzle.algToTransformation(new Alg(s)) : IDENTITY_T);
-const ROTATION_T = ROTATIONS.map(toT);
-const AUF_T = ["", "U", "U2", "U'"].map(toT);
-
-function centersSolved(pattern) {
-  const c = pattern.patternData.CENTERS;
-  const s = solved.patternData.CENTERS;
-  return c.pieces.every((p, i) => p === s.pieces[i]);
-}
-
-/**
- * Bring centers home. Forward patterns (state after executing an alg from a
- * given pre-state) are a physically rotated cube — rotate it back AFTER, i.e.
- * right-compose. Inverted transformations (pre-states, alg⁻¹) carry any net
- * rotation on the left — left-compose. Using the wrong side conjugates the
- * state onto the wrong slot for algs with net rotation (leading y etc.).
- */
-function rightRotNormalize(t) {
-  for (const r of ROTATION_T) {
-    const cand = t.applyTransformation(r);
-    if (centersSolved(solved.applyTransformation(cand))) return cand;
-  }
-  throw new Error("rightRotNormalize: no rotation brings centers home");
-}
-function leftRotNormalize(t) {
-  for (const r of ROTATION_T) {
-    const cand = r.applyTransformation(t);
-    if (centersSolved(solved.applyTransformation(cand))) return cand;
-  }
-  throw new Error("leftRotNormalize: no rotation brings centers home");
-}
+// Shared rotation/normalization kit. Left- vs right-rotation-normalize
+// matters: forward patterns rotate back AFTER (right-compose), inverted
+// transformations (pre-states, alg⁻¹) carry any net rotation on the LEFT —
+// using the wrong side conjugates the state onto the wrong slot for algs
+// with net rotation (leading y etc.).
+const { solved, ID: IDENTITY_T, toT, AUF_T, rightRotNormalize, leftRotNormalize } = makeKit(kpuzzle);
 
 // U-layer and FR-slot piece slots (detected, not hardcoded): FR slot = moves
 // under R and F but not U (corners: DFR; edges: FR).

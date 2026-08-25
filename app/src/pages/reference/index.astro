@@ -2,7 +2,7 @@
 import Base from "../../layouts/Base.astro";
 import Header from "../../components/Header.astro";
 import CaseRow from "../../components/CaseRow.astro";
-import { ALL_CASES, CASES } from "../../data/algs";
+import { ALL_CASES, CASES, isFullOll, isFullPll, type CaseDef } from "../../data/algs";
 import { caseIcon } from "../../data/icons";
 
 const GROUPS: { key: string; name: string }[] = [
@@ -13,27 +13,19 @@ const GROUPS: { key: string; name: string }[] = [
   { key: "444-parity", name: "4×4 Parity" },
 ];
 
-// Full sets, grouped by shape/type, linking to per-case pages.
-function fullSet(prefix: string) {
-  const items = ALL_CASES.filter((k) => k.id.startsWith(prefix) && k.phase.startsWith("full"));
-  const groups = new Map<string, typeof items>();
-  for (const k of items) {
+// Full sets, grouped by shape/type, linking to per-case pages. Membership is
+// by id shape (isFullOll/isFullPll) so the curated 2-look cases count too.
+function grouped(predicate: (k: CaseDef) => boolean) {
+  const groups = new Map<string, CaseDef[]>();
+  for (const k of ALL_CASES.filter(predicate)) {
     if (!groups.has(k.group)) groups.set(k.group, []);
     groups.get(k.group)!.push(k);
   }
   return [...groups.entries()];
 }
-const fullOLL = fullSet("oll.");
-const fullPLL = fullSet("pll.");
-const f2lGroups = (() => {
-  const items = ALL_CASES.filter((k) => k.phase === "full-f2l");
-  const groups = new Map<string, typeof items>();
-  for (const k of items) {
-    if (!groups.has(k.group)) groups.set(k.group, []);
-    groups.get(k.group)!.push(k);
-  }
-  return [...groups.entries()];
-})();
+const fullOLL = grouped(isFullOll);
+const fullPLL = grouped(isFullPll);
+const f2lGroups = grouped((k) => k.phase === "full-f2l");
 const groupTitle = (g: string) =>
   g.replace(/^(oll|pll)-/, "").replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 ---

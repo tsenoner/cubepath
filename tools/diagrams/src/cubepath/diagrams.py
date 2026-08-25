@@ -63,6 +63,11 @@ G = GREY
 _SIM_COLOR = {"Y": YELLOW, "R": RED, "G": GREEN, "O": ORANGE, "B": BLUE, "W": WHITE}
 
 
+def _colorize(strip: list[str]) -> list[str]:
+    """Simulator color letters → diagram hex colors."""
+    return [_SIM_COLOR[s] for s in strip]
+
+
 def _u_layer_views(cube: Cube) -> tuple[list[str], dict[str, list[str]]]:
     """Plan-view of the U layer: u_face (row 0 = back) + side strips.
 
@@ -134,16 +139,15 @@ def _derived_pll_case(
     cube = state_before(alg)
     u, sides = _u_layer_views(cube)
     assert all(s == "Y" for s in u), f"{name}: U face not fully yellow in pre-state"
-    colorize = lambda strip: [_SIM_COLOR[s] for s in strip]  # noqa: E731
     return CubeDiagram(
         name=name,
         label=label,
         category=category,
         u_face=[YELLOW] * 9,
-        top_side=colorize(sides["top"]),
-        right_side=colorize(sides["right"]),
-        bottom_side=colorize(sides["bottom"]),
-        left_side=colorize(sides["left"]),
+        top_side=_colorize(sides["top"]),
+        right_side=_colorize(sides["right"]),
+        bottom_side=_colorize(sides["bottom"]),
+        left_side=_colorize(sides["left"]),
         swaps=swaps or [],
         cycles=cycles or [],
         dashed_swaps=dashed_swaps or [],

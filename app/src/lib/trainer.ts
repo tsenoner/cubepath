@@ -2,9 +2,7 @@
  * Trainer logic: case selection, weighted case picking, setup scrambles,
  * and session statistics. Pure functions + a thin idb-settings layer.
  */
-import { Alg } from "cubing/alg";
-
-import { ALL_CASES, primaryAlg, type CaseDef } from "../data/algs";
+import { ALL_CASES, isFullOll, isFullPll, primaryAlg, type CaseDef } from "../data/algs";
 import { CASE_SCRAMBLES } from "../data/fullsets.gen";
 import { getDB } from "./db";
 
@@ -54,8 +52,8 @@ export const TRAINER_GROUPS: {
     member: (c) => c.group === "2look-pll-edges",
   },
   { key: "full-f2l", name: "F2L (41)", member: (c) => c.phase === "full-f2l" },
-  { key: "full-oll", name: "Full OLL (57)", member: (c) => c.phase === "full-oll" },
-  { key: "full-pll", name: "Full PLL (all 21)", member: (c) => c.phase === "full-pll" },
+  { key: "full-oll", name: "Full OLL (57)", member: isFullOll },
+  { key: "full-pll", name: "Full PLL (all 21)", member: isFullPll },
   { key: "444-oll", name: "4×4 OLL + parity", member: (c) => c.group.startsWith("4x4oll-") },
   { key: "444-pll", name: "4×4 PLL + parity", member: (c) => c.group.startsWith("4x4pll-") },
   { key: "555-l2e", name: "5×5 last two edges", member: (c) => c.group === "555-l2e" },
@@ -104,6 +102,22 @@ export function pickCase(
 const AUFS = ["", "U ", "U2 ", "U' "];
 
 /**
+ * Invert a plain move sequence: reverse the tokens and toggle the trailing
+ * prime (tokens ending in 2 are self-inverse). Only the scramble-pool
+ * fallback cases (eo.*, 555.*, 444.oll-parity) reach this, and none of their
+ * primary algorithms use parentheses or repeat notation — this stays true by
+ * construction, so the heavy cubing/alg parser is not needed here.
+ */
+function invertMoves(moves: string): string {
+  return moves
+    .trim()
+    .split(/\s+/)
+    .reverse()
+    .map((t) => (t.endsWith("'") ? t.slice(0, -1) : t.endsWith("2") ? t : `${t}'`))
+    .join(" ");
+}
+
+/**
  * Setup scramble for a case: prefer the verified per-case scramble pool
  * (varied U-layer permutations); fall back to inverse-of-alg with random AUFs.
  */
@@ -112,7 +126,7 @@ export function setupScramble(def: CaseDef, random: () => number = Math.random):
   if (pool && pool.length > 0) {
     return pool[Math.floor(random() * pool.length)]!;
   }
-  const inv = new Alg(primaryAlg(def)).invert().toString();
+  const inv = invertMoves(primaryAlg(def));
   const pre = AUFS[Math.floor(random() * 4)]!;
   const post = AUFS[Math.floor(random() * 4)]!;
   return `${pre}${inv} ${post}`.replace(/\s+/g, " ").trim();

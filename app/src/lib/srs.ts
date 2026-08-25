@@ -25,10 +25,14 @@ function intervalLabel(from: Date, due: Date): string {
   return `${Math.round(days / 30)}mo`;
 }
 
+/** The case's stored card, or a fresh one tagged with the case id. */
+async function cardFor(caseId: string, now: Date): Promise<Card & { caseId: string }> {
+  return (await getCard(caseId)) ?? { ...createEmptyCard(now), caseId };
+}
+
 /** What each answer button would schedule — shown on the buttons themselves. */
 export async function previewIntervals(caseId: string, now: Date): Promise<ReviewPreview> {
-  const fresh: Card = createEmptyCard(now);
-  const card = (await getCard(caseId)) ?? { ...fresh, caseId };
+  const card = await cardFor(caseId, now);
   const preview = scheduler.repeat(card, now);
   const labels: ReviewPreview = {};
   for (const grade of [Rating.Again, Rating.Hard, Rating.Good, Rating.Easy] as Grade[]) {
@@ -39,8 +43,7 @@ export async function previewIntervals(caseId: string, now: Date): Promise<Revie
 
 /** Grade a case review and persist the resulting card + log atomically. */
 export async function review(caseId: string, grade: Grade, now: Date): Promise<Card> {
-  const fresh: Card = createEmptyCard(now);
-  const existing = (await getCard(caseId)) ?? { ...fresh, caseId };
+  const existing = await cardFor(caseId, now);
   const { card } = scheduler.next(existing, now, grade);
   const withId = { ...card, caseId };
   await recordReview(withId, grade, now);

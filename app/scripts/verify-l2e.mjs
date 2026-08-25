@@ -68,9 +68,10 @@
  * Usage: node scripts/verify-l2e.mjs
  */
 import { mkdir, writeFile } from "node:fs/promises";
-import { Alg } from "cubing/alg";
 import { KPattern } from "cubing/kpuzzle";
 import { puzzles } from "cubing/puzzles";
+
+import { makeKit } from "./lib/kpuzzle-utils.mjs";
 
 // ---------------------------------------------------------------------------
 // Pinned data — SCDB 5x5 L2E, algs in page order (top-voted first).
@@ -220,8 +221,13 @@ const NEGATIVE = [
 
 // ---------------------------------------------------------------------------
 const kp = await puzzles["5x5x5"].kpuzzle();
-const solved = kp.defaultPattern();
-const T = (s) => kp.algToTransformation(new Alg(s));
+
+// Shared rotation/normalization kit; the 555 "centers visually home" test
+// spans all three center orbits.
+const { solved, toT, ROTATION_T, AUF_T, centersSolved, rightRotNormalize } = makeKit(kp, {
+  centerOrbits: ["CENTERS", "CENTERS2", "CENTERS3"],
+});
+const T = toT;
 
 const report = [];
 let failures = 0;
@@ -230,23 +236,6 @@ const fail = (msg) => {
   failures++;
 };
 
-// All 24 cube orientations as rotation algs (as in extract-algs.mjs).
-const ROTATIONS = [];
-for (const a of ["", "x", "x2", "x'", "z", "z'"]) {
-  for (const b of ["", "y", "y2", "y'"]) ROTATIONS.push([a, b].filter(Boolean).join(" "));
-}
-const ID = kp.identityTransformation();
-const toT = (s) => (s ? T(s) : ID);
-const ROTATION_T = ROTATIONS.map(toT);
-const AUF_T = ["", "U", "U2", "U'"].map(toT);
-
-// --- centers -----------------------------------------------------------------
-const CENTER_ORBITS = ["CENTERS", "CENTERS2", "CENTERS3"];
-const centersSolved = (p) =>
-  CENTER_ORBITS.every((o) =>
-    p.patternData[o].pieces.every((v, i) => v === solved.patternData[o].pieces[i]),
-  );
-
 /**
  * Cancel an alg's net whole-cube rotation on the RIGHT of its forward
  * transformation (t = Pure ∘ Rot, so Pure = t ∘ Rot⁻¹; a left-composed
@@ -254,11 +243,11 @@ const centersSolved = (p) =>
  * no rotation brings centers home (the alg genuinely breaks centers).
  */
 function rotNormalize(t) {
-  for (const r of ROTATION_T) {
-    const cand = t.applyTransformation(r);
-    if (centersSolved(solved.applyTransformation(cand))) return cand;
+  try {
+    return rightRotNormalize(t);
+  } catch {
+    return null;
   }
-  return null;
 }
 
 // --- empirical slot/orbit derivation ----------------------------------------
@@ -317,6 +306,31 @@ const cornersSolvedIn = (p) =>
       p.patternData.CORNERS.pieces[i] === v &&
       p.patternData.CORNERS.orientation[i] === solved.patternData.CORNERS.orientation[i],
   );
+
+/**
+ * Case class of a case state S: target-slot content, canonicalized over the
+ * pre-AUF powers that keep target-home pieces on target (U2 swaps UF<->UB;
+ * U/U' move the case off target so they never qualify — including them would
+ * collapse distinct cases onto one generic key).
+ */
+function classKeyOf(S) {
+  const keys = [];
+  for (const u of AUF_T) {
+    const p = solved.applyTransformation(S.applyTransformation(u));
+    let onTarget = true;
+    for (const tgt of TARGETS) {
+      for (const i of SLOTS[tgt].wings) {
+        if (!TARGET_PIECES.EDGES.has(p.patternData.EDGES.pieces[i])) onTarget = false;
+      }
+      if (!TARGET_PIECES.EDGES2.has(p.patternData.EDGES2.pieces[SLOTS[tgt].midge])) {
+        onTarget = false;
+      }
+    }
+    if (onTarget) keys.push(JSON.stringify(TARGETS.map((tgt) => arrKey(p, tgt))));
+  }
+  keys.sort();
+  return keys[0];
+}
 
 // --- self-checks -------------------------------------------------------------
 {
@@ -447,23 +461,7 @@ function analyze(algStr) {
     if (!rt) problems.push("round-trip: displayed case + alg is not reduction-solved");
   }
 
-  // case class: target content of S, canonical over the pre-AUF powers that
-  // keep target-home pieces on target (U2 swaps UF<->UB; U/U' never qualify —
-  // including them would collapse distinct cases onto one generic key)
-  const keys = [];
-  for (const u of AUF_T) {
-    const p = solved.applyTransformation(S.applyTransformation(u));
-    let onTarget = true;
-    for (const tgt of TARGETS) {
-      for (const i of SLOTS[tgt].wings) {
-        if (!TARGET_PIECES.EDGES.has(p.patternData.EDGES.pieces[i])) onTarget = false;
-      }
-      if (!TARGET_PIECES.EDGES2.has(p.patternData.EDGES2.pieces[SLOTS[tgt].midge])) onTarget = false;
-    }
-    if (onTarget) keys.push(JSON.stringify(TARGETS.map((tgt) => arrKey(p, tgt))));
-  }
-  keys.sort();
-  return { problems, strict, strictAUF, corners, class: keys[0], S };
+  return { problems, strict, strictAUF, corners, class: classKeyOf(S), S };
 }
 
 const classOf = new Map(); // slug -> class
@@ -575,22 +573,7 @@ if (classToSlug.size !== 13) {
     if (s.caseUnderY2) {
       const y2 = T("y2");
       const Sc = y2.invert().applyTransformation(r.S).applyTransformation(y2);
-      // class of the y2-conjugated case state
-      const keys = [];
-      for (const u of AUF_T) {
-        const p = solved.applyTransformation(Sc.applyTransformation(u));
-        let onTarget = true;
-        for (const tgt of TARGETS) {
-          for (const w of SLOTS[tgt].wings) {
-            if (!TARGET_PIECES.EDGES.has(p.patternData.EDGES.pieces[w])) onTarget = false;
-          }
-          if (!TARGET_PIECES.EDGES2.has(p.patternData.EDGES2.pieces[SLOTS[tgt].midge]))
-            onTarget = false;
-        }
-        if (onTarget) keys.push(JSON.stringify(TARGETS.map((tgt) => arrKey(p, tgt))));
-      }
-      keys.sort();
-      if (classToSlug.get(keys[0]) !== s.caseUnderY2) {
+      if (classToSlug.get(classKeyOf(Sc)) !== s.caseUnderY2) {
         fail(`${label}: not ${s.caseUnderY2} under y2-conjugation`);
       } else covered.add(s.caseUnderY2);
       continue;

@@ -35,6 +35,8 @@ import vm from "node:vm";
 import { Alg } from "cubing/alg";
 import { cube3x3x3, puzzles } from "cubing/puzzles";
 
+import { makeKit } from "./lib/kpuzzle-utils.mjs";
+
 // Parity algs pinned by docs/research/tech-brief.md §8 (jperm.net/4x4 verbatim).
 const OLL_PARITY = "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'";
 const PLL_PARITY = "2R2 U2 2R2 Uw2 2R2 Uw2";
@@ -50,38 +52,20 @@ const SETS = [
 ];
 
 const kpuzzle = await cube3x3x3.kpuzzle();
-const solved = kpuzzle.defaultPattern();
 const kpuzzle4 = await puzzles["4x4x4"].kpuzzle();
 
-// All 24 cube orientations as rotation algs.
-const ROTATIONS = [];
-for (const a of ["", "x", "x2", "x'", "z", "z'"]) {
-  for (const b of ["", "y", "y2", "y'"]) {
-    ROTATIONS.push([a, b].filter(Boolean).join(" "));
-  }
-}
-const ROTATION_ALGS = ROTATIONS.map((r) => (r ? new Alg(r) : null));
-
-function centersSolved(pattern) {
-  // The 3x3 kpuzzle pins center orientation (CENTERS orientationMod is all
-  // 1s, so pattern orientation is always 0) — pieces are the whole story.
-  const c = pattern.patternData.CENTERS;
-  const s = solved.patternData.CENTERS;
-  return c.pieces.every((p, i) => p === s.pieces[i]);
-}
-
-/**
- * Rotate a pattern so its centers are solved. Every pattern reachable from
- * solved by algs normalizes (centers only ever move as a rigid frame), so
- * failure is an internal bug — throw, never fall back.
- */
-function normalizeOrientation(pattern) {
-  for (const r of ROTATION_ALGS) {
-    const p = r ? pattern.applyAlg(r) : pattern;
-    if (centersSolved(p)) return p;
-  }
-  throw new Error("normalizeOrientation: no rotation brings centers home");
-}
+// Shared rotation/normalization kit on the 3x3 kpuzzle. The 3x3 kpuzzle pins
+// center orientation (CENTERS orientationMod is all 1s), so the kit's
+// pieces-only center comparison is the whole story. Every pattern reachable
+// from solved by algs normalizes (centers only ever move as a rigid frame),
+// so a normalization failure is an internal bug — the kit throws.
+const {
+  solved,
+  toT: toTransformation,
+  AUF_T,
+  normalizePattern: normalizeOrientation,
+  leftRotNormalize,
+} = makeKit(kpuzzle);
 
 // Which piece slots belong to the U layer (detected, not hardcoded).
 const uTurn = solved.applyAlg(new Alg("U")).patternData;
@@ -126,25 +110,11 @@ function preservesF2L(algStr) {
  * Transformation composition is execution order: t1.applyTransformation(t2)
  * means "t1 then t2" (verified: T("R U") ≡ T("R")∘T("U")).
  */
-const AUFS = ["", "U", "U2", "U'"];
-const AUF_ALGS = AUFS.map((u) => (u ? new Alg(u) : null));
-const IDENTITY_T = kpuzzle.identityTransformation();
-const toTransformation = (s) => (s ? kpuzzle.algToTransformation(new Alg(s)) : IDENTITY_T);
-const AUF_T = AUFS.map(toTransformation);
-const ROTATION_T = ROTATIONS.map(toTransformation);
+const AUF_ALGS = ["", "U", "U2", "U'"].map((u) => (u ? new Alg(u) : null));
 const YCONJ_T = ["", "y", "y2", "y'"].map((y) => {
   const t = toTransformation(y);
   return [t, t.invert()];
 });
-
-/** Left-compose the rotation that brings CENTERS home; throws if impossible. */
-function leftRotNormalize(t) {
-  for (const r of ROTATION_T) {
-    const cand = r.applyTransformation(t);
-    if (centersSolved(solved.applyTransformation(cand))) return cand;
-  }
-  throw new Error("leftRotNormalize: no rotation brings centers home");
-}
 
 function caseClass(algStr, { orientationOnly = false } = {}) {
   const S = leftRotNormalize(toTransformation(algStr).invert());

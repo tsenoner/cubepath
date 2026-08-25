@@ -33,8 +33,11 @@ export interface CaseDef {
   /** Grouping for course structure and the trainer, e.g. "2look-oll-corners". */
   group: string;
   name: string;
-  /** How to recognize the case at the algorithm's execution angle. */
-  recognition: string;
+  /**
+   * How to recognize the case at the algorithm's execution angle.
+   * Lean generated entries omit it — build-time pages read RICH instead.
+   */
+  recognition?: string;
   algs: AlgVariant[];
   stickering: Stickering;
   puzzle: Puzzle;
@@ -44,14 +47,15 @@ export interface CaseDef {
   phase: string;
   /** Case ids that should be learned first. */
   prereqs?: string[];
+  /** Diagram icon path, e.g. "/diagrams/oll/oll_sune.svg". */
+  icon?: string;
 }
-
-const c = (def: CaseDef): CaseDef => def;
 
 export const CASES: CaseDef[] = [
   // ── Yellow cross (edge orientation) ────────────────────────────────
-  c({
+  {
     id: "eo.line",
+    icon: "/diagrams/oll/oll_line.svg",
     group: "cross-eo",
     name: "Line",
     recognition: "Yellow line through the center — hold it horizontal",
@@ -59,9 +63,10 @@ export const CASES: CaseDef[] = [
     stickering: "OLL",
     puzzle: "3x3x3",
     phase: "phase-1",
-  }),
-  c({
+  },
+  {
     id: "eo.hook",
+    icon: "/diagrams/oll/oll_hook.svg",
     group: "cross-eo",
     name: "Hook",
     recognition: "Yellow L-shape — hold the L in the front-right",
@@ -69,9 +74,10 @@ export const CASES: CaseDef[] = [
     stickering: "OLL",
     puzzle: "3x3x3",
     phase: "phase-1.5",
-  }),
-  c({
+  },
+  {
     id: "eo.dot",
+    icon: "/diagrams/oll/oll_dot.svg",
     group: "cross-eo",
     name: "Dot",
     recognition: "Only the yellow center — no edges oriented",
@@ -81,11 +87,12 @@ export const CASES: CaseDef[] = [
     stickering: "OLL",
     puzzle: "3x3x3",
     phase: "phase-1",
-  }),
+  },
 
   // ── Corner orientation (OCLL) ──────────────────────────────────────
-  c({
+  {
     id: "oll.27",
+    icon: "/diagrams/oll/oll_sune.svg",
     group: "2look-oll-corners",
     name: "Sune",
     recognition: "1 yellow corner in the front-left, the other 3 twisted clockwise",
@@ -94,9 +101,10 @@ export const CASES: CaseDef[] = [
     puzzle: "3x3x3",
     probability: "4/27",
     phase: "phase-2",
-  }),
-  c({
+  },
+  {
     id: "oll.26",
+    icon: "/diagrams/oll/oll_antisune.svg",
     group: "2look-oll-corners",
     name: "Anti-Sune",
     recognition: "1 yellow corner in the back-right, the other 3 twisted counter-clockwise",
@@ -106,9 +114,10 @@ export const CASES: CaseDef[] = [
     probability: "4/27",
     phase: "phase-3",
     prereqs: ["oll.27"],
-  }),
-  c({
+  },
+  {
     id: "oll.22",
+    icon: "/diagrams/oll/oll_pi.svg",
     group: "2look-oll-corners",
     name: "Pi",
     recognition: "0 yellow corners — headlights on the left only",
@@ -118,9 +127,10 @@ export const CASES: CaseDef[] = [
     probability: "4/27",
     phase: "phase-3",
     prereqs: ["oll.27"],
-  }),
-  c({
+  },
+  {
     id: "oll.23",
+    icon: "/diagrams/oll/oll_headlights.svg",
     group: "2look-oll-corners",
     name: "Headlights",
     recognition: "2 yellow corners at the back — headlights facing you",
@@ -130,9 +140,10 @@ export const CASES: CaseDef[] = [
     probability: "4/27",
     phase: "phase-3",
     prereqs: ["oll.27"],
-  }),
-  c({
+  },
+  {
     id: "oll.21",
+    icon: "/diagrams/oll/oll_double_headlights.svg",
     group: "2look-oll-corners",
     name: "Double Headlights",
     recognition: "0 yellow corners — headlights on the left and the right",
@@ -142,9 +153,10 @@ export const CASES: CaseDef[] = [
     probability: "2/27",
     phase: "phase-3",
     prereqs: ["oll.27"],
-  }),
-  c({
+  },
+  {
     id: "oll.24",
+    icon: "/diagrams/oll/oll_chameleon.svg",
     group: "2look-oll-corners",
     name: "Chameleon",
     recognition: "2 adjacent yellow corners on the right",
@@ -154,9 +166,10 @@ export const CASES: CaseDef[] = [
     probability: "4/27",
     phase: "phase-3",
     prereqs: ["oll.27"],
-  }),
-  c({
+  },
+  {
     id: "oll.25",
+    icon: "/diagrams/oll/oll_bowtie.svg",
     group: "2look-oll-corners",
     name: "Bowtie",
     recognition: "2 diagonal yellow corners",
@@ -166,11 +179,12 @@ export const CASES: CaseDef[] = [
     probability: "4/27",
     phase: "phase-3",
     prereqs: ["oll.27"],
-  }),
+  },
 
   // ── Corner permutation ─────────────────────────────────────────────
-  c({
+  {
     id: "pll.t",
+    icon: "/diagrams/pll/pll_tperm.svg",
     group: "2look-pll-corners",
     name: "T-Perm",
     recognition: "Headlights on the left — the two right corners swap",
@@ -179,9 +193,10 @@ export const CASES: CaseDef[] = [
     puzzle: "3x3x3",
     probability: "4/72",
     phase: "phase-2",
-  }),
-  c({
+  },
+  {
     id: "pll.y",
+    icon: "/diagrams/pll/pll_yperm.svg",
     group: "2look-pll-corners",
     name: "Y-Perm",
     recognition: "No headlights anywhere — diagonal corner swap",
@@ -191,11 +206,12 @@ export const CASES: CaseDef[] = [
     probability: "4/72",
     phase: "phase-3",
     prereqs: ["pll.t"],
-  }),
+  },
 
   // ── Edge permutation ───────────────────────────────────────────────
-  c({
+  {
     id: "pll.ub",
+    icon: "/diagrams/pll/pll_ub.svg",
     group: "2look-pll-edges",
     name: "Ub",
     recognition: "Solved edge at the back — front edge goes left",
@@ -204,9 +220,10 @@ export const CASES: CaseDef[] = [
     puzzle: "3x3x3",
     probability: "4/72",
     phase: "phase-2",
-  }),
-  c({
+  },
+  {
     id: "pll.ua",
+    icon: "/diagrams/pll/pll_ua.svg",
     group: "2look-pll-edges",
     name: "Ua",
     recognition: "Solved edge at the back — front edge goes right",
@@ -216,9 +233,10 @@ export const CASES: CaseDef[] = [
     probability: "4/72",
     phase: "phase-3",
     prereqs: ["pll.ub"],
-  }),
-  c({
+  },
+  {
     id: "pll.h",
+    icon: "/diagrams/pll/pll_hperm.svg",
     group: "2look-pll-edges",
     name: "H-Perm",
     recognition: "Both edge pairs swap across — opposite colors face each other",
@@ -228,9 +246,10 @@ export const CASES: CaseDef[] = [
     probability: "1/72",
     phase: "phase-3",
     prereqs: ["pll.ub"],
-  }),
-  c({
+  },
+  {
     id: "pll.z",
+    icon: "/diagrams/pll/pll_zperm.svg",
     group: "2look-pll-edges",
     name: "Z-Perm",
     recognition: "Adjacent edge pairs swap — adjacent colors face each other",
@@ -240,10 +259,10 @@ export const CASES: CaseDef[] = [
     probability: "2/72",
     phase: "phase-3",
     prereqs: ["pll.ub"],
-  }),
+  },
 
   // ── Big cubes (M0 proof seeds — full courses land in M5) ───────────
-  c({
+  {
     id: "444.oll-parity",
     group: "444-parity",
     name: "OLL Parity (4×4)",
@@ -258,7 +277,7 @@ export const CASES: CaseDef[] = [
     puzzle: "4x4x4",
     probability: "1/2",
     phase: "444",
-  }),
+  },
 ];
 
 import { GENERATED_CASES } from "./fullsets.gen";
@@ -268,13 +287,21 @@ import { GENERATED_CASES } from "./fullsets.gen";
  * entries with the same id (they carry hand-written recognition + phases);
  * generated entries fill in the full OLL/PLL/4x4 sets.
  */
-const curatedIds = new Set(CASES.map((k) => k.id));
+export const CURATED_IDS: ReadonlySet<string> = new Set(CASES.map((k) => k.id));
 export const ALL_CASES: CaseDef[] = [
   ...CASES,
-  ...GENERATED_CASES.filter((k) => !curatedIds.has(k.id)),
+  ...GENERATED_CASES.filter((k) => !CURATED_IDS.has(k.id)),
 ];
 
 export const caseById = new Map(ALL_CASES.map((k) => [k.id, k]));
+
+/**
+ * Full-set membership by id shape. The curated 2-look entries (oll.21–27,
+ * pll.t/y/ua/ub/h/z) carry curated phases ("phase-2"/"phase-3"), so a phase
+ * test would undercount the full sets — the id shape is the truth.
+ */
+export const isFullOll = (def: CaseDef): boolean => /^oll\.\d+$/.test(def.id);
+export const isFullPll = (def: CaseDef): boolean => def.id.startsWith("pll.");
 
 export function primaryAlg(def: CaseDef): string {
   const p = def.algs.find((a) => a.primary) ?? def.algs[0];

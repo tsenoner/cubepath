@@ -34,7 +34,39 @@ const {
   tempo-scale="2"></twisty-player>
 
 <script>
-  import "cubing/twisty";
+  // Register <twisty-player> lazily: immediately when a player is visible on
+  // load (open <details> or not inside one); otherwise on the first toggle of
+  // a <details> containing a player, or when the browser goes idle —
+  // whichever comes first.
+  let registered = false;
+  function register() {
+    if (registered) return;
+    registered = true;
+    void import("cubing/twisty");
+  }
+  if (
+    document.querySelector("details[open] twisty-player") ||
+    document.querySelector("twisty-player:not(details twisty-player)")
+  ) {
+    register();
+  } else {
+    // toggle does not bubble — listen in the capture phase.
+    document.addEventListener(
+      "toggle",
+      (e) => {
+        const el = e.target;
+        if (el instanceof HTMLDetailsElement && el.open && el.querySelector("twisty-player")) {
+          register();
+        }
+      },
+      true,
+    );
+    if ("requestIdleCallback" in window) {
+      requestIdleCallback(() => register());
+    } else {
+      setTimeout(register, 2000);
+    }
+  }
 </script>
 
 <style>

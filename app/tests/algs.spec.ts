@@ -8,8 +8,10 @@ import { Alg } from "cubing/alg";
 import { puzzles } from "cubing/puzzles";
 import type { KPuzzle } from "cubing/kpuzzle";
 
-import { ALL_CASES, CASES, primaryAlg } from "../src/data/algs";
+import { ALL_CASES, CASES, caseById, primaryAlg } from "../src/data/algs";
 import { CASE_SCRAMBLES } from "../src/data/fullsets.gen";
+import { RICH } from "../src/data/fullsets.rich.gen";
+import { groupSize } from "../src/lib/trainer";
 
 const kpuzzleCache = new Map<string, Promise<KPuzzle>>();
 
@@ -46,6 +48,20 @@ describe("every case's algorithms are valid and solve their own case", () => {
   }
 });
 
+describe("every rich alternate algorithm is valid and solves its case", () => {
+  for (const [id, rich] of Object.entries(RICH)) {
+    const def = caseById.get(id);
+    for (const [i, variant] of rich.alternates.entries()) {
+      test(`${id} alt[${i}] (${variant.moves})`, async () => {
+        expect(def, `RICH id ${id} missing from ALL_CASES`).toBeTruthy();
+        const kpuzzle = await kpuzzleFor(def!.puzzle);
+        kpuzzle.algToTransformation(new Alg(variant.moves));
+        expect(await algSolvesItsInverse(def!.puzzle, variant.moves)).toBe(true);
+      });
+    }
+  }
+});
+
 describe("dataset invariants", () => {
   test("ids are unique", () => {
     const ids = ALL_CASES.map((k) => k.id);
@@ -71,6 +87,11 @@ describe("dataset invariants", () => {
   test("full OLL/PLL coverage present", () => {
     expect(ALL_CASES.filter((k) => k.id.startsWith("oll.")).length).toBe(57);
     expect(ALL_CASES.filter((k) => k.id.startsWith("pll.")).length).toBe(21);
+  });
+
+  test("full-set trainer groups cover the whole sets", () => {
+    expect(groupSize("full-oll")).toBe(57);
+    expect(groupSize("full-pll")).toBe(21);
   });
 
   test("curated course cases survive the merge", () => {
