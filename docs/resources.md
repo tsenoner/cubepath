@@ -57,6 +57,19 @@ Sources researched and referenced while building this guide.
 - [bugbytes-io/svg-cube-diagram](https://github.com/bugbytes-io/svg-cube-diagram) — Simple SVG cube diagrams
 - [rsapkf/20](https://github.com/rsapkf/20) — Cubing resources collection
 
+## Printed prior art (card sets & booklets)
+
+Surveyed 2026-08-26 while designing the printable card set. Finding: **no
+product organises cubing material by *learner stage*** — every one is indexed
+by algorithm set or by case, and none contains the beginner method.
+
+| Product | What it is | Why it matters to us |
+|---|---|---|
+| [QiYi Secret Tutorial Book](https://fliphtml5.com/hsroh/luel/QiYi_Secret_tutorial_for_magic_cubes/) ([TheCubicle](https://www.thecubicle.com/products/qiyi-secret-tutorial-book), [SpeedCubeShop](https://speedcubeshop.com/products/qiyi-secret-tutorial-book)) | 88-page pocket booklet, ~$3-5. Covers 2x2, 3x3, 4x4, 5x5, 6x6, 7x7, megaminx, skewb, pyraminx, ivy, 2x2x3, mirror, mastermorphix, square-1 — plus full CFOP | The closest thing to "every puzzle in one place". **Breadth-first reference**, where our card set is depth-first and staged. Different form factor: a booklet needs two hands and page-finding; a card lies flat next to the cube. Worth owning as a reference — it is a sold product, so buy it rather than ripping the flipbook |
+| [Z-Cube CFOP Cards](https://mastercubestore.de/anleitungen-ratgeber/1923-z-cube-cfop-cards-algorithm-set-f2l-oll-and-pll.html) | 3 plastic cards, 86x55mm, one each for F2L/OLL/PLL | This repo's original inspiration. Its review complaints are a spec: text too small, "cannot tell R from R' even with a magnifying glass", PLL cards omit case names, "red and orange look almost the same" |
+| [SpeedCubeShop CFOP Flashcards](https://speedcubeshop.com/products/qiyi-secret-tutorial-book) | 120 cards, one case each, $20.95, QR per card | Ships an order (PLL -> OLL -> F2L) but only *within* CFOP. Bundles the notation card inside the PLL set — the prerequisite arrives with the last material bought |
+| [d-grasshopper/speed-cube-flash-cards](https://github.com/d-grasshopper/speed-cube-flash-cards) | MIT, hand-drawn in Illustrator from JPerm PNGs | Same upstream data as us, but no generator and no verification |
+
 ## Offline Reference PDFs (not redistributed)
 
 `docs/other_guides/` holds locally-downloaded copies used while writing this guide. They are
