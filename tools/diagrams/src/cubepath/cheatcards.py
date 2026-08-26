@@ -316,19 +316,19 @@ def _back() -> str:
 {chr(10).join(sc)}
 )
 
-#hdr[][Big cubes][4x4 & 5x5 -- reduce: 6 centres #sym.arrow.r pair 12 dedges
+#hdr[][Big cubes][4x4 & 5x5 -- reduce: build 6 centres #sym.arrow.r pair the 12 edges
 #sym.arrow.r solve it as a 3x3]
 #grid(columns: (14.5mm, 1fr), column-gutter: 0.8mm, row-gutter: 0.28mm,
   align: (left + horizon, left + horizon),
   lbl[last 2 edges], [{bcalg("l2e-flip")} #h(1.2mm)
     #cue[slice out, run it, slice back -- both cubes]],
   lbl[4x4 PLL parity], [{bcalg("4x4-pll-parity")} #h(1.2mm)
-    #cue[2 dedges swapped · 50%]],
+    #cue[2 edge pairs swapped · 50%]],
 )
 #v(0.25mm)
-#cue[*4x4 OLL parity* -- 1 dedge flipped · 50%] \\
+#cue[*4x4 OLL parity* -- 1 edge pair flipped · 50%] \\
 {oll_p} \\
-#cue[*5x5 edge parity* -- 1 dedge flipped · 50% · #text(fill: CR)[one token] differs;
+#cue[*5x5 edge parity* -- 1 edge pair flipped · 50% · #text(fill: CR)[one token] differs;
 5x5 has no PLL parity] \\
 {edge_p} \\
 #cue[Fix parity during the last layer, *before* OLL/PLL -- both parity algs move corners.]
