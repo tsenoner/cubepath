@@ -20,12 +20,19 @@ from cubepath.notation import (
     PARITY_DIFF_4X4,
     PARITY_DIFF_5X5,
     PARITY_DIFF_INDEX,
+    PLL_CHUNKS,
+    PLL_OWNED,
     bigcube_algs,
     block_compactable,
+    chunk_boundaries,
     compact,
     compactable,
     expand,
     expand_key,
+    family,
+    normalize,
+    pll_algs,
+    pll_rows,
     tokenize,
 )
 from cubepath.palette import FAMILY, FAMILY_LABELS, TRIGGER_COLORS
@@ -166,3 +173,113 @@ def test_guide_trigger_spans_are_known_families() -> None:
             continue
         tokens = " ".join(tokenize(body))
         assert FAMILY.get(tokens) == fam, f"guide span {tokens!r} is not family {fam!r}"
+
+
+# ── PLL: the 21 cases Card 3 prints ───────────────────────────────────
+
+
+@pytest.mark.parametrize("name", [r.name for r in pll_rows()])
+def test_pll_chunks_round_trip(name: str) -> None:
+    """Card 3's chunking must expand back to the algorithm, character for
+    character. This is the gate that lets the card compact and colour a
+    17-move alg without ever becoming a retyped copy of it."""
+    assert expand(PLL_CHUNKS[name]) == pll_algs()[name], f"{name} chunking is not lossless"
+
+
+def test_pll_covers_all_21_in_source_order() -> None:
+    assert list(PLL_CHUNKS) == [r.name for r in pll_rows()]
+    assert len(PLL_CHUNKS) == 21
+
+
+def test_owned_pll_cases_print_the_guide_string() -> None:
+    """The six cases the guide teaches print what the learner already drilled,
+    not JPerm's. Three of the six genuinely differ, so this is not a tie."""
+    algs = pll_algs()
+    for name, key in PLL_OWNED.items():
+        assert algs[name] == ALGORITHMS[key]
+        assert PLL_CHUNKS[name] is CHUNKS[key]
+    differ = {n for n, k in PLL_OWNED.items() if algs[n] != _jperm_primary(n)}
+    assert differ == {"Ub", "H", "Z"}, f"guide/JPerm divergence moved: {differ}"
+
+
+def _jperm_primary(name: str) -> str:
+    import json
+
+    from cubepath.notation import _JPERM
+
+    for case in json.loads(_JPERM.read_text())["pll"]:
+        if case["name"] == name:
+            return normalize(case["algs"][0])
+    raise AssertionError(f"no PLL case named {name}")
+
+
+def test_pll_sources_are_tagged_and_exhaustive() -> None:
+    rows = pll_rows()
+    assert {r.source for r in rows} == {"algs.py", "jperm-raw"}
+    assert sum(r.source == "algs.py" for r in rows) == len(PLL_OWNED) == 6
+    assert {r.group for r in rows} == {
+        "Edges Only",
+        "Adjacent Corner Swap",
+        "Diagonal Corner Swap",
+    }
+
+
+def test_normalize_drops_only_parentheses_and_spacing() -> None:
+    assert normalize("R' (U R U' R') F'") == "R' U R U' R' F'"
+    assert normalize("R2  U   R'") == "R2 U R'"
+    # No token is welded to its neighbour when a parenthesis is removed.
+    for row in pll_rows():
+        assert tokenize(row.alg) == row.alg.split()
+
+
+def test_jperm_execution_units_survive_as_chunk_boundaries() -> None:
+    """JPerm marks execution units with parentheses — `(U' D)` is the
+    simultaneous double-layer turn in the G perms. Dropping the brackets would
+    lose that unless the chunking reproduces it, so assert it does."""
+    checked = 0
+    for row in pll_rows():
+        if row.source != "jperm-raw":
+            continue  # owned cases follow the guide's trigger spans instead
+        toks = tokenize(row.alg)
+        bounds = chunk_boundaries(PLL_CHUNKS[row.name])
+        for group in row.parens:
+            unit = tokenize(group)
+            spans = [s for s in range(len(toks) - len(unit) + 1) if toks[s : s + len(unit)] == unit]
+            assert spans, f"{row.name}: {group!r} not found in its own algorithm"
+            assert any(s in bounds and s + len(unit) in bounds for s in spans), (
+                f"{row.name}: chunking straddles JPerm's ({group}) execution unit"
+            )
+            checked += 1
+    assert checked == 5, f"expected 5 parenthesised units, checked {checked}"
+
+
+def test_rotations_form_their_own_pll_chunk() -> None:
+    """A gap on the card means "change your grip"; a rotation is the largest
+    grip change there is, so it never shares a chunk with a face turn."""
+    for name, chunks in PLL_CHUNKS.items():
+        for chunk in chunks:
+            toks = [t for seg in chunk for t in tokenize(seg)]
+            if any(t[0] in "xyz" for t in toks):
+                assert toks == [toks[0]] and toks[0][0] in "xyz", (
+                    f"{name}: rotation shares a chunk with {toks}"
+                )
+
+
+def test_pll_block_is_compactable() -> None:
+    """No PLL algorithm carries a layer-count prefix, so Card 3's whole block
+    may drop its inner spaces — which is what makes 21 algs fit."""
+    assert block_compactable(list(pll_algs().values()))
+
+
+def test_segments_exist_only_to_carry_colour() -> None:
+    """A compacted chunk joins its segments with no gap, so a segment split
+    that no trigger family colours is invisible — and therefore a mistake.
+    Applies to every compacted table; the big-cube block keeps real spaces."""
+    tables = {"CHUNKS": CHUNKS, "PLL_CHUNKS": PLL_CHUNKS, "DOT": {"dot": DOT_CHUNKS}}
+    for table, cases in tables.items():
+        for name, chunks in cases.items():
+            for chunk in chunks:
+                if len(chunk) > 1:
+                    assert any(family(seg) for seg in chunk), (
+                        f"{table}[{name}]: segments in {chunk} render no colour"
+                    )
