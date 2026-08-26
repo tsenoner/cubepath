@@ -302,7 +302,9 @@ def _back() -> str:
 #key[R U F L D B = turn that face clockwise · #mn['] = anti-clockwise · #mn[2] = half turn ·
 #mn[M] = middle slice (follows L) · #mn[x y z] = turn the whole cube] \\
 #key[3x3: #mn[r f] = 2 layers wide · big cubes: #mn[Rw] = 2 layers, #mn[3Rw] = 3 layers,
-#mn[2R] = *INNER SLICE ONLY* -- never widen it]
+#mn[2R] = *INNER SLICE ONLY* -- never widen it] \\
+#key[*OLL* = orient the last layer (top all yellow) · *PLL* = permute it (slide pieces home) ·
+*parity* = a case a 3x3 cannot have]
 
 #hdr[1--3][Before the last layer][white on the bottom, yellow on top]
 #grid(columns: (14.5mm, 30.5mm, 1fr), column-gutter: 0.8mm, row-gutter: 0.28mm,
