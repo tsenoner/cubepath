@@ -13,7 +13,7 @@ APP := app
 PY  := tools/diagrams
 
 .DEFAULT_GOAL := help
-.PHONY: help install dev preview diagrams build build-guide build-app \
+.PHONY: help install dev preview diagrams logo build build-guide build-app \
         check check-py check-app e2e ci clean
 
 help: ## Show this help
@@ -35,6 +35,10 @@ preview: ## Serve the built app locally
 diagrams: ## Regenerate SVG diagrams and sync them into the app
 	cd $(PY) && uv run cubepath-diagrams
 	bash scripts/sync-diagrams.sh
+
+logo: ## Regenerate the brand mark (favicon.svg) and rasterize the icon set
+	cd $(PY) && uv run cubepath-logo
+	cd $(APP) && node scripts/gen-icons.mjs
 
 build-guide: ## Build the PDF guide (diagrams + pandoc/typst)
 	bash scripts/build.sh

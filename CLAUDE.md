@@ -55,12 +55,16 @@ node scripts/verify-l2e.mjs     # 5x5 L2E verifier
 node scripts/gen-icons.mjs      # rasterize the PWA icon set from favicon.svg
 ```
 
-Brand mark: `public/favicon.svg` is the single source of truth — an isometric
-cube with a yellow route climbing the front face and crossing the top. Face
-tones live in `tokens.css` as `--logo-*` (light + dark); `Header.astro` inlines
-the same paths and binds them to those tokens, while the favicon carries its own
-`prefers-color-scheme` block because it loads outside the page. `gen-icons.mjs`
-rasterizes every PNG from it — never hand-edit the icons.
+Brand mark: an isometric cube with a yellow route climbing the front face and
+crossing the top. `cubepath.logo` (Python) is the source of truth — its 23 paths
+are bezier strings no one can retune by hand, so the trail shape, face tones,
+radii and sticker gap are constants there. `make logo` regenerates
+`app/public/favicon.svg` and rasterizes every PNG from it via `gen-icons.mjs`;
+never hand-edit the SVG or the icons, because `test_logo.py` fails the gate when
+the committed favicon stops matching the generator. Face tones are mirrored in
+`tokens.css` as `--logo-*` (light + dark), which `Header.astro` binds the same
+paths to; the favicon carries its own `prefers-color-scheme` block because it
+loads outside the page and cannot see the tokens.
 
 The route is drawn as flush yellow stickers, chosen for punch. It is **not a
 reachable cube position**, and that is a deliberate call rather than an oversight:
