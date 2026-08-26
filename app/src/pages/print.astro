@@ -1,0 +1,184 @@
+---
+import Base from "../layouts/Base.astro";
+import Header from "../components/Header.astro";
+
+// This page is the URL printed on the back of the physical card, so its path
+// must stay /print. Content mirrors docs/printing.md.
+const FILES = [
+  {
+    href: "/cheat-card-a4.pdf",
+    name: "A4 sheet",
+    note: "Start here. Two-sided, 8 cards per sheet.",
+  },
+  { href: "/cheat-card-letter.pdf", name: "US Letter sheet", note: "Same, Letter paper." },
+  {
+    href: "/cheat-card-a4-fold.pdf",
+    name: "A4 fold-over",
+    note: "No duplex printer, or duplex that misaligns. Print single-sided, fold, glue.",
+  },
+  { href: "/cheat-card-letter-fold.pdf", name: "US Letter fold-over", note: "Same, Letter paper." },
+  {
+    href: "/cheat-card.pdf",
+    name: "Bare card",
+    note: "Two 85.6 × 53.98 mm pages — for screen, or for a print shop. Not for home printing.",
+  },
+];
+
+const VIEWERS = [
+  ["Acrobat / Reader", "Page Sizing & Handling → Size → Actual size. Turn off “Auto portrait/landscape”."],
+  ["macOS Preview", "Scale: 100 % radio button (not “Scale to Fit”). Pick A4 / US Letter, not the “borderless” variant."],
+  ["Windows / Edge", "Page Sizing → Actual size."],
+  ["Chrome", "More settings → Scale → Custom → 100. Its “Default” silently shrinks. Prefer another viewer."],
+];
+---
+
+<Base
+  title="Print the cheat card — Cubepath"
+  description="Print the Cubepath credit-card cheat sheet at home: sheets, a no-duplex fold-over version, and the settings that keep it the right size."
+>
+  <Header />
+  <main>
+    <h1>Print the cheat card</h1>
+    <p class="lead">
+      One card, front and back: the complete 2-Look CFOP last layer on one side,
+      notation, the earlier steps and the 4×4/5×5 parity set on the other.
+    </p>
+
+    <section>
+      <h2>1. Pick your file</h2>
+      <ul class="files">
+        {
+          FILES.map((f) => (
+            <li>
+              <a href={f.href}>{f.name}</a>
+              <span>{f.note}</span>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <section>
+      <h2>2. Print at 100 %</h2>
+      <p>
+        This is the one setting that matters. Never “Fit to page”, “Shrink oversized
+        pages”, or “Scale to fit”. Each sheet carries an <strong>80 mm calibration bar</strong>
+        in both margins — measure it after the first page. If it isn’t 80 mm, the scale is
+        wrong and the card won’t fit a wallet slot.
+      </p>
+      <table>
+        <tbody>
+          {
+            VIEWERS.map(([app, how]) => (
+              <tr>
+                <th>{app}</th>
+                <td>{how}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+      <p class="note">
+        Check your printer driver’s own dialog too — a driver-level “Fit to Paper Size”
+        overrides whatever the application asked for.
+      </p>
+    </section>
+
+    <section>
+      <h2>3. Two-sided</h2>
+      <p>
+        Choose <strong>two-sided, flip on long edge</strong>. The card grid is centred and
+        every card on a side is identical, so it registers under
+        <em>either</em> flip setting — if the backs come out upside down, switch to short
+        edge and they still line up. Print one sheet first and hold it to a light.
+      </p>
+      <p>
+        No duplex, or duplex that drifts 1–2 mm? Use the <strong>fold-over</strong> file:
+        print single-sided, score the grey line, fold so both printed faces are outward,
+        glue, press, then cut both layers together.
+      </p>
+    </section>
+
+    <section>
+      <h2>4. Paper and finishing</h2>
+      <p>
+        160–200 gsm feeds through most home printers. Cut on the grey hairlines — they run
+        the full sheet, so one straight cut serves four cards.
+      </p>
+      <p class="note">
+        A standard 54 × 86 mm “credit card” laminating pouch leaves about 0.4 mm of total
+        clearance and will not seal. Either keep it wallet-sized and don’t laminate (the
+        folded 200 gsm card is stiff enough), or use a 60 × 90 mm business-card pouch and
+        accept that the result no longer fits a wallet slot.
+      </p>
+    </section>
+
+    <p class="lead">
+      Also on paper: <a href="/cubepath.pdf">the full PDF guide</a>.
+    </p>
+  </main>
+</Base>
+
+<style>
+  main {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 34px 20px 60px;
+  }
+  .lead {
+    color: var(--soft);
+    margin: 8px 0 10px;
+  }
+  section {
+    margin-top: 26px;
+  }
+  h2 {
+    font-size: 20px;
+    margin-bottom: 10px;
+  }
+  p {
+    margin: 8px 0;
+  }
+  .note {
+    color: var(--soft);
+    font-size: 14px;
+  }
+  .files {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .files li {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    align-items: baseline;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .files a {
+    font-weight: 600;
+  }
+  .files span {
+    color: var(--soft);
+    font-size: 14px;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 10px 0;
+  }
+  th,
+  td {
+    text-align: left;
+    vertical-align: top;
+    padding: 8px 10px 8px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 14px;
+  }
+  th {
+    white-space: nowrap;
+    color: var(--soft);
+    font-weight: 600;
+  }
+</style>

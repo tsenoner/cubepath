@@ -13,7 +13,7 @@ APP := app
 PY  := tools/diagrams
 
 .DEFAULT_GOAL := help
-.PHONY: help install dev preview diagrams logo build build-guide build-app \
+.PHONY: help install dev preview diagrams cheatcards logo build build-guide build-app \
         check check-py check-app e2e ci clean
 
 help: ## Show this help
@@ -36,6 +36,10 @@ diagrams: ## Regenerate SVG diagrams and sync them into the app
 	cd $(PY) && uv run cubepath-diagrams
 	bash scripts/sync-diagrams.sh
 
+cheatcards: ## Generate the printable cheat card + print sheets, sync into the app
+	cd $(PY) && uv run cubepath-cheatcards
+	cp guide/build/cheat-card*.pdf $(APP)/public/
+
 logo: ## Regenerate the brand mark (favicon.svg) and rasterize the icon set
 	cd $(PY) && uv run cubepath-logo
 	cd $(APP) && node scripts/gen-icons.mjs
@@ -46,7 +50,7 @@ build-guide: ## Build the PDF guide (diagrams + pandoc/typst)
 build-app: ## Build the app
 	cd $(APP) && npx astro build
 
-build: build-guide build-app ## Build everything (guide PDF + app)
+build: build-guide cheatcards build-app ## Build everything (guide PDF + cards + app)
 
 check-py: ## Python gate: ruff lint + format check + pytest
 	cd $(PY) && uv run ruff check src/ tests/

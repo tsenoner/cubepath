@@ -2,7 +2,7 @@
 
 **Speedcubing from zero** — a free, offline-first course from absolute beginner to full CFOP, plus 4×4 and 5×5.
 
-**Live:** [cubepath-six.vercel.app](https://cubepath-six.vercel.app) — installable, the whole course works offline. The printable guide and credit-card cheat sheets ship in-app at `/cubepath.pdf` and `/cheat-cards.pdf`.
+**Live:** [cubepath-six.vercel.app](https://cubepath-six.vercel.app) — installable, the whole course works offline. The printable guide ships in-app at `/cubepath.pdf`; the double-sided credit-card cheat sheet, print-ready sheets and a no-duplex fold-over version are at [`/print`](https://cubepath-six.vercel.app/print) (see [docs/printing.md](docs/printing.md)).
 
 - `app/` — the web app (Astro + TypeScript, installable PWA)
 - `tools/diagrams/` — Python cube simulator + SVG diagram generator (build-time tooling)

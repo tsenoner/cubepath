@@ -14,6 +14,13 @@ ALGORITHMS: dict[str, str] = {
     "F-sexy-F'": "F R U R' U' F'",
     "Sune": "R U R' U R U2 R'",
     "Niklas": "R U' L' U R' U' L",
+    # Phase 1 — finishers the guide teaches as prose. Stored expanded:
+    # cubing notation has no repeat operator, and an "x2" suffix would collide
+    # with the x rotation the 4x4 parity algorithm contains.
+    "Orient Corners Right": "R' D' R D R' D' R D",
+    "Orient Corners Front": "D' R' D R D' R' D R",
+    "Edge Insert Right": "U R U R' U' y L' U' L U",
+    "Edge Insert Left": "U' L' U' L U y' R U R' U'",
     # Phase 1.5
     "f-sexy-f'": "f R U R' U' f'",
     # Phase 2
