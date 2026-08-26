@@ -167,3 +167,47 @@ Prior art (`docs/resources.md`): nothing on the market organises cubing
 material by learner stage. The QiYi Secret Tutorial Book is the nearest
 neighbour but is a breadth-first 88-page booklet across 14 puzzles, not a
 staged pocket set.
+
+### T1 — the 21 PLL algorithms are chunked and measured (2026-08-26)
+
+`notation.pll_rows()` / `pll_algs()` / `PLL_CHUNKS` land the first blocking
+task of the card set. Decisions, each with the evidence:
+
+- **Six cases print the guide's string, not JPerm's.** `PLL_OWNED` maps the
+  six the guide already teaches back to `algs.py`. Three of the six genuinely
+  differ (`Ub` is the R-only alg vs JPerm's `M2`; `H` and `Z` differ in U
+  direction and a trailing AUF), so this is a real choice and a test pins the
+  divergence set — if it ever moves, someone changed an algorithm.
+- **Parentheses become chunk boundaries.** JPerm marks execution units with
+  brackets — `(U' D)` in the G perms is the simultaneous double-layer turn,
+  `(U R U' R')` in Nb is a trigger. `normalize()` drops them, and a test
+  asserts all five bracketed units in the JPerm-sourced cases land on chunk
+  boundaries. The annotation survives in the only form the card can print.
+- **A rotation always forms its own chunk.** A gap means "change your grip";
+  a rotation is the largest grip change there is. Tested for all 21.
+- **F, Jb and Na reuse the T perm's middle three chunks** — they contain its
+  body, so identical boundaries show the shared work instead of hiding it.
+
+**Measured** (Typst, `--ignore-system-fonts`, DejaVu Sans Mono, 6.5 pt, the
+card's `a()` with `GAP = 0.55em`):
+
+- The plan's capacity formula
+  `1.3805·chars + 0.5045·primes + 1.2612·(chunks−1)` reproduces the measured
+  width of all 21 to **0.00 mm**. It can be trusted for layout arithmetic.
+- Widest **Na 43.10 mm**, median 29.91 mm, narrowest **Ua 16.83 mm**.
+- Chunk gaps cost **1.261 mm each**, 11.9–20.6 % of an algorithm's width.
+- `docs/card-set-plan.md` §3 predicted `F 33.8` / `Na 39.3`; those numbers
+  assume **3 chunks per algorithm**. The shipped card chunks at ~3.5 tokens
+  per chunk and these follow it, so **three algorithms exceed Card 3's
+  33.4 mm text slot, not two**: F (36.32), Na (43.10), Nb (34.31).
+- **Wrapping is real and free, verified rather than assumed.** Typst treats
+  `h(GAP)` as a break opportunity, so all three wrap at a chunk boundary to
+  exactly two lines — 3.94 mm, still under the D = 6.0 mm row pitch. The
+  other eighteen stay on one line. No overflow, no Typst warning.
+
+Two things this also settled early: `fullsets.case_state()` resolves all 21
+printed algorithms with U correctly oriented, so Card 3's diagrams can be
+re-rendered from the exact printed string (the F6 / Z-perm fix); and the
+JPerm dataset contains `R3` in one *alternate* Ub algorithm, which `tokenize`
+rejects. Legal in cubing.js, unsupported here — harmless while the card
+prints primaries, a blocker the day it prints an alternate.
