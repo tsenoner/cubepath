@@ -52,7 +52,23 @@ node scripts/gen-cases.mjs      # regenerate src/data/fullsets.gen.ts + .rich.ge
 node scripts/extract-algs.mjs   # re-extract + verify the JPerm dataset (gated write)
 node scripts/verify-f2l.mjs     # F2L-41 verifier
 node scripts/verify-l2e.mjs     # 5x5 L2E verifier
+node scripts/gen-icons.mjs      # rasterize the PWA icon set from favicon.svg
 ```
+
+Brand mark: `public/favicon.svg` is the single source of truth — an isometric
+cube with a yellow route climbing the front face and crossing the top. Face
+tones live in `tokens.css` as `--logo-*` (light + dark); `Header.astro` inlines
+the same paths and binds them to those tokens, while the favicon carries its own
+`prefers-color-scheme` block because it loads outside the page. `gen-icons.mjs`
+rasterizes every PNG from it — never hand-edit the icons.
+
+The route is drawn as flush yellow stickers, chosen for punch. It is **not a
+reachable cube position**, and that is a deliberate call rather than an oversight:
+a contiguous sticker path can never legally cross a cube edge, because the two
+facelets either side of an edge always belong to the same piece. Here the UF edge
+would need yellow on both its U and F facelets, and the U and F centres would both
+be yellow. The mark is a graphic, not a derived position — the one place in this
+repo that does not follow the derive-everything rule.
 
 Data flow: `src/data/extracted/*.json` (verified extractions) → `gen-cases.mjs` →
 `fullsets.gen.ts` (lean, ships to client) + `fullsets.rich.gen.ts` (recognition +

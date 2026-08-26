@@ -13,6 +13,10 @@
   --warn: #e65100;
   --warn-soft: #fff3e0;
   --brand: #ffd500;
+  --logo-body: #17130f;
+  --logo-u: #7a736b;
+  --logo-f: #423c36;
+  --logo-r: #2c2824;
   --trig-r: #d32f2f;
   --trig-g: #2e7d32;
   --trig-b: #1565c0;
@@ -34,6 +38,10 @@
   --ok-soft: #16281a;
   --warn: #f0964c;
   --warn-soft: #2e2014;
+  --logo-body: #26221e;
+  --logo-u: #a39c92;
+  --logo-f: #6a645c;
+  --logo-r: #4e4842;
   --trig-r: #ef6b62;
   --trig-g: #7cc47f;
   --trig-b: #6faae8;
@@ -53,6 +61,10 @@
     --ok-soft: #16281a;
     --warn: #f0964c;
     --warn-soft: #2e2014;
+    --logo-body: #26221e;
+    --logo-u: #a39c92;
+    --logo-f: #6a645c;
+    --logo-r: #4e4842;
     --trig-r: #ef6b62;
     --trig-g: #7cc47f;
     --trig-b: #6faae8;
