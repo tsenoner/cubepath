@@ -30,6 +30,7 @@ import subprocess
 from pathlib import Path
 
 from cubepath.algs import ALGORITHMS
+from cubepath.diagrams import CARD, all_cases, render
 from cubepath.notation import (
     BIGCUBE_CHUNKS,
     CHUNKS,
@@ -54,39 +55,24 @@ MARGIN = 2.0
 USABLE_W, USABLE_H = CARD_W - 2 * MARGIN, CARD_H - 2 * MARGIN
 
 # ── Print-variant diagrams ────────────────────────────────────────────
-# The app is backlit and the guide is read on paper at full size; the card is
-# 4.65 mm wide and often printed in black and white. #FFD500 on #C0C0C0 is a
-# 1.29:1 contrast ratio — ten identical grey squares on a mono printer. These
-# substitutions are card-only; diagrams.py is untouched.
-_SVG_SUBS: list[tuple[str, str]] = [
-    ('fill="#C0C0C0"', 'fill="#5F5F5F"'),
-    ('stroke-width="1.5"', 'stroke-width="3.2"'),
-    ('stroke-width="1"', 'stroke-width="2.4"'),
-    ('stroke-width="2"', 'stroke-width="4.5"'),
-]
+# The card re-renders every diagram in `diagrams.CARD` style rather than
+# post-processing the screen SVG. That is the difference between a palette
+# that is chosen and gated (`palette.contrast`) and a list of hex-string
+# substitutions that silently stops matching the day diagrams.py changes.
 
 
 def build_print_svgs() -> dict[str, int]:
-    """Rewrite the OLL/PLL diagrams for greyscale print. Returns hit counts."""
+    """Re-render the OLL/PLL diagrams in card style. Returns per-subdir counts."""
     if _CARD_SVG.exists():
         shutil.rmtree(_CARD_SVG)
-    counts = dict.fromkeys((old for old, _ in _SVG_SUBS), 0)
-    for sub in ("oll", "pll"):
-        dst = _CARD_SVG / sub
-        dst.mkdir(parents=True, exist_ok=True)
-        for svg in sorted((_FIGS / sub).glob("*.svg")):
-            text = svg.read_text()
-            for old, new in _SVG_SUBS:
-                counts[old] += text.count(old)
-                text = text.replace(old, new)
-            (dst / svg.name).write_text(text)
-    # A future diagrams.py edit must not turn the contrast fix into a no-op.
-    for old, n in counts.items():
-        if n == 0:
-            raise AssertionError(
-                f"print-variant SVG rewrite matched nothing for {old!r} — "
-                "diagrams.py changed; re-derive the substitutions"
-            )
+    counts: dict[str, int] = {}
+    for case in all_cases():
+        path = render(case, _CARD_SVG, style=CARD)
+        counts[path.parent.name] = counts.get(path.parent.name, 0) + 1
+    # The card only ever asks for these two; anything else means all_cases()
+    # grew a category the card silently would not print.
+    if set(counts) != {"oll", "pll"}:
+        raise AssertionError(f"unexpected card diagram categories: {sorted(counts)}")
     return counts
 
 
@@ -648,7 +634,7 @@ def main() -> None:
             _compile(src, out)
             outputs.append(out)
 
-    print(f"print-variant SVGs: {sum(counts.values())} substitutions")
+    print(f"card-style diagrams re-rendered: {sum(counts.values())} ({counts})")
     for o in outputs:
         print(f"  {o.relative_to(_REPO)}")
 
