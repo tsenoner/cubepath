@@ -105,3 +105,65 @@ courses · PDF stays first-class.
   install; the user completed it on 2026-08-25 and v1.0.0 deployed
   automatically from git (see Deploys section above). Live and verified at
   https://cubepath-six.vercel.app.
+
+## Cheat card v2 (2026-08-26, PR #1)
+
+- **Three half-empty cards became one double-sided ID-1 card.** The old set
+  used ~50% of its area; the rebuild carries all 15 last-layer cases on the
+  front and notation + steps 1–3 + big-cube parity on the back.
+- **Two bugs the old card shipped.** Typst smart quotes rewrote every ASCII
+  prime to U+2019 (33 curly quotes, zero real primes in the shipped PDF) and
+  cubing.js rejects both U+2019 and U+2032 — so no printed algorithm could be
+  pasted into a cube tool. And `Courier New` is macOS-only while Typst exits 0
+  on an unknown family. Both are now build gates, along with a page-count /
+  ink-bbox gate (Typst paginates silently on overflow) and a "no leaked Typst
+  markup" gate that was negative-tested by reintroducing the bug it catches.
+- **Nothing is retyped.** 3×3 algs expand from `algs.py` via `notation.CHUNKS`
+  (22/22 round-trip lossless, coverage-tested); the four big-cube strings are
+  read out of the app scripts that pin them for CI, so the card inherits their
+  verification.
+- **Compact notation, only where provably invertible.** Spaces drop inside a
+  chunk, a gap separates chunks. Refused for any alg with a layer-count prefix
+  — `2R2 U2` compacted has two legal readings and the wrong one is a different
+  cube state. Commutator/conjugate brackets were investigated and rejected:
+  10 of 19 algs have no exact decomposition and most that do save 0 characters.
+- **Everything typographic was measured at 600dpi, not eyeballed.** The prime
+  is boxed at 0.22em pulled left 0.20em (0.38mm before it vs the 0.55mm `R→U`
+  letter gap; 1.36mm after vs the 1.31mm `U→F` gap). The regrip gap is 0.55em
+  in compacted blocks (4.6× the widest intra-chunk gap) but stays 0.90em in
+  the spaced big-cube block, where an ordinary space already measures 1.50mm
+  and 0.55em would be 1.03× — inverting the encoding.
+- **Palette darkened and unified.** The old triad greyscaled to luma 96/93/88,
+  *lighter* than body text, so triggers printed faded. `palette.py` is now the
+  one source, drift-tested against `callouts.lua` and the guide's own spans.
+- **Vocabulary rule.** Jargon a learner meets elsewhere (sune, headlights,
+  OLL/PLL) is taught with a gloss at the point of use; insider shorthand with
+  an equally standard plain phrase becomes the plain phrase. "dedge" → "edge
+  pair" — which also matched what `444-3x3-stage.mdx` already said. The card
+  glosses inline rather than carrying a glossary block: every case row's
+  recognition cue defines its own name, so only the bare terms (OLL, PLL,
+  parity) needed an explicit line.
+- **Printing.** Five PDFs. The A4/Letter imposition is centred so it registers
+  under *either* duplex flip; a fold-over variant removes duplex error
+  entirely. `docs/printing.md` + a `/print` page. Deliberately skipped: a
+  `pypdf /PrintScaling` post-pass and a CR80 press PDF with bleed — neither
+  affects home printing and each adds a dependency.
+
+## Card SET — planned, not built
+
+`docs/card-set-plan.md` is the research-backed build order for a staged card
+set (3 numbered cards + 1 annex). Two load-bearing conclusions:
+
+- **A tier exists only where the learner's ability changes, and after every
+  card they must still be able to fully solve a cube.** That kills Phase 1.5
+  (it exists only to un-teach the righty-repeat corner twist) and Phase 2
+  (two algs plus a reordering).
+- **A card stops being a progression card when its completion cannot be
+  stated as a solve.** That puts full OLL (57 cases, 22 differing only in a
+  sliver) and F2L (no diagrams, no recognition data, not a memorisation
+  problem) past the end of the set — they belong in the app trainer.
+
+Prior art (`docs/resources.md`): nothing on the market organises cubing
+material by learner stage. The QiYi Secret Tutorial Book is the nearest
+neighbour but is a breadth-first 88-page booklet across 14 puzzles, not a
+staged pocket set.
