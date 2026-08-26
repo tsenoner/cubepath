@@ -30,13 +30,14 @@ from cubepath.cube import Cube, state_before
 from cubepath.fullsets import _u_layer_permutation, _u_layer_views, case_state
 from cubepath.notation import pll_rows
 
-# Measured, not guessed. Card 3's text slot is 33.4 mm and cues set in
-# Libertinus 4.0pt; the widest character observed across the 21 cues is
-# 0.6424 mm, so 33.4 / 0.6424 = 51 characters is safe even for a cue made
-# entirely of the widest glyph. The mean is 0.5366 mm/char, and the widest
-# real cue (Ua, 48 chars) measures 26.97 mm — 81% of the slot. A cap of 34,
-# as first planned, would have forced hand-abbreviated cues for no reason.
-CUE_MAX_CHARS = 51
+# A design budget, not a correctness gate: Card 3's text slot is 33.4 mm and a
+# cue that overran it would simply wrap, costing 1.21 mm of column — which the
+# build's page-count gate already catches. The number is measured rather than
+# guessed. Cues set in Libertinus 4.0pt average 0.5366 mm/char, and the widest
+# real cue measures under 30 mm, ~89% of the slot. 56 keeps every cue on one
+# line with the observed character mix. The first plan said 34, which would
+# have forced hand-abbreviated cues for no reason at all.
+CUE_MAX_CHARS = 56
 
 # Which side strip of a plan-view diagram shows which face.
 _STRIP = {"F": "bottom", "R": "right", "B": "top", "L": "left"}
@@ -190,7 +191,8 @@ def cue(alg: str) -> str:
     if by_kind.get(BAR):
         parts.append(f"{' '.join(by_kind[BAR])} solid")
     if lights := by_kind.get(LIGHTS):
-        parts.append("all 4 lights" if len(lights) == 4 else f"{' '.join(lights)} lights")
+        word = "headlights"
+        parts.append(f"all 4 {word}" if len(lights) == 4 else f"{' '.join(lights)} {word}")
     pairs = [
         f"{face}-{pair_end(face, kind)}" for face, kind in sorted(facts) if kind in (PAIR_L, PAIR_R)
     ]

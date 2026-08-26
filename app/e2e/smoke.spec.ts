@@ -27,3 +27,29 @@ test("practice: drill scrambles + WCA full-solve scrambles on-device", async ({ 
   await page.getByRole("button", { name: "Full solve" }).click();
   await expect(page.getByTestId("scramble")).toHaveText(SCRAMBLE_RE, { timeout: 30_000 });
 });
+
+// /c0../c3 are printed on physical cards. A printed card cannot be
+// redeployed, so these paths are a permanent public contract — they must
+// resolve, and each must name its own place in the ladder.
+for (const [route, heading] of [
+  ["/c0", "First solve"],
+  ["/c1", "Two-look"],
+  ["/c2", "One-look PLL"],
+  ["/c3", "Annex"],
+] as const) {
+  test(`printed route ${route} resolves and names its card`, async ({ page }) => {
+    const res = await page.goto(route);
+    expect(res?.status(), `${route} must not 404 — it is printed on card stock`).toBe(200);
+    await expect(page.locator("h1")).toContainText(heading);
+    // Every card page offers its own reprint, so a lost card is one click away.
+    await expect(page.locator('a[href^="/cards/"]').first()).toBeVisible();
+  });
+}
+
+test("print page offers the whole set and every single card", async ({ page }) => {
+  await page.goto("/print/");
+  await expect(page.locator('a[href="/cards/deck-a4-fold.pdf"]')).toBeVisible();
+  for (const n of [0, 1, 2, 3]) {
+    await expect(page.locator(`a[href="/c${n}"]`)).toBeVisible();
+  }
+});

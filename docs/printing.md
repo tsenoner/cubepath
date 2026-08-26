@@ -1,20 +1,30 @@
-# Printing the cheat card
+# Printing the Cubepath card set
 
-`make cheatcards` (or `uv run cubepath-cheatcards` from `tools/diagrams/`)
-writes five PDFs to `guide/build/`. Pick the one that matches your printer —
-they are not interchangeable.
+`make cards` (or `uv run cubepath-cards` from `tools/diagrams/`) writes the
+set to `guide/build/cards/` and syncs it into `app/public/cards/`. Four cards:
+three numbered progression cards and one annex.
 
 | File | Use it when |
 | --- | --- |
-| `cheat-card-a4.pdf` | **Start here (A4).** Two-sided, 8 cards per sheet. |
-| `cheat-card-letter.pdf` | Same, US Letter. |
-| `cheat-card-a4-fold.pdf` | Your printer has **no duplex**, or your duplex misaligns. 4 cards per sheet. |
-| `cheat-card-letter-fold.pdf` | Same, US Letter. |
-| `cheat-card.pdf` | Two bare 85.6 × 53.98 mm pages — for reading on screen, or for a print shop. |
+| `deck-a4-fold.pdf` | **Start here (A4).** One single-sided sheet, all four cards. Fold, glue, cut. |
+| `deck-letter-fold.pdf` | Same, US Letter. |
+| `deck-a4-duplex-long.pdf` | You want two-sided and your printer flips on the **long** edge. Two complete sets per sheet. |
+| `deck-a4-duplex-short.pdf` | Same, but your printer flips on the **short** edge. |
+| `card-N-{slug}-fold-a4.pdf` | Four copies of **one** card — wallet, desk, bag, and the one you will lose. |
+| `card-N-{slug}.pdf` | Two bare 85.6 × 53.98 mm pages — for screen, or for a PVC card service. |
 
-> Do **not** send `cheat-card.pdf` to a home printer. Chrome and most drivers
-> silently shrink any PDF whose page is smaller than the paper, and you will
-> get a card that is the wrong size without being told.
+There is deliberately **no single duplex file that works under either flip**.
+A whole-page 180° rotation on its own degenerates into a column swap, which
+pairs card 1's front with card 2's back — invisible on a proof sheet of
+identical cards, and wrong the moment the cards differ. Each card carries its
+number on *both* faces, so a wrong flip is caught after cutting one card.
+
+> Do **not** send a bare `card-N-{slug}.pdf` to a home printer. Chrome and most
+> drivers silently shrink any PDF whose page is smaller than the paper, and you
+> will get a card that is the wrong size without being told.
+
+Every card back also carries its own **20 mm tick**, because sheet furniture
+does not survive the scissors: a card cut out of a sheet can still be checked.
 
 ## The one setting that matters
 
@@ -51,7 +61,7 @@ Print **one sheet first** and hold it up to a light before committing paper.
 Home duplex typically carries 1–2 mm of registration error, which is visible
 on a card this small. The fold-over PDF removes it entirely:
 
-1. Print `cheat-card-a4-fold.pdf` **single-sided**.
+1. Print `cards/deck-a4-fold.pdf` **single-sided**.
 2. Score the grey fold line against a ruler with the back of a knife.
 3. Mountain-fold so both printed faces end up outward.
 4. Glue-stick the inside, press under a book for a minute.
@@ -82,7 +92,7 @@ You have three options:
   (you read this under a lamp while holding a cube). The finished item is
   90 × 60 mm and **no longer fits a wallet card slot**. That is a real trade,
   not a workaround.
-- **Order it properly.** Send `cheat-card.pdf` to a print shop as a CR80 PVC
+- **Order it properly.** Send `cards/card-0-first-solve.pdf` to a print shop as a CR80 PVC
   card: 85.6 × 53.98 mm, 0.76 mm / 30 mil. Ask them to convert RGB to CMYK.
 
 Never trim a laminated card down to wallet size — at a 2 mm live margin, a

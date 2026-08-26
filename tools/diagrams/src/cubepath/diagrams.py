@@ -1085,8 +1085,14 @@ def render_notation(move: NotationMove, output_dir: Path) -> Path:
     return filepath
 
 
-def render_step(step: StepDiagram, output_dir: Path) -> Path:
-    """Render a step progress diagram (3D isometric cube) to SVG."""
+def render_step(step: StepDiagram, output_dir: Path, style: DiagramStyle = SCREEN) -> Path:
+    """Render a step progress diagram (3D isometric cube) to SVG.
+
+    The style remaps the finished sticker colour rather than the inputs, so
+    `face_colors` overrides (a white-on-top hold, a flipped cube) restyle with
+    everything else instead of leaking a screen colour onto a printed card.
+    """
+    recolor = _restyle(style)
     subdir = output_dir / "steps"
     subdir.mkdir(parents=True, exist_ok=True)
     filepath = subdir / f"{step.filename}.svg"
@@ -1112,7 +1118,9 @@ def render_step(step: StepDiagram, output_dir: Path) -> Path:
     dwg.add(dwg.rect((vb_x, vb_y), (vb_w, vb_h), fill=WHITE, rx=6, ry=6))
     _draw_iso_stickers(
         dwg,
-        lambda f, a, b: _step_sticker_color(f, a, b, step.solved, step.face_colors, step.overrides),
+        lambda f, a, b: recolor.get(
+            c := _step_sticker_color(f, a, b, step.solved, step.face_colors, step.overrides), c
+        ),
     )
     _draw_cube_outline(dwg)
 

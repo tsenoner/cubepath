@@ -26,7 +26,7 @@ Individual tools still run directly when working inside one subtree:
 ```bash
 cd tools/diagrams
 uv run cubepath-diagrams   # generate SVG diagrams
-uv run cubepath-cheatcards # generate the credit-card cheat sheet + print sheets
+uv run cubepath-cards      # generate the printable card set + print sheets
 uv run pytest tests/       # run tests
 uv run pytest tests/test_diagrams.py::test_all_cases_count   # single test
 uv run ruff check src/ tests/
@@ -110,22 +110,45 @@ Four case groups: `_oll_cross_cases()` (3), `_oll_corner_cases()` (8), `_pll_cor
 
 `guide/cubepath.md` is the single source file. Pandoc builds PDF using `guide/defaults/pdf.yaml` (Typst output), passing through `guide/filters/callouts.lua`.
 
-`cubepath-cheatcards` (`tools/diagrams/src/cubepath/cheatcards.py`) generates **one
-double-sided ID-1 card** (85.6 × 53.98 mm) plus A4/Letter print sheets and a no-duplex
-fold-over version, into `guide/build/`. `make cheatcards` builds them and syncs them to
-`app/public/`; the app serves them from `/print`.
+### Card set (`cubepath-cards`)
 
-Nothing in the card is retyped. 3×3 algorithms come from `algs.py` via
-`notation.CHUNKS`; the four big-cube strings are read out of the app scripts that pin
-them for CI (`extract-algs.mjs`, `verify-l2e.mjs`, `l2e-raw.json`), so the card inherits
-their verification. Trigger colours are derived by exact-token lookup in
-`palette.FAMILY` — never hand-assigned — and `palette.py` is the single source shared
-with `guide/filters/callouts.lua`.
+**Four ID-1 panels** (85.6 × 53.98 mm): three numbered progression cards plus an annex.
+`make cards` builds them into `guide/build/cards/` and syncs to `app/public/cards/`;
+the app serves them from `/print` and from the frozen routes `/c0`–`/c3`.
 
-Three failure modes the generator gates on every build, because each silently ships a
-wrong card: Typst rewrites ASCII primes to U+2019 (which cubing.js refuses to parse),
-exits 0 on an unknown font family, and paginates silently on overflow. See
-`docs/printing.md` for the print/duplex/lamination guidance.
+| module | owns |
+| --- | --- |
+| `cards.py` | what each card *says* — the deck table and the four cards' content |
+| `cheatcards.py` | imposition, build gates, CLI, `manifest.json` |
+| `recognition.py` | PLL cues and Sune counts, **derived** from the cube state |
+| `glossary.py` | `GLOSS` / `TEACH` / `DEMONSTRATED` / `BANNED` vocabulary tiers |
+| `typst.py` | algorithm → Typst markup, shared by the two above |
+
+Nothing on a card is retyped. 3×3 algorithms come from `algs.py` via
+`notation.CHUNKS`, PLL via `notation.PLL_CHUNKS`; the four big-cube strings are read
+out of the app scripts that pin them for CI (`extract-algs.mjs`, `verify-l2e.mjs`,
+`l2e-raw.json`). Trigger colours are derived by exact-token lookup in `palette.FAMILY`,
+and recognition wording is generated from the same permutation the diagram is drawn
+from — a wrong cue is a template bug, never a mis-copied case.
+
+Diagrams are **re-rendered** in `diagrams.CARD` style, never post-processed: the card
+palette is chosen against `palette.contrast` and gated, because at card size on a mono
+printer hue is gone and only luminance survives.
+
+Five failure modes the generator gates on every build, because each silently ships a
+wrong card:
+
+1. Typst rewrites ASCII primes to U+2019, which cubing.js refuses to parse.
+2. Typst exits 0 on an unknown font family (so `--ignore-system-fonts`, warnings fatal).
+3. Typst paginates silently on overflow — the page count is asserted.
+4. A fixed-height card does **not** paginate when it overruns; it overlaps its own
+   footer. `fit()` measures the real rendered height in Typst and refuses to compile.
+5. A duplex imposition that pairs the wrong front with the wrong back looks perfect on
+   a proof sheet. The row-duplication theorem is asserted, not assumed.
+
+`/c0`–`/c3` are **printed on card stock and can never change or 404** — Playwright
+treats them as a public contract. See `docs/printing.md` for print/duplex/lamination
+guidance and `docs/card-set-plan.md` for why the set stops at three cards.
 
 ### Lua Filter (`guide/filters/callouts.lua`)
 

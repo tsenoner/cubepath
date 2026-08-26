@@ -2,26 +2,36 @@
 import Base from "../layouts/Base.astro";
 import Header from "../components/Header.astro";
 
-// This page is the URL printed on the back of the physical card, so its path
-// must stay /print. Content mirrors docs/printing.md.
-const FILES = [
+// This page is the URL printed on the back of every card, so its path must
+// stay /print. Content mirrors docs/printing.md.
+import manifest from "../data/cards.json";
+
+const DECK = [
   {
-    href: "/cheat-card-a4.pdf",
-    name: "A4 sheet",
-    note: "Start here. Two-sided, 8 cards per sheet.",
+    href: "/cards/deck-a4-fold.pdf",
+    name: "A4 — the whole set, one sheet",
+    note: "Start here. Single-sided, fold, glue, cut. No duplex printer needed.",
   },
-  { href: "/cheat-card-letter.pdf", name: "US Letter sheet", note: "Same, Letter paper." },
   {
-    href: "/cheat-card-a4-fold.pdf",
-    name: "A4 fold-over",
-    note: "No duplex printer, or duplex that misaligns. Print single-sided, fold, glue.",
+    href: "/cards/deck-letter-fold.pdf",
+    name: "US Letter — the whole set",
+    note: "Same, Letter paper.",
   },
-  { href: "/cheat-card-letter-fold.pdf", name: "US Letter fold-over", note: "Same, Letter paper." },
+];
+
+const DUPLEX = [
   {
-    href: "/cheat-card.pdf",
-    name: "Bare card",
-    note: "Two 85.6 × 53.98 mm pages — for screen, or for a print shop. Not for home printing.",
+    href: "/cards/deck-a4-duplex-long.pdf",
+    name: "A4 two-sided, flip on LONG edge",
+    note: "Two complete sets per sheet. Pick the file that matches your printer setting.",
   },
+  {
+    href: "/cards/deck-a4-duplex-short.pdf",
+    name: "A4 two-sided, flip on SHORT edge",
+    note: "Same sheet, laid out for the other flip.",
+  },
+  { href: "/cards/deck-letter-duplex-long.pdf", name: "US Letter, LONG edge", note: "" },
+  { href: "/cards/deck-letter-duplex-short.pdf", name: "US Letter, SHORT edge", note: "" },
 ];
 
 const VIEWERS = [
@@ -33,25 +43,63 @@ const VIEWERS = [
 ---
 
 <Base
-  title="Print the cheat card — Cubepath"
-  description="Print the Cubepath credit-card cheat sheet at home: sheets, a no-duplex fold-over version, and the settings that keep it the right size."
+  title="Print the cards — Cubepath"
+  description="Print the Cubepath card set at home: one fold-over sheet for all four cards, per-card reprints, and the settings that keep them wallet-sized."
 >
   <Header />
   <main>
-    <h1>Print the cheat card</h1>
+    <h1>Print the cards</h1>
     <p class="lead">
-      One card, front and back: the complete 2-Look CFOP last layer on one side,
-      notation, the earlier steps and the 4×4/5×5 parity set on the other.
+      Four cards: three numbered progression cards and one annex. Each one leaves you
+      able to solve a cube, and each says on its own back what unlocks the next.
     </p>
 
     <section>
-      <h2>1. Pick your file</h2>
+      <h2>1. Print the set</h2>
       <ul class="files">
         {
-          FILES.map((f) => (
+          DECK.map((f) => (
             <li>
               <a href={f.href}>{f.name}</a>
               <span>{f.note}</span>
+            </li>
+          ))
+        }
+      </ul>
+      <details>
+        <summary>Two-sided instead? Pick the file that matches your flip setting.</summary>
+        <ul class="files">
+          {
+            DUPLEX.map((f) => (
+              <li>
+                <a href={f.href}>{f.name}</a>
+                <span>{f.note}</span>
+              </li>
+            ))
+          }
+        </ul>
+        <p class="note">
+          There is deliberately no single file that works under either flip. The numeral
+          on both faces is your check — cut one card first and make sure its front and
+          back agree.
+        </p>
+      </details>
+    </section>
+
+    <section>
+      <h2>Or reprint one card</h2>
+      <ul class="files">
+        {
+          manifest.map((c) => (
+            <li>
+              <a href={c.route}>
+                {c.num ? `${c.num}/3` : "A"} — {c.title}
+              </a>
+              <span>
+                <a href={`/cards/${c.fold_pdf.a4}`}>A4</a> ·{" "}
+                <a href={`/cards/${c.fold_pdf.letter}`}>Letter</a> ·{" "}
+                <a href={`/cards/${c.card_pdf}`}>bare card</a> — four copies per sheet.
+              </span>
             </li>
           ))
         }
@@ -85,17 +133,17 @@ const VIEWERS = [
     </section>
 
     <section>
-      <h2>3. Two-sided</h2>
+      <h2>3. Folding and two-sided</h2>
       <p>
-        Choose <strong>two-sided, flip on long edge</strong>. The card grid is centred and
-        every card on a side is identical, so it registers under
-        <em>either</em> flip setting — if the backs come out upside down, switch to short
-        edge and they still line up. Print one sheet first and hold it to a light.
+        The default files are <strong>single-sided</strong>: print, crease the grey line,
+        fold so both printed faces are outward, glue, then cut both layers together. That
+        removes duplex registration error entirely, and works on printers with no duplex
+        unit at all.
       </p>
       <p>
-        No duplex, or duplex that drifts 1–2 mm? Use the <strong>fold-over</strong> file:
-        print single-sided, score the grey line, fold so both printed faces are outward,
-        glue, press, then cut both layers together.
+        If you do want two-sided, the set ships one file per flip direction. Each card
+        carries its number on <em>both</em> faces, so a wrong flip is caught after cutting
+        one card instead of after wasting the sheet.
       </p>
     </section>
 

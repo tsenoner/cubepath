@@ -158,6 +158,42 @@ def full_pll_cases() -> list[CubeDiagram]:
     return cases
 
 
+def card_pll_cases() -> list[CubeDiagram]:
+    """The 21 PLL diagrams as Card 3 needs them: derived from the algorithm
+    the card actually prints, not JPerm's primary.
+
+    Six of the 21 print the guide's algorithm instead, and three of those six
+    solve a different state — the repo's Z-Perm and JPerm's differ by a `y`
+    rotation. Rendering from `algs[0]` there would put a diagram beside an
+    algorithm that does not solve it.
+    """
+    from cubepath.notation import pll_algs
+
+    printed = pll_algs()
+    cases = []
+    for c in _load()["pll"]:
+        alg = printed[c["name"]]
+        cube = case_state(alg)
+        u, sides = _u_layer_views(cube)
+        assert all(s == "Y" for s in u), f"PLL {c['name']}: U face not oriented"
+        swaps, cycles = _arrows_from_permutation(_u_layer_permutation(cube))
+        cases.append(
+            CubeDiagram(
+                name=f"pll_card_{_slug(c['name'])}",
+                label=f"{c['name']} Perm",
+                category="pll_full",
+                u_face=[YELLOW] * 9,
+                top_side=_colorize(sides["top"]),
+                right_side=_colorize(sides["right"]),
+                bottom_side=_colorize(sides["bottom"]),
+                left_side=_colorize(sides["left"]),
+                swaps=swaps,
+                cycles=cycles,
+            )
+        )
+    return cases
+
+
 def render_fullsets(output_dir: Path) -> int:
     count = 0
     for case in full_oll_cases() + full_pll_cases():
