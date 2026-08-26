@@ -26,7 +26,7 @@ Individual tools still run directly when working inside one subtree:
 ```bash
 cd tools/diagrams
 uv run cubepath-diagrams   # generate SVG diagrams
-uv run cubepath-cheatcards # generate credit-card cheat sheets (Typst PDF)
+uv run cubepath-cheatcards # generate the credit-card cheat sheet + print sheets
 uv run pytest tests/       # run tests
 uv run pytest tests/test_diagrams.py::test_all_cases_count   # single test
 uv run ruff check src/ tests/
@@ -110,7 +110,22 @@ Four case groups: `_oll_cross_cases()` (3), `_oll_corner_cases()` (8), `_pll_cor
 
 `guide/cubepath.md` is the single source file. Pandoc builds PDF using `guide/defaults/pdf.yaml` (Typst output), passing through `guide/filters/callouts.lua`.
 
-`cubepath-cheatcards` (`tools/diagrams/src/cubepath/cheatcards.py`) generates the credit-card cheat sheets from the canonical alg data (Typst, `typst compile --root guide/`) into `guide/build/cheat-cards.pdf`. Both PDFs also ship in-app from `app/public/` (`/cubepath.pdf`, `/cheat-cards.pdf`).
+`cubepath-cheatcards` (`tools/diagrams/src/cubepath/cheatcards.py`) generates **one
+double-sided ID-1 card** (85.6 × 53.98 mm) plus A4/Letter print sheets and a no-duplex
+fold-over version, into `guide/build/`. `make cheatcards` builds them and syncs them to
+`app/public/`; the app serves them from `/print`.
+
+Nothing in the card is retyped. 3×3 algorithms come from `algs.py` via
+`notation.CHUNKS`; the four big-cube strings are read out of the app scripts that pin
+them for CI (`extract-algs.mjs`, `verify-l2e.mjs`, `l2e-raw.json`), so the card inherits
+their verification. Trigger colours are derived by exact-token lookup in
+`palette.FAMILY` — never hand-assigned — and `palette.py` is the single source shared
+with `guide/filters/callouts.lua`.
+
+Three failure modes the generator gates on every build, because each silently ships a
+wrong card: Typst rewrites ASCII primes to U+2019 (which cubing.js refuses to parse),
+exits 0 on an unknown font family, and paginates silently on overflow. See
+`docs/printing.md` for the print/duplex/lamination guidance.
 
 ### Lua Filter (`guide/filters/callouts.lua`)
 

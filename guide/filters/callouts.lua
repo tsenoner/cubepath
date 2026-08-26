@@ -29,10 +29,15 @@ local callout_styles = {
   },
 }
 
+-- Keep in sync with tools/diagrams/src/cubepath/palette.py — the cheat card
+-- renders the same three families, and tests/test_notation.py asserts these
+-- hexes still match. Darkened from the original D32F2F/2E7D32/1565C0 triad,
+-- which converted to luma 96/93/88 — lighter than the black body text, so on
+-- a mono printer the triggers you most want to grab came out faded.
 local trigger_colors = {
-  ["trig-r"] = { hex = "D32F2F" },  -- Red: R U R' U' family
-  ["trig-g"] = { hex = "2E7D32" },  -- Green: R U R' U family
-  ["trig-b"] = { hex = "1565C0" },  -- Blue: R' F R F' family
+  ["trig-r"] = { hex = "A61B1B" },  -- Red: R U R' U' family
+  ["trig-g"] = { hex = "1B5E20" },  -- Green: R U R' U family
+  ["trig-b"] = { hex = "12408C" },  -- Blue: R' F R F' family
 }
 
 function Image(el)

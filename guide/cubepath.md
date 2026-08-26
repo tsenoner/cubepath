@@ -281,12 +281,15 @@ Completes the T-Perm pair. Solves diagonal corner swaps directly (no double T-Pe
 | ----- | ----------------------------------------------------------------------------------- | ---------- | ------------- |
 | 1     | [`R U R' U'`]{.trig-r}                                                              | Sexy Move  | Everywhere    |
 | 1     | `L' U' L U`                                                                         | Lefty      | White corners |
+| 1     | `U` [`R U R' U'`]{.trig-r} `y` `L' U' L U`                                          | Edge Insert Right | Middle edge |
+| 1     | `U'` `L' U' L U` `y'` [`R U R' U'`]{.trig-r}                                        | Edge Insert Left | Middle edge |
 | 1     | `F` [`R U R' U'`]{.trig-r} `F'`                                                     | F-sexy-F'  | OE            |
 | 1     | [`R U R' U`]{.trig-g} `R U2 R'`                                                     | Sune       | PE (+U)       |
 | 1     | `R U' L' U R' U' L`                                                                 | Niklas     | PC            |
 | 1     | Repeat [`R U R' U'`]{.trig-r} + flip                                                | —          | OC            |
 | 1.5   | `f` [`R U R' U'`]{.trig-r} `f'`                                                     | f-sexy-f'  | OE (Hook)     |
-| 1.5   | `(R' D' R D) ×2` / `(D' R' D R) ×2`                                                 | —          | OC            |
+| 1.5   | `R' D' R D R' D' R D`                                                               | Orient Corners Right | OC      |
+| 1.5   | `D' R' D R D' R' D R`                                                               | Orient Corners Front | OC      |
 | 2     | [`R U R' U`]{.trig-g} `R U2 R'`                                                     | Sune       | OC            |
 | 2     | [`R U R' U'`]{.trig-r} [`R' F`]{.trig-b} `R2 U' R' U'` [`R U R' F'`]{.trig-r}       | T-Perm     | PC            |
 | 2     | `R2 U` [`R U R' U'`]{.trig-r} `R' U' R' U R'`                                       | Ub         | PE            |
