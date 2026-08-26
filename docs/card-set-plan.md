@@ -508,9 +508,27 @@ blkR   s[1]==s[2] != s[0]
 
 Full derived fact table (abridged): `T` lights L + blkL F + blkR B · `Ja` BAR L + blkL everywhere · `Jb` BAR L + blkR everywhere · `F` BAR L only · `Aa` lights L + blkR F + blkL R · `Ab` lights L + blkR R + blkL B · `Ra` lights L + blkL F · `Rb` lights L + blkR B · `Ga` lights L + blkR F · `Gb` lights L + blkR R · `Gc` lights L + blkL B · `Gd` lights L + blkL R · `Y` blkL F + blkR R · `V` blkL F + blkR L · `Na` blkR ×4 · `Nb` blkL ×4 · `E` nothing.
 
-**All 21 are separated by the corner clause except two pairs** — `{Ua, Ub}` and `{H, Z}` — which require the edge clause (cycle direction / opposite-vs-adjacent swap), derived from the same U-layer permutation the arrows already come from and are already permutation-verified against.
+**All 21 are separated by the corner clause except two pairs** — `{Ua, Ub}`
+and `{H, Z}` — which require the edge clause (cycle direction / opposite-vs-adjacent
+swap), derived from the same U-layer permutation the arrows already come from and
+are already permutation-verified against.
 
-Cue generator emits **the minimal clause set that makes the case unique among the 21**, formatted to ≤ 34 characters. Test asserts: (a) derived group == JPerm group for all 21; (b) all 21 cues pairwise distinct; (c) every cue ≤ `CUE_MAX_CHARS`.
+> **BUILT — and three claims above are wrong. See `docs/DECISIONS.md` §T3.**
+> The load-bearing claim holds: the derivation reproduces JPerm's group for all
+> 21, and the two collisions are exactly the two predicted. But:
+> 1. There is **no minimal positive clause set** for ten of the 21 — recognition
+>    is closed-world. `Ga` is exactly `L headlights + F pair`, and `Aa` is that
+>    *plus* one more, so no subset of Ga's facts excludes Aa. Cues state the
+>    whole signature.
+> 2. `CUE_MAX_CHARS` is **51, not 34** — measured. The widest real cue (Ua, 48
+>    chars) is 26.97 mm, 81% of the 33.4 mm slot.
+> 3. The fact table above differs from the derivation by a systematic flip on
+>    the R and B faces — a strip reading-direction convention. Do not hand-copy
+>    it; `recognition.py` derives it, and a geometric test pins the direction
+>    against the renderer.
+>
+> Also tested and **false**: "a matching pair means that corner is home" (14 of
+> 30 pairs violate it). It was never printed, because it was checked first.
 
 **Derived Sune fallback counts** for Card 2: BFS over `{∅, U, U2, U'} × Sune` from `state_before(case_alg)` to `u_face_solved()`. Run for this spec: `{Sune:1, Anti-Sune:2, Pi:2, Headlights:3, Double Headlights:2, Chameleon:3, Bowtie:3}` — max 3, which is what licenses "at most three Sunes" in print.
 

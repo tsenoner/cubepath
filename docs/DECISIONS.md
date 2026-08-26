@@ -260,3 +260,54 @@ change. Confirmed byte-identical output after the refactor.
 All four gates were negative-tested — each fails on exactly the regression it
 exists to catch (green moved next to red, band narrowed back to 12, masked
 grey left at its screen value, card re-rendered in SCREEN style).
+
+### T3 — recognition cues are derived, and three planned claims were wrong (2026-08-26)
+
+`recognition.py` generates every PLL cue from the simulator state the printed
+algorithm solves. This was the claim flagged as needing proof before Card 3
+was built, because it is the difference between generated-and-testable cues
+and 84 hand-written strings labelled machine-verified.
+
+**The load-bearing claim holds.** Counting headlight faces (4 / 1 / 0) →
+(edges only / adjacent swap / diagonal swap) reproduces JPerm's own `group`
+field for **all 21**, including the three cases where the card prints the
+guide's algorithm instead of JPerm's. And the corner facts alone separate 19
+of 21, with exactly the two predicted collisions — `{H, Z}` and `{Ua, Ub}` —
+settled by the edge cycle. Cues and signatures are 21/21 unique.
+
+**Three planned claims were wrong. Each was caught by testing it first.**
+
+1. **There is no "minimal clause set unique among the 21".** Recognition is
+   closed-world. `Ga` is exactly `L headlights + F pair`; `Aa` is that *plus*
+   `R pair`, so every subset of Ga's facts is also true of Aa. Ten of the 21
+   have no identifying positive subset — F, Ra, Rb, Ga–Gd and the four
+   edges-only cases. A cue must state the whole signature.
+2. **`CUE_MAX_CHARS` is 51, not 34.** Measured in Typst at Libertinus 4.0pt:
+   the widest glyph across the real cues is 0.6424 mm, so 33.4 / 0.6424 = 51
+   is safe even for a cue of nothing but the widest character. The widest real
+   cue (Ua, 48 chars) measures 26.97 mm — 81% of the slot. A cap of 34 would
+   have forced hand-abbreviated cues for no reason.
+3. **A matching pair does not mean "that corner is home".** 14 of the 30 pairs
+   violate it: a pair is a corner facelet matching its neighbouring edge
+   facelet, which happens with both pieces wrong. This was tested before any
+   cue depended on it, so nothing shipped on it.
+
+**Cue wording is pinned to the renderer's geometry.** A pair is named by face
+and by which end of that face's strip it sits at (`F-left`, `R-back`), because
+"left" on the right-hand strip is meaningless to a reader. The plan's own fact
+table differs from the derivation by a systematic flip on R and B — a strip
+reading-direction convention, not an error, but exactly the ambiguity that
+makes hand-written cues unsafe.
+`test_strip_reading_order_matches_the_drawing` renders a probe diagram with a
+unique colour per sticker and reads the coordinates back, so inverting a strip
+in `diagrams.py` fails the build rather than silently pointing every cue at
+the wrong end.
+
+**Card 2's Sune promise is measured.** BFS over `{∅, U, U2, U'} × Sune`
+reproduces `{Sune 1, Anti-Sune 2, Pi 2, Headlights 3, Double Headlights 2,
+Chameleon 3, Bowtie 3}`, max 3 — which is what licenses "at most three Sunes"
+in print. And Niklas really does wreck the yellow face, per the simulator.
+
+All four new gates negative-tested: reverting the 3-cycle direction
+derivation, printing the edge clause on every case, mis-stating the headlight
+count, and inverting a strip's drawing order each fail exactly their own test.
