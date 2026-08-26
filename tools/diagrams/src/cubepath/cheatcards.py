@@ -114,8 +114,13 @@ def _chunk(chunk: Chunk, compacted: bool) -> str:
 
 
 def alg(chunks: list[Chunk], compacted: bool = True, size: str = "AS") -> str:
-    """Typst call rendering one algorithm as gap-separated chunks."""
-    return f"#a({size}, {', '.join(_chunk(c, compacted) for c in chunks)})"
+    """Typst call rendering one algorithm as gap-separated chunks.
+
+    A spaced block needs the wider gap: its chunks already contain ordinary
+    spaces, which a 0.55em break would not beat.
+    """
+    fn = "a" if compacted else "aw"
+    return f"#{fn}({size}, {', '.join(_chunk(c, compacted) for c in chunks)})"
 
 
 def key_alg(name: str, **kw) -> str:
@@ -364,8 +369,16 @@ def _preamble() -> str:
 #let CR = rgb("#{cr}")
 #let CG = rgb("#{cg}")
 #let CB = rgb("#{cb}")
-// Wider than DejaVu's 0.602em word space, so the gap reads as a break.
-#let GAP = 0.90em
+// The regrip gap must dominate whatever separates moves *inside* a chunk, and
+// that differs by block — so there are two, both measured at 600dpi:
+//   compacted blocks: widest intra-chunk gap is 0.34mm, so 0.55em (1.55mm,
+//     4.6x) is unambiguous. The old 0.90em gave 6.9x — far more air than a
+//     break needs, and it cost ~0.8mm per gap.
+//   spaced blocks (big cubes keep real spaces): an ordinary space already
+//     measures 1.50mm, so 0.55em would be 1.03x and the break would vanish.
+//     0.90em (2.35mm, 1.56x) is the floor here.
+#let GAP  = 0.55em
+#let GAPW = 0.90em
 
 // In monospace the prime gets a full character cell, so "R'" reads as two
 // separate glyphs with a gap between them. Narrow its advance and pull it
@@ -379,7 +392,8 @@ def _preamble() -> str:
 // (Y-Perm: 42.1mm -> 34.2mm).
 #let pr() = box(width: 0.22em, move(dx: -0.20em, text("'")))
 
-#let a(sz, ..p) = text(font: M, size: sz, weight: "bold")[#p.pos().join(h(GAP))]
+#let a(sz, ..p)  = text(font: M, size: sz, weight: "bold")[#p.pos().join(h(GAP))]
+#let aw(sz, ..p) = text(font: M, size: sz, weight: "bold")[#p.pos().join(h(GAPW))]
 #let r(t) = text(fill: CR, t)
 #let g(t) = text(fill: CG, t)
 #let b(t) = text(fill: CB, t)
@@ -610,7 +624,7 @@ def gate_card(pdf: Path) -> None:
         raise AssertionError(f"algorithms missing from the rendered card: {missing}")
 
     # Typst function calls must never reach the page as literal text.
-    for leak in ("a(AB,", "#a(", "cue[", "lbl["):
+    for leak in ("a(AB,", "aw(AB,", "#a(", "#aw(", "cue[", "lbl["):
         if leak.replace(" ", "") in flat:
             raise AssertionError(f"raw Typst markup {leak!r} rendered as text on the card")
 
