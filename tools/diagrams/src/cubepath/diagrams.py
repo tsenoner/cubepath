@@ -35,6 +35,83 @@ RADIUS = 4  # corner radius for rounded rects
 ARROW_COLOR = "#222222"
 
 
+# ── Render styles ─────────────────────────────────────────────────────
+# The app is backlit and the guide is read on paper at full size. A card
+# sticker is under 5 mm wide and often printed on a mono laser, where hue is
+# gone and only luminance survives — #FFD500 on #C0C0C0 is 1.28:1, ten
+# identical grey squares. So the card re-renders every diagram in its own
+# palette rather than post-processing the screen SVG.
+
+
+@dataclass(frozen=True)
+class DiagramStyle:
+    """Everything that differs between a screen diagram and a printed one."""
+
+    faces: dict[str, str]  # simulator colour letter -> hex
+    masked: str  # the "not solved yet" fill on OLL diagrams
+    band_u: int  # side-band thickness in viewBox units
+    stroke_main: float  # U-face sticker outline
+    stroke_side: float  # side-band sticker outline
+    stroke_arrow: float  # PLL permutation arrows
+
+
+SCREEN_FACES: dict[str, str] = {
+    "Y": YELLOW,
+    "R": RED,
+    "G": GREEN,
+    "O": ORANGE,
+    "B": BLUE,
+    "W": WHITE,
+}
+
+# Measured against `palette.contrast`, not chosen by eye. Every side-face pair
+# improves in greyscale — the worst (red/green) goes 1.45 -> 1.96, and the
+# inverting pair red/orange, which are opposite faces and so appear together
+# on every diagram, goes 2.16 -> 4.00. Yellow keeps its screen value: it is
+# the reference every OLL diagram reads against, and the masked grey moves
+# instead (1.28 -> 4.49 against it). `tests/test_diagrams.py` gates all of it.
+#
+# The one pair that gets worse is yellow/orange, 1.64 -> 1.42. It is not
+# load-bearing: a yellow U sticker never abuts an orange band directly, both
+# carry a #333333 outline at stroke width 2.4, and a band is a different shape
+# from a grid cell. Buying it back would cost the red/orange separation.
+CARD_FACES: dict[str, str] = {
+    "Y": YELLOW,
+    "R": "#A30A0A",
+    "G": "#0A9048",
+    "O": "#FFA13C",
+    "B": "#001A5C",
+    "W": WHITE,
+}
+
+SCREEN = DiagramStyle(
+    faces=SCREEN_FACES,
+    masked=GREY,
+    band_u=SIDE_H,
+    stroke_main=1.5,
+    # ints, not floats: svgwrite writes the value verbatim, so 1.0 would
+    # rewrite every committed screen SVG for no visual change.
+    stroke_side=1,
+    stroke_arrow=2,
+)
+CARD = DiagramStyle(
+    faces=CARD_FACES,
+    masked="#5F5F5F",
+    band_u=20,
+    stroke_main=3.2,
+    stroke_side=2.4,
+    stroke_arrow=4.5,
+)
+
+
+def _restyle(style: DiagramStyle) -> dict[str, str]:
+    """SCREEN hex -> this style's hex. Derived from the two palettes, so a
+    face colour can never be remapped by a hand-written substitution."""
+    remap = {SCREEN_FACES[k]: style.faces[k] for k in SCREEN_FACES}
+    remap[GREY] = style.masked
+    return remap
+
+
 @dataclass
 class CubeDiagram:
     """A single cube diagram case."""
@@ -311,6 +388,7 @@ def _arrow_path(
     dwg: svgwrite.Drawing,
     pos_a: str,
     pos_b: str,
+    width: float,
 ) -> svgwrite.path.Path:
     """Create a straight arrow path between two named positions."""
     start = _arrow_pos(pos_a)
@@ -319,7 +397,7 @@ def _arrow_path(
         d=f"M {start[0]},{start[1]} L {end[0]},{end[1]}",
         fill="none",
         stroke=ARROW_COLOR,
-        stroke_width=2,
+        stroke_width=width,
     )
 
 
@@ -327,11 +405,12 @@ def _draw_swap(
     dwg: svgwrite.Drawing,
     pos_a: str,
     pos_b: str,
+    width: float,
     *,
     dashed: bool = False,
 ) -> None:
     """Draw a single bidirectional arrow (swap) between two named positions."""
-    path = _arrow_path(dwg, pos_a, pos_b)
+    path = _arrow_path(dwg, pos_a, pos_b, width)
     path["marker-start"] = "url(#arrowhead-rev)"
     path["marker-end"] = "url(#arrowhead)"
     if dashed:
@@ -342,12 +421,13 @@ def _draw_swap(
 def _draw_cycle(
     dwg: svgwrite.Drawing,
     positions: list[str],
+    width: float,
 ) -> None:
     """Draw directional arrows forming a cycle through named positions."""
     for i in range(len(positions)):
         a = positions[i]
         b = positions[(i + 1) % len(positions)]
-        path = _arrow_path(dwg, a, b)
+        path = _arrow_path(dwg, a, b, width)
         path["marker-end"] = "url(#arrowhead)"
         dwg.add(path)
 
@@ -365,8 +445,9 @@ def _case_subdir(category: str) -> str:
     return ""
 
 
-def render(case: CubeDiagram, output_dir: Path) -> Path:
-    """Render a CubeDiagram to an SVG file."""
+def render(case: CubeDiagram, output_dir: Path, style: DiagramStyle = SCREEN) -> Path:
+    """Render a CubeDiagram to an SVG file in the given style."""
+    recolor = _restyle(style)
     grid_w = 3 * CELL + 2 * GAP
     grid_h = 3 * CELL + 2 * GAP
     total_w = 2 * MARGIN + 2 * (SIDE_H + GAP) + grid_w
@@ -392,9 +473,9 @@ def render(case: CubeDiagram, output_dir: Path) -> Path:
             dwg.rect(
                 (x, y),
                 (CELL, CELL),
-                fill=color,
+                fill=recolor.get(color, color),
                 stroke=STICKER_STROKE,
-                stroke_width=1.5,
+                stroke_width=style.stroke_main,
                 rx=RADIUS,
                 ry=RADIUS,
             )
@@ -404,12 +485,16 @@ def render(case: CubeDiagram, output_dir: Path) -> Path:
     ox = MARGIN + SIDE_H + GAP
     oy = MARGIN + SIDE_H + GAP
     step = CELL + GAP
+    # A thicker band grows *outward* into the margin: the inner edge stays put,
+    # so the viewBox is unchanged and every downstream size still holds.
+    band = style.band_u
+    lead = MARGIN + SIDE_H - band
     side_strips = [
         # (colors, x0, y0, dx, dy, width, height)
-        (case.top_side, ox, MARGIN, step, 0, CELL, SIDE_H),
-        (case.bottom_side, ox, oy + grid_h + GAP, step, 0, CELL, SIDE_H),
-        (case.left_side, MARGIN, oy, 0, step, SIDE_H, CELL),
-        (case.right_side, ox + grid_w + GAP, oy, 0, step, SIDE_H, CELL),
+        (case.top_side, ox, lead, step, 0, CELL, band),
+        (case.bottom_side, ox, oy + grid_h + GAP, step, 0, CELL, band),
+        (case.left_side, lead, oy, 0, step, band, CELL),
+        (case.right_side, ox + grid_w + GAP, oy, 0, step, band, CELL),
     ]
     for colors, x0, y0, sx, sy, w, h in side_strips:
         for i, color in enumerate(colors):
@@ -417,9 +502,9 @@ def render(case: CubeDiagram, output_dir: Path) -> Path:
                 dwg.rect(
                     (x0 + i * sx, y0 + i * sy),
                     (w, h),
-                    fill=color,
+                    fill=recolor.get(color, color),
                     stroke=STICKER_STROKE,
-                    stroke_width=1,
+                    stroke_width=style.stroke_side,
                     rx=2,
                     ry=2,
                 )
@@ -430,11 +515,11 @@ def render(case: CubeDiagram, output_dir: Path) -> Path:
     if has_arrows:
         _add_arrow_defs(dwg)
         for pos_a, pos_b in case.swaps:
-            _draw_swap(dwg, pos_a, pos_b)
+            _draw_swap(dwg, pos_a, pos_b, style.stroke_arrow)
         for cycle in case.cycles:
-            _draw_cycle(dwg, cycle)
+            _draw_cycle(dwg, cycle, style.stroke_arrow)
         for pos_a, pos_b in case.dashed_swaps:
-            _draw_swap(dwg, pos_a, pos_b, dashed=True)
+            _draw_swap(dwg, pos_a, pos_b, style.stroke_arrow, dashed=True)
 
     dwg.save(pretty=True)
     return filepath

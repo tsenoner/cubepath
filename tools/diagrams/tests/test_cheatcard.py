@@ -14,6 +14,7 @@ import subprocess
 import pytest
 
 from cubepath import cheatcards
+from cubepath.diagrams import CARD_FACES, SCREEN_FACES
 from cubepath.notation import CHUNKS, compact
 
 pytestmark = pytest.mark.skipif(
@@ -70,8 +71,21 @@ def test_only_bundled_fonts(card) -> None:
         assert banned not in fonts, f"non-bundled font {banned} reached the PDF"
 
 
-def test_print_svg_rewrite_fires(tmp_path) -> None:
-    """A future diagrams.py edit must not silently turn the greyscale
-    contrast fix into a no-op."""
+def test_card_diagrams_are_rendered_in_card_style(tmp_path) -> None:
+    """The card's diagrams must come off the generator in CARD style, not off
+    the screen SVGs. A screen colour reaching the card means the re-render
+    silently stopped happening."""
     counts = cheatcards.build_print_svgs()
-    assert all(n > 0 for n in counts.values()), counts
+    assert counts == {"oll": 11, "pll": 6}, counts
+    seen = set()
+    for svg in sorted((cheatcards._CARD_SVG).rglob("*.svg")):
+        text = svg.read_text()
+        for letter, hex_ in SCREEN_FACES.items():
+            if hex_ == CARD_FACES[letter]:
+                continue  # deliberately identical in both styles (Y, W)
+            assert f'fill="{hex_}"' not in text, f"{svg.name}: screen {letter} survived"
+        for hex_ in CARD_FACES.values():
+            if f'fill="{hex_}"' in text:
+                seen.add(hex_)
+        assert 'fill="#C0C0C0"' not in text, f"{svg.name}: screen masked grey survived"
+    assert seen, "no card face colour reached any diagram"

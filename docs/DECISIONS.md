@@ -211,3 +211,52 @@ re-rendered from the exact printed string (the F6 / Z-perm fix); and the
 JPerm dataset contains `R3` in one *alternate* Ub algorithm, which `tokenize`
 rejects. Legal in cubing.js, unsupported here — harmless while the card
 prints primaries, a blocker the day it prints an alternate.
+
+### T2 — card diagrams are re-rendered, not rewritten (2026-08-26)
+
+`diagrams.DiagramStyle` splits the generator into `SCREEN` and `CARD`, and
+`cheatcards.build_print_svgs()` now calls the generator instead of running
+hex-string substitutions over the finished screen SVGs. The old `_SVG_SUBS`
+list is gone.
+
+**Why it mattered.** The substitution list guarded itself with "did every
+pattern match at least once", which only catches the day diagrams.py stops
+emitting a literal. It could not express a palette at all — it could only
+recolour grey and thicken strokes, so the face colours stayed at their screen
+values on a card printed in mono. Re-rendering also unblocks Card 3's rule
+that a diagram is generated from the exact algorithm printed next to it.
+
+**The palette is measured, not chosen.** `palette.relative_luminance` /
+`palette.contrast` (WCAG) are the referee, and `tests/test_diagrams.py` gates
+the result. Greyscale contrast, screen → card:
+
+```
+red/orange   2.16 -> 4.00   (1.85x)      red/green    1.45 -> 1.96  (1.35x)
+red/blue     1.44 -> 2.00   (1.38x)      orange/green 1.49 -> 2.04  (1.38x)
+orange/blue  3.12 -> 8.00   (2.56x)      green/blue   2.10 -> 3.91  (1.86x)
+yellow/masked 1.28 -> 4.49  (3.51x)  <- the one that made OLL cases printable
+```
+
+Every side-face pair improves, and a test asserts that as an invariant rather
+than a one-off: a palette edit that makes any pair worse is the wrong edit.
+Verified visually in greyscale — at the screen palette an OLL case is ten
+identical grey squares; at the card palette the pattern reads at a glance.
+
+**One pair gets worse, deliberately: yellow/orange, 1.64 → 1.42.** It is not
+load-bearing. A yellow U sticker never abuts an orange band directly, every
+sticker carries a `#333333` outline at stroke width 2.4, and a band is a
+different shape from a grid cell. Buying it back would cost the red/orange
+separation, which is the pair that appears on *every* diagram (they are
+opposite faces) and the one Z-Cube's customers complain about by name.
+
+**Bands widen outward only.** `band_u` 12 → 20 with the inner edge pinned, so
+the 192-unit viewBox never moves and every diagram size already measured for
+the card still holds. Visible fill goes 0.225 mm → 0.475 mm at D = 6.0 mm.
+
+`SCREEN` keeps integer stroke widths on purpose: svgwrite writes the value
+verbatim, so `1.0` would rewrite every committed screen SVG for no visual
+change. Confirmed byte-identical output after the refactor.
+
+All four gates were negative-tested — each fails on exactly the regression it
+exists to catch (green moved next to red, band narrowed back to 12, masked
+grey left at its screen value, card re-rendered in SCREEN style).

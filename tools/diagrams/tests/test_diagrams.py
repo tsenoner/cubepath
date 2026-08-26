@@ -1,5 +1,7 @@
 """Tests for cubepath diagram generation."""
 
+import itertools
+
 from cubepath.cube import Cube
 from cubepath.diagrams import (
     _CENTERS,
@@ -9,10 +11,14 @@ from cubepath.diagrams import (
     _SECOND_LAYER,
     _YELLOW_CROSS,
     BLUE,
+    CARD,
+    CARD_FACES,
     GREEN,
     GREY,
     ORANGE,
     RED,
+    SCREEN,
+    SCREEN_FACES,
     YELLOW,
     _align_edge_cases,
     _arrow_pos,
@@ -32,6 +38,7 @@ from cubepath.diagrams import (
     render_overview,
     render_step,
 )
+from cubepath.palette import contrast
 
 # ViewBox dimensions (computed from layout constants)
 VIEWBOX_SIZE = 192
@@ -237,3 +244,53 @@ def test_all_step_diagrams_render(tmp_path):
         assert path.exists(), f"{step.filename} not created"
         content = path.read_text()
         assert "<svg" in content, f"{step.filename} missing <svg>"
+
+
+# ── Card style: greyscale legibility and band thickness ───────────────
+# A card is printed, often on a mono laser, at under 5 mm per sticker. These
+# gate the palette by measurement so nobody re-picks a colour by eye.
+
+_SIDE_FACES = ("R", "G", "O", "B")  # red, green, orange, blue
+CARD_SIDE_CONTRAST_MIN = 1.95
+
+
+def test_card_side_faces_are_separable_in_greyscale() -> None:
+    for a, b in itertools.combinations(_SIDE_FACES, 2):
+        ratio = contrast(CARD_FACES[a], CARD_FACES[b])
+        assert ratio >= CARD_SIDE_CONTRAST_MIN, f"{a}/{b} at {ratio:.2f}:1 prints as one grey"
+
+
+def test_card_palette_beats_the_screen_palette_on_every_side_pair() -> None:
+    """Not a tie-break: the card palette exists only because it separates
+    better. If an edit makes any pair worse, it is the wrong edit."""
+    for a, b in itertools.combinations(_SIDE_FACES, 2):
+        card, screen = (
+            contrast(CARD_FACES[a], CARD_FACES[b]),
+            contrast(SCREEN_FACES[a], SCREEN_FACES[b]),
+        )
+        assert card > screen, f"{a}/{b} got worse: {screen:.2f} -> {card:.2f}"
+
+
+def test_masked_grey_is_readable_against_yellow() -> None:
+    """The whole job of an OLL diagram: solved sticker vs not. On screen this
+    is 1.28:1 — ten identical grey squares on a mono printer."""
+    assert contrast(SCREEN_FACES["Y"], SCREEN.masked) < 1.5
+    assert contrast(CARD_FACES["Y"], CARD.masked) >= 4.0
+
+
+def test_card_bands_grow_outward_only(tmp_path) -> None:
+    """A thicker side band must not move the inner edge, or every diagram
+    size measured for the card silently changes."""
+    case = _pll_edge_cases()[0]
+    screen = render(case, tmp_path / "s", style=SCREEN).read_text()
+    card = render(case, tmp_path / "c", style=CARD).read_text()
+
+    assert 'viewBox="0 0 192 192"' in screen
+    assert 'viewBox="0 0 192 192"' in card, "card render changed the viewBox"
+
+    assert f'height="{SCREEN.band_u}"' in screen
+    assert f'height="{CARD.band_u}"' in card
+    # inner edge pinned: top band ends at 32, bottom band starts at 160
+    assert f'height="{SCREEN.band_u}"' in screen and 'y="20"' in screen
+    assert f'height="{CARD.band_u}"' in card and 'y="12"' in card
+    assert 'y="160"' in screen and 'y="160"' in card
