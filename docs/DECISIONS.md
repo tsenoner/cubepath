@@ -311,3 +311,78 @@ in print. And Niklas really does wreck the yellow face, per the simulator.
 All four new gates negative-tested: reverting the 3-cycle direction
 derivation, printing the edge clause on every case, mis-stating the headlight
 count, and inverting a strip's drawing order each fail exactly their own test.
+
+### T4–T8 — the card set is built (2026-08-27)
+
+Four ID-1 panels: three numbered progression cards and one annex, from
+`cards.py` (content) + `cheatcards.py` (imposition and gates). The single-card
+v2 is replaced. Entry point is `cubepath-cards`; `cubepath-cheatcards` and
+`make cheatcards` stay as aliases.
+
+**The gate that mattered most was one the plan did not specify.** A card is a
+fixed-height box, so when its content overruns it does **not** paginate — it
+silently overlaps its own footer. The page-count gate cannot see that, and the
+first render shipped Card 3's glossary printed on top of its own map footer.
+`fit()` now measures the real rendered height inside Typst and refuses to
+compile. It caught four separate overflows during the build, including two the
+plan's own arithmetic said were fine. Measured heights of the 49.98 mm budget:
+
+```
+first-solve  46.76 / 42.48      two-look      48.20 / 49.16
+one-look-pll 44.82 / 49.16      annex         31.73 / 29.47
+```
+
+Related: the footer is now a block in the flow, not `place(bottom + left, …)`.
+Placed absolutely it grows *upward* into the content, which is how a four-line
+footer collided with a glossary that fit perfectly well on its own.
+
+**Vocabulary is enforced against the rendered PDF, not by proofreading.**
+`glossary.py` splits terms three ways: `TEACH` must carry its gloss on *every*
+card that uses it (a term defined on Card 1 is forgotten by Card 3, and the
+annex is the card people cut off); `DEMONSTRATED` terms are defined by the
+footer legend printing the swatch, the literal algorithm and the name together,
+which beats any six words; `BANNED` terms fail the build with their
+replacement named. The gate found four real violations, one per card.
+
+Two extraction subtleties this exposed, both fixed in the test rather than by
+distorting the card: `pdftotext` drops the hyphen when a compound wraps at it
+(`corner-and-edge` → `corner-andedge`, `look-ahead` → `lookahead`), so the
+gloss check compares on letters alone; and Typst reads `______` in a write-in
+blank as emphasis markup, which it only *warns* about — and warnings are fatal
+here, so it surfaced instead of silently italicising the card.
+
+**Other corrections found by building it:**
+
+- **Phase 1.5 adds one algorithm, not zero and not three.** The guide said
+  "No new algorithms"; the plan said "+3". `algs.py` says the wide-`f` Hook is
+  new there and nothing else is, and the guide's running total stopped at ~18
+  for a 22-algorithm set. The progression table is now derived and tested.
+- **What's Next now puts full PLL before full OLL**, with the reason printed:
+  PLL is a closed set of 21 states told apart by sight; 22 of the 57 OLL cases
+  differ only by a sliver at card size.
+- **Annex big-cube algorithms need full card width.** They keep real spaces (a
+  layer-count prefix makes compaction ambiguous), so an 18-move parity
+  algorithm wrapped to two lines in a 40.2 mm column. Card faces are now
+  composed from full-width and two-column sections.
+- **`Row` is a dataclass, not a tuple.** A Sune badge smuggled into the `name`
+  field had its `#` escaped and printed as literal Typst source on the card.
+  Prose and markup are now separate fields.
+
+**Duplex.** Two files per paper size, one per flip, and deliberately never one
+file claiming to work under either: a whole-page 180° rotation alone
+degenerates into the long-edge column swap and pairs Card 1's front with
+Card 2's back. That is invisible on a sheet of identical cards, which is how it
+survived in the single-card build. The row-duplication theorem
+(`FRONT_SLOTS[2k] == FRONT_SLOTS[2k+1]`) is asserted at build time, along with
+both permutations being involutions and `σ_short == ρ ∘ σ_long`. Mirror
+identities use `abs(…) ≤ 0.01`, never `==`.
+
+**`/c0`–`/c3` are a permanent public contract.** They are printed on card
+stock; a printed card cannot be redeployed. Playwright asserts all four return
+200 and name their own card. The app renders them from `manifest.json`, so the
+web ladder is the deck table rather than a second copy of it.
+
+**Playwright port.** A parallel `astro dev` on 4321 was being reused by
+`reuseExistingServer`, and the dev toolbar injects its own `<h1>` elements —
+breaking every heading assertion for reasons unrelated to the app. `PW_PORT`
+moves the test server out of the way.

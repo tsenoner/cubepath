@@ -359,3 +359,24 @@ def test_guide_tables_match_canonical_algorithms():
     # Each core algorithm must be checked at least once (present in the guide).
     for required in ALGORITHMS:
         assert required in checked, f"{required} not found (or not checkable) in the guide"
+
+
+def test_progression_table_totals_match_the_algorithm_set() -> None:
+    """The guide's progression table is a running count of `algs.py`. It read
+    "+0" for Phase 1.5 while that phase introduces the wide-f Hook, and its
+    total stopped at ~18 for a 22-algorithm set. Derive it, don't retype it."""
+    import re
+    from pathlib import Path
+
+    from cubepath.algs import ALGORITHMS
+
+    guide = (Path(__file__).resolve().parents[3] / "guide" / "cubepath.md").read_text()
+    rows = re.findall(r"^\| (\d[\d.]*): [^|]+\|\s*\+?(\d+)\s*\|\s*(\d+)\s*\|", guide, re.M)
+    assert len(rows) == 4, f"progression table changed shape: {rows}"
+    running = 0
+    for phase, new, total in rows:
+        running += int(new)
+        assert running == int(total), f"phase {phase}: running total {running} != {total}"
+    assert running == len(ALGORITHMS), (
+        f"the table ends at {running} but algs.py holds {len(ALGORITHMS)}"
+    )

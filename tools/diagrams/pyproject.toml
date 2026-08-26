@@ -14,6 +14,8 @@ build-backend = "hatchling.build"
 
 [project.scripts]
 cubepath-diagrams = "cubepath.diagrams:main"
+cubepath-cards = "cubepath.cheatcards:main"
+# deprecated alias, kept so an old command still works
 cubepath-cheatcards = "cubepath.cheatcards:main"
 cubepath-logo = "cubepath.logo:main"
 

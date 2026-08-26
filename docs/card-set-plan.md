@@ -5,7 +5,13 @@
 
 # Cubepath Progression Set — Build Order v1.0
 
-**Status:** definitive. No open decisions. Every number below is either measured in this repo, computed from repo data, or derived from a formula given here.
+**Status: BUILT** (2026-08-27), on branch `cheat-card-v2`. This document is the
+plan that was followed, kept for its reasoning and its numbers — not a to-do
+list. Where building it disproved a claim, the claim is struck inline and the
+correction is in `docs/DECISIONS.md` (§T1–§T4). Notably: the cue cap, the
+"minimal clause set", the Phase 1.5 algorithm count and two of the §3 column
+predictions were all wrong, and each was caught by a gate rather than by
+proofreading.
 
 ---
 

@@ -142,7 +142,7 @@ Each letter = one 90° CW turn (looking at that face). **'** = CCW, **2** = 180�
 
 # Phase 1.5: Speed Tricks
 
-Three improvements that speed up Phase 1 with minimal new learning. No new algorithms — just smarter use of what you know.
+Three improvements that speed up Phase 1 with minimal new learning. One new algorithm — the wide-`f` Hook — and otherwise smarter use of what you know.
 
 ## White Cross on Bottom
 
@@ -308,14 +308,16 @@ Completes the T-Perm pair. Solves diagonal corner swaps directly (no double T-Pe
 
 | Phase             | New | Total | LL Order          |
 | ----------------- | --- | ----- | ----------------- |
-| 1: Beginner       | ~6  | ~6    | OE → PE → PC → OC |
-| 1.5: Speed Tricks | +0  | ~6    | OE → PE → PC → OC |
-| 2: CFOP Switch    | +2  | ~8    | OE → OC → PC → PE |
-| 3: Full 2-Look    | +10 | ~18   | OE → OC → PC → PE |
+| 1: Beginner       | 9   | 9     | OE → PE → PC → OC |
+| 1.5: Speed Tricks | +1  | 10    | OE → PE → PC → OC |
+| 2: CFOP Switch    | +2  | 12    | OE → OC → PC → PE |
+| 3: Full 2-Look    | +10 | 22    | OE → OC → PC → PE |
 
 # What's Next
 
-- **F2L:** Replace beginner corner+edge insertion with intuitive pairs — the biggest speed improvement.
-- **Full OLL** (57 algs) / **Full PLL** (21 algs) / **Cross planning** / **Look-ahead**.
+- **Full PLL** (21 algorithms) — do this one first. It is a closed set of 21 states you tell apart by sight, and it takes the permute step from two algorithms to one. Printed in full on card 3 of the [card set](https://cubepath-six.vercel.app/print).
+- **F2L:** Replace beginner corner+edge insertion with intuitive pairs — the biggest single speed improvement, and not a memorisation problem. Drill it, don't look it up.
+- **Full OLL** (57 algorithms) — last, because 22 of the 57 differ only by a sliver on a side face. Drill it with randomised setups rather than a table.
+- **Cross planning** and **look-ahead** — skills, not case lists.
 
 ![Overview of cube faces and rotation axes](figures/generated/notation/overview.svg){ width=40% }
