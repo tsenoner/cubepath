@@ -300,7 +300,7 @@ def _back() -> str:
 #style(block(width: 100%, height: 100%)[
 #hdr[][Notation][]
 #key[R U F L D B = turn that face clockwise · #mn['] = anti-clockwise · #mn[2] = half turn ·
-#mn[M] = middle slice (follows L) · #mn[x y z] = turn the whole cube] \\
+#mn[M] = middle slice (as L) · #mn[x y z] = whole cube (as #mn[R], #mn[U], #mn[F])] \\
 #key[3x3: #mn[r f] = 2 layers wide · big cubes: #mn[Rw] = 2 layers, #mn[3Rw] = 3 layers,
 #mn[2R] = *INNER SLICE ONLY* -- never widen it] \\
 #key[*OLL* = orient the last layer (top all yellow) · *PLL* = permute it (slide pieces home) ·
