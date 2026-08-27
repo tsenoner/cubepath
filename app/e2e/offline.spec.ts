@@ -12,10 +12,14 @@ test("offline: whole course works in airplane mode after first visit", async ({
 }) => {
   // Single online visit: the service worker precaches everything.
   await page.goto("/");
-  await page.waitForFunction(async () => {
-    const reg = await navigator.serviceWorker?.getRegistration();
-    return !!reg?.active;
-  }, undefined, { timeout: 30_000 });
+  await page.waitForFunction(
+    async () => {
+      const reg = await navigator.serviceWorker?.getRegistration();
+      return !!reg?.active;
+    },
+    undefined,
+    { timeout: 30_000 },
+  );
   // Wait for workbox to finish precaching EVERYTHING (the app flags it).
   await page.waitForFunction(
     () => document.documentElement.dataset.offlineReady === "1",
@@ -36,7 +40,12 @@ test("offline: whole course works in airplane mode after first visit", async ({
   await page.goto("/learn/two-look-oll/");
   await expect(page.locator("h1")).toContainText("Anti-Sune", { timeout: 15_000 });
   const shot = await page.evaluate(async () => {
-    const open = document.querySelector("details[open] twisty-player") as any;
+    // twisty-player is a custom element; experimentalScreenshot is cubing.js API.
+    const open = document.querySelector("details[open] twisty-player") as
+      | (Element & {
+          experimentalScreenshot(o: { width: number; height: number }): Promise<string>;
+        })
+      | null;
     return open?.experimentalScreenshot({ width: 32, height: 32 });
   });
   expect(shot).toMatch(/^data:image\/png;base64,/);

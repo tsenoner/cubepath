@@ -38,8 +38,8 @@ const ladder = manifest.cards.filter((c) => c.num !== null);
     {
       card.supersedes && (
         <p class="note">
-          This card retires part of the previous one. That is the only thing in the set
-          that gets replaced — everything else keeps working.
+          This card retires part of the previous one. That is the only thing in the set that gets
+          replaced — everything else keeps working.
         </p>
       )
     }
@@ -47,9 +47,9 @@ const ladder = manifest.cards.filter((c) => c.num !== null);
     <section>
       <h2>Drill it with a real cube</h2>
       <p>
-        Paper is for looking things up. Recognition is drilled with randomised setups in
-        the <a href="/practice">trainer</a>, which checks your solution on a real cube
-        model rather than showing you an answer.
+        Paper is for looking things up. Recognition is drilled with randomised setups in the <a
+          href="/practice">trainer</a
+        >, which checks your solution on a real cube model rather than showing you an answer.
       </p>
     </section>
 
@@ -70,8 +70,8 @@ const ladder = manifest.cards.filter((c) => c.num !== null);
         </li>
       </ul>
       <p class="note">
-        Print at 100 % / Actual size — the <a href="/print">print guide</a> has the
-        per-viewer settings and the calibration check.
+        Print at 100 % / Actual size — the <a href="/print">print guide</a> has the per-viewer settings
+        and the calibration check.
       </p>
     </section>
 
@@ -88,7 +88,13 @@ const ladder = manifest.cards.filter((c) => c.num !== null);
           ))
         }
       </ol>
-      {next && <p class="note">Next: <a href={next.route}>{next.title}</a>.</p>}
+      {
+        next && (
+          <p class="note">
+            Next: <a href={next.route}>{next.title}</a>.
+          </p>
+        )
+      }
     </section>
   </main>
 </Base>

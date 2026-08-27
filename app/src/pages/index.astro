@@ -13,8 +13,8 @@ const lessons = (await getCollection("lessons")).sort((a, b) => a.data.order - b
     <section class="hero">
       <h1>Speedcubing from zero.</h1>
       <p>
-        One unbroken ladder from your first solve to full CFOP — every algorithm
-        machine-verified, every case interactive in 3D. Free, offline, no account.
+        One unbroken ladder from your first solve to full CFOP — every algorithm machine-verified,
+        every case interactive in 3D. Free, offline, no account.
       </p>
       <div class="cta">
         <a class="btn primary" href={`/learn/${lessons[0]?.id}/`}>Start learning</a>
@@ -48,7 +48,11 @@ const lessons = (await getCollection("lessons")).sort((a, b) => a.data.order - b
     </section>
 
     <footer>
-      <span>Free forever · MIT + CC BY 4.0 · <a href="https://github.com/tsenoner/cubepath">Open source</a></span>
+      <span
+        >Free forever · MIT + CC BY 4.0 · <a href="https://github.com/tsenoner/cubepath"
+          >Open source</a
+        ></span
+      >
     </footer>
   </main>
 </Base>

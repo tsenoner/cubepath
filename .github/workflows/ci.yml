@@ -3,25 +3,44 @@ name: CI
 # Command lists live in the root Makefile, not here, so this workflow and
 # the local pre-push hook cannot drift apart. Dependency installation and
 # browser setup stay as named steps for readable per-step failure output.
+#
+# Actions are pinned to commit SHAs, not mutable major tags — the same
+# reasoning as the release-age cooldown in .github/dependabot.yml, which also
+# keeps these pins (and their trailing version comments) up to date.
 
 on:
   push:
     branches: [master]
   pull_request:
 
+# Least privilege: nothing here writes to the repo.
+permissions:
+  contents: read
+
+# A second push supersedes an in-flight PR run; master runs are never
+# cancelled, because every push to master auto-deploys to production.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   python-pipeline:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          enable-cache: true
+          cache-dependency-glob: tools/cubepath/uv.lock
       - run: make check-py
 
   app:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           cache: npm
@@ -30,6 +49,11 @@ jobs:
         run: npm ci
         working-directory: app
       - run: make check-app
+      - name: Cache Playwright browsers
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('app/package-lock.json') }}
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
         working-directory: app

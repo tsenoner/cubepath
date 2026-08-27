@@ -31,16 +31,22 @@ const fullOLL = grouped(GENERATED_CASES.filter((k) => /^oll\.\d+$/.test(k.id)));
 const fullPLL = grouped(GENERATED_CASES.filter((k) => k.id.startsWith("pll.")));
 const f2lGroups = grouped(GENERATED_CASES.filter((k) => k.phase === "full-f2l"));
 const groupTitle = (g: string) =>
-  g.replace(/^(oll|pll)-/, "").replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  g
+    .replace(/^(oll|pll)-/, "")
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 ---
 
-<Base title="Algorithm Reference — Cubepath" description="Every Cubepath algorithm — machine-verified, tap to play in 3D.">
+<Base
+  title="Algorithm Reference — Cubepath"
+  description="Every Cubepath algorithm — machine-verified, tap to play in 3D."
+>
   <Header active="reference" />
   <main>
     <h1>Algorithm Reference</h1>
     <p class="lead">
-      Every algorithm on this site is machine-verified against a cube simulator
-      before it ships. Tap a case to play it in 3D. Prefer paper?
+      Every algorithm on this site is machine-verified against a cube simulator before it ships. Tap
+      a case to play it in 3D. Prefer paper?
       <a href="/cubepath.pdf">Download the PDF guide</a> or the
       <a href="/print">printable card set</a> — three progression cards plus an annex.
     </p>
@@ -83,7 +89,10 @@ const groupTitle = (g: string) =>
 
     <section>
       <h2>F2L — all 41 cases</h2>
-      <p class="lead">First-two-layers pairs for the front-right slot; learn intuitively first, look up the awkward ones here.</p>
+      <p class="lead">
+        First-two-layers pairs for the front-right slot; learn intuitively first, look up the
+        awkward ones here.
+      </p>
       {
         f2lGroups.map(([group, items]) => (
           <div class="full-group">

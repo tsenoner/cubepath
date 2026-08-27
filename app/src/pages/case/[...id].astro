@@ -25,7 +25,11 @@ const scrambles = (CASE_SCRAMBLES[def.id] ?? []).slice(0, 4);
 <Base title={`${def.name} — Cubepath`} description={recognition}>
   <Header active="reference" />
   <main>
-    <nav class="crumbs"><a href="/reference/">Reference</a> <span>›</span> <span>{def.name}</span></nav>
+    <nav class="crumbs">
+      <a href="/reference/">Reference</a>
+      <span>›</span>
+      <span>{def.name}</span>
+    </nav>
     <div class="layout">
       <div class="left">
         <TwistyPlayer alg={primaryAlg(def)} puzzle={def.puzzle} stickering={def.stickering} />
@@ -49,7 +53,9 @@ const scrambles = (CASE_SCRAMBLES[def.id] ?? []).slice(0, 4);
           {
             alternates.length > 0 && (
               <details>
-                <summary>{alternates.length} alternate{alternates.length > 1 ? "s" : ""}</summary>
+                <summary>
+                  {alternates.length} alternate{alternates.length > 1 ? "s" : ""}
+                </summary>
                 <ul>
                   {alternates.map((a) => (
                     <li>
@@ -71,7 +77,9 @@ const scrambles = (CASE_SCRAMBLES[def.id] ?? []).slice(0, 4);
                   <li class="alg">{s}</li>
                 ))}
               </ul>
-              <p class="hint">Each scramble produces this case from a solved cube (hold yellow up).</p>
+              <p class="hint">
+                Each scramble produces this case from a solved cube (hold yellow up).
+              </p>
             </section>
           )
         }

@@ -31,6 +31,7 @@ import { makeSlotKit } from "./lib/kpuzzle-utils.mjs";
 
 // Numbering ground truth: SpeedCubeDB case setups (setup applied to a solved
 // cube produces the case at the FR slot). https://speedcubedb.com/a/3x3/F2L
+/** @type {Record<number, string>} */
 const SCDB_SETUPS = {
   1: "F R' F' R",
   2: "R' F R F'",
@@ -75,6 +76,9 @@ const SCDB_SETUPS = {
   41: "R F U R U' R' F' U' R'",
 };
 
+/** Narrow a `catch` binding to a printable message. @param {unknown} e */
+const errText = (e) => (e instanceof Error ? e.message : String(e));
+
 const kpuzzle = await cube3x3x3.kpuzzle();
 
 // Shared rotation/normalization + slot kit (slot detection and outsideSolved
@@ -97,8 +101,12 @@ if (!("CORNERS" in FR_PIECE) || !("EDGES" in FR_PIECE)) {
   throw new Error("FR-slot detection failed to find the corner+edge slots");
 }
 
-/** Where the FR corner + FR edge pieces sit, and their twist/flip. */
+/**
+ * Where the FR corner + FR edge pieces sit, and their twist/flip.
+ * @param {import("cubing/kpuzzle").KPattern} pattern
+ */
 function frSignature(pattern) {
+  /** @type {[string, number, number][]} */
   const sig = [];
   for (const orbit of Object.keys(FR_PIECE)) {
     const d = pattern.patternData[orbit];
@@ -108,7 +116,10 @@ function frSignature(pattern) {
   return JSON.stringify(sig);
 }
 
-/** Case class of a rot-normalized pre-state: min FR signature over pre-AUF U turns. */
+/**
+ * Case class of a rot-normalized pre-state: min FR signature over pre-AUF U turns.
+ * @param {import("cubing/kpuzzle").KTransformation} t
+ */
 function classOfState(t) {
   const keys = AUF_T.map((u) => frSignature(solved.applyTransformation(t.applyTransformation(u))));
   keys.sort();
@@ -116,8 +127,10 @@ function classOfState(t) {
 }
 const SOLVED_CLASS = classOfState(IDENTITY_T);
 
+/** @type {string[]} */
 const report = [];
 let failures = 0;
+/** @param {string} msg */
 const fail = (msg) => {
   report.push(`✗ ${msg}`);
   failures++;
@@ -132,7 +145,7 @@ for (const [numStr, setup] of Object.entries(SCDB_SETUPS)) {
   try {
     t = leftRotNormalize(toT(setup));
   } catch (e) {
-    fail(`case ${num}: pinned setup unusable (${e.message}): ${setup}`);
+    fail(`case ${num}: pinned setup unusable (${errText(e)}): ${setup}`);
     continue;
   }
   if (!outsideSolved(solved.applyTransformation(t), { allowFRSlot: true })) {
@@ -186,7 +199,7 @@ for (const c of cases) {
     try {
       t = toT(a);
     } catch (e) {
-      fail(`${label}: alg does not parse or is illegal (${e.message}): ${a}`);
+      fail(`${label}: alg does not parse or is illegal (${errText(e)}): ${a}`);
       continue;
     }
     // 2. F2L invariant (forward)
@@ -195,7 +208,7 @@ for (const c of cases) {
       fwd = rightRotNormalize(t);
       inv = leftRotNormalize(t.invert());
     } catch (e) {
-      fail(`${label}: centers not restorable by a rotation (${e.message}): ${a}`);
+      fail(`${label}: centers not restorable by a rotation (${errText(e)}): ${a}`);
       continue;
     }
     if (!outsideSolved(solved.applyTransformation(fwd), { allowFRSlot: true })) {

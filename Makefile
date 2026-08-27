@@ -10,11 +10,11 @@
 #   make ci     — check + Playwright E2E; what GitHub Actions runs
 
 APP := app
-PY  := tools/diagrams
+PY  := tools/cubepath
 
 .DEFAULT_GOAL := help
 .PHONY: help install dev preview diagrams cards cheatcards logo build build-guide build-app \
-        check check-py check-app e2e ci clean
+        fmt check check-py check-app e2e ci clean
 
 help: ## Show this help
 	@echo "Cubepath — available targets:"
@@ -47,22 +47,32 @@ logo: ## Regenerate the brand mark (favicon.svg) and rasterize the icon set
 	cd $(PY) && uv run cubepath-logo
 	cd $(APP) && node scripts/gen-icons.mjs
 
-build-guide: ## Build the PDF guide (diagrams + pandoc/typst)
+build-guide: diagrams ## Build the PDF guide (pandoc/typst) and ship it into the app
 	bash scripts/build.sh
 
 build-app: ## Build the app
 	cd $(APP) && npx astro build
 
-build: build-guide cards build-app ## Build everything (guide PDF + cards + app)
+build: build-guide cards build-app ## Build everything (diagrams + guide PDF + cards + app)
 
-check-py: ## Python gate: ruff lint + format check + pytest
+fmt: ## Apply every formatter/autofix in the repo
+	cd $(APP) && npx prettier --write .
+	cd $(APP) && npx eslint . --fix
+	cd $(PY) && uv run ruff check --fix src/ tests/
+	cd $(PY) && uv run ruff format src/ tests/
+
+check-py: ## Python gate: ruff lint + format check + mypy + pytest
 	cd $(PY) && uv run ruff check src/ tests/
 	cd $(PY) && uv run ruff format --check src/ tests/
+	cd $(PY) && uv run mypy
 	cd $(PY) && uv run pytest tests/ -q
 
-check-app: ## App gate: astro check + vitest + data verifiers + build
+check-app: ## App gate: format + lint + types (incl. scripts) + vitest + data verifiers + build
 	@test -d $(APP)/node_modules || { echo "$(APP)/node_modules missing — run 'make install' first" >&2; exit 1; }
+	cd $(APP) && npx prettier --check .
+	cd $(APP) && npx eslint .
 	cd $(APP) && npx astro check
+	cd $(APP) && npm run check:scripts
 	cd $(APP) && npx vitest run
 	cd $(APP) && npm run verify:data
 	cd $(APP) && npx astro build
@@ -76,4 +86,4 @@ e2e: ## Playwright E2E (smoke + airplane-mode PWA gate)
 ci: check e2e ## Everything CI runs
 
 clean: ## Remove build output
-	rm -rf $(APP)/dist $(APP)/.astro guide/build
+	rm -rf $(APP)/dist $(APP)/.astro .astro guide/build

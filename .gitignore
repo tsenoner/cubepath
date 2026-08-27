@@ -1,3 +1,12 @@
+# Repo-root ignores.
+#
+# Ownership: this file covers the repo root, guide/, tools/ and anything that
+# has no closer .gitignore. Everything *inside* app/ is owned by app/.gitignore
+# (node_modules/, dist/, .astro/, test-results/, playwright-report/) — do not
+# re-list those here, or the two files drift and one of them starts lying.
+# .DS_Store below is unanchored on purpose: it matches at every depth, app/
+# included.
+
 # Python-generated files
 __pycache__/
 *.py[oc]
@@ -12,6 +21,7 @@ wheels/
 # Tools
 .ruff_cache/
 .pytest_cache/
+.mypy_cache/
 .claude/
 
 # Playwright MCP
@@ -23,10 +33,13 @@ wheels/
 # Guide build output
 guide/build/
 
-# other guids
+# Other guides (reference PDFs, not ours to redistribute)
 docs/other_guides/
 
-# Node / app
+# Astro state written by an `astro` invocation from the repo root. The real
+# one lives at app/.astro/ (app/.gitignore); a root copy is always an orphan,
+# and one got committed in M1 because nothing here matched it.
+/.astro/
+
+# Node (repo root only — app/ has its own)
 node_modules/
-app/dist/
-app/.astro/

@@ -14,7 +14,10 @@
 </div>
 
 <div id="ios-install-hint" hidden>
-  <span>Install Cubepath: tap <strong>Share</strong> → <strong>Add to Home Screen</strong> — the whole course works offline.</span>
+  <span
+    >Install Cubepath: tap <strong>Share</strong> → <strong>Add to Home Screen</strong> — the whole course
+    works offline.</span
+  >
   <button id="ios-hint-close" type="button" aria-label="Dismiss">✕</button>
 </div>
 
@@ -51,7 +54,8 @@
   // iOS install hint: Safari on iOS, not yet installed, shown once.
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
   const standalone =
-    matchMedia("(display-mode: standalone)").matches || (navigator as any).standalone === true;
+    matchMedia("(display-mode: standalone)").matches ||
+    (navigator as Navigator & { standalone?: boolean }).standalone === true;
   const hint = document.getElementById("ios-install-hint")!;
   if (isIOS && !standalone && !localStorage.getItem("cubepath.ios-hint-dismissed")) {
     hint.hidden = false;
@@ -65,7 +69,12 @@
   // Click listeners are wired ONCE here — beforeinstallprompt can fire again
   // (e.g. after a dismissed prompt), and re-adding listeners per event would
   // stack them and call prompt() twice.
-  let deferredPrompt: any = null;
+  // beforeinstallprompt is Chromium-only and absent from lib.dom.d.ts.
+  type BeforeInstallPromptEvent = Event & {
+    prompt(): void;
+    userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+  };
+  let deferredPrompt: BeforeInstallPromptEvent | null = null;
   const installSlots = document.querySelectorAll<HTMLElement>("[data-install-slot]");
   const hideInstallSlots = () => {
     for (const slot of installSlots) slot.hidden = true;
@@ -82,7 +91,7 @@
   }
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
-    deferredPrompt = e;
+    deferredPrompt = e as BeforeInstallPromptEvent;
     for (const slot of installSlots) slot.hidden = false;
   });
   window.addEventListener("appinstalled", () => {

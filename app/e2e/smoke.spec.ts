@@ -18,7 +18,12 @@ test("lesson page renders its case players", async ({ page }) => {
   await page.waitForFunction(() => document.querySelectorAll("twisty-player").length >= 7);
   // The lesson opens one case by default — its player must actually render.
   const shot = await page.evaluate(async () => {
-    const open = document.querySelector("details[open] twisty-player") as any;
+    // twisty-player is a custom element; experimentalScreenshot is cubing.js API.
+    const open = document.querySelector("details[open] twisty-player") as
+      | (Element & {
+          experimentalScreenshot(o: { width: number; height: number }): Promise<string>;
+        })
+      | null;
     return open?.experimentalScreenshot({ width: 48, height: 48 });
   });
   expect(shot).toMatch(/^data:image\/png;base64,/);
@@ -73,9 +78,9 @@ test("print page offers the whole set and every single card", async ({ page }) =
 // page. Fetch every printable the manifest advertises and check it resolves.
 test("every printable the print page offers actually resolves", async ({ page, request }) => {
   await page.goto("/print/");
-  const hrefs = await page.locator('a[href^="/cards/"]').evaluateAll((as) =>
-    as.map((a) => a.getAttribute("href")!),
-  );
+  const hrefs = await page
+    .locator('a[href^="/cards/"]')
+    .evaluateAll((as) => as.map((a) => a.getAttribute("href")!));
   expect(hrefs.length).toBeGreaterThan(0);
   for (const href of new Set(hrefs)) {
     const res = await request.get(href);

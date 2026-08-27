@@ -7,7 +7,11 @@ export interface PhaseInfo {
 
 export const PHASES: PhaseInfo[] = [
   { key: "basics", name: "Basics", blurb: "Know the cube, read the moves." },
-  { key: "phase-1", name: "Phase 1 — Beginner", blurb: "Solve the cube reliably with one trigger." },
+  {
+    key: "phase-1",
+    name: "Phase 1 — Beginner",
+    blurb: "Solve the cube reliably with one trigger.",
+  },
   { key: "phase-1.5", name: "Phase 1.5 — Speed Tricks", blurb: "Same method, fewer moves." },
   {
     key: "phase-2",

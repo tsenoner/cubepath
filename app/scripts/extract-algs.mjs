@@ -37,6 +37,18 @@ import { cube3x3x3, puzzles } from "cubing/puzzles";
 
 import { makeKit } from "./lib/kpuzzle-utils.mjs";
 
+/**
+ * What a JPerm `lib/*.js` file binds once evaluated in the sandbox. Everything
+ * here comes off the network, so the shape is asserted below, never assumed.
+ *
+ * @typedef {{ name: string | number; group?: string; prob?: number;
+ *   alg: string | string[]; arrows?: unknown }} JPermCase
+ * @typedef {{ algsetAlgs?: JPermCase[]; algsetScrambles?: unknown[]; specialAlg?: string }} JPermBindings
+ */
+
+/** Narrow a `catch` binding to a printable message. @param {unknown} e */
+const errText = (e) => (e instanceof Error ? e.message : String(e));
+
 // Parity algs pinned by docs/research/tech-brief.md §8 (jperm.net/4x4 verbatim).
 const OLL_PARITY = "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'";
 const PLL_PARITY = "2R2 U2 2R2 Uw2 2R2 Uw2";
@@ -69,6 +81,7 @@ const {
 
 // Which piece slots belong to the U layer (detected, not hardcoded).
 const uTurn = solved.applyAlg(new Alg("U")).patternData;
+/** @type {Record<string, boolean[]>} */
 const U_SLOTS = {};
 for (const orbit of Object.keys(solved.patternData)) {
   const s = solved.patternData[orbit];
@@ -78,7 +91,10 @@ for (const orbit of Object.keys(solved.patternData)) {
   );
 }
 
-/** A last-layer alg must leave every non-U-layer piece solved (after rotation-normalizing). */
+/**
+ * A last-layer alg must leave every non-U-layer piece solved (after rotation-normalizing).
+ * @param {string} algStr
+ */
 function preservesF2L(algStr) {
   const p = normalizeOrientation(solved.applyAlg(new Alg(algStr)));
   const d = p.patternData;
@@ -116,8 +132,13 @@ const YCONJ_T = ["", "y", "y2", "y'"].map((y) => {
   return [t, t.invert()];
 });
 
+/**
+ * @param {string} algStr
+ * @param {{ orientationOnly?: boolean }} [opts]
+ */
 function caseClass(algStr, { orientationOnly = false } = {}) {
   const S = leftRotNormalize(toTransformation(algStr).invert());
+  /** @type {string[]} */
   const keys = [];
   for (const [yk, ykInv] of YCONJ_T) {
     for (const pre of AUF_T) {
@@ -145,7 +166,10 @@ function caseClass(algStr, { orientationOnly = false } = {}) {
   return keys[0];
 }
 
-/** OLL-solved: every non-U piece home and everything oriented (U permutation free). */
+/**
+ * OLL-solved: every non-U piece home and everything oriented (U permutation free).
+ * @param {import("cubing/kpuzzle").KPattern} p
+ */
 function ollSolvedState(p) {
   const d = p.patternData;
   for (const orbit of Object.keys(d)) {
@@ -158,6 +182,7 @@ function ollSolvedState(p) {
   return true;
 }
 
+/** @param {import("cubing/kpuzzle").KPattern} p */
 function solvedUpToAUF(p) {
   return AUF_ALGS.some((u) => (u ? p.applyAlg(u) : p).isIdentical(solved));
 }
@@ -169,6 +194,10 @@ function solvedUpToAUF(p) {
  * everything oriented (classBy "orientation": the OLL alg orients, and JPerm's
  * OLL scrambles leave a deliberately random U permutation behind). Whole-cube
  * rotation is normalized away by normalizeOrientation.
+ *
+ * @param {string} scrambleStr
+ * @param {Alg} primaryAlg
+ * @param {string | undefined} classBy
  */
 function scrambleProducesCase(scrambleStr, primaryAlg, classBy) {
   const scrambled = solved.applyAlg(new Alg(scrambleStr));
@@ -180,22 +209,30 @@ function scrambleProducesCase(scrambleStr, primaryAlg, classBy) {
   return false;
 }
 
-/** Why an alg string is unusable on kpuzzle `kp` (parse or legality); null if fine. */
+/**
+ * Why an alg string is unusable on kpuzzle `kp` (parse or legality); null if fine.
+ * @param {import("cubing/kpuzzle").KPuzzle} kp
+ * @param {string} s
+ */
 function illegalReason(kp, s) {
   let alg;
   try {
     alg = new Alg(s);
   } catch (e) {
-    return `does not parse (${e.message})`;
+    return `does not parse (${errText(e)})`;
   }
   try {
     kp.algToTransformation(alg);
   } catch (e) {
-    return `is illegal (${e.message})`;
+    return `is illegal (${errText(e)})`;
   }
   return null;
 }
 
+/**
+ * @param {string} s
+ * @param {string} parity
+ */
 const expandParity = (s, parity) => s.split("[*]").join(parity).replace(/\s+/g, " ").trim();
 
 /**
@@ -204,23 +241,32 @@ const expandParity = (s, parity) => s.split("[*]").join(parity).replace(/\s+/g, 
  * same direction (verified on the kpuzzle: m ≡ 2-3Rw' ≡ 3Rw' R), so translate
  * M/M'/M2 → m/m'/m2. E and S never appear in the 4x4 sets.
  */
+/** @param {string} s */
 const translate4x4Slices = (s) => s.replace(/(^|[\s(])M/g, "$1m");
 
+/**
+ * @param {string} url
+ * @returns {Promise<JPermBindings>}
+ */
 async function fetchBindings(url) {
   const res = await fetch(url, { headers: { "user-agent": "cubepath-extractor" } });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  /** @type {JPermBindings} */
   const sandbox = {};
   vm.createContext(sandbox);
   vm.runInContext(await res.text(), sandbox, { timeout: 5000 });
   return sandbox;
 }
 
+/** @type {Record<string, unknown[]>} */
 const out = {};
+/** @type {string[]} */
 const report = [];
 let failures = 0;
 
 for (const set of SETS) {
   let setFailures = 0;
+  /** @param {string} msg */
   const fail = (msg) => {
     report.push(`${set.name}: ${msg}`);
     setFailures++;
@@ -230,7 +276,7 @@ for (const set of SETS) {
   try {
     bindings = await fetchBindings(set.url);
   } catch (e) {
-    fail(`FETCH FAILED — ${e.message}`);
+    fail(`FETCH FAILED — ${errText(e)}`);
   }
   if (bindings && !(Array.isArray(bindings.algsetAlgs) && bindings.algsetAlgs.length > 0)) {
     fail("fetched file has no algsetAlgs bindings (or they are empty)");
@@ -238,7 +284,8 @@ for (const set of SETS) {
   }
 
   if (bindings) {
-    const rawAlgs = bindings.algsetAlgs;
+    // Non-empty by the Array.isArray guard directly above.
+    const rawAlgs = /** @type {JPermCase[]} */ (bindings.algsetAlgs);
     const rawScrambles = bindings.algsetScrambles;
     if (!Array.isArray(rawScrambles) || rawScrambles.length !== rawAlgs.length) {
       fail(
@@ -246,7 +293,7 @@ for (const set of SETS) {
           `does not match algsetAlgs (${rawAlgs.length}) — scramble join is broken`,
       );
     }
-    const cases = rawAlgs.map((c, i) => {
+    const cases = rawAlgs.map((/** @type {JPermCase} */ c, /** @type {number} */ i) => {
       const entry = Array.isArray(rawScrambles) ? rawScrambles[i] : undefined;
       if (typeof entry === "string") {
         fail(`${c.name}: scrambles entry is a bare string, not a list`);
@@ -255,7 +302,9 @@ for (const set of SETS) {
         name: String(c.name),
         group: c.group ?? null,
         prob: c.prob ?? null,
-        algs: (Array.isArray(c.alg) ? c.alg : [c.alg]).filter((a) => typeof a === "string"),
+        algs: (Array.isArray(c.alg) ? c.alg : [c.alg]).filter(
+          (/** @type {unknown} */ a) => typeof a === "string",
+        ),
         scrambles:
           entry && typeof entry === "object"
             ? Object.values(entry).filter((s) => typeof s === "string")
@@ -319,6 +368,10 @@ for (const set of SETS) {
     } else {
       // 4×4: expand `[*]` with the set's parity alg, then parse/legality-check
       // everything on the 4x4 kpuzzle. TODO(M3): full 4x4 case-class checks.
+      // Every 4×4 entry in SETS pins a parity alg; assert it rather than
+      // expanding `[*]` to nothing if one is ever added without.
+      if (!set.parity) throw new Error(`${set.name}: 4x4 set has no pinned parity alg`);
+      const parity = set.parity;
       if (bindings.specialAlg !== set.parity) {
         fail(
           `specialAlg ${JSON.stringify(bindings.specialAlg)} does not match the pinned ` +
@@ -330,7 +383,9 @@ for (const set of SETS) {
           fail(`${c.name}: no algorithm strings`);
           continue;
         }
-        c.algs = c.algs.map((a) => translate4x4Slices(expandParity(a, set.parity)));
+        c.algs = c.algs.map((/** @type {string} */ a) =>
+          translate4x4Slices(expandParity(a, parity)),
+        );
         for (const a of c.algs) {
           nAlgs++;
           const err = illegalReason(kpuzzle4, a);

@@ -1,0 +1,17 @@
+dist
+.astro
+node_modules
+public
+package-lock.json
+test-results
+playwright-report
+
+# Prettier's MDX printer rewrites *italic* -> _italic_ and explodes the compact
+# <figure> blocks in the 25 lesson files — 564 changed lines, no correctness gain.
+src/content
+
+# Generated. `make cards` and gen-cases.mjs rewrite these in their own format;
+# formatting them here would make the next generator run fail `prettier --check`.
+src/data/*.gen.ts
+src/data/extracted
+src/data/cards.json

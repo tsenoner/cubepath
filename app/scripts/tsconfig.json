@@ -1,0 +1,15 @@
+{
+  // These .mjs scripts generate the shipped algorithm data and run the F2L/L2E
+  // verifiers, so they are type-checked (`checkJs`) rather than trusted. They
+  // stay on `strict` rather than the app's `strictest`: noUncheckedIndexedAccess
+  // costs ~99 non-null casts in dense cube-math indexing, which JS cannot write
+  // as `!`. Run via `npm run check:scripts` (part of `make check-app`).
+  "extends": "astro/tsconfigs/strict",
+  "compilerOptions": {
+    "checkJs": true,
+    "noEmit": true,
+    "module": "nodenext",
+    "moduleResolution": "nodenext"
+  },
+  "include": ["**/*.mjs", "**/*.d.mts"]
+}

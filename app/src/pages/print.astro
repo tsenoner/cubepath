@@ -38,10 +38,19 @@ const DECK = manifest.sheets.filter((s) => s.mode === "fold").map(sheet);
 const DUPLEX = manifest.sheets.filter((s) => s.mode === "duplex").map(sheet);
 
 const VIEWERS = [
-  ["Acrobat / Reader", "Page Sizing & Handling → Size → Actual size. Turn off “Auto portrait/landscape”."],
-  ["macOS Preview", "Scale: 100 % radio button (not “Scale to Fit”). Pick A4 / US Letter, not the “borderless” variant."],
+  [
+    "Acrobat / Reader",
+    "Page Sizing & Handling → Size → Actual size. Turn off “Auto portrait/landscape”.",
+  ],
+  [
+    "macOS Preview",
+    "Scale: 100 % radio button (not “Scale to Fit”). Pick A4 / US Letter, not the “borderless” variant.",
+  ],
   ["Windows / Edge", "Page Sizing → Actual size."],
-  ["Chrome", "More settings → Scale → Custom → 100. Its “Default” silently shrinks. Prefer another viewer."],
+  [
+    "Chrome",
+    "More settings → Scale → Custom → 100. Its “Default” silently shrinks. Prefer another viewer.",
+  ],
 ];
 ---
 
@@ -53,8 +62,8 @@ const VIEWERS = [
   <main>
     <h1>Print the cards</h1>
     <p class="lead">
-      Four cards: three numbered progression cards and one annex. Each one leaves you
-      able to solve a cube, and each says on its own back what unlocks the next.
+      Four cards: three numbered progression cards and one annex. Each one leaves you able to solve
+      a cube, and each says on its own back what unlocks the next.
     </p>
 
     <section>
@@ -82,9 +91,8 @@ const VIEWERS = [
           }
         </ul>
         <p class="note">
-          There is deliberately no single file that works under either flip. The numeral
-          on both faces is your check — cut one card first and make sure its front and
-          back agree.
+          There is deliberately no single file that works under either flip. The numeral on both
+          faces is your check — cut one card first and make sure its front and back agree.
         </p>
       </details>
     </section>
@@ -112,10 +120,10 @@ const VIEWERS = [
     <section>
       <h2>2. Print at 100 %</h2>
       <p>
-        This is the one setting that matters. Never “Fit to page”, “Shrink oversized
-        pages”, or “Scale to fit”. Each sheet carries an <strong>80 mm calibration bar</strong>
-        in both margins — measure it after the first page. If it isn’t 80 mm, the scale is
-        wrong and the card won’t fit a wallet slot.
+        This is the one setting that matters. Never “Fit to page”, “Shrink oversized pages”, or
+        “Scale to fit”. Each sheet carries an <strong>80 mm calibration bar</strong>
+        in both margins — measure it after the first page. If it isn’t 80 mm, the scale is wrong and the
+        card won’t fit a wallet slot.
       </p>
       <table>
         <tbody>
@@ -130,37 +138,36 @@ const VIEWERS = [
         </tbody>
       </table>
       <p class="note">
-        Check your printer driver’s own dialog too — a driver-level “Fit to Paper Size”
-        overrides whatever the application asked for.
+        Check your printer driver’s own dialog too — a driver-level “Fit to Paper Size” overrides
+        whatever the application asked for.
       </p>
     </section>
 
     <section>
       <h2>3. Folding and two-sided</h2>
       <p>
-        The default files are <strong>single-sided</strong>: print, crease the grey line,
-        fold so both printed faces are outward, glue, then cut both layers together. That
-        removes duplex registration error entirely, and works on printers with no duplex
-        unit at all.
+        The default files are <strong>single-sided</strong>: print, crease the grey line, fold so
+        both printed faces are outward, glue, then cut both layers together. That removes duplex
+        registration error entirely, and works on printers with no duplex unit at all.
       </p>
       <p>
-        If you do want two-sided, the set ships one file per flip direction. Each card
-        carries its number on <em>both</em> faces, so a wrong flip is caught after cutting
-        one card instead of after wasting the sheet.
+        If you do want two-sided, the set ships one file per flip direction. Each card carries its
+        number on <em>both</em> faces, so a wrong flip is caught after cutting one card instead of after
+        wasting the sheet.
       </p>
     </section>
 
     <section>
       <h2>4. Paper and finishing</h2>
       <p>
-        160–200 gsm feeds through most home printers. Cut on the grey hairlines — they run
-        the full sheet, so one straight cut serves four cards.
+        160–200 gsm feeds through most home printers. Cut on the grey hairlines — they run the full
+        sheet, so one straight cut serves four cards.
       </p>
       <p class="note">
-        A standard 54 × 86 mm “credit card” laminating pouch leaves about 0.4 mm of total
-        clearance and will not seal. Either keep it wallet-sized and don’t laminate (the
-        folded 200 gsm card is stiff enough), or use a 60 × 90 mm business-card pouch and
-        accept that the result no longer fits a wallet slot.
+        A standard 54 × 86 mm “credit card” laminating pouch leaves about 0.4 mm of total clearance
+        and will not seal. Either keep it wallet-sized and don’t laminate (the folded 200 gsm card
+        is stiff enough), or use a 60 × 90 mm business-card pouch and accept that the result no
+        longer fits a wallet slot.
       </p>
     </section>
 

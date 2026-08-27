@@ -172,6 +172,7 @@ const PARITY_DIFF_TOKEN = 7; // 0-based; "Rw'" (4x4) vs "3Rw'" (5x5)
 // Per-alg expected corner/strict profile ("s"=strict holds up to some AUF,
 // "-"=only group-rigid; corners: "p"=permuted, "a"=solved up to AUF). Pinned
 // so a semantics regression in cubing.js or a bad edit fails loudly.
+/** @type {Record<string, string[]>} */
 const EXPECT = {
   "l2e-1": ["-p"],
   "l2e-2": ["-p", "-p"],
@@ -203,8 +204,18 @@ const SARAH = [
   { alg: "Rw U2 Rw U2 Rw' U2 Rw U2 Lw' U2 Rw U2 Rw' U2 x' Rw' U2 Rw' U2 M'", caseUnderY2: "l2e-6" },
   { alg: "Rw U2 Rw U2 Rw' U2 Rw U2 Lw' U2 Lw F2 Rw' F2 Rw' U2 Rw'", case: "l2e-6" },
   { alg: "Lw' U2 Lw' U2 F2 Lw' F2 Rw U2 Rw' U2 Lw2", case: "l2e-7" },
-  { alg: "Lw2 F2 U2 Lw' U2 Lw2 F2 Lw' U2 Lw2 U2 F2 Lw'", invalid: true, withSuffix: "F2", case: "l2e-8" },
-  { alg: "Rw2 F2 U2 Lw' U2 Lw2 F2 Lw' U2 Rw2 U2 F2 Rw", invalid: true, withSuffix: "F2", case: "l2e-9" },
+  {
+    alg: "Lw2 F2 U2 Lw' U2 Lw2 F2 Lw' U2 Lw2 U2 F2 Lw'",
+    invalid: true,
+    withSuffix: "F2",
+    case: "l2e-8",
+  },
+  {
+    alg: "Rw2 F2 U2 Lw' U2 Lw2 F2 Lw' U2 Rw2 U2 F2 Rw",
+    invalid: true,
+    withSuffix: "F2",
+    case: "l2e-9",
+  },
   { alg: "Rw' U2 Rw2 U2 Rw U2 Rw' U2 Rw U2 Rw2 U2 Rw'", case: "l2e-10" },
   { alg: "Rw U2 Rw2 U2 Rw' U2 Rw U2 Rw' U2 Rw2 U2 Rw", case: "l2e-11" },
   { alg: "Rw' U2 Rw' U2 B2 Rw' B2 Rw' F2 Lw2 F2 Rw U2 Rw2", case: "l2e-12" },
@@ -229,8 +240,10 @@ const { solved, toT, ROTATION_T, AUF_T, centersSolved, rightRotNormalize } = mak
 });
 const T = toT;
 
+/** @type {string[]} */
 const report = [];
 let failures = 0;
+/** @param {string} msg */
 const fail = (msg) => {
   report.push(`FAIL ${msg}`);
   failures++;
@@ -241,6 +254,8 @@ const fail = (msg) => {
  * transformation (t = Pure ∘ Rot, so Pure = t ∘ Rot⁻¹; a left-composed
  * rotation would conjugate the effect onto the wrong faces). Returns null if
  * no rotation brings centers home (the alg genuinely breaks centers).
+ *
+ * @param {import("cubing/kpuzzle").KTransformation} t
  */
 function rotNormalize(t) {
   try {
@@ -255,6 +270,7 @@ const FACES = ["U", "D", "L", "R", "F", "B"];
 const faceP = Object.fromEntries(
   FACES.map((f) => [f, solved.applyTransformation(T(f)).patternData]),
 );
+/** @type {Record<string, { wings: number[]; midge: number }>} */
 const SLOTS = {}; // signature ("FU", "BR", …) -> { wings: [i, i], midge: i }
 for (const orbit of ["EDGES", "EDGES2"]) {
   const s = solved.patternData[orbit];
@@ -278,7 +294,11 @@ const TARGET_PIECES = {
   EDGES2: new Set(TARGETS.map((t) => SLOTS[t].midge)),
 };
 
-/** Content of one edge slot (2 wing stickers + midge, with orientations). */
+/**
+ * Content of one edge slot (2 wing stickers + midge, with orientations).
+ * @param {import("cubing/kpuzzle").KPattern} p
+ * @param {string} slot
+ */
 const arrKey = (p, slot) => {
   const { wings, midge } = SLOTS[slot];
   const E = p.patternData.EDGES;
@@ -293,6 +313,7 @@ const arrKey = (p, slot) => {
 // Calibrate every valid intact-group arrangement per slot from the 24
 // rotations: each ordered (source slot, dest slot) pair is realized by exactly
 // two rotations — the direct and the whole-group-flipped placement.
+/** @type {Record<string, Set<string>>} */
 const VALID = {};
 for (const slot of SLOT_NAMES) VALID[slot] = new Set();
 for (const r of ROTATION_T) {
@@ -300,6 +321,7 @@ for (const r of ROTATION_T) {
   for (const slot of SLOT_NAMES) VALID[slot].add(arrKey(p, slot));
 }
 
+/** @param {import("cubing/kpuzzle").KPattern} p */
 const cornersSolvedIn = (p) =>
   solved.patternData.CORNERS.pieces.every(
     (v, i) =>
@@ -312,8 +334,11 @@ const cornersSolvedIn = (p) =>
  * pre-AUF powers that keep target-home pieces on target (U2 swaps UF<->UB;
  * U/U' move the case off target so they never qualify — including them would
  * collapse distinct cases onto one generic key).
+ *
+ * @param {import("cubing/kpuzzle").KTransformation} S
  */
 function classKeyOf(S) {
+  /** @type {string[]} */
   const keys = [];
   for (const u of AUF_T) {
     const p = solved.applyTransformation(S.applyTransformation(u));
@@ -334,11 +359,13 @@ function classKeyOf(S) {
 
 // --- self-checks -------------------------------------------------------------
 {
+  /** @type {Record<number, number>} */
   const counts = {};
   for (const v of solved.patternData.CENTERS.pieces) counts[v] = (counts[v] ?? 0) + 1;
   if (!Object.values(counts).every((n) => n === 4) || Object.keys(counts).length !== 6) {
     fail("self-check: CENTERS orbit does not use duplicated ids per face");
   }
+  /** @type {Record<number, number>} */
   const counts2 = {};
   for (const v of solved.patternData.CENTERS2.pieces) counts2[v] = (counts2[v] ?? 0) + 1;
   if (!Object.values(counts2).every((n) => n === 4) || Object.keys(counts2).length !== 6) {
@@ -373,20 +400,35 @@ function classKeyOf(S) {
 /**
  * Full analysis of one candidate L2E alg. Returns { error } (parse/legality),
  * { brokenCenters: true }, or { problems: [...], strict, strictAUF, corners,
- * class } — verified iff problems is empty.
+ * class } — verified iff problems is empty. `problems` is always present so a
+ * caller cannot forget the empty-list case.
+ *
+ * @typedef {object} Analysis
+ * @property {string[]} problems - empty means the alg verified
+ * @property {string} [error] - parse/legality failure
+ * @property {boolean} [brokenCenters]
+ * @property {boolean} [strict]
+ * @property {number | null} [strictAUF]
+ * @property {"solved" | "up-to-AUF" | "permuted"} [corners]
+ * @property {string} [class]
+ * @property {import("cubing/kpuzzle").KTransformation} [S]
+ *
+ * @param {string} algStr
+ * @returns {Analysis}
  */
 function analyze(algStr) {
   let t;
   try {
     t = T(algStr);
   } catch (e) {
-    return { error: String(e.message) };
+    return { problems: [], error: e instanceof Error ? e.message : String(e) };
   }
   const tp = rotNormalize(t);
-  if (tp === null) return { brokenCenters: true };
+  if (tp === null) return { problems: [], brokenCenters: true };
   const S = tp.invert(); // the case state, centers home
   const caseP = solved.applyTransformation(S);
   const fwdP = solved.applyTransformation(tp);
+  /** @type {string[]} */
   const problems = [];
 
   // case content confined to the target slots
@@ -410,6 +452,7 @@ function analyze(algStr) {
   // strict spec'd invariant (informational): non-target edges solved in place,
   // up to a net U-layer offset
   let strict = false;
+  /** @type {number | null} */
   let strictAUF = null;
   for (let k = 0; k < 4 && !strict; k++) {
     const p = fwdP.applyTransformation(AUF_T[k]);
@@ -498,8 +541,11 @@ for (const c of L2E_CASES) {
     for (const p of r.problems) fail(`${c.slug}: ${p}: ${a}`);
     if (r.problems.length > 0) continue;
     strictProfile[r.strict ? "strict" : "groupRigidOnly"]++;
-    if (r.strict) strictAUFs.add(["", "U", "U2", "U'"][r.strictAUF]);
-    cornerProfile[r.corners]++;
+    // `strict` is only ever set together with strictAUF.
+    if (r.strict && r.strictAUF !== null && r.strictAUF !== undefined) {
+      strictAUFs.add(["", "U", "U2", "U'"][r.strictAUF]);
+    }
+    if (r.corners) cornerProfile[r.corners]++;
     const expected = EXPECT[c.slug]?.[j];
     const observed = `${r.strict ? "s" : "-"}${r.corners === "permuted" ? "p" : r.corners === "up-to-AUF" ? "a" : "c"}`;
     if (expected && expected !== observed) {
@@ -521,7 +567,9 @@ if (classToSlug.size !== 13) {
 // --- cross-source: jperm parity ---------------------------------------------
 {
   const parityCase = L2E_CASES.find((c) => c.slug === PARITY_CASE);
-  if (!parityCase.algs.includes(EDGE_PARITY_5X5)) {
+  if (!parityCase) {
+    fail(`${PARITY_CASE} is not in the case list`);
+  } else if (!parityCase.algs.includes(EDGE_PARITY_5X5)) {
     fail(`jperm 5x5 edge parity alg is not verbatim among ${PARITY_CASE} algs`);
   }
   const t4 = OLL_PARITY_4X4.split(" ");
@@ -571,6 +619,10 @@ if (classToSlug.size !== 13) {
       continue;
     }
     if (s.caseUnderY2) {
+      if (!r.S) {
+        fail(`${label}: verified but carries no case state`);
+        continue;
+      }
       const y2 = T("y2");
       const Sc = y2.invert().applyTransformation(r.S).applyTransformation(y2);
       if (classToSlug.get(classKeyOf(Sc)) !== s.caseUnderY2) {

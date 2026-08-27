@@ -32,6 +32,7 @@ if (!inner) throw new Error("favicon.svg: could not find the <svg> body");
 // The mark is authored on a 64×64 viewBox.
 const VB = 64;
 
+/** @param {number} scale — mark size as a fraction of the canvas side. */
 function wrap(scale) {
   const span = VB / scale; // canvas side, in the mark's own units
   const off = (span - VB) / 2;
@@ -47,7 +48,13 @@ try {
   for (const { out, size, scale } of TARGETS) {
     writeFileSync(tmp, wrap(scale));
     execFileSync("rsvg-convert", [
-      "-w", String(size), "-h", String(size), tmp, "-o", join(PUBLIC, out),
+      "-w",
+      String(size),
+      "-h",
+      String(size),
+      tmp,
+      "-o",
+      join(PUBLIC, out),
     ]);
     console.log(`  ${out}  ${size}×${size}`);
   }
