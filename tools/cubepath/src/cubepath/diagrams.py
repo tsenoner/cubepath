@@ -1276,7 +1276,7 @@ _VIEW_DIR: Vec3 = (_N_SIN_H, _N_ELEV, _N_COS_H)
 # Screen distance from the cube centre to each tip, in viewBox units. The
 # hidden faces' pins run behind the cube and need the extra reach for their
 # ring to clear the silhouette.
-_OV_PIN_TIP = {"front": 56.0, "back": 66.0}
+_OV_PIN_TIP = {"front": 56.0, "back": 73.0}
 _OV_PIN_RING_R = 0.72  # ring radius, in stickers
 _OV_PIN_RING_IN = 0.7  # ring centre, this far back from the tip along the pin
 _OV_PIN_SWEEP = math.radians(250)
@@ -1629,8 +1629,10 @@ def _ribbon_arc(
         group = front if is_front else back
         edge(group, top)
         edge(group, bot)
-        cap(group, top[0], bot[0])
-        cap(group, top[-1], bot[-1])
+        if i == 0:
+            cap(group, top[0], bot[0])  # the ribbon's open start
+        # no cap at a depth boundary (the band continues behind the pin) and
+        # none at the sweep end (the band flows into the arrowhead)
         i = j
 
     # the arrowhead: a triangle in the band's own plane, past the sweep end
@@ -1644,13 +1646,21 @@ def _ribbon_arc(
         bounds.add(*p, _OV_PIN_STROKE)
     arrow = dwg.g()
     top_end, bot_end = band_pt(end, +1), band_pt(end, -1)
+    # The fill reaches a little back into the band so no hairline shows where
+    # the ribbon's fill polygon and the head's meet.
+    back_in = end - sweep / n_pts
     arrow.add(
         dwg.path(
-            d=poly([top_end, outer, tip, inner, bot_end], closed=True),
+            d=poly(
+                [band_pt(back_in, +1), top_end, outer, tip, inner, bot_end, band_pt(back_in, -1)],
+                closed=True,
+            ),
             fill=WHITE,
             stroke="none",
         )
     )
+    edge(arrow, [band_pt(back_in, +1), top_end])
+    edge(arrow, [band_pt(back_in, -1), bot_end])
     arrow.add(
         dwg.path(
             d=poly([top_end, outer, tip, inner, bot_end]),

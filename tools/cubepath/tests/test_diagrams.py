@@ -483,6 +483,48 @@ def test_pins_leave_the_face_centre_along_its_normal():
         assert abs(reach - _OV_PIN_TIP["front" if face in "UFR" else "back"]) < 0.3, (face, reach)
 
 
+def test_hidden_rings_clear_the_cube():
+    """D, B and L's rings sit behind the cube; their pins are long enough that
+    no part of the ring projects onto the cube's silhouette, so the ring is
+    never sliced by the cube and reads as one object around its pin."""
+    corners = [_n_proj(x, y, z) for x in (0, 3) for y in (0, 3) for z in (0, 3)]
+    # the silhouette is the convex hull of the projected corners
+    pts = sorted(set(corners))
+
+    def half(points):
+        hull: list[tuple[float, float]] = []
+        for p in points:
+            while (
+                len(hull) >= 2
+                and (
+                    (hull[-1][0] - hull[-2][0]) * (p[1] - hull[-2][1])
+                    - (hull[-1][1] - hull[-2][1]) * (p[0] - hull[-2][0])
+                )
+                <= 0
+            ):
+                hull.pop()
+            hull.append(p)
+        return hull
+
+    hull = half(pts)[:-1] + half(pts[::-1])[:-1]
+
+    def inside(p) -> bool:
+        sign = None
+        for a, b in zip(hull, hull[1:] + hull[:1], strict=True):
+            cross = (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0])
+            if cross == 0:
+                continue
+            if sign is None:
+                sign = cross > 0
+            elif (cross > 0) != sign:
+                return False
+        return True
+
+    for face in "DBL":
+        for p in overview_pin_ring(face):
+            assert not inside(_n_proj(*p)), (face, p)
+
+
 def test_pins_layout_labels_and_heads(tmp_path):
     svg = render_overview(tmp_path, layout=OVERVIEW_PINS).read_text()
     assert sorted(_texts(svg)) == sorted("UDFBRL")
