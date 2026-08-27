@@ -9,9 +9,11 @@ than as a style note nobody re-reads:
     is forgotten by Card 3, and the annex is the card people cut off first.
     The redundancy is the design.
 *   **BAN** — insider shorthand with an equally standard plain phrase. The
-    plain phrase wins; `tests/test_cards.py` fails the build if a banned term
+    plain phrase wins; `cheatcards.gate_card` fails the build if a banned term
     reaches a rendered card.
 *   **PLAIN** — never introduce the term at all; say the thing instead.
+    Gated alongside BAN, for the same reason: a tier nothing enforces is a
+    style note, and this file exists precisely to not be one.
 """
 
 from __future__ import annotations
@@ -81,7 +83,8 @@ BANNED: dict[str, str] = {
     "CCW": "counter-clockwise",
 }
 
-# Terms never to introduce: say the right-hand side instead.
+# Terms never to introduce: say the right-hand side instead. Enforced by
+# `cheatcards.gate_card` on the text of every rendered card, same as BANNED.
 PLAIN: dict[str, str] = {
     "permute": "slide the pieces home",
     "orient": "make the top all yellow",

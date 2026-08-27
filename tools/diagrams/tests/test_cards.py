@@ -16,11 +16,21 @@ import subprocess
 import pytest
 
 from cubepath import cheatcards
-from cubepath.cards import DECK, FRONT_SLOTS, Row, learn_order, pll_deck
+from cubepath.cards import (
+    _C3_ADJACENT_A,
+    _C3_ADJACENT_B,
+    _C3_DIAGONAL,
+    _C3_EDGES,
+    DECK,
+    FRONT_SLOTS,
+    Row,
+    learn_order,
+    pll_deck,
+)
 from cubepath.cheatcards import RHO, SHEETS, SIGMA_LONG, SIGMA_SHORT
 from cubepath.diagrams import CARD_FACES, SCREEN_FACES
 from cubepath.glossary import BANNED, DEMONSTRATED, GLOSS, TEACH
-from cubepath.notation import CHUNKS, PLL_CHUNKS, compact
+from cubepath.palette import FAMILIES, FAMILY, TRIGGER_COLORS
 
 _TOOLS = ("typst", "pdfinfo", "pdftotext", "pdffonts")
 needs_typst = pytest.mark.skipif(
@@ -67,6 +77,17 @@ def test_learn_order_covers_every_unowned_case() -> None:
     assert len(learn_order()) == 15
     assert len(pll_deck()) == 21
     assert all(isinstance(r, Row) for r in pll_deck().values())
+
+
+def test_learn_order_is_the_order_card_3_prints() -> None:
+    """The card says "learn in the printed order", so the two cannot be two
+    lists. They were, and they disagreed: the hand-written order put Ga..Gd
+    last while the card prints them mid-front."""
+    printed = [
+        n for block in (_C3_ADJACENT_A, _C3_ADJACENT_B, _C3_EDGES, _C3_DIAGONAL) for n in block
+    ]
+    order = learn_order()
+    assert order == [n for n in printed if n in set(order)]
 
 
 # ── Imposition (pure Python, runs in CI) ──────────────────────────────
@@ -145,14 +166,15 @@ def built():
 
 @needs_typst
 @pytest.mark.parametrize("card", DECK, ids=lambda c: c.slug)
-def test_each_card_is_two_id1_pages(built, card) -> None:
-    """Typst paginates silently on overflow — a third page means the content
-    no longer fits."""
-    info = cheatcards._pdfinfo(built[card.slug][0])
-    assert info["Pages"] == "2"
-    w, h = (float(v) for v in re.match(r"([\d.]+) x ([\d.]+)", info["Page size"]).groups())
-    assert abs(w - cheatcards.CARD_W * 72 / 25.4) < 0.1
-    assert abs(h - cheatcards.CARD_H * 72 / 25.4) < 0.1
+def test_card_passes_the_build_gate(built, card) -> None:
+    """Run the gate the generator runs, rather than a second copy of its rules.
+
+    `gate_card` is what decides whether a card may ship — page count, ID-1 page
+    size, smart quotes, leaked Typst markup and banned vocabulary. Re-asserting
+    those here by hand meant every rule had two homes, and the copy the build
+    does *not* consult is the one that goes stale.
+    """
+    cheatcards.gate_card(card, built[card.slug][0])
 
 
 @needs_typst
@@ -166,32 +188,21 @@ def test_no_card_overflows_its_own_height(built) -> None:
         assert mm <= cheatcards.USABLE_H, f"{face} needs {mm}mm of {cheatcards.USABLE_H}mm"
 
 
-@needs_typst
-@pytest.mark.parametrize("card", DECK, ids=lambda c: c.slug)
-def test_no_smart_quotes(built, card) -> None:
-    """Typst rewrites ASCII primes to U+2019, which cubing.js refuses to
-    parse — an algorithm copied off the card would not run."""
-    text = built[card.slug][1]
-    assert "’" not in text and "′" not in text
+def test_the_leak_gate_covers_every_preamble_helper() -> None:
+    """The gate is derived from the preamble, so a helper added later is
+    covered by construction — that is the whole point of deriving it."""
+    names = set(re.findall(r"#let (\w+)", cheatcards._preamble()))
+    assert len(names) > 30
+    patterns = cheatcards._leaks()
+    for n in names:
+        assert f"{n}[" in patterns, f"{n} could leak as markup uncaught"
 
 
 @needs_typst
 def test_every_algorithm_appears_in_the_set(built) -> None:
-    flat = re.sub(r"\s+", "", "".join(t for _, t in built.values()))
-    for key, chunks in {**CHUNKS, **PLL_CHUNKS}.items():
-        for chunk in chunks:
-            for seg in chunk:
-                assert compact(seg) in flat, f"{key}: segment {seg!r} missing from the set"
-
-
-@needs_typst
-@pytest.mark.parametrize("card", DECK, ids=lambda c: c.slug)
-def test_no_banned_term_reaches_a_card(built, card) -> None:
-    text = built[card.slug][1]
-    for term, better in BANNED.items():
-        assert not re.search(rf"(?<![A-Za-z]){re.escape(term)}(?![A-Za-z])", text, re.IGNORECASE), (
-            f"{card.slug}: {term!r} should be {better!r}"
-        )
+    """Same gate the build runs — and it also covers the big-cube strings the
+    hand-written version here used to leave out."""
+    cheatcards.gate_deck({slug: text for slug, (_, text) in built.items()})
 
 
 @needs_typst
@@ -214,21 +225,6 @@ def test_taught_terms_are_glossed_on_their_own_card(built, card) -> None:
         assert squash(f"{term}={GLOSS[term]}") in text, (
             f"{card.slug} uses {term!r} without printing its gloss on this card"
         )
-
-
-@needs_typst
-@pytest.mark.parametrize("card", DECK, ids=lambda c: c.slug)
-def test_calibration_tick_on_every_back(built, card) -> None:
-    """Sheet furniture does not survive the scissors."""
-    assert "20 mm" in built[card.slug][1]
-
-
-@needs_typst
-@pytest.mark.parametrize("card", DECK, ids=lambda c: c.slug)
-def test_no_raw_typst_markup_reaches_the_page(built, card) -> None:
-    flat = re.sub(r"\s+", "", built[card.slug][1])
-    for leak in cheatcards._LEAKS:
-        assert leak.replace(" ", "") not in flat, f"{card.slug}: {leak!r} rendered as text"
 
 
 @needs_typst
@@ -265,9 +261,60 @@ def test_card_diagrams_are_rendered_in_card_style() -> None:
 
 
 def test_manifest_matches_the_deck() -> None:
-    rows = cheatcards.manifest()
+    m = cheatcards.manifest()
+    rows = m["cards"]
     assert [r["route"] for r in rows] == ["/c0", "/c1", "/c2", "/c3"]
     assert [r["slug"] for r in rows] == [c.slug for c in DECK]
     for r in rows:
         assert set(r["fold_pdf"]) == set(SHEETS)
-    json.dumps(rows)  # must be serialisable — the app reads it
+    assert {s["file"] for s in m["sheets"]} == {
+        f"deck-{paper}-{mode}.pdf"
+        for paper in SHEETS
+        for mode in ("fold", "duplex-long", "duplex-short")
+    }
+    json.dumps(m)  # must be serialisable — the app reads it
+
+
+def test_committed_cards_json_matches_the_generator() -> None:
+    """The app imports `app/src/data/cards.json` at build time, and CI never
+    runs `cubepath-cards` (no typst). Without this gate the shipped ladder can
+    drift from DECK with everything green — same reason `test_logo.py` pins the
+    committed favicon to its generator.
+    """
+    committed = json.loads(cheatcards.CARDS_JSON.read_text())
+    assert committed == cheatcards.manifest(), (
+        "app/src/data/cards.json is out of sync — run `make cards` and commit the result"
+    )
+
+
+def test_manifest_names_only_sheets_the_build_writes() -> None:
+    """Every file the manifest points the app at is a sheet `main()` compiles."""
+    built = {f"{stem}.pdf" for stem, _, _ in cheatcards._sheet_jobs()}
+    m = cheatcards.manifest()
+    assert {s["file"] for s in m["sheets"]} <= built
+    for row in m["cards"]:
+        assert set(row["fold_pdf"].values()) <= built
+
+
+def test_the_footer_legend_defines_exactly_the_demonstrated_terms() -> None:
+    """`glossary.DEMONSTRATED` excuses three terms from needing a prose gloss on
+    the grounds that the footer legend shows them instead. Nothing used to check
+    that the legend still does — both sides were hand-typed lists. Now the
+    legend is built from `palette.FAMILIES`, so pin the claim to the same table.
+    """
+    assert set(FAMILIES) == set(TRIGGER_COLORS), "a family with no colour, or vice versa"
+    assert {name for _, name in FAMILIES.values()} == set(DEMONSTRATED)
+    for letter, (canonical, _) in FAMILIES.items():
+        assert FAMILY[canonical] == letter, (
+            f"{canonical!r} is the legend's {letter} trigger but not that family in FAMILY"
+        )
+
+
+@needs_typst
+@pytest.mark.parametrize("card", DECK, ids=lambda c: c.slug)
+def test_every_card_front_carries_the_whole_legend(built, card) -> None:
+    """The legend is what defines the trigger names on that card, so a card
+    front missing one of them has an undefined term on it."""
+    text = built[card.slug][1]
+    for _, name in FAMILIES.values():
+        assert name in text, f"{card.slug}: legend is missing {name!r}"

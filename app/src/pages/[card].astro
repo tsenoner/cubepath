@@ -8,21 +8,21 @@ import Header from "../components/Header.astro";
 import manifest from "../data/cards.json";
 
 export function getStaticPaths() {
-  return manifest.map((card) => ({ params: { card: `c${card.index}` }, props: { card } }));
+  return manifest.cards.map((card) => ({ params: { card: `c${card.index}` }, props: { card } }));
 }
 
 const { card } = Astro.props;
-const next = manifest.find((c) => c.slug === card.next_slug) ?? null;
-const ladder = manifest.filter((c) => c.num !== null);
+const next = manifest.cards.find((c) => c.slug === card.next_slug) ?? null;
+const ladder = manifest.cards.filter((c) => c.num !== null);
 ---
 
 <Base
   title={`${card.title} — Cubepath card ${card.num ?? "A"}`}
-  description={`Cubepath printable card ${card.num ? `${card.num} of 3` : "annex"}: ${card.title}. What it covers, what unlocks the next card, and where to reprint it.`}
+  description={`Cubepath printable card ${card.num ? `${card.num} of ${card.of}` : "annex"}: ${card.title}. What it covers, what unlocks the next card, and where to reprint it.`}
 >
   <Header />
   <main>
-    <p class="kicker">{card.num ? `Card ${card.num} of 3` : "Annex — not a tier"}</p>
+    <p class="kicker">{card.num ? `Card ${card.num} of ${card.of}` : "Annex — not a tier"}</p>
     <h1>{card.title}</h1>
 
     {
@@ -82,7 +82,7 @@ const ladder = manifest.filter((c) => c.num !== null);
           ladder.map((c) => (
             <li class={c.index === card.index ? "here" : ""}>
               <a href={c.route}>
-                {c.num}/3 {c.title}
+                {c.num}/{c.of} {c.title}
               </a>
             </li>
           ))

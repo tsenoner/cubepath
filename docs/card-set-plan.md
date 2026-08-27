@@ -379,7 +379,7 @@ Back page content is `B[s] = F[σ[s]]`.
 
 - `card-{0,1,2,3}-{slug}.pdf` — 2 pages, bare ID-1, page 1 front / page 2 back. What a PVC card service wants.
 - `card-N-{slug}-fold-{a4,letter}.pdf` — one sheet, four copies of that one card. Wallet, desk, bag, and the one you will lose. **This preserves today's best property** (one print gives you several copies of the card you actually want) and is what `print.astro` defaults to.
-- `manifest.json` at `guide/build/cards/manifest.json` — one ordered table driving the app ladder, the imposition, the NEXT footers and the supersession text.
+- `manifest.json` at `guide/build/cards/manifest.json` (copied to `app/src/data/cards.json`, which is what the app imports) — `{cards, sheets}`: the ordered card table driving the app ladder, the NEXT footers and the supersession text, plus every whole-deck sheet the build writes, so `print.astro` never re-types a filename. `tests/test_cards.py` pins the committed copy to the generator, because CI does not run `cubepath-cards`.
 
 Zero gutter stays zero gutter: a ±1 mm cut drift takes a sliver of the neighbour, and that sliver is white only because the neighbour's outer 2 mm is blank margin. **That 2 mm margin is load-bearing as cut tolerance and can never be spent on content.**
 

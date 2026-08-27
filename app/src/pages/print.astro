@@ -6,33 +6,36 @@ import Header from "../components/Header.astro";
 // stay /print. Content mirrors docs/printing.md.
 import manifest from "../data/cards.json";
 
-const DECK = [
-  {
-    href: "/cards/deck-a4-fold.pdf",
+// Filenames come from the generator (cheatcards.deck_sheets) so a renamed
+// sheet cannot leave a dead link here; only the prose lives in the page.
+type Sheet = (typeof manifest.sheets)[number];
+const key = (s: Sheet) => [s.paper, s.mode, s.flip].filter(Boolean).join("-");
+
+const LABEL: Record<string, { name: string; note: string }> = {
+  "a4-fold": {
     name: "A4 — the whole set, one sheet",
     note: "Start here. Single-sided, fold, glue, cut. No duplex printer needed.",
   },
-  {
-    href: "/cards/deck-letter-fold.pdf",
-    name: "US Letter — the whole set",
-    note: "Same, Letter paper.",
-  },
-];
-
-const DUPLEX = [
-  {
-    href: "/cards/deck-a4-duplex-long.pdf",
+  "letter-fold": { name: "US Letter — the whole set", note: "Same, Letter paper." },
+  "a4-duplex-long": {
     name: "A4 two-sided, flip on LONG edge",
     note: "Two complete sets per sheet. Pick the file that matches your printer setting.",
   },
-  {
-    href: "/cards/deck-a4-duplex-short.pdf",
+  "a4-duplex-short": {
     name: "A4 two-sided, flip on SHORT edge",
     note: "Same sheet, laid out for the other flip.",
   },
-  { href: "/cards/deck-letter-duplex-long.pdf", name: "US Letter, LONG edge", note: "" },
-  { href: "/cards/deck-letter-duplex-short.pdf", name: "US Letter, SHORT edge", note: "" },
-];
+  "letter-duplex-long": { name: "US Letter, LONG edge", note: "" },
+  "letter-duplex-short": { name: "US Letter, SHORT edge", note: "" },
+};
+
+const sheet = (s: Sheet) => ({
+  href: `/cards/${s.file}`,
+  ...(LABEL[key(s)] ?? { name: s.file, note: "" }),
+});
+
+const DECK = manifest.sheets.filter((s) => s.mode === "fold").map(sheet);
+const DUPLEX = manifest.sheets.filter((s) => s.mode === "duplex").map(sheet);
 
 const VIEWERS = [
   ["Acrobat / Reader", "Page Sizing & Handling → Size → Actual size. Turn off “Auto portrait/landscape”."],
@@ -90,10 +93,10 @@ const VIEWERS = [
       <h2>Or reprint one card</h2>
       <ul class="files">
         {
-          manifest.map((c) => (
+          manifest.cards.map((c) => (
             <li>
               <a href={c.route}>
-                {c.num ? `${c.num}/3` : "A"} — {c.title}
+                {c.num ? `${c.num}/${c.of}` : "A"} — {c.title}
               </a>
               <span>
                 <a href={`/cards/${c.fold_pdf.a4}`}>A4</a> ·{" "}

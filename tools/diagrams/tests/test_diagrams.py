@@ -291,6 +291,5 @@ def test_card_bands_grow_outward_only(tmp_path) -> None:
     assert f'height="{SCREEN.band_u}"' in screen
     assert f'height="{CARD.band_u}"' in card
     # inner edge pinned: top band ends at 32, bottom band starts at 160
-    assert f'height="{SCREEN.band_u}"' in screen and 'y="20"' in screen
-    assert f'height="{CARD.band_u}"' in card and 'y="12"' in card
+    assert 'y="20"' in screen and 'y="12"' in card
     assert 'y="160"' in screen and 'y="160"' in card

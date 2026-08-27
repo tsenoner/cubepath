@@ -46,15 +46,18 @@ asked for.
 
 ## Two-sided printing
 
-Choose **two-sided, flip on LONG edge** (portrait).
+Pick the file that matches your printer's flip setting — `…-duplex-long.pdf`
+for a long-edge flip, `…-duplex-short.pdf` for a short-edge one.
 
-The card grid is centred on the sheet and every card on a side is identical,
-so the layout is symmetric under both the long-edge mirror and the short-edge
-mirror. Fronts and backs therefore register under **either** duplex setting —
-if the backs come out upside down, switch to short edge and the cards still
-line up.
+The grid is centred, so the cards *register* (line up edge to edge) under
+either flip. What does not survive the wrong flip is **which back lands on
+which front**: the two files differ by a whole-page 180° rotation, and under
+the other setting that rotation reverses the row order, so card 1's front
+comes out backed by the annex. The four cards are different, so this is not
+the cosmetic problem it was when every card was the same.
 
-Print **one sheet first** and hold it up to a light before committing paper.
+Print **one sheet first**, cut **one** card, and check the numeral printed on
+both of its faces agrees before committing paper.
 
 ## No duplex, or duplex that drifts
 
@@ -77,7 +80,9 @@ are not laminating.
   printer's maximum weight before buying heavier stock.
 - **Cutting:** cut on the grey hairlines. They run the full width and height
   of the sheet, so one straight guillotine or ruler-and-knife cut serves four
-  cards at once. The solid black ticks in the margins mark the same lines.
+  cards at once. The solid black ticks in the margins mark the same lines. On
+  the fold-over sheet the crease is a *short* grey line, one card wide, and is
+  the one line you never cut.
 - **Corners:** an r ≈ 3 mm corner punch makes it feel like a real card.
 
 ### Lamination — an honest trade

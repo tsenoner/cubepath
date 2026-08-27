@@ -22,6 +22,7 @@ from cubepath.diagrams import (
     _yellow_mask,
     render,
 )
+from cubepath.notation import pll_algs
 
 _REPO = Path(__file__).resolve().parents[4]
 _DATA = _REPO / "app" / "src" / "data" / "extracted" / "jperm-raw.json"
@@ -34,14 +35,10 @@ _ROTATIONS = [
 ]
 
 
-def case_state(alg: str) -> Cube:
-    """The state a (possibly net-rotating) algorithm solves, yellow up.
-
-    For an alg A with net rotation, the case is A⁻¹ applied to a PRE-rotated
-    solved cube (the rotation composes on the left of the inverse — applying
-    it afterwards would conjugate the case onto the wrong face). Enumerate
-    the 24 pre-rotations; exactly one lands every center home.
-    """
+@functools.cache
+def _solved_case_state(alg: str) -> Cube:
+    """The 24-rotation search, memoised. Never handed out directly — see
+    `case_state`."""
     from cubepath.cube import COLORS, invert_algorithm
 
     inv = invert_algorithm(alg)
@@ -53,6 +50,22 @@ def case_state(alg: str) -> Cube:
         if all(c.faces[f][4] == COLORS[f] for f in COLORS):
             return c
     raise AssertionError(f"no pre-rotation brings centers home for {alg!r}")
+
+
+def case_state(alg: str) -> Cube:
+    """The state a (possibly net-rotating) algorithm solves, yellow up.
+
+    For an alg A with net rotation, the case is A⁻¹ applied to a PRE-rotated
+    solved cube (the rotation composes on the left of the inverse — applying
+    it afterwards would conjugate the case onto the wrong face). Enumerate
+    the 24 pre-rotations; exactly one lands every center home.
+
+    The search is cached but the result is not: a `Cube` is mutable, so
+    handing the cached instance to every caller means one `apply()` anywhere —
+    an AUF probe, a recognition experiment — silently rewrites the case every
+    later diagram and cue is derived from.
+    """
+    return _solved_case_state(alg).copy()
 
 
 # Slugs for PLL case names ("Ja" -> "ja", "H" -> "h").
@@ -133,17 +146,17 @@ def full_oll_cases() -> list[CubeDiagram]:
     return cases
 
 
-def full_pll_cases() -> list[CubeDiagram]:
+def _pll_cases(prefix: str, alg_of) -> list[CubeDiagram]:
     """21 PLL diagrams: true side colors + arrows derived from the permutation."""
     cases = []
     for c in _load()["pll"]:
-        cube = case_state(c["algs"][0])
+        cube = case_state(alg_of(c))
         u, sides = _u_layer_views(cube)
         assert all(s == "Y" for s in u), f"PLL {c['name']}: U face not oriented"
         swaps, cycles = _arrows_from_permutation(_u_layer_permutation(cube))
         cases.append(
             CubeDiagram(
-                name=f"pll_full_{_slug(c['name'])}",
+                name=f"{prefix}_{_slug(c['name'])}",
                 label=f"{c['name']} Perm",
                 category="pll_full",
                 u_face=[YELLOW] * 9,
@@ -156,6 +169,11 @@ def full_pll_cases() -> list[CubeDiagram]:
             )
         )
     return cases
+
+
+def full_pll_cases() -> list[CubeDiagram]:
+    """The 21 PLL diagrams as the guide needs them: JPerm's primary algorithm."""
+    return _pll_cases("pll_full", lambda c: c["algs"][0])
 
 
 def card_pll_cases() -> list[CubeDiagram]:
@@ -167,31 +185,8 @@ def card_pll_cases() -> list[CubeDiagram]:
     rotation. Rendering from `algs[0]` there would put a diagram beside an
     algorithm that does not solve it.
     """
-    from cubepath.notation import pll_algs
-
     printed = pll_algs()
-    cases = []
-    for c in _load()["pll"]:
-        alg = printed[c["name"]]
-        cube = case_state(alg)
-        u, sides = _u_layer_views(cube)
-        assert all(s == "Y" for s in u), f"PLL {c['name']}: U face not oriented"
-        swaps, cycles = _arrows_from_permutation(_u_layer_permutation(cube))
-        cases.append(
-            CubeDiagram(
-                name=f"pll_card_{_slug(c['name'])}",
-                label=f"{c['name']} Perm",
-                category="pll_full",
-                u_face=[YELLOW] * 9,
-                top_side=_colorize(sides["top"]),
-                right_side=_colorize(sides["right"]),
-                bottom_side=_colorize(sides["bottom"]),
-                left_side=_colorize(sides["left"]),
-                swaps=swaps,
-                cycles=cycles,
-            )
-        )
-    return cases
+    return _pll_cases("pll_card", lambda c: printed[c["name"]])
 
 
 def render_fullsets(output_dir: Path) -> int:
