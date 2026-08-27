@@ -159,11 +159,11 @@ def union_loops(cells: set[tuple[int, int]]) -> list[list[tuple[int, int]]]:
         start = min(successors)
         loop, cur = [start], start
         while True:
-            options = successors.get(cur)
-            if not options:
+            nexts = successors.get(cur)
+            if not nexts:
                 break
-            nxt = options.pop(0)
-            if not options:
+            nxt = nexts.pop(0)
+            if not nexts:
                 del successors[cur]
             if nxt == start:
                 break
@@ -227,7 +227,7 @@ def render() -> str:
 
 
 def favicon_path() -> Path:
-    """tools/diagrams/src/cubepath/logo.py -> repo root is 4 levels up."""
+    """tools/cubepath/src/cubepath/logo.py -> repo root is 4 levels up."""
     return Path(__file__).resolve().parents[4] / "app" / "public" / "favicon.svg"
 
 

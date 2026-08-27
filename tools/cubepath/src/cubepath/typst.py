@@ -52,8 +52,10 @@ def alg(
     return f"#{fn}({size}, {', '.join(groups)})"
 
 
-def key_alg(name: str, **kw) -> str:
-    return alg(CHUNKS[name], **kw)
+def key_alg(
+    name: str, *, compacted: bool = True, size: str = "AS", extra: str | None = None
+) -> str:
+    return alg(CHUNKS[name], compacted=compacted, size=size, extra=extra)
 
 
 # Characters Typst reads as markup. Underscore matters more than it looks:

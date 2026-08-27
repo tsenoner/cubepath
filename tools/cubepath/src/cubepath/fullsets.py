@@ -11,7 +11,9 @@ from __future__ import annotations
 import functools
 import json
 import re
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 from cubepath.cube import Cube
 from cubepath.diagrams import (
@@ -99,7 +101,9 @@ def _u_layer_permutation(cube: Cube) -> dict[str, str]:
     return perm
 
 
-def _arrows_from_permutation(perm: dict[str, str]) -> tuple[list, list]:
+def _arrows_from_permutation(
+    perm: dict[str, str],
+) -> tuple[list[tuple[str, str]], list[list[str]]]:
     """Decompose the position->destination map into swaps and cycles."""
     swaps: list[tuple[str, str]] = []
     cycles: list[list[str]] = []
@@ -121,8 +125,11 @@ def _arrows_from_permutation(perm: dict[str, str]) -> tuple[list, list]:
 
 
 @functools.cache
-def _load() -> dict:
-    return json.loads(_DATA.read_text())
+def _load() -> dict[str, Any]:
+    """The verified JPerm extraction, as parsed JSON (shape asserted by the
+    app's own extractor, not re-declared here)."""
+    data: dict[str, Any] = json.loads(_DATA.read_text())
+    return data
 
 
 def full_oll_cases() -> list[CubeDiagram]:
@@ -146,7 +153,7 @@ def full_oll_cases() -> list[CubeDiagram]:
     return cases
 
 
-def _pll_cases(prefix: str, alg_of) -> list[CubeDiagram]:
+def _pll_cases(prefix: str, alg_of: Callable[[dict[str, Any]], str]) -> list[CubeDiagram]:
     """21 PLL diagrams: true side colors + arrows derived from the permutation."""
     cases = []
     for c in _load()["pll"]:

@@ -112,7 +112,7 @@ def _ocll_class(cube: Cube) -> str:
 
 
 def test_ocll_full_coverage():
-    classes = {}
+    classes: dict[str, str] = {}
     for name in _OCLL_ALGS:
         cube = state_before(ALGORITHMS[name])
         cls = _ocll_class(cube)

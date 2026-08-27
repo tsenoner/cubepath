@@ -27,7 +27,11 @@ from collections import deque
 
 from cubepath.algs import ALGORITHMS
 from cubepath.cube import state_before
-from cubepath.fullsets import _u_layer_permutation, _u_layer_views, case_state
+
+# `_u_layer_views` lives in diagrams; import it from its home module rather
+# than through fullsets, which only re-exports it by accident of import.
+from cubepath.diagrams import _u_layer_views
+from cubepath.fullsets import _u_layer_permutation, case_state
 from cubepath.notation import pll_rows
 
 # A design budget, not a correctness gate: Card 3's text slot is 33.4 mm and a
@@ -38,6 +42,9 @@ from cubepath.notation import pll_rows
 # line with the observed character mix. The first plan said 34, which would
 # have forced hand-abbreviated cues for no reason at all.
 CUE_MAX_CHARS = 56
+
+# A case's corner story, canonicalised: the sorted `corner_facts` set.
+CornerKey = tuple[tuple[str, str], ...]
 
 # Which side strip of a plan-view diagram shows which face.
 _STRIP = {"F": "bottom", "R": "right", "B": "top", "L": "left"}
@@ -146,20 +153,20 @@ def edge_phrase(alg: str) -> str:
     return ""
 
 
-def signature(alg: str) -> tuple:
+def signature(alg: str) -> tuple[CornerKey, str]:
     """The complete recognition state. Unique across all 21 PLL cases."""
     return (tuple(sorted(corner_facts(alg))), edge_phrase(alg))
 
 
 @functools.cache
-def _corner_collisions() -> set[tuple]:
+def _corner_collisions() -> set[CornerKey]:
     """Corner signatures shared by more than one case.
 
     Only these need the edge clause printed. Every other case is settled by
     its corners, and printing "3 edges clockwise" there would cost a third of
     the cue to say nothing.
     """
-    counts: dict[tuple, int] = {}
+    counts: dict[CornerKey, int] = {}
     for row in pll_rows():
         key = tuple(sorted(corner_facts(row.alg)))
         counts[key] = counts.get(key, 0) + 1
