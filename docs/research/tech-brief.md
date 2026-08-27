@@ -1,5 +1,11 @@
 # Cubepath PWA — Integration Brief
 
+> Kept live, not archived: `app/scripts/extract-algs.mjs` and
+> `app/scripts/verify-l2e.mjs` pin their big-cube algorithm strings to §8 of
+> this file. `raw-keyfacts.json` beside it is the unsynthesised source record
+> behind these claims — nothing imports it, and it is retained only so a
+> disputed line here can be traced back.
+
 Synthesis of 7 research tracks (cubing.js, Astro+PWA, storage/FSRS, Vercel, competitors, install UX, curriculum sources). All claims carry inline sources; disagreements and unverified claims are flagged **UNVERIFIED**.
 
 ---
@@ -188,6 +194,17 @@ Two states, one component rendered in the base layout: **offline-ready** ("App r
 - Hobby limits fit (100 GB transfer, 1M edge requests, 100 deploys/day, 45-min builds; non-commercial only; overage pauses, no billing) ([hobby](https://vercel.com/docs/plans/hobby), [limits](https://vercel.com/docs/limits)). Repo must stay on the personal GitHub account (org repos need Pro).
 
 ### app/vercel.json
+
+> **Superseded — do not implement this block.** The project's Root Directory
+> was left at the repo root, not `app/`, so the config Vercel actually reads is
+> the root `vercel.json` (`installCommand: cd app && npm ci`,
+> `outputDirectory: app/dist`), confirmed by the production build log. An
+> `app/vercel.json` was created from this section, never parsed, and deleted on
+> 2026-08-27 — it silently swallowed edits to the `/sw.js` cache header, which
+> is the PWA's entire update mechanism. Kept here as the record of what was
+> researched; the bullet above about "vercel.json must live at
+> `app/vercel.json`" holds only when Root Directory *is* `app/`.
+
 ```json
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",

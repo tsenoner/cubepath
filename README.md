@@ -5,9 +5,9 @@
 **Live:** [cubepath-six.vercel.app](https://cubepath-six.vercel.app) — installable, the whole course works offline. The printable guide ships in-app at `/cubepath.pdf`; the double-sided credit-card cheat sheet, print-ready sheets and a no-duplex fold-over version are at [`/print`](https://cubepath-six.vercel.app/print) (see [docs/printing.md](docs/printing.md)).
 
 - `app/` — the web app (Astro + TypeScript, installable PWA)
-- `tools/diagrams/` — Python cube simulator + SVG diagram generator (build-time tooling)
+- `tools/cubepath/` — build-time Python: cube simulator, SVG diagrams, card set, logo
 - `guide/` — the printable PDF companion (Pandoc → Typst)
-- `docs/` — master plan, decision log, resources
+- `docs/` — decision log, printing and resource references (`docs/archive/` is finished work, kept for provenance)
 
 ## Commands
 
@@ -19,7 +19,7 @@ Run `make` on its own for the full list. The common ones:
 make install     # install app + Python dependencies
 make dev         # app dev server -> http://localhost:4321
 make check       # local gate: ruff, pytest, astro check, vitest, build
-make build       # PDF guide -> guide/build/cubepath.pdf, plus the app
+make build       # diagrams, PDF guide, card set and the app
 make diagrams    # regenerate SVG diagrams and sync them into the app
 ```
 
@@ -30,13 +30,16 @@ cannot drift apart.
 Working inside a single subtree? The underlying tools still run directly:
 
 ```bash
-cd tools/diagrams && uv run pytest tests/   # verify algorithms + diagram derivation
-cd app && npm run dev                       # app only
+cd tools/cubepath && uv run pytest tests/    # verify algorithms + diagram derivation
+cd app && npm run dev                        # app only
 ```
 
 Every published algorithm is machine-verified against the bundled cube simulator,
 and every case diagram is derived from its algorithm — a mismatch is a build
-error, not a shipped bug.
+error, not a shipped bug. The same applies to the generated files the app ships:
+the PDF, the 130 diagrams, the card PDFs and the favicon are each pinned to their
+generator by a test, so `make check` fails rather than letting a stale artifact
+reach production.
 
 ## License
 

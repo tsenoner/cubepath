@@ -12,8 +12,9 @@ commands, so the two gates cannot drift apart. Run `make` for the full list.
 make install   # install app + Python dependencies
 make dev       # app dev server -> http://localhost:4321
 make check     # local gate: check-py + check-app (what the pre-push hook runs)
+make fmt       # apply every formatter/autofix: prettier, eslint --fix, ruff
 make ci        # check + Playwright E2E (what GitHub Actions runs)
-make build     # PDF guide + card set + app
+make build     # diagrams + PDF guide + card set + app
 make diagrams  # regenerate SVG diagrams + sync into the app
 ```
 
@@ -21,16 +22,30 @@ Two gates, deliberately different: `make check` is fast and runs on every push;
 `make ci` adds the Playwright E2E suite and runs in CI. Changing a command means
 editing the Makefile — never re-list commands in the hook or the workflow.
 
+Both halves of the repo are linted, formatted and type-checked, and every one
+of those is part of `make check`:
+
+| | Python (`tools/cubepath`) | App (`app/`) |
+| --- | --- | --- |
+| lint | `ruff check` | `eslint .` (typescript-eslint + eslint-plugin-astro) |
+| format | `ruff format --check` | `prettier --check .` |
+| types | `mypy` (strict on `src/`, relaxed on `tests/`) | `astro check` (`strictest`) + `tsc -p scripts/tsconfig.json` |
+| tests | `pytest` | `vitest`, the data verifiers, `astro build` |
+
+`make fmt` is the write side of the same list. Prettier and ruff both wrap at
+100 columns, so the two halves of the repo look alike.
+
 Individual tools still run directly when working inside one subtree:
 
 ```bash
-cd tools/diagrams
+cd tools/cubepath
 uv run cubepath-diagrams   # generate SVG diagrams
 uv run cubepath-cards      # generate the printable card set + print sheets
 uv run pytest tests/       # run tests
 uv run pytest tests/test_diagrams.py::test_all_cases_count   # single test
 uv run ruff check src/ tests/
 uv run ruff format src/ tests/
+uv run mypy                # strict type gate (paths come from pyproject.toml)
 ```
 
 **Prerequisites:** uv, pandoc (>=3.1.2, for the typst writer), typst,
@@ -41,21 +56,84 @@ Node >= 22.12 (app/)
 The pre-push hook runs `make check` — a push that would fail CI is rejected
 locally.
 
+## Repo layout
+
+| path | what lives there |
+| --- | --- |
+| `app/` | the Astro PWA — 25 MDX lessons, the trainer, the reference set |
+| `tools/cubepath/` | build-time Python: simulator, diagrams, card set, logo |
+| `guide/` | `cubepath.md` + the pandoc/typst build for the PDF companion |
+| `docs/` | live reference; `docs/archive/` is finished work kept for provenance |
+| `scripts/` | multi-step build logic too long to inline in the Makefile |
+
+`docs/README.md` is the index: `DECISIONS.md` (append-only, always current),
+`printing.md`, `resources.md`, `TODO.md` (open items only — completed ones move
+into `DECISIONS.md`) and `research/tech-brief.md`, which stays live because two
+app scripts pin their big-cube algorithm strings to its §8. Everything under
+`docs/archive/` carries a banner naming what superseded it; nothing there
+describes the project as it is.
+
+## Generated artifacts committed under `app/`
+
+Vercel builds only `cd app && npm ci && npm run build` — no Python, pandoc,
+typst or poppler on the runner — so anything the app serves has to be committed,
+generated locally. That makes silent staleness the failure mode, and every one
+of these is therefore pinned by a test:
+
+| artifact | produced by | pinned by |
+| --- | --- | --- |
+| `app/public/cubepath.pdf` | `make build-guide` | `tests/test_guide.py` (input digest in `guide/pdf.stamp.json`) |
+| `app/public/diagrams/**` (130 SVGs) | `make diagrams` | `tests/test_diagrams.py` — generator match + byte-identity with `guide/figures/generated/` |
+| `app/public/cards/*.pdf`, `app/src/data/cards.json` | `make cards` | `tests/test_cards.py` |
+| `app/public/favicon.svg`, `app/public/icons/*.png` | `make logo` | `tests/test_logo.py` |
+| `app/src/data/fullsets*.gen.ts` | `node scripts/gen-cases.mjs` | `app/tests/algs.spec.ts` (kpuzzle) |
+
+A PDF cannot be compared to its markdown — typst output is not byte-
+reproducible — so `make build-guide` stamps the **inputs** instead
+(`scripts/guide_stamp.py`: the markdown, the pandoc/typst config, the Lua
+filter, and only the 51 figures `cubepath.md` actually references) and the test
+recomputes that digest. Edit the guide and forget to rebuild, and `make check`
+fails. This gate exists because the shipped PDF went two content revisions
+stale in production without anything noticing.
+
+`make build-guide` depends on `make diagrams`, so the guide can never be built
+against a diagram tree the app has not been given. Never run `pandoc` or
+`cubepath-diagrams` by hand and commit the result — go through the Makefile, or
+the stamp and the byte-identity gate will disagree with the tree.
+
 ## App (app/)
 
 Astro + TypeScript strict PWA (offline-first). Commands, from `app/`:
 
 ```bash
 npm run dev / build / preview
-npx astro check          # strict type gate
+npm run lint             # eslint (add :fix to autofix)
+npm run format:check     # prettier (npm run format to write)
+npx astro check          # strictest type gate for src/ + e2e/ + tests/
+npm run check:scripts    # tsc --checkJs over scripts/*.mjs
 npx vitest run           # every algorithm machine-verified on the cubing.js kpuzzle
-npx playwright test      # smoke + airplane-mode E2E (the PWA gate)
+npx playwright test      # smoke + airplane-mode E2E (the PWA gate) + axe a11y
 node scripts/gen-cases.mjs      # regenerate src/data/fullsets.gen.ts + .rich.gen.ts
 node scripts/extract-algs.mjs   # re-extract + verify the JPerm dataset (gated write)
 node scripts/verify-f2l.mjs     # F2L-41 verifier
 node scripts/verify-l2e.mjs     # 5x5 L2E verifier (gated write of l2e-raw.json)
 node scripts/gen-icons.mjs      # rasterize the PWA icon set from favicon.svg
+node scripts/gen-stickering.mjs # regenerate the twisty-player stickering masks
 ```
+
+**Everything under `app/scripts/` is type-checked** (`scripts/tsconfig.json`,
+`checkJs: true`) — it generates the shipped algorithm data and runs the F2L/L2E
+verifiers, so a type error there can silently weaken the verification it exists
+to perform. Annotate new scripts with JSDoc; do not add a script that opts out.
+The scripts stay on `strict` rather than the app's `strictest`, because
+`noUncheckedIndexedAccess` costs ~99 casts in dense cube-math indexing that JS
+cannot write as `!`.
+
+Two Prettier settings are load-bearing, not taste: `.prettierignore` excludes
+`src/content` (its MDX printer rewrites `*italic*` and explodes the lesson
+figures) and the generated data files, and `quoteProps: "preserve"` keeps the
+quoted keys `gen-stickering.mjs` writes into `src/lib/stickering.ts` — without
+it, formatting and regenerating that file fight each other forever.
 
 Brand mark: an isometric cube with a yellow route climbing the front face and
 crossing the top. `cubepath.logo` (Python) is the source of truth — its 23 paths
@@ -86,24 +164,35 @@ alg is kpuzzle-verified in `tests/algs.spec.ts`.
 Deploys: Vercel project `cubepath` (deploy setup in docs/DECISIONS.md § Deploys), git-linked via
 the Vercel GitHub App — **every push to master auto-deploys** to
 https://cubepath-six.vercel.app (root `vercel.json` builds from `app/`).
-Manual fallback only: `scripts/build-deploy-payload.py` (refuses incomplete
-file sets) + the Vercel MCP.
+Manual fallback only: `vercel login && cd app && vercel deploy --prod`, or the
+Vercel MCP.
 
-## Diagram pipeline (tools/diagrams/)
+**There is exactly one `vercel.json`, at the repo root.** Vercel reads the
+config at the project's Root Directory, which is the repo root here — a second
+copy under `app/` is never parsed, so an edit to it (the `/sw.js` no-cache
+header is the PWA's whole update mechanism) would look correct, pass review and
+do nothing. One existed and was deleted; do not recreate it. JSON has no comment
+syntax and Vercel rejects unknown root keys, which is why this note lives here
+rather than in the file.
 
-Python SVG generator + cube simulator feeding both the guide PDF and the app.
+## Build-time Python tooling (tools/cubepath/)
+
+One `uv` project, package `cubepath`, four entry points: the SVG diagram
+generator, the card set, the logo, and the cube simulator they all derive from.
+The directory was `tools/diagrams/` until cards and the logo landed in it; it is
+named for the package now (`parents[N]` depths are unchanged, so no code moved).
 
 ### Cube Simulator
 
-`tools/diagrams/src/cubepath/cube.py` is a minimal Rubik's cube simulator (~330 lines). Used at build time by `diagrams.py`, `fullsets.py` and `recognition.py` to derive sticker states and card recognition cues, and by tests to verify diagram sticker colors and algorithm correctness. State: 6 faces × 9 stickers (row-major). Table-driven moves (R/L/U/D/F/B/M/S/E + wide/rotations). Algorithm parser handles `R U R' U'`, `R2`, lowercase wide (`r`, `f`), and `(R U)×2` repeats. Coordinate mapping `diagram_to_sim(face, a, b)` bridges diagram coords to simulator state.
+`tools/cubepath/src/cubepath/cube.py` is a minimal Rubik's cube simulator (~330 lines). Used at build time by `diagrams.py`, `fullsets.py` and `recognition.py` to derive sticker states and card recognition cues, and by tests to verify diagram sticker colors and algorithm correctness. State: 6 faces × 9 stickers (row-major). Table-driven moves (R/L/U/D/F/B/M/S/E + wide/rotations). Algorithm parser handles `R U R' U'`, `R2`, lowercase wide (`r`, `f`), and `(R U)×2` repeats. Coordinate mapping `diagram_to_sim(face, a, b)` bridges diagram coords to simulator state.
 
 ### Algorithm Data
 
-`tools/diagrams/src/cubepath/algs.py` is the single source of truth for the 22 algorithms the guide teaches. The full 57-OLL / 21-PLL sets are derived from the app's verified extraction via `fullsets.py`; 15 of the 21 PLLs (all but `notation.PLL_OWNED`) and the four big-cube strings come from there too. Diagrams derive their sticker states from these strings via the simulator; `tests/test_derivation.py` asserts the guide's tables match, arrows match the real piece permutation, and the 7 corner-orientation algs cover all 7 OCLL classes. Never hand-define sticker layouts — derive them.
+`tools/cubepath/src/cubepath/algs.py` is the single source of truth for the 22 algorithms the guide teaches. The full 57-OLL / 21-PLL sets are derived from the app's verified extraction via `fullsets.py`; 15 of the 21 PLLs (all but `notation.PLL_OWNED`) and the four big-cube strings come from there too. Diagrams derive their sticker states from these strings via the simulator; `tests/test_derivation.py` asserts the guide's tables match, arrows match the real piece permutation, and the 7 corner-orientation algs cover all 7 OCLL classes. Never hand-define sticker layouts — derive them.
 
 ### Diagram Pipeline
 
-`tools/diagrams/src/cubepath/diagrams.py` defines the guide's 17 core cube diagrams as `CubeDiagram` dataclasses rendered to SVG using `svgwrite`. Case sticker data is **derived from algorithms** via `_derived_cross_case` / `_derived_oll_corner_case` / `_derived_pll_case` (OLL: yellow/grey masks; PLL: true colors). The entry point `cubepath-diagrams` writes to `guide/figures/generated/`.
+`tools/cubepath/src/cubepath/diagrams.py` defines the guide's 17 core cube diagrams as `CubeDiagram` dataclasses rendered to SVG using `svgwrite`. Case sticker data is **derived from algorithms** via `_derived_cross_case` / `_derived_oll_corner_case` / `_derived_pll_case` (OLL: yellow/grey masks; PLL: true colors). The entry point `cubepath-diagrams` writes to `guide/figures/generated/`.
 
 Four case groups: `_oll_cross_cases()` (3), `_oll_corner_cases()` (8), `_pll_corner_cases()` (2), `_pll_edge_cases()` (4). `fullsets.py` builds a further 78 (57 OLL + 21 PLL) from the app's extraction, into `oll-full/` and `pll-full/`.
 
@@ -162,7 +251,8 @@ from the preamble's `#let` helpers, so a helper added later is covered by constr
 
 `/c0`–`/c3` are **printed on card stock and can never change or 404** — Playwright
 treats them as a public contract. See `docs/printing.md` for print/duplex/lamination
-guidance and `docs/card-set-plan.md` for why the set stops at three cards.
+guidance and `docs/archive/card-set-plan.md` for why the set stops at three
+cards.
 
 ### Lua Filter (`guide/filters/callouts.lua`)
 
@@ -230,3 +320,6 @@ The guide should be as small and concise as possible while containing all inform
 - U-face indices are row-major: 0=TL, 1=TC, 2=TR, 3=ML, 4=Center, 5=MR, 6=BL, 7=BC, 8=BR. Top row = back of cube, bottom row = front.
 - OLL cross algorithms: `F(R U R' U')F'` solves **Line** (hold horizontal), `f(R U R' U')f'` solves **Hook** (hold L in front-right).
 - Ruff config: Python 3.12, line-length 100, rules E/F/I/UP/W.
+- mypy: `strict` over `src/`, signatures not required in `tests/`; `svgwrite`
+  has no stubs and is the one ignored import. Prefer a real annotation to a
+  `type: ignore`, and if one is unavoidable make it per-code with a reason.

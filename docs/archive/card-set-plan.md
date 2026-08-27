@@ -1,7 +1,11 @@
-<!-- Research-backed build order for the printable card SET (not yet built).
-     Produced 2026-08-26 from a 13-agent research + design + adversarial-judge
-     pass. The single-card v2 (PR #1) is DONE and shipped; this document is the
-     unbuilt follow-on. Keep it here rather than in a chat transcript. -->
+<!-- ARCHIVED — EXECUTED PLAN. The four-card set shipped in 5eb5a8d
+     (2026-08-27); every "REWRITE"/"EDIT" work order below is DONE. Read it as
+     the record of *why* the set looks the way it does, never as pending work.
+     Retained (not deleted) because live code cites its section numbers:
+     cubepath/cards.py and cubepath/cheatcards.py. Original header follows.
+
+     Research-backed build order for the printable card SET. Produced
+     2026-08-26 from a 13-agent research + design + adversarial-judge pass. -->
 
 # Cubepath Progression Set — Build Order v1.0
 

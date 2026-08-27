@@ -1,7 +1,8 @@
 # Decision log — autonomous build
 
 Decisions made during the autonomous PWA build (Aug 2026), beyond what the
-master plan (docs/master-plan.html) and the user's locked answers specify.
+master plan (docs/archive/master-plan.html) and the user's locked answers
+specify.
 User-locked: full M0–M6 scope · Vercel deploy · push to master per milestone ·
 MIT code + CC BY 4.0 content · guide aesthetic · free subdomain · full big-cube
 courses · PDF stays first-class.
@@ -39,12 +40,17 @@ courses · PDF stays first-class.
 - **Tokens**: warm paper #FCFBF8 / ink #1C1917, accent #1565C0 (the guide's
   algorithm-callout blue), ok #2E7D32, warn #E65100; cube colors and trigger
   colors (trig-r/g/b) carried over verbatim from the pipeline; dark theme
-  counterparts defined in design/build_canvas.py.
+  counterparts defined in the design canvas.
 - **Signature elements**: trigger-colored monospace algorithms, real derived
   case diagrams inline, guide callout system on the web, case-row anatomy
   (diagram / name+recognition / alg / status / play).
-- design/ holds the generator (build_canvas.py) + artboards; re-run and
-  re-seed to update the canvas.
+- The canvas was a one-time exploration. **Retired 2026-08-27**: the design
+  system now lives in `app/src/styles/tokens.css`, which is the source of
+  truth — the canvas had already drifted past it (its `--line` / `--faint`
+  are the pre-contrast-audit values and it never knew about the four
+  `--logo-*` tokens). Generator and artboards archived to
+  `docs/archive/design/` rather than deleted, because they are the provenance
+  for the type and colour choices above.
 
 ## M0
 
@@ -68,8 +74,13 @@ courses · PDF stays first-class.
   **Resolved 2026-08-25**: the user installed https://github.com/apps/vercel
   on tsenoner/cubepath; the project is git-linked (root `vercel.json` builds
   from `app/`) and **every push to master now auto-deploys**. The MCP
-  file-payload path and `scripts/build-deploy-payload.py` are retained only
-  as a manual fallback. Production alias: https://cubepath-six.vercel.app.
+  file-payload path is retained as a manual fallback, alongside the simpler
+  `vercel login && cd app && vercel deploy --prod`. Production alias:
+  https://cubepath-six.vercel.app.
+  **`scripts/build-deploy-payload.py` deleted 2026-08-27** — it wrote to a
+  finished agent session's scratch path, nothing invoked it, and its claim to
+  be "the ONLY sanctioned way to assemble a deploy" stopped being true the
+  moment pushes started auto-deploying.
 - Vercel Deployment Protection (SSO) disabled on the project — required for a
   public PWA and service-worker testing.
 
@@ -149,10 +160,12 @@ courses · PDF stays first-class.
   `pypdf /PrintScaling` post-pass and a CR80 press PDF with bleed — neither
   affects home printing and each adds a dependency.
 
-## Card SET — planned, not built
+## Card SET — planned, then built (shipped 2026-08-27)
 
-`docs/card-set-plan.md` is the research-backed build order for a staged card
-set (3 numbered cards + 1 annex). Two load-bearing conclusions:
+`docs/archive/card-set-plan.md` is the research-backed build order for the staged
+card set (3 numbered cards + 1 annex). It has since been executed in full — the
+plan is archived, and the sections below are the record of what was decided.
+Two load-bearing conclusions:
 
 - **A tier exists only where the learner's ability changes, and after every
   card they must still be able to fully solve a cube.** That kills Phase 1.5
@@ -196,7 +209,7 @@ card's `a()` with `GAP = 0.55em`):
   width of all 21 to **0.00 mm**. It can be trusted for layout arithmetic.
 - Widest **Na 43.10 mm**, median 29.91 mm, narrowest **Ua 16.83 mm**.
 - Chunk gaps cost **1.261 mm each**, 11.9–20.6 % of an algorithm's width.
-- `docs/card-set-plan.md` §3 predicted `F 33.8` / `Na 39.3`; those numbers
+- `docs/archive/card-set-plan.md` §3 predicted `F 33.8` / `Na 39.3`; those numbers
   assume **3 chunks per algorithm**. The shipped card chunks at ~3.5 tokens
   per chunk and these follow it, so **three algorithms exceed Card 3's
   33.4 mm text slot, not two**: F (36.32), Na (43.10), Nb (34.31).
@@ -386,3 +399,21 @@ web ladder is the deck table rather than a second copy of it.
 `reuseExistingServer`, and the dev toolbar injects its own `<h1>` elements —
 breaking every heading assertion for reasons unrelated to the app. `PW_PORT`
 moves the test server out of the way.
+
+## Card set — shipped (2026-08-27)
+
+Closes the only completed item that was still filed in `docs/TODO.md`: the
+request for "small portable credit-card size cheatsheets for each step",
+modelled on the [Z-Cube CFOP card
+set](https://mastercubestore.de/anleitungen-ratgeber/1923-z-cube-cfop-cards-algorithm-set-f2l-oll-and-pll.html).
+
+Shipped as the four-card progression set — three numbered cards plus an annex.
+`make cards` generates them from the canonical algorithm data into
+`guide/build/cards/` and syncs the PDFs to `app/public/cards/`; the app serves
+them from `/print` and from the frozen per-card routes `/c0`–`/c3`. Why the set
+stops at three cards is in `docs/archive/card-set-plan.md`; print, duplex and
+lamination guidance is in `docs/printing.md`.
+
+Deliberately *not* a copy of the prior art: the Z-Cube set is organised by
+algorithm family (F2L / OLL / PLL), this one by learner stage, so finishing any
+card still leaves you able to solve the whole cube.

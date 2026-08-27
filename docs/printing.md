@@ -1,6 +1,6 @@
 # Printing the Cubepath card set
 
-`make cards` (or `uv run cubepath-cards` from `tools/diagrams/`) writes the
+`make cards` (or `uv run cubepath-cards` from `tools/cubepath/`) writes the
 set to `guide/build/cards/` and syncs it into `app/public/cards/`. Four cards:
 three numbered progression cards and one annex.
 

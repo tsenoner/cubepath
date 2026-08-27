@@ -1,2 +1,6 @@
-- [x] create small portable credit-card size cheatsheets for each step similar to: https://mastercubestore.de/anleitungen-ratgeber/1923-z-cube-cfop-cards-algorithm-set-f2l-oll-and-pll.html — shipped as the four-card progression set (three numbered cards plus an annex). `make cards` (or `uv run cubepath-cards` from `tools/diagrams/`) generates them from the canonical alg data into `guide/build/cards/` and syncs the PDFs to `app/public/cards/`; the app serves them from `/print` and from the frozen per-card routes `/c0`–`/c3`. See `docs/card-set-plan.md` for why the set stops at three cards and `docs/printing.md` for print/duplex/lamination guidance.
+# Open work
+
+Completed items move to `docs/DECISIONS.md` with their rationale — this file
+holds only what is still open.
+
 - [ ] extend with different guides, can be found here: https://www.kungfoomanchu.com/home.html#333
