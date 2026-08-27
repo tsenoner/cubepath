@@ -198,8 +198,15 @@ Standard Western color scheme with **Yellow on top, White on bottom, Red in fron
 **Move rotation direction:** CW when looking at the face from outside. For the isometric projection:
 - R CW from +x: top→back→bottom→front (F→U→B→D→F). In yz plane: (y, z) → (z, 2−y).
 - U CW from +y: front→left→back→right (F→L→B→R→F). In xz plane: similar.
-- F CW from +z: top→right→bottom→left. In xy plane: similar.
+- F CW from +z: top→right→bottom→left (U→R→D→L→U). In xy plane: similar.
 - L/D follow opposite-face conventions. M follows L direction, S follows F direction, E follows D direction.
+
+**This section is machine-checked.** `tests/test_conventions.py` parses the table,
+the adjacency ring, the `(F→U→B→D→F)` cycles and the slice claims straight out of
+this file and asserts them against `cube.py`, so a wrong direction fails the build
+instead of quietly misleading the next session — which is exactly what it did until
+these sentences were corrected. Keep the formats above intact: the parsers fail loudly
+if they stop matching, rather than silently passing.
 
 ### Diagram output structure
 
