@@ -1,17 +1,29 @@
 /* Cubepath design tokens — from the design canvas (design/build_canvas.py). */
+/*
+ * Contrast is a measured property here, not a taste call. Every text token
+ * clears 4.5:1 on both --paper and --card, --line clears 3:1 (it is the only
+ * thing that makes a .card read as a container), and each accent surface
+ * carries its own --on-* foreground because #fff on a *light* dark-mode
+ * accent measured 2.44:1. Re-measure before retuning any of them.
+ */
 :root {
   --paper: #fcfbf8;
   --card: #ffffff;
   --ink: #1c1917;
   --soft: #57534e;
-  --faint: #8a857d;
-  --line: #e7e4de;
+  --faint: #79736a; /* 4.54:1 on paper, 4.69:1 on card */
+  --line: #948f86; /* 3.11:1 on paper, 3.21:1 on card */
   --accent: #1565c0;
   --accent-soft: #e8f4fd;
   --ok: #2e7d32;
   --ok-soft: #e8f5e9;
-  --warn: #e65100;
+  --warn: #b23c00; /* 5.73:1 on paper, 5.41:1 on warn-soft */
   --warn-soft: #fff3e0;
+  --on-accent: #ffffff; /* 5.75:1 on accent */
+  --on-ok: #ffffff; /* 5.13:1 on ok */
+  --on-warn: #ffffff; /* 5.93:1 on warn */
+  --shell-max: 1200px;
+  --shell-x: 20px;
   --brand: #ffd500;
   --logo-body: #17130f;
   --logo-u: #7a736b;
@@ -30,14 +42,17 @@
   --card: #1e1b18;
   --ink: #ece8e1;
   --soft: #b3ada4;
-  --faint: #7d786f;
-  --line: #2e2a26;
+  --faint: #8f8a81; /* 5.36:1 on paper, 5.00:1 on card */
+  --line: #6f6960; /* 3.38:1 on paper, 3.16:1 on card */
   --accent: #6faae8;
   --accent-soft: #16283c;
   --ok: #7cc47f;
   --ok-soft: #16281a;
-  --warn: #f0964c;
+  --warn: #f0964c; /* 8.03:1 on paper, 6.88:1 on warn-soft */
   --warn-soft: #2e2014;
+  --on-accent: #0d1a26; /* 7.20:1 on accent */
+  --on-ok: #10200f; /* 8.14:1 on ok */
+  --on-warn: #2a1200; /* 7.74:1 on warn */
   --logo-body: #26221e;
   --logo-u: #a39c92;
   --logo-f: #6a645c;
@@ -53,14 +68,17 @@
     --card: #1e1b18;
     --ink: #ece8e1;
     --soft: #b3ada4;
-    --faint: #7d786f;
-    --line: #2e2a26;
+    --faint: #8f8a81;
+    --line: #6f6960;
     --accent: #6faae8;
     --accent-soft: #16283c;
     --ok: #7cc47f;
     --ok-soft: #16281a;
     --warn: #f0964c;
     --warn-soft: #2e2014;
+    --on-accent: #0d1a26;
+    --on-ok: #10200f;
+    --on-warn: #2a1200;
     --logo-body: #26221e;
     --logo-u: #a39c92;
     --logo-f: #6a645c;
@@ -73,6 +91,33 @@
 
 * {
   box-sizing: border-box;
+}
+
+/*
+ * `hidden` is a promise, not a hint. The UA rule for it is origin-weak, so any
+ * author `display:` beats it — which is how the /practice review stage (and its
+ * src-less <img>) shipped visible on every page load. One global, so no future
+ * `display: flex` can defeat the attribute again.
+ */
+[hidden] {
+  display: none !important;
+}
+
+/* The UA focus ring is invisible on transparent pills and borderless rows. */
+:where(a, button, summary, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 body {
@@ -90,6 +135,14 @@ a {
   text-decoration: none;
 }
 a:hover {
+  text-decoration: underline;
+}
+/* WCAG 1.4.1: a link sitting inside running text may not be signalled by colour
+   alone (axe `link-in-text-block`, gated by e2e/a11y.spec.ts). Links that are
+   their own block — nav items, ladder rows, case cards — are not in a text
+   block and keep the undecorated look. */
+p a,
+footer a {
   text-decoration: underline;
 }
 
@@ -174,5 +227,5 @@ h3 {
 .btn.primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }

@@ -81,7 +81,8 @@ export async function recordReview(
   const progress = tx.objectStore("progress");
   // Reviewing implies at least "learning" — but never demotes "learned".
   const existing = await progress.get(card.caseId);
-  const status: CaseStatus = existing && existing.status !== "unseen" ? existing.status : "learning";
+  const status: CaseStatus =
+    existing && existing.status !== "unseen" ? existing.status : "learning";
   await Promise.all([
     tx.objectStore("cards").put(card),
     tx.objectStore("reviews").add({ caseId: card.caseId, rating, review: when }),
@@ -97,6 +98,26 @@ export async function putCard(card: Card & { caseId: string }): Promise<void> {
 
 export async function getCard(caseId: string): Promise<(Card & { caseId: string }) | undefined> {
   return (await getDB()).get("cards", caseId);
+}
+
+/**
+ * Drop cards + progress rows for case ids the dataset no longer has.
+ *
+ * A card outlives its case whenever an id is renamed upstream or a backup from
+ * an older build is imported. Merely skipping such a card dead-ends the review
+ * queue, because grading re-persists it — it has to leave the store.
+ */
+export async function forgetCards(caseIds: string[]): Promise<void> {
+  if (caseIds.length === 0) return;
+  const db = await getDB();
+  const tx = db.transaction(["cards", "progress"], "readwrite");
+  await Promise.all([
+    ...caseIds.flatMap((id) => [
+      tx.objectStore("cards").delete(id),
+      tx.objectStore("progress").delete(id),
+    ]),
+    tx.done,
+  ]);
 }
 
 /** Cards due at or before `now`, soonest first. */
@@ -145,12 +166,25 @@ export async function exportBackup(): Promise<BackupEnvelope> {
   };
 }
 
-export async function importBackup(raw: unknown): Promise<void> {
+/**
+ * Restore a backup, dropping rows whose case this build no longer knows.
+ *
+ * Import is the main path by which an orphan card enters the store: a backup
+ * from an older build carries ids that were since renamed or retired, and an
+ * orphan in the review queue is a case with no diagram, no name and no
+ * algorithm. `isKnownCase` is injected so db.ts stays free of the dataset;
+ * the returned ids are reported to the user rather than silently swallowed.
+ */
+export async function importBackup(
+  raw: unknown,
+  isKnownCase: (caseId: string) => boolean = () => true,
+): Promise<{ skipped: string[] }> {
   const env = raw as BackupEnvelope;
   if (env?.app !== "cubepath" || !env.data) throw new Error("Not a Cubepath backup file");
   if (env.schemaVersion > DB_VERSION) {
     throw new Error("Backup was made by a newer version of Cubepath");
   }
+  const skipped = new Set<string>();
   const db = await getDB();
   const tx = db.transaction(["progress", "cards", "reviews", "settings"], "readwrite");
   // Queue everything without awaiting each request — IndexedDB executes
@@ -161,15 +195,26 @@ export async function importBackup(raw: unknown): Promise<void> {
     tx.objectStore("reviews").clear(),
     tx.objectStore("settings").clear(),
   ];
-  for (const p of env.data.progress ?? []) ops.push(tx.objectStore("progress").put(p));
+  for (const p of env.data.progress ?? []) {
+    if (!isKnownCase(p.caseId)) {
+      skipped.add(p.caseId);
+      continue;
+    }
+    ops.push(tx.objectStore("progress").put(p));
+  }
   for (const c of env.data.cards ?? []) {
+    if (!isKnownCase(c.caseId)) {
+      skipped.add(c.caseId);
+      continue;
+    }
     // Revive dates: the by-due index needs real Date objects (ts-fsrs itself
     // tolerates ISO strings, which would silently break the due queue).
     ops.push(
       tx.objectStore("cards").put({
         ...c,
         due: new Date(c.due),
-        last_review: c.last_review ? new Date(c.last_review) : undefined,
+        // Omitted, not `undefined`: exactOptionalPropertyTypes distinguishes them.
+        ...(c.last_review ? { last_review: new Date(c.last_review) } : {}),
       }),
     );
   }
@@ -178,4 +223,5 @@ export async function importBackup(raw: unknown): Promise<void> {
   }
   for (const s of env.data.settings ?? []) ops.push(tx.objectStore("settings").put(s.value, s.key));
   await Promise.all([...ops, tx.done]);
+  return { skipped: [...skipped] };
 }

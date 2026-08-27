@@ -3,16 +3,23 @@ import "fake-indexeddb/auto";
 import { beforeEach, describe, expect, test } from "vitest";
 import { IDBFactory } from "fake-indexeddb";
 
+import { createEmptyCard } from "ts-fsrs";
+
 import {
   _resetDBCache,
   allProgress,
   dueCards,
   exportBackup,
+  forgetCards,
   getCard,
   importBackup,
   setStatus,
 } from "../src/lib/db";
 import { dueQueue, ensureCard, Rating, previewIntervals, review } from "../src/lib/srs";
+import { caseById } from "../src/data/algs";
+
+/** An id no build of the dataset has ever had — the orphan-card stand-in. */
+const ORPHAN = "pll.u-a";
 
 beforeEach(() => {
   // Fresh database per test.
@@ -117,5 +124,83 @@ describe("backup", () => {
 
   test("import refuses foreign files", async () => {
     await expect(importBackup({ app: "not-cubepath" })).rejects.toThrow(/Not a Cubepath backup/);
+  });
+
+  test("import drops rows for cases the dataset no longer has, and says how many", async () => {
+    const now = new Date("2026-08-19T12:00:00Z");
+    const card = createEmptyCard(now);
+    const { skipped } = await importBackup(
+      {
+        app: "cubepath",
+        schemaVersion: 1,
+        exportedAt: now.toISOString(),
+        data: {
+          progress: [
+            { caseId: "pll.t", status: "learning", updatedAt: 0 },
+            { caseId: ORPHAN, status: "learning", updatedAt: 0 },
+          ],
+          cards: [
+            { ...card, caseId: "pll.t" },
+            { ...card, caseId: ORPHAN },
+          ],
+          reviews: [],
+          settings: [],
+        },
+      },
+      (id) => caseById.has(id),
+    );
+
+    expect(skipped).toEqual([ORPHAN]);
+    expect(await getCard(ORPHAN)).toBeUndefined();
+    expect(await getCard("pll.t")).toBeDefined();
+    expect((await allProgress()).map((p) => p.caseId)).toEqual(["pll.t"]);
+  });
+
+  test("import without a validator keeps every card (the default predicate)", async () => {
+    const now = new Date("2026-08-19T12:00:00Z");
+    const { skipped } = await importBackup({
+      app: "cubepath",
+      schemaVersion: 1,
+      exportedAt: now.toISOString(),
+      data: {
+        progress: [],
+        cards: [{ ...createEmptyCard(now), caseId: ORPHAN }],
+        reviews: [],
+        settings: [],
+      },
+    });
+    expect(skipped).toEqual([]);
+    expect(await getCard(ORPHAN)).toBeDefined();
+  });
+});
+
+describe("orphan cards", () => {
+  test("an unknown case id is purged from the queue, not merely skipped", async () => {
+    const now = new Date("2026-08-19T12:00:00Z");
+    await ensureCard(ORPHAN, now);
+    await ensureCard("pll.t", now);
+    await setStatus(ORPHAN, "learning");
+    expect(caseById.has(ORPHAN)).toBe(false);
+    expect((await dueQueue(now)).toSorted()).toEqual(["pll.t", ORPHAN]);
+
+    // What nextReview() does: everything the dataset cannot resolve leaves the
+    // store. Skipping alone dead-ends the queue, because grading re-persists it.
+    const unknown = (await dueQueue(now)).filter((id) => !caseById.has(id));
+    expect(unknown).toEqual([ORPHAN]);
+    await forgetCards(unknown);
+
+    expect(await dueQueue(now)).toEqual(["pll.t"]);
+    expect(await getCard(ORPHAN)).toBeUndefined();
+    // The progress row goes with it, or "Your cases" keeps showing the ghost.
+    expect(await allProgress()).toEqual([]);
+    // …and the live card's schedule is untouched.
+    expect(await getCard("pll.t")).toBeDefined();
+  });
+
+  test("forgetCards on an empty list is a no-op", async () => {
+    const now = new Date("2026-08-19T12:00:00Z");
+    await ensureCard("pll.t", now);
+    await forgetCards([]);
+    expect(await dueQueue(now)).toEqual(["pll.t"]);
   });
 });

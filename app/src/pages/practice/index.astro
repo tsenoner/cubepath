@@ -8,7 +8,10 @@ import { TRAINER_GROUPS, groupSize } from "../../lib/trainer";
 const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
 ---
 
-<Base title="Practice — Cubepath" description="Drill cases with real scrambles and spaced-repetition reviews — fully offline.">
+<Base
+  title="Practice — Cubepath"
+  description="Drill cases with real scrambles and spaced-repetition reviews — fully offline."
+>
   <Header active="practice" />
   <main>
     <div class="columns">
@@ -57,7 +60,15 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
         <div class="card stage" id="drill-stage">
           <span class="label" id="drill-label">SCRAMBLE · HOLD YELLOW UP</span>
           <p class="alg scramble" id="drill-scramble" data-testid="scramble">…</p>
-          <p class="mono timer" id="timer">0.00</p>
+          <p
+            class="mono timer"
+            id="timer"
+            tabindex="0"
+            role="button"
+            aria-label="Start or stop the timer"
+          >
+            0.00
+          </p>
           <div class="chip-row center" id="stats-row">
             <span class="chip ghost" id="stat-ao5">ao5 · —</span>
             <span class="chip ghost" id="stat-ao12">ao12 · —</span>
@@ -68,7 +79,12 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
             <button class="btn" id="show-case-btn" type="button">Show case</button>
           </div>
           <div id="case-reveal" hidden>
-            <img id="case-img" alt="Case diagram" width="84" height="84" />
+            <!-- Both stay hidden until setCaseImage picks one: a visible <img>
+                 with no src paints the browser's broken-image glyph. -->
+            <img id="case-img" alt="" width="84" height="84" hidden />
+            <p class="no-diagram" id="case-no-diagram" hidden>
+              <span class="nd-set"></span><span class="nd-note">no diagram yet</span>
+            </p>
             <div>
               <p class="case-name" id="case-name"></p>
               <p id="case-alg"></p>
@@ -79,16 +95,23 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
 
         <div class="card stage" id="review-stage" hidden>
           <span class="label">REVIEW · RECALL THE ALGORITHM</span>
-          <div id="review-body">
-            <img id="review-img" alt="Case diagram" width="110" height="110" />
+          <div id="review-body" hidden>
+            <img id="review-img" alt="" width="110" height="110" hidden />
+            <p class="no-diagram" id="review-no-diagram" hidden>
+              <span class="nd-set"></span><span class="nd-note">no diagram yet</span>
+            </p>
             <p class="case-name" id="review-name"></p>
             <button class="btn primary" id="reveal-btn" type="button">Reveal algorithm</button>
             <div id="review-answer" hidden>
               <p id="review-alg" class="review-alg"></p>
               <div class="chip-row center" id="grade-row">
-                <button class="btn grade again" data-grade="1" type="button">Again <small></small></button>
+                <button class="btn grade again" data-grade="1" type="button"
+                  >Again <small></small></button
+                >
                 <button class="btn grade" data-grade="2" type="button">Hard <small></small></button>
-                <button class="btn grade good" data-grade="3" type="button">Good <small></small></button>
+                <button class="btn grade good" data-grade="3" type="button"
+                  >Good <small></small></button
+                >
                 <button class="btn grade" data-grade="4" type="button">Easy <small></small></button>
               </div>
             </div>
@@ -105,10 +128,19 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
         <div id="case-status-list">
           {
             trainable.map((c) => (
-              <button class="status-row" data-case={c.id} type="button" title="Click to cycle status">
-                {caseIcon(c.id) && <img src={caseIcon(c.id)} alt="" width="34" height="34" loading="lazy" />}
+              <button
+                class="status-row"
+                data-case={c.id}
+                type="button"
+                title="Click to cycle status"
+              >
+                {caseIcon(c.id) && (
+                  <img src={caseIcon(c.id)} alt="" width="34" height="34" loading="lazy" />
+                )}
                 <span class="status-name">{c.name}</span>
-                <span class="status-chip" data-status-chip={c.id}>unseen</span>
+                <span class="status-chip" data-status-chip={c.id}>
+                  unseen
+                </span>
               </button>
             ))
           }
@@ -119,12 +151,13 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
 </Base>
 
 <script>
-  import { caseById, primaryAlg } from "../../data/algs";
+  import { caseById, primaryAlg, type CaseDef } from "../../data/algs";
   import { caseIcon } from "../../data/icons";
   import {
     averageOf,
     defaultSettings,
     formatTime,
+    groupLabel,
     loadSettings,
     pickCase,
     poolFor,
@@ -138,10 +171,37 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
 
   const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
-  /** Show a case diagram, or hide the img entirely — an empty src renders a broken image. */
-  function setCaseImage(img: HTMLImageElement, src: string | undefined) {
+  /**
+   * Show a case diagram, or a labelled placeholder tile naming its set.
+   *
+   * Two hazards, both measured: a visible <img> with no src renders the
+   * broken-image glyph plus its alt text, and merely hiding the img leaves the
+   * PREVIOUS case's diagram on the element — so the src is cleared either way.
+   * The placeholder is the common path today: 104 of 185 cases (all F2L, 4×4
+   * and 5×5) have no diagram art yet, and a bare gap reads as a broken page.
+   */
+  function setCaseImage(img: HTMLImageElement, fallback: HTMLElement, def: CaseDef) {
+    const src = caseIcon(def.id);
     img.hidden = !src;
-    if (src) img.src = src;
+    fallback.hidden = !!src;
+    if (src) {
+      img.src = src;
+      img.alt = `${def.name} case diagram`;
+      return;
+    }
+    img.removeAttribute("src");
+    img.alt = "";
+    fallback.querySelector(".nd-set")!.textContent = groupLabel(def);
+  }
+
+  /** Clear the case reveal entirely — no stale diagram, name or algorithm. */
+  function clearCaseReveal() {
+    $("case-reveal").hidden = true;
+    $<HTMLImageElement>("case-img").removeAttribute("src");
+    $<HTMLImageElement>("case-img").hidden = true;
+    $("case-no-diagram").hidden = true;
+    $("case-name").textContent = "";
+    $("case-alg").innerHTML = "";
   }
 
   // An IndexedDB failure must not kill the island — fall back to defaults.
@@ -155,7 +215,7 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
   let mode: "drill" | "solve" | "review" = "drill";
   let solvePuzzle: "333" | "444" | "555" = "333";
   let lastCase: string | undefined;
-  let times: number[] = [];
+  const times: number[] = [];
   let timerStart = 0;
   let timerTick: number | undefined;
 
@@ -208,6 +268,10 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
     const pool = poolFor(settings.groups);
     if (pool.length === 0) {
       $("drill-scramble").textContent = "Select at least one case set.";
+      // There is no case to show — hide the trigger, or "Show case" reveals
+      // whatever the last one left behind.
+      $("show-case-btn").hidden = true;
+      clearCaseReveal();
       return;
     }
     const def = pickCase(pool, settings.frequencies, lastCase);
@@ -216,7 +280,7 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
     $("drill-label").textContent = `SCRAMBLE · ${cubeName} · HOLD YELLOW UP`;
     $("drill-scramble").textContent = setupScramble(def);
     $("case-reveal").hidden = true;
-    setCaseImage($<HTMLImageElement>("case-img"), caseIcon(def.id));
+    setCaseImage($<HTMLImageElement>("case-img"), $("case-no-diagram"), def);
     $("case-name").textContent = def.name;
     $("case-alg").innerHTML = "";
     const algSpan = document.createElement("span");
@@ -253,10 +317,14 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
       $("timer").textContent = formatTime(performance.now() - timerStart);
     }, 47);
   }
+  // Space belongs to whatever control has focus: it activates buttons, toggles
+  // checkboxes and types a space. Claim it for the timer only when the page
+  // background has focus, and never blur — stealing focus made every case-set
+  // checkbox and every button on this page unusable from the keyboard.
+  const KEEPS_SPACE = "button, input, select, textarea, summary, a[href], [contenteditable]";
   document.addEventListener("keydown", (e) => {
     if (e.code !== "Space" || e.repeat || mode === "review") return;
-    const target = e.target as HTMLElement;
-    if (target.tagName === "INPUT" || target.tagName === "BUTTON") target.blur();
+    if (e.target instanceof Element && e.target.closest(KEEPS_SPACE)) return;
     e.preventDefault();
     timerTick === undefined ? startTimer() : stopTimer();
   });
@@ -301,18 +369,27 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
   }
   async function nextReview() {
     reviewQueue = await refreshDueBadge();
-    const empty = reviewQueue.length === 0;
-    $("review-body").hidden = empty;
-    $("review-empty").hidden = !empty;
-    if (empty) return;
-    const id = reviewQueue[0]!;
-    const def = caseById.get(id);
+    // A card can outlive its case (renamed ids, a backup from an older build).
+    // Skipping such a card dead-ends the queue — grading re-persists it, so it
+    // returns forever — and leaves this stage half-built. Purge, then carry on.
+    const unknown = reviewQueue.filter((id) => !caseById.has(id));
+    if (unknown.length > 0) {
+      const { forgetCards } = await import("../../lib/db");
+      await forgetCards(unknown);
+      console.warn("cubepath: dropped review cards for unknown cases", unknown);
+      reviewQueue = await refreshDueBadge();
+    }
+    // Resolve the case *before* deciding what to show, so the stage is never
+    // revealed in a state the rest of this function then fails to fill in.
+    const def = reviewQueue.length > 0 ? caseById.get(reviewQueue[0]!) : undefined;
+    $("review-body").hidden = !def;
+    $("review-empty").hidden = !!def;
     if (!def) return;
-    setCaseImage($<HTMLImageElement>("review-img"), caseIcon(id));
+    setCaseImage($<HTMLImageElement>("review-img"), $("review-no-diagram"), def);
     $("review-name").textContent = def.name;
     $("review-answer").hidden = true;
     $("reveal-btn").hidden = false;
-    const labels = await previewIntervals(id, new Date());
+    const labels = await previewIntervals(def.id, new Date());
     for (const btn of document.querySelectorAll<HTMLElement>("[data-grade]")) {
       const name = { 1: "Again", 2: "Hard", 3: "Good", 4: "Easy" }[Number(btn.dataset.grade)]!;
       btn.querySelector("small")!.textContent = labels[name] ?? "";
@@ -328,7 +405,8 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
   for (const btn of document.querySelectorAll<HTMLElement>("[data-grade]")) {
     btn.addEventListener("click", async () => {
       const id = reviewQueue[0];
-      if (!id) return;
+      // Never write SRS history for a case this build does not have.
+      if (!id || !caseById.has(id)) return;
       await review(id, Number(btn.dataset.grade) as Grade, new Date());
       void ensurePersistence();
       await nextReview();
@@ -384,10 +462,14 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
     if (!file) return;
     try {
       const { importBackup } = await import("../../lib/db");
-      await importBackup(JSON.parse(await file.text()));
+      const { skipped } = await importBackup(JSON.parse(await file.text()), (id) =>
+        caseById.has(id),
+      );
       await renderStatuses();
       await refreshDueBadge();
-      $("persist-note").textContent = "Backup imported.";
+      $("persist-note").textContent = skipped.length
+        ? `Backup imported — ${skipped.length} card(s) for retired cases were dropped.`
+        : "Backup imported.";
     } catch (err) {
       $("persist-note").textContent = `Import failed: ${err}`;
     }
@@ -465,7 +547,7 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
   .chip.active {
     background: var(--accent);
     border-color: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
   }
   .chip.ghost {
     cursor: default;
@@ -476,11 +558,18 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
     color: var(--ok);
     cursor: default;
   }
+  /* A 20%-white overlay was invisible on the inactive chip (transparent on
+     paper) and washed out on the light dark-mode accent. Tokenised both ways. */
   .badge {
-    background: #fff3;
+    background: var(--accent);
+    color: var(--on-accent);
     border-radius: 999px;
     padding: 0 6px;
     margin-left: 4px;
+  }
+  .chip.active .badge {
+    background: color-mix(in srgb, var(--on-accent) 20%, transparent);
+    color: inherit;
   }
   .main-col {
     display: flex;
@@ -521,15 +610,45 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
   .btn.grade.good {
     background: var(--ok);
     border-color: var(--ok);
-    color: #fff;
+    color: var(--on-ok);
   }
   #case-reveal {
     display: flex;
     gap: 14px;
     align-items: center;
   }
-  #case-reveal[hidden] {
-    display: none;
+  /* Placeholder shown where a case has no diagram art yet — a labelled tile,
+     so "not drawn" is distinguishable from "images are broken". */
+  .no-diagram {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    flex: none;
+    margin: 0;
+    padding: 6px;
+    border: 1px dashed var(--line);
+    border-radius: 8px;
+    background: var(--paper);
+    text-align: center;
+  }
+  #case-no-diagram {
+    width: 84px;
+    min-height: 84px;
+  }
+  #review-no-diagram {
+    width: 110px;
+    min-height: 110px;
+  }
+  .nd-set {
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--soft);
+  }
+  .nd-note {
+    font-size: 11px;
+    color: var(--faint);
   }
   .case-name {
     font-weight: 600;
@@ -540,9 +659,6 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
     flex-direction: column;
     align-items: center;
     gap: 12px;
-  }
-  #review-body[hidden] {
-    display: none;
   }
   .review-alg {
     font-size: 16px;

@@ -59,10 +59,27 @@ export const TRAINER_GROUPS: {
   { key: "full-f2l", name: "F2L (41)", member: (c) => c.phase === "full-f2l" },
   { key: "full-oll", name: "Full OLL (57)", member: isFullOll },
   { key: "full-pll", name: "Full PLL (all 21)", member: isFullPll },
-  { key: "444-oll", name: "4×4 OLL + parity", member: (c) => c.group.startsWith("4x4oll-") },
+  {
+    key: "444-oll",
+    name: "4×4 OLL + parity",
+    // The curated parity case is grouped "444-parity", not "4x4oll-*", so the
+    // prefix alone left the only parity case in the app outside every set —
+    // a group promising "+ parity" that could never drill one.
+    member: (c) => c.group.startsWith("4x4oll-") || c.group === "444-parity",
+  },
   { key: "444-pll", name: "4×4 PLL + parity", member: (c) => c.group.startsWith("4x4pll-") },
   { key: "555-l2e", name: "5×5 last two edges", member: (c) => c.group === "555-l2e" },
 ];
+
+/**
+ * Short set label for a case — the trainer group's name without its count.
+ * Derived from TRAINER_GROUPS so the placeholder tile shown where a case has
+ * no diagram yet cannot drift from the set names in the sidebar.
+ */
+export function groupLabel(def: CaseDef): string {
+  const g = TRAINER_GROUPS.find((t) => t.member(def));
+  return g ? g.name.replace(/\s*\([^)]*\)\s*$/, "") : def.group;
+}
 
 export function groupSize(key: string): number {
   const g = TRAINER_GROUPS.find((t) => t.key === key);
