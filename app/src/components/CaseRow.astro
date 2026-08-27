@@ -25,19 +25,37 @@ const recognition = def.recognition ?? RICH[id]?.recognition ?? "";
 
 <details class="case-row" open={open}>
   <summary>
-    {icon && <img src={icon} alt={`${def.name} case diagram`} width="62" height="62" loading="lazy" />}
+    {
+      icon && (
+        <img src={icon} alt={`${def.name} case diagram`} width="62" height="62" loading="lazy" />
+      )
+    }
     <span class="meta">
       <span class="name">{def.name}</span>
       <span class="recognition">{recognition}</span>
     </span>
     <AlgText moves={alg} class="row-alg" />
     <span class="play" aria-hidden="true">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5l10 7-10 7z"></path></svg>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"
+        ><path d="M7 5l10 7-10 7z"></path></svg
+      >
     </span>
   </summary>
   <div class="player-slot">
-    <TwistyPlayer alg={alg} puzzle={def.puzzle} stickering={def.stickering} />
-    <p class="hint">The player starts at the case and solves it — drag to rotate, scrub to step.</p>
+    <div class="demo">
+      <p class="demo-head">
+        <span class="label">Solving</span>
+        <span class="demo-name">{def.name}</span>
+      </p>
+      <TwistyPlayer
+        alg={alg}
+        puzzle={def.puzzle}
+        stickering={def.stickering}
+        {...icon ? { poster: icon } : {}}
+        posterAlt={`${def.name} case diagram`}
+      />
+      <p class="hint">Starts at the case. Only the pieces this algorithm fixes stay in colour.</p>
+    </div>
   </div>
 </details>
 
@@ -97,17 +115,44 @@ const recognition = def.recognition ?? RICH[id]?.recognition ?? "";
     background: var(--accent);
     color: #fff;
   }
+  /* Tint the open row and hang the demo off it, so the player reads as part of
+     the case rather than a loose box at the bottom of the list. */
+  .case-row[open] > summary {
+    background: var(--accent-soft);
+  }
   .player-slot {
+    padding: 0 16px 18px 16px;
+    background: var(--accent-soft);
+  }
+  .demo {
+    width: min(100%, 380px);
+    margin: 0 auto;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
-    padding: 8px 16px 18px;
+    gap: 8px;
+    padding: 12px 14px 14px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: 10px;
+  }
+  .demo-head {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    align-self: stretch;
+    margin: 0;
+  }
+  .demo-name {
+    font-weight: 600;
+    font-size: 14px;
   }
   .hint {
     margin: 0;
     color: var(--faint);
     font-size: 12px;
+    text-align: center;
   }
   @media (max-width: 640px) {
     summary {

@@ -10,15 +10,7 @@
 export type Puzzle = "3x3x3" | "4x4x4" | "5x5x5";
 
 /** twisty-player experimental-stickering values used by Cubepath. */
-export type Stickering =
-  | "full"
-  | "Cross"
-  | "F2L"
-  | "LL"
-  | "OLL"
-  | "OCLL"
-  | "PLL"
-  | "ELL";
+export type Stickering = "full" | "Cross" | "F2L" | "LL" | "OLL" | "OCLL" | "PLL" | "ELL";
 
 export interface AlgVariant {
   moves: string;

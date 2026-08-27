@@ -1,15 +1,33 @@
 ---
 /**
  * Wraps cubing.js's <twisty-player> web component.
+ *
  * With `anchor="end"` (the default here) the player starts at the case state
  * and plays the algorithm forward to solved — the core Cubepath pattern.
+ *
+ * Two things are not defaults and matter:
+ *  - `experimental-setup-alg` rotates the whole cube so cubing.js's fixed
+ *    palette lands as yellow-up / red-front / green-right (see lib/stickering).
+ *  - that rotation inverts every built-in `experimental-stickering`, so the
+ *    mask is generated instead — and narrowed to the pieces this algorithm
+ *    actually fixes, rather than lighting up the whole last layer.
+ *
+ * The library's own control panel is off (`control-panel="none"`): it is a
+ * closed shadow root with no ::part, so it cannot be themed, and it ate ~20%
+ * of the box. The controls below replace it.
  */
+import type { Puzzle, Stickering } from "../data/algs";
+import { SETUP_ALG, maskFor } from "../lib/stickering";
+
 interface Props {
   alg: string;
-  puzzle?: "3x3x3" | "4x4x4" | "5x5x5";
-  stickering?: string;
+  puzzle?: Puzzle;
+  stickering?: Stickering;
   /** "end" = show the case, play to solved; "start" = play from solved. */
   anchor?: "start" | "end";
+  /** Static diagram painted until cubing.js has the cube on screen. */
+  poster?: string;
+  posterAlt?: string;
   class?: string;
 }
 
@@ -18,62 +36,283 @@ const {
   puzzle = "3x3x3",
   stickering = "full",
   anchor = "end",
+  poster,
+  posterAlt = "",
   class: className,
 } = Astro.props;
+
+const mask = await maskFor(puzzle, stickering, alg);
+// Last-layer cases are read off the top face, so tip the camera down for them;
+// F2L and cross cases need the side layers, so they keep the stock 35.
+const lastLayer = ["OLL", "OCLL", "PLL", "ELL", "LL"].includes(stickering);
 ---
 
-<twisty-player
-  class={className}
-  puzzle={puzzle}
-  alg={alg}
-  experimental-setup-anchor={anchor}
-  experimental-stickering={stickering === "full" ? undefined : stickering}
-  hint-facelets="none"
-  background="none"
-  control-panel="bottom-row"
-  tempo-scale="2"></twisty-player>
+<div class:list={["twisty", { "has-poster": !!poster }, className]}>
+  <div class="stage">
+    {
+      poster && (
+        <img class="poster" src={poster} alt={posterAlt} width="140" height="140" loading="lazy" />
+      )
+    }
+    <twisty-player
+      puzzle={puzzle}
+      alg={alg}
+      experimental-setup-alg={SETUP_ALG}
+      experimental-setup-anchor={anchor}
+      experimental-stickering-mask-orbits={mask}
+      hint-facelets="none"
+      background="none"
+      control-panel="none"
+      viewer-link="none"
+      camera-latitude={lastLayer ? "50" : "35"}
+      tempo-scale="0.8"></twisty-player>
+  </div>
+
+  <div class="controls" role="group" aria-label="Playback">
+    <button type="button" data-act="reset" title="Back to the case" aria-label="Back to the case">
+      <svg viewBox="0 0 24 24" aria-hidden="true"
+        ><path d="M12 5V2L7 6l5 4V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7z"></path></svg
+      >
+    </button>
+    <button type="button" data-act="prev" title="Previous move" aria-label="Previous move">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 5v14l-9-7zM6 5h2v14H6z"></path></svg>
+    </button>
+    <button type="button" data-act="play" title="Play" aria-label="Play">
+      <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"
+        ><path d="M7 5l11 7-11 7z"></path></svg
+      >
+      <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"
+        ><path d="M6 5h4v14H6zm8 0h4v14h-4z"></path></svg
+      >
+    </button>
+    <button type="button" data-act="next" title="Next move" aria-label="Next move">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5l9 7-9 7zM16 5h2v14h-2z"></path></svg
+      >
+    </button>
+    <input class="scrub" type="range" min="0" max="1" step="1" value="0" aria-label="Move" />
+    <span class="count">–</span>
+  </div>
+</div>
 
 <script>
-  // Register <twisty-player> lazily: immediately when a player is visible on
-  // load (open <details> or not inside one); otherwise on the first toggle of
-  // a <details> containing a player, or when the browser goes idle —
-  // whichever comes first.
-  let registered = false;
-  function register() {
-    if (registered) return;
-    registered = true;
-    void import("cubing/twisty");
+  import type { TwistyPlayer } from "cubing/twisty";
+
+  /** Only the members we use, without cubing's branded index/timestamp types. */
+  interface Indexer {
+    numAnimatedLeaves(): number;
+    indexToMoveStartTimestamp(index: number): number;
+    algDuration(): number;
   }
+
+  let loading: Promise<void> | null = null;
+
+  /** Load cubing.js once, then wire every player on the page. */
+  function register(): Promise<void> {
+    loading ??= import("cubing/twisty")
+      .then(() => customElements.whenDefined("twisty-player"))
+      .then(() => {
+        for (const wrap of document.querySelectorAll<HTMLElement>(".twisty")) void wire(wrap);
+      });
+    return loading;
+  }
+
+  async function wire(wrap: HTMLElement): Promise<void> {
+    const player = wrap.querySelector("twisty-player") as TwistyPlayer | null;
+    if (!player || wrap.dataset.wired) return;
+    wrap.dataset.wired = "1";
+
+    const model = player.experimentalModel;
+    const scrub = wrap.querySelector<HTMLInputElement>(".scrub")!;
+    const count = wrap.querySelector<HTMLElement>(".count")!;
+    const playBtn = wrap.querySelector<HTMLButtonElement>('[data-act="play"]')!;
+
+    const indexer = (await model.indexer.get()) as unknown as Indexer;
+    const total = indexer.numAnimatedLeaves();
+    const duration = indexer.algDuration();
+    // Move i runs [starts[i], starts[i + 1]). Position 0 is the case, position
+    // n is solved, so what the controls count is MOVES DONE, not move index —
+    // the indexer's own timestampToIndex answers a different question.
+    const starts = Array.from({ length: total }, (_, i) => indexer.indexToMoveStartTimestamp(i));
+    const at = (i: number) => (i >= total ? duration : starts[i]!);
+    const done = (t: number) =>
+      starts.filter((_, i) => (i + 1 < total ? starts[i + 1]! : duration) <= t + 1).length;
+    let index = 0;
+
+    scrub.max = String(total);
+    const jump = (i: number) => {
+      player.pause();
+      // cubing brands its millisecond timestamps; ours come from its indexer.
+      (player as unknown as { timestamp: number }).timestamp = at(Math.max(0, Math.min(total, i)));
+    };
+
+    wrap.querySelector('[data-act="reset"]')!.addEventListener("click", () => jump(0));
+    wrap.querySelector('[data-act="prev"]')!.addEventListener("click", () => jump(index - 1));
+    wrap.querySelector('[data-act="next"]')!.addEventListener("click", () => jump(index + 1));
+    playBtn.addEventListener("click", () => player.togglePlay());
+    scrub.addEventListener("input", () => jump(Number(scrub.value)));
+
+    model.detailedTimelineInfo.addFreshListener((info) => {
+      index = info.atEnd ? total : done(info.timestamp);
+      scrub.value = String(index);
+      count.textContent = `${index}/${total}`;
+    });
+    model.playingInfo.addFreshListener(({ playing }) => {
+      wrap.classList.toggle("playing", playing);
+      playBtn.title = playing ? "Pause" : "Play";
+      playBtn.setAttribute("aria-label", playing ? "Pause" : "Play");
+    });
+
+    // Keep the static diagram up until the cube is actually on screen: the
+    // library only builds its 3D scene once the element intersects with a
+    // non-zero height (inside a closed <details> it never does).
+    const io = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting || entry.intersectionRect.height === 0) continue;
+        io.disconnect();
+        void model.currentPattern.get().then(() => {
+          requestAnimationFrame(() => requestAnimationFrame(() => wrap.classList.add("ready")));
+        });
+      }
+    });
+    io.observe(player);
+  }
+
+  // Register immediately when a player is already visible; otherwise on the
+  // first toggle of a <details> containing one (toggle does not bubble, so
+  // listen in the capture phase), or when the browser goes idle.
   if (
     document.querySelector("details[open] twisty-player") ||
     document.querySelector("twisty-player:not(details twisty-player)")
   ) {
-    register();
+    void register();
   } else {
-    // toggle does not bubble — listen in the capture phase.
     document.addEventListener(
       "toggle",
       (e) => {
         const el = e.target;
         if (el instanceof HTMLDetailsElement && el.open && el.querySelector("twisty-player")) {
-          register();
+          void register();
         }
       },
       true,
     );
     if ("requestIdleCallback" in window) {
-      requestIdleCallback(() => register());
+      requestIdleCallback(() => void register());
     } else {
-      setTimeout(register, 2000);
+      setTimeout(() => void register(), 2000);
     }
   }
 </script>
 
 <style>
-  twisty-player {
+  .twisty {
     width: 100%;
     max-width: 320px;
+  }
+  .stage {
+    position: relative;
+    display: grid;
+    place-items: center;
     height: 280px;
-    contain: layout size;
+  }
+  .poster,
+  .stage twisty-player {
+    grid-area: 1 / 1;
+  }
+  .poster {
+    width: 140px;
+    height: 140px;
+    opacity: 0.55;
+    transition: opacity 160ms ease;
+  }
+  twisty-player {
+    width: 100%;
+    height: 280px;
+  }
+  /* Only cross-fade when there is something to cross-fade FROM; without a
+     poster the player paints as soon as it can, as it always did. */
+  .twisty.has-poster twisty-player {
+    opacity: 0;
+    transition: opacity 160ms ease;
+  }
+  .twisty.ready .poster {
+    opacity: 0;
+  }
+  .twisty.ready twisty-player {
+    opacity: 1;
+  }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 2px 0;
+  }
+  button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--soft);
+    cursor: pointer;
+  }
+  button:hover {
+    color: var(--ink);
+    border-color: var(--soft);
+  }
+  button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  [data-act="play"] {
+    background: var(--accent-soft);
+    border-color: transparent;
+    color: var(--accent);
+  }
+  svg {
+    width: 15px;
+    height: 15px;
+    fill: currentColor;
+  }
+  .i-pause,
+  .playing .i-play {
+    display: none;
+  }
+  .playing .i-pause {
+    display: block;
+  }
+  .scrub {
+    flex-grow: 1;
+    min-width: 0;
+    height: 30px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .scrub:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .count {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--faint);
+    min-width: 34px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* The cube animation is content and always user-initiated; what we drop here
+     is our own decoration. */
+  @media (prefers-reduced-motion: reduce) {
+    .poster,
+    twisty-player {
+      transition: none;
+    }
   }
 </style>

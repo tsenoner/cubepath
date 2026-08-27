@@ -11,6 +11,10 @@
  * One verified scramble per 3x3 case must be solved by the primary alg.
  * 4x4/5x5 algs are parse+legality checked here — their deep checks live in
  * scripts/verify-f2l.mjs / verify-l2e.mjs (npm run verify:data).
+ *
+ * The same discipline covers the player's stickering masks: the generated
+ * table in src/lib/stickering.ts is re-derived from cubing.js here, and every
+ * case's emitted mask must highlight exactly the pieces its algorithm fixes.
  */
 import { describe, expect, test } from "vitest";
 import { Alg } from "cubing/alg";
@@ -20,6 +24,7 @@ import type { KPuzzle } from "cubing/kpuzzle";
 import { ALL_CASES, CASES, caseById, primaryAlg, type CaseDef } from "../src/data/algs";
 import { CASE_SCRAMBLES } from "../src/data/fullsets.gen";
 import { RICH } from "../src/data/fullsets.rich.gen";
+import { BASE_MASKS, FRAME, SETUP_ALG, maskFor } from "../src/lib/stickering";
 import { groupSize } from "../src/lib/trainer";
 import { makeSlotKit, type SlotKit } from "../scripts/lib/kpuzzle-utils.mjs";
 
@@ -163,7 +168,9 @@ describe("dataset invariants", () => {
 
   test("curated course cases survive the merge", () => {
     for (const def of CASES) {
-      expect(ALL_CASES.some((k) => k.id === def.id && k.recognition === def.recognition)).toBe(true);
+      expect(ALL_CASES.some((k) => k.id === def.id && k.recognition === def.recognition)).toBe(
+        true,
+      );
     }
   });
 
@@ -178,4 +185,127 @@ describe("dataset invariants", () => {
       }
     }
   });
+});
+
+/** Piece-mask chars that still carry the sticker's real colour. */
+const LIT = new Set(["-", "O", "P"]);
+
+/**
+ * `parseSerializedStickeringMask`'s char map, inverted — the spec the
+ * generator is pinned against. Read out of cubing.js's own bundle
+ * (chunk-VRTKWZPL.js `pieceStickerings` + `charMap`).
+ */
+const CHAR_BY_FACELETS: Record<string, string> = {
+  "regular,regular,regular,regular,regular": "-",
+  "dim,dim,dim,dim,dim": "D",
+  "ignored,ignored,ignored,ignored,ignored": "I",
+  "invisible,invisible,invisible,invisible,invisible": "X",
+  "regular,ignored,ignored,ignored,ignored": "O",
+  "dim,regular,regular,regular,regular": "P",
+  "dim,ignored,ignored,ignored,ignored": "o",
+  "oriented,ignored,ignored,ignored,ignored": "?",
+  "mystery,mystery,mystery,mystery,mystery": "M",
+};
+
+const orbitChars = (mask: string): Record<string, string> =>
+  Object.fromEntries(mask.split(",").map((segment) => segment.split(":") as [string, string]));
+
+describe("stickering masks", () => {
+  /**
+   * cubing.js hard-codes the cube palette per axis in Cube3D (`axesInfo`, face
+   * order U L F R B D) and exposes no colour-scheme API, so SETUP_ALG is the
+   * only thing between the player and a white-on-top cube. CENTERS piece order
+   * is U L F R B D, so centre cubie i wears the colour of face i.
+   */
+  const CUBING_PALETTE = ["white", "orange", "green", "red", "blue", "yellow"];
+  /** CLAUDE.md § Rubik's Cube Color Scheme, in the same U L F R B D order. */
+  const CUBEPATH_SCHEME = ["yellow", "blue", "red", "green", "orange", "white"];
+
+  test("the setup rotation paints the Cubepath colour scheme", async () => {
+    const kpuzzle = await kpuzzleFor("3x3x3");
+    const centers = kpuzzle.defaultPattern().applyAlg(SETUP_ALG).patternData.CENTERS!.pieces;
+    expect(centers.map((cubie) => CUBING_PALETTE[cubie])).toEqual(CUBEPATH_SCHEME);
+  });
+
+  test("the generated FRAME is the setup rotation's permutation", async () => {
+    const kpuzzle = await kpuzzleFor("3x3x3");
+    const setup = kpuzzle.defaultPattern().applyAlg(SETUP_ALG);
+    for (const { orbitName } of kpuzzle.definition.orbits) {
+      expect([...FRAME[orbitName]!], orbitName).toEqual([...setup.patternData[orbitName]!.pieces]);
+    }
+  });
+
+  test("the generated BASE_MASKS still match cubing.js", async () => {
+    const { cube3x3x3 } = await import("cubing/puzzles");
+    const kpuzzle = await kpuzzleFor("3x3x3");
+    for (const name of Object.keys(BASE_MASKS)) {
+      const mask = await cube3x3x3.stickeringMask!(name);
+      const expected = kpuzzle.definition.orbits
+        .map(({ orbitName, numPieces }) => {
+          const pieces = mask.orbits[orbitName]!.pieces;
+          const chars = Array.from({ length: numPieces }, (_, i) => {
+            const key = pieces[i]!.facelets.map((f) => (typeof f === "string" ? f : f!.mask)).join(
+              ",",
+            );
+            return CHAR_BY_FACELETS[key] ?? `?${key}?`;
+          }).join("");
+          return `${orbitName}:${chars}`;
+        })
+        .join(",");
+      expect(BASE_MASKS[name as keyof typeof BASE_MASKS], name).toBe(expected);
+    }
+  });
+
+  test("big-cube and full-cube cases get no mask", async () => {
+    for (const def of ALL_CASES) {
+      const mask = await maskFor(def.puzzle, def.stickering, primaryAlg(def));
+      if (def.puzzle !== "3x3x3" || def.stickering === "full") {
+        expect(mask, def.id).toBeUndefined();
+      } else {
+        expect(mask, def.id).toBeTruthy();
+      }
+    }
+  });
+});
+
+describe("every mask highlights exactly the pieces its algorithm fixes", () => {
+  const masked = ALL_CASES.filter((k) => k.puzzle === "3x3x3" && k.stickering !== "full");
+  for (const def of masked) {
+    test(`${def.id} [${def.stickering}]`, async () => {
+      const kit = await kit3();
+      const alg = primaryAlg(def);
+      const mask = (await maskFor(def.puzzle, def.stickering, alg))!;
+      const chars = orbitChars(mask);
+      const base = orbitChars(BASE_MASKS[def.stickering]);
+      // What the player actually shows first: the case state, re-oriented so
+      // the centres are home (an alg written with a whole-cube rotation would
+      // otherwise look like it disturbs every piece).
+      const state = kit.normalizePattern(kit.solved.applyTransformation(kit.toT(alg).invert()));
+      // Derived here, not read from FRAME: the remap is half of what's on test.
+      const setup = kit.solved.applyAlg(SETUP_ALG);
+
+      for (const orbitName of ["EDGES", "CORNERS"]) {
+        const emitted = chars[orbitName]!;
+        const frame = setup.patternData[orbitName]!.pieces;
+        const now = state.patternData[orbitName]!;
+        const home = kit.solved.patternData[orbitName]!;
+        expect(emitted.length, `${orbitName} length`).toBe(frame.length);
+        for (let slot = 0; slot < frame.length; slot++) {
+          // A mask entry binds to the CUBIE, so read the char at the index of
+          // the cubie the setup rotation parks in this slot.
+          const char = emitted[frame[slot]!]!;
+          expect(Object.values(CHAR_BY_FACELETS), `${orbitName}[${slot}] char`).toContain(char);
+          const solved =
+            now.pieces[slot] === home.pieces[slot] &&
+            now.orientation[slot] === home.orientation[slot];
+          if (LIT.has(char)) {
+            expect(solved, `${orbitName}[${slot}] highlighted but already solved`).toBe(false);
+          }
+          if (LIT.has(base[orbitName]![slot]!) && !solved) {
+            expect(LIT.has(char), `${orbitName}[${slot}] fixed by the alg but dimmed`).toBe(true);
+          }
+        }
+      }
+    });
+  }
 });
