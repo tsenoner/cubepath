@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xlink="http://www.w3.org/1999/xlink" baseProfile="full" height="137px" version="1.1" viewBox="0 -14.0 155 137.4" width="155px">
-  <defs/>
-  <rect fill="#FFFFFF" height="137.4" rx="6" ry="6" width="155" x="0" y="-14.0"/>
+  <defs>
+    <style type="text/css"><![CDATA[.bg{fill:#FFFFFF}.ink{fill:#222222}@media (prefers-color-scheme:light){.bg{fill:none}}@media (prefers-color-scheme:dark){.bg{fill:none}.ink{fill:#ECE8E1}}]]></style>
+  </defs>
+  <rect class="bg" fill="#FFFFFF" height="137.4" rx="6" ry="6" width="155" x="0" y="-14.0"/>
   <polygon fill="#009E60" points="126.6,77.8 115.2,84.3 115.2,104.3 126.6,97.8" stroke="#333333" stroke-width="1.2"/>
   <polygon fill="#009E60" points="126.6,57.8 115.2,64.3 115.2,84.3 126.6,77.8" stroke="#333333" stroke-width="1.2"/>
   <polygon fill="#009E60" points="126.6,37.8 115.2,44.3 115.2,64.3 126.6,57.8" stroke="#333333" stroke-width="1.2"/>
@@ -40,5 +42,5 @@
   <line stroke="#333333" stroke-width="1.5" x1="92.2" x2="92.2" y1="57.4" y2="117.4"/>
   <path d="M 73.4,47.3 L 76.6,47.3 L 79.5,47.5 L 82.3,47.9 L 84.9,48.5 L 87.2,49.3 L 89.4,50.2 L 91.3,51.4 L 93.1,52.8 L 94.6,54.3 L 95.9,56.1 L 97.0,58.0 L 98.0,60.1 L 98.7,62.5 L 99.2,65.0 L 99.5,67.7 L 99.6,70.6 L 99.5,73.7 L 99.2,77.0 L 100.28405752058895,68.26386785724995" fill="none" stroke="#222222" stroke-width="5"/>
   <polygon fill="#222222" points="98.0,84.1 92.36599144921392,67.12183909695547 108.20212359196397,69.40589661754443"/>
-  <text fill="#222" font-family="sans-serif" font-size="30px" font-weight="bold" text-anchor="middle" x="77.5" y="16.0">F</text>
+  <text class="ink" fill="#222222" font-family="sans-serif" font-size="30px" font-weight="bold" text-anchor="middle" x="77.5" y="16.0">F</text>
 </svg>

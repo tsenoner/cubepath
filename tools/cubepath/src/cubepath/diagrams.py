@@ -10,6 +10,7 @@ import math
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 import svgwrite
 
@@ -35,6 +36,56 @@ RADIUS = 4  # corner radius for rounded rects
 ARROW_COLOR = "#222222"
 
 
+# ── Theme ─────────────────────────────────────────────────────────────
+# An <img>-loaded SVG cannot read the host page's CSS custom properties, so —
+# exactly like `logo.render()` and app/public/favicon.svg — every screen
+# diagram carries its own colour-scheme rules. A class rule beats a `fill=`
+# presentation attribute everywhere (Chromium, Firefox, resvg), so callers
+# keep emitting `fill=WHITE` as the no-CSS fallback.
+#
+# The plate is transparent on the *web* in both schemes: the diagram should sit
+# on the page surface it is printed on, not on a second card. resvg (typst)
+# skips every @media block, so the declaration order below leaves the guide PDF
+# with the opaque white plate it has always had — which it needs, because 13
+# figures sit inside a tinted `.algorithm` callout. Verified with a real
+# `typst compile`, not assumed.
+#
+# Only the plate and the label ink flip. Sticker strokes are read between two
+# coloured fills and the rotation-ribbon occluders carry their own surface, so
+# both stay as they are.
+DARK_INK = "#ECE8E1"  # tokens.css --ink, dark
+
+_THEME_CSS = (
+    f".bg{{fill:{WHITE}}}.ink{{fill:{ARROW_COLOR}}}"
+    "@media (prefers-color-scheme:light){.bg{fill:none}}"
+    f"@media (prefers-color-scheme:dark){{.bg{{fill:none}}.ink{{fill:{DARK_INK}}}}}"
+)
+
+
+def _add_theme(dwg: svgwrite.Drawing) -> None:
+    """Give the drawing its own light/dark rules."""
+    dwg.defs.add(dwg.style(_THEME_CSS))
+
+
+# svgwrite ships no type information, so every element it hands back is Any.
+Point = tuple[float, float]
+# (x, y, z) -> projected (x, y); every 3D diagram takes one.
+Projector = Callable[[float, float, float], Point]
+
+
+def _bg(dwg: svgwrite.Drawing, insert: Point, size: Point, radius: int) -> Any:
+    """The rounded background plate, tagged so the web themes can drop it."""
+    rect = dwg.rect(insert, size, fill=WHITE, rx=radius, ry=radius)
+    rect["class"] = "bg"
+    return rect
+
+
+def _ink(elem: Any) -> Any:
+    """Tag a label or dot drawn on the plate rather than on a sticker."""
+    elem["class"] = "ink"
+    return elem
+
+
 # ── Render styles ─────────────────────────────────────────────────────
 # The app is backlit and the guide is read on paper at full size. A card
 # sticker is under 5 mm wide and often printed on a mono laser, where hue is
@@ -53,6 +104,7 @@ class DiagramStyle:
     stroke_main: float  # U-face sticker outline
     stroke_side: float  # side-band sticker outline
     stroke_arrow: float  # PLL permutation arrows
+    themed: bool = True  # emit the light/dark <style> block (screen only)
 
 
 SCREEN_FACES: dict[str, str] = {
@@ -96,6 +148,8 @@ SCREEN = DiagramStyle(
 )
 CARD = DiagramStyle(
     faces=CARD_FACES,
+    # A printed card is ink on paper: no page behind it to show through.
+    themed=False,
     masked="#5F5F5F",
     band_u=20,
     stroke_main=3.2,
@@ -463,7 +517,9 @@ def render(case: CubeDiagram, output_dir: Path, style: DiagramStyle = SCREEN) ->
     )
 
     # Background
-    dwg.add(dwg.rect((0, 0), (total_w, total_h), fill=WHITE, rx=8, ry=8))
+    if style.themed:
+        _add_theme(dwg)
+    dwg.add(_bg(dwg, (0, 0), (total_w, total_h), 8))
 
     # Draw U face (3x3 grid)
     for idx, color in enumerate(case.u_face):
@@ -1064,21 +1120,24 @@ def render_notation(move: NotationMove, output_dir: Path) -> Path:
         size=(f"{_N_W}px", f"{vb_h:.0f}px"),
         viewBox=f"0 {vb_top:.1f} {_N_W} {vb_h:.1f}",
     )
-    dwg.add(dwg.rect((0, vb_top), (_N_W, vb_h), fill=WHITE, rx=6, ry=6))
+    _add_theme(dwg)
+    dwg.add(_bg(dwg, (0, vb_top), (_N_W, vb_h), 6))
     _draw_iso_stickers(dwg, lambda f, a, b: _n_sticker_color(f, a, b, move.layer, move.clockwise))
     _draw_cube_outline(dwg)
     # Rotation arrow
     _n_draw_arrow(dwg, move.layer, move.clockwise)
-    # Label (top, above cube)
+    # Label (top, above cube) — on the plate, so it flips with the theme
     dwg.add(
-        dwg.text(
-            move.name,
-            insert=(_N_W / 2, label_y),
-            text_anchor="middle",
-            font_size=f"{label_font}px",
-            font_family="sans-serif",
-            font_weight="bold",
-            fill="#222",
+        _ink(
+            dwg.text(
+                move.name,
+                insert=(_N_W / 2, label_y),
+                text_anchor="middle",
+                font_size=f"{label_font}px",
+                font_family="sans-serif",
+                font_weight="bold",
+                fill=ARROW_COLOR,
+            )
         )
     )
     dwg.save(pretty=True)
@@ -1115,7 +1174,9 @@ def render_step(step: StepDiagram, output_dir: Path, style: DiagramStyle = SCREE
         size=(f"{vb_w:.0f}px", f"{vb_h:.0f}px"),
         viewBox=f"{vb_x:.1f} {vb_y:.1f} {vb_w:.1f} {vb_h:.1f}",
     )
-    dwg.add(dwg.rect((vb_x, vb_y), (vb_w, vb_h), fill=WHITE, rx=6, ry=6))
+    if style.themed:
+        _add_theme(dwg)
+    dwg.add(_bg(dwg, (vb_x, vb_y), (vb_w, vb_h), 6))
     _draw_iso_stickers(
         dwg,
         lambda f, a, b: recolor.get(
@@ -1142,7 +1203,7 @@ def render_step(step: StepDiagram, output_dir: Path, style: DiagramStyle = SCREE
 
 def _draw_rotation_arc(
     dwg: svgwrite.Drawing,
-    proj_fn,
+    proj_fn: Projector,
     center: tuple[float, ...],
     v1: tuple[float, ...],
     v2: tuple[float, ...],
@@ -1214,13 +1275,13 @@ def _draw_rotation_arc(
         stroke_linecap="round",
     )
 
-    def _add_cap(group, pt_a, pt_b):
+    def _add_cap(group: Any, pt_a: Point, pt_b: Point) -> None:
         cap = dwg.line(pt_a, pt_b, stroke=ARROW_COLOR, stroke_width=1.5)
         cap["stroke-linecap"] = "round"
         group.add(cap)
 
     # Collect per-segment data for two-pass rendering
-    seg_data: list[tuple[bool, list, list]] = []
+    seg_data: list[tuple[bool, list[Point], list[Point]]] = []
     for seg_i in range(len(boundaries) - 1):
         a0, a1 = boundaries[seg_i], boundaries[seg_i + 1]
         span = a1 - a0
@@ -1242,7 +1303,7 @@ def _draw_rotation_arc(
         group.add(
             dwg.path(
                 d=_svg_polyline(top_pts + list(reversed(bot_pts)), closed=True),
-                fill="white",
+                fill=WHITE,
                 stroke="none",
             )
         )
@@ -1294,7 +1355,7 @@ def _draw_rotation_arc(
     # Arrowhead in a separate group so callers can control its z-order.
     bg_pts = last_top + [base_outer, tip, base_inner] + list(reversed(last_bot))
     arrow_g = dwg.g()
-    arrow_g.add(dwg.path(d=_svg_polyline(bg_pts, closed=True), fill="white", stroke="none"))
+    arrow_g.add(dwg.path(d=_svg_polyline(bg_pts, closed=True), fill=WHITE, stroke="none"))
     # Re-stroke the last ribbon segment edges (covered by the white background)
     arrow_g.add(dwg.path(d=_svg_polyline(last_top), **stroke_kw))
     arrow_g.add(dwg.path(d=_svg_polyline(last_bot), **stroke_kw))
@@ -1307,7 +1368,7 @@ def _draw_rotation_arc(
     arrow_g.add(
         dwg.path(
             d=_svg_polyline([ribbon_top_end, base_outer, tip, base_inner, ribbon_bot_end]),
-            fill="white",
+            fill=WHITE,
             **{k: v for k, v in stroke_kw.items() if k != "fill"},
         )
     )
@@ -1376,7 +1437,8 @@ def render_overview(output_dir: Path) -> Path:
         size=(f"{vb_w:.0f}px", f"{vb_h:.0f}px"),
         viewBox=f"{vb_x:.1f} {vb_y:.1f} {vb_w:.1f} {vb_h:.1f}",
     )
-    dwg.add(dwg.rect((vb_x, vb_y), (vb_w, vb_h), fill=WHITE, rx=8, ry=8))
+    _add_theme(dwg)
+    dwg.add(_bg(dwg, (vb_x, vb_y), (vb_w, vb_h), 8))
 
     # Cube face definitions (needed before step 1 for clip path)
     face_colors = [
@@ -1430,7 +1492,7 @@ def render_overview(output_dir: Path) -> Path:
     # B's back ring drawn behind the cube for correct 3D occlusion
     dwg.add(arc_data["B"][0])
 
-    def _add_line(start, end, color=STICKER_STROKE, **extra):
+    def _add_line(start: Point, end: Point, color: str = STICKER_STROKE, **extra: str) -> None:
         line = dwg.line(start, end, stroke=color, stroke_width=1.5)
         line["stroke-linecap"] = "round"
         for k, v in extra.items():
@@ -1483,26 +1545,28 @@ def render_overview(output_dir: Path) -> Path:
                 **{"clip-path": "url(#behind-clip)"},
             )
             if label in ("B", "L"):
-                dwg.add(dwg.circle(center=proj(*tip), r=5, fill=ARROW_COLOR))
+                dwg.add(_ink(dwg.circle(center=proj(*tip), r=5, fill=ARROW_COLOR)))
             dwg.add(arrow_g)
 
     # 6. Dots and labels at each tip
     for i, (label, face_center, tip, _, _) in enumerate(axes):
         e = proj(*tip)
         if label not in ("B", "L"):
-            dwg.add(dwg.circle(center=e, r=5, fill=ARROW_COLOR))
+            dwg.add(_ink(dwg.circle(center=e, r=5, fill=ARROW_COLOR)))
 
         lx, ly = label_positions[i]
         dwg.add(
-            dwg.text(
-                label,
-                insert=(lx, ly),
-                text_anchor="middle",
-                dominant_baseline="central",
-                font_size="18px",
-                font_family="sans-serif",
-                font_weight="bold",
-                fill="#222",
+            _ink(
+                dwg.text(
+                    label,
+                    insert=(lx, ly),
+                    text_anchor="middle",
+                    dominant_baseline="central",
+                    font_size="18px",
+                    font_family="sans-serif",
+                    font_weight="bold",
+                    fill=ARROW_COLOR,
+                )
             )
         )
 
@@ -1528,7 +1592,7 @@ def all_steps() -> list[StepDiagram]:
 
 
 def main() -> None:
-    # tools/diagrams/src/cubepath/diagrams.py -> repo root is 4 levels up
+    # tools/cubepath/src/cubepath/diagrams.py -> repo root is 4 levels up
     output_dir = Path(__file__).resolve().parents[4] / "guide" / "figures" / "generated"
     output_dir.mkdir(parents=True, exist_ok=True)
     total = 0
