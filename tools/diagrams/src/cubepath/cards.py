@@ -14,9 +14,11 @@ and `glossary.BANNED` is enforced against the rendered PDF.
 
 from __future__ import annotations
 
+import functools
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
+from cubepath.algs import ALGORITHMS
 from cubepath.glossary import gloss_line
 from cubepath.notation import (
     BIGCUBE_CHUNKS,
@@ -28,7 +30,11 @@ from cubepath.notation import (
     pll_rows,
 )
 from cubepath.recognition import pll_cues, sune_fallbacks
-from cubepath.typst import alg, diagram, esc, key_alg
+from cubepath.typst import alg, diagram, esc, key_alg, prime
+
+# One section of a card face: a bare string spans the card, a pair is the
+# two-column layout. `cheatcards._section` renders both.
+Section = str | tuple[str, str]
 
 SITE = "cubepath-six.vercel.app"
 
@@ -155,7 +161,7 @@ _C1_PLACE = [
 def _twice(key: str) -> str:
     """An algorithm printed once with a literal x2 — the stored string is the
     doubled token stream, so this is a label, not a second algorithm."""
-    return key_alg(key)[:-1] + ", [x2])"
+    return key_alg(key, extra="x2")
 
 
 _C1_TWIST = [
@@ -164,95 +170,82 @@ _C1_TWIST = [
 ]
 
 
-def card1_front() -> str:
+def card1_front() -> list[Section]:
     left = _stack(
-        *[
-            _cue(
-                f"New here? Do the walkthrough once at {SITE}/learn. This card is the memory jog."
-            ),
-            _hdr("Notation"),
-            _key("R U F L D B = turn that face clockwise, looking at it from outside the cube."),
-            _key(
-                "' = counter-clockwise. 2 = half turn. Lowercase r f = that face plus the "
-                "layer behind it, turning together."
-            ),
-            _key(
-                "y = spin the whole cube left, white staying down. A whole-cube turn "
-                "solves nothing."
-            ),
-            _words("algorithm", "trigger"),
-            _hdr("White cross", "", "1"),
-            f"#align(center)[#{diagram('steps/step_1_cross.svg', '8.0mm')}]",
-            _cue(
-                "White center DOWN. Bring the four white edges to it. Each edge's side "
-                "color must match the center it touches. No algorithm — work it out."
-            ),
-            _cue(
-                "Can't see it? Build the four white edges on the YELLOW face first, each "
-                "above its matching center, then turn each one down 180 degrees."
-            ),
-        ]
+        _cue(f"New here? Do the walkthrough once at {SITE}/learn. This card is the memory jog."),
+        _hdr("Notation"),
+        _key("R U F L D B = turn that face clockwise, looking at it from outside the cube."),
+        _key(
+            "' = counter-clockwise. 2 = half turn. Lowercase r f = that face plus the "
+            "layer behind it, turning together."
+        ),
+        _key("y = spin the whole cube left, white staying down. A whole-cube turn solves nothing."),
+        _words("algorithm", "trigger"),
+        _hdr("White cross", "", "1"),
+        f"#align(center)[#{diagram('steps/step_1_cross.svg', '8.0mm')}]",
+        _cue(
+            "White center DOWN. Bring the four white edges to it. Each edge's side "
+            "color must match the center it touches. No algorithm — work it out."
+        ),
+        _cue(
+            "Can't see it? Build the four white edges on the YELLOW face first, each "
+            "above its matching center, then turn each one down 180 degrees."
+        ),
     )
     right = _stack(
-        *[
-            _hdr("White corners", "", "2"),
-            _cue(
-                "Find a white corner on top, turn U until it sits above the empty slot it "
-                "belongs in, then match a picture below and repeat until it drops in."
-            ),
-            _rows(_C1_CORNERS, "DS"),
-            _hdr("Middle edges", "", "3"),
-            _cue(
-                "Top edge with NO yellow: turn U until its front color matches the center "
-                "under it. The arrow shows which slot it goes to."
-            ),
-            _rows(_C1_EDGES, "DS"),
-            _cue("Edge stuck in the wrong slot? Run either one to kick it out, then place it."),
-        ]
+        _hdr("White corners", "", "2"),
+        _cue(
+            "Find a white corner on top, turn U until it sits above the empty slot it "
+            "belongs in, then match a picture below and repeat until it drops in."
+        ),
+        _rows(_C1_CORNERS, "DS"),
+        _hdr("Middle edges", "", "3"),
+        _cue(
+            "Top edge with NO yellow: turn U until its front color matches the center "
+            "under it. The arrow shows which slot it goes to."
+        ),
+        _rows(_C1_EDGES, "DS"),
+        _cue("Edge stuck in the wrong slot? Run either one to kick it out, then place it."),
     )
     return [(left, right)]
 
 
-def card1_back() -> str:
+def card1_back() -> list[Section]:
     left = _stack(
-        *[
-            _hdr("Yellow cross", "yellow edges only — ignore the corners", "4"),
-            _rows(_C1_CROSS, "D"),
-            _cue("One algorithm, up to three times: dot to hook to line to cross."),
-            _hdr("Match the yellow edges", "", "5"),
-            _cue(
-                "First turn U so at least two top edges match the center under them. This "
-                "algorithm is called Sune; you use it on every card after this one."
-            ),
-            _rows(_C1_MATCH, "DS"),
-        ]
+        _hdr("Yellow cross", "yellow edges only — ignore the corners", "4"),
+        _rows(_C1_CROSS, "D"),
+        _cue("One algorithm, up to three times: dot to hook to line to cross."),
+        _hdr("Match the yellow edges", "", "5"),
+        _cue(
+            "First turn U so at least two top edges match the center under them. This "
+            "algorithm is called Sune; you use it on every card after this one."
+        ),
+        _rows(_C1_MATCH, "DS"),
     )
     right = _stack(
-        *[
-            _hdr("Put the yellow corners home", "", "6"),
-            _rows(_C1_PLACE, "DS"),
-            _cue(
-                "This cycles the other three corners into place. It also twists the "
-                "yellow face you just built — expected, the next step rebuilds it."
-            ),
-            _hdr("Twist the yellow corners", "", "7"),
-            _rows(_C1_TWIST, "DS"),
-            _cue(
-                "Between corners turn ONLY the top face, to bring the next unsolved "
-                "corner to front-right. Never turn the whole cube."
-            ),
-            _cue(
-                "The cube will look destroyed while you do this. Keep going — the last "
-                "top turn brings it back."
-            ),
-        ]
+        _hdr("Put the yellow corners home", "", "6"),
+        _rows(_C1_PLACE, "DS"),
+        _cue(
+            "This cycles the other three corners into place. It also twists the "
+            "yellow face you just built — expected, the next step rebuilds it."
+        ),
+        _hdr("Twist the yellow corners", "", "7"),
+        _rows(_C1_TWIST, "DS"),
+        _cue(
+            "Between corners turn ONLY the top face, to bring the next unsolved "
+            "corner to front-right. Never turn the whole cube."
+        ),
+        _cue(
+            "The cube will look destroyed while you do this. Keep going — the last "
+            "top turn brings it back."
+        ),
     )
     return [(left, right)]
 
 
 # ── CARD 2 — TWO-LOOK ─────────────────────────────────────────────────
 
-_SUNES = {f.case: f.sunes for f in sune_fallbacks()}
+_SUNES = sune_fallbacks()
 
 
 def _badge(case: str) -> str:
@@ -333,71 +326,70 @@ _C2_PLL_EDGES = [
 ]
 
 
-def card2_front() -> str:
+def card2_front() -> list[Section]:
     left = _stack(
-        *[
-            _hdr("OLL cross", "yellow edges"),
-            _rows(_C2_CROSS, "DS"),
-            _hdr("OLL corners", "yellow face"),
-            _rows(_C2_OLL_A, "DS"),
-            _cue("No yellow edge at all? Run the first one, then read again."),
-        ]
+        _hdr("OLL cross", "yellow edges"),
+        _rows(_C2_CROSS, "DS"),
+        _hdr("OLL corners", "yellow face"),
+        _rows(_C2_OLL_A, "DS"),
+        _cue("No yellow edge at all? Run the first one, then read again."),
     )
     right = _stack(
-        *[
-            _hdr("OLL corners", "continued"),
-            _rows(_C2_OLL_B, "DS"),
-            _hdr("Fallback"),
-            _cue(
-                "The badge on each row is your fallback: that many Sunes, with a U turn "
-                "between, also finishes the case. Machine-checked; three is the worst."
-            ),
-            _cue("Top not all yellow and nothing matches? Run Sune and read again."),
-        ]
+        _hdr("OLL corners", "continued"),
+        _rows(_C2_OLL_B, "DS"),
+        _hdr("Fallback"),
+        _cue(
+            "The badge on each row is your fallback: that many Sunes, with a U turn "
+            "between, also finishes the case. Machine-checked; three is the worst."
+        ),
+        _cue("Top not all yellow and nothing matches? Run Sune and read again."),
     )
     return [(left, right)]
 
 
-def card2_back() -> str:
+def card2_back() -> list[Section]:
     left = _stack(
-        *[
-            _hdr("PLL corners", "headlights = two matching corners on one face"),
-            _rows(_C2_PLL_CORNERS, "DC"),
-            _hdr("PLL edges", "corners home, top still not solved"),
-            _rows(_C2_PLL_EDGES, "DP"),
-        ]
+        _hdr("PLL corners", "headlights = two matching corners on one face"),
+        _rows(_C2_PLL_CORNERS, "DC"),
+        _hdr("PLL edges", "corners home, top still not solved"),
+        _rows(_C2_PLL_EDGES, "DP"),
     )
     right = _stack(
-        *[
-            _hdr("Start here", "two new algorithms finish any last layer"),
-            _cue("Yellow cross: F(R U R' U')F' until the cross appears — at most 3."),
-            _cue("Yellow face: Sune, read again, repeat — at most 3 (see the badges)."),
-            _cue("Corners: T-Perm. No headlights to hold left? Run it twice."),
-            _cue("Edges: Ub. No solved edge to put at the back? Run it twice."),
-            _cue(
-                "Each case on the front replaces one repeat with one run. Three a week; "
-                "you can solve the whole time."
-            ),
-            _hdr("H vs Z"),
-            _cue(
-                "All four side faces show a matched pair = H. Two faces matched, two not "
-                "= Z. Turn U and read again before deciding."
-            ),
-            _hdr("Stuck?"),
-            _cue(
-                "Corners home but nothing solves? Turn the top face once and read again — "
-                "that is often the whole fix."
-            ),
-            _cue(
-                "One case has beaten you five times? Park it, use its fallback above, "
-                "come back next week."
-            ),
-            _cue(
-                "A single piece looks twisted and no algorithm touches it? The cube was "
-                "reassembled wrong. Pop it out and reseat it."
-            ),
-            _words("OLL", "PLL", "headlights", "AUF"),
-        ]
+        _hdr("Start here", "two new algorithms finish any last layer"),
+        # The one algorithm this card names in prose rather than in a row, so
+        # it expands from algs.py like every other one — a retyped copy here
+        # is the one place on the set nothing would have caught.
+        _cue(f"Yellow cross: {ALGORITHMS["F-sexy-F'"]} until the cross appears — at most 3."),
+        _cue("Yellow face: Sune, read again, repeat — at most 3 (see the badges)."),
+        _cue("Corners: T-Perm. No headlights to hold left? Run it twice."),
+        _cue("Edges: Ub. No solved edge to put at the back? Run it twice."),
+        _cue(
+            "Each case on the front replaces one repeat with one run. Three a week; "
+            "you can solve the whole time."
+        ),
+        _hdr("H vs Z"),
+        # NOT a corner cue: recognition.corner_facts derives "all 4 headlights"
+        # for BOTH cases, under every AUF. The old wording ("two faces matched,
+        # two not = Z") is never true, so every Z read as an H. The edge is
+        # what separates them, which is exactly what Card 3's derived cue says.
+        _cue(
+            "Both show headlights on all four faces. The edge between them decides: "
+            "it belongs to the opposite face = H, to a neighbour = Z."
+        ),
+        _hdr("Stuck?"),
+        _cue(
+            "Corners home but nothing solves? Turn the top face once and read again — "
+            "that is often the whole fix."
+        ),
+        _cue(
+            "One case has beaten you five times? Park it, use its fallback above, "
+            "come back next week."
+        ),
+        _cue(
+            "A single piece looks twisted and no algorithm touches it? The cube was "
+            "reassembled wrong. Pop it out and reseat it."
+        ),
+        _words("OLL", "PLL", "headlights", "AUF"),
     )
     return [(left, right)]
 
@@ -407,25 +399,19 @@ def card2_back() -> str:
 # case's algorithm, cue or diagram.
 
 _OWNED_MARK = "●"
-_LEARN_ORDER = [
-    "Ja",
-    "Jb",
-    "Aa",
-    "Ab",
-    "F",
-    "Ra",
-    "Rb",
-    "V",
-    "Na",
-    "Nb",
-    "E",
-    "Ga",
-    "Gb",
-    "Gc",
-    "Gd",
-]
+
+# The four blocks Card 3 prints, in reading order. The card tells the learner
+# "learn in the printed order", so the printed order *is* the learning order —
+# a second hand-written list beside it said Ga..Gd came last when the card puts
+# them mid-front, and nothing could catch the disagreement.
+_C3_ADJACENT_A = ["T", "Ja", "Jb", "Aa", "Ab", "F"]
+_C3_ADJACENT_B = ["Ra", "Rb", "Ga", "Gb", "Gc", "Gd"]
+_C3_EDGES = ["Ua", "Ub", "H", "Z"]
+_C3_DIAGONAL = ["Y", "V", "Na", "Nb", "E"]
+_C3_PRINTED = _C3_ADJACENT_A + _C3_ADJACENT_B + _C3_EDGES + _C3_DIAGONAL
 
 
+@functools.cache
 def pll_deck() -> dict[str, Row]:
     """name -> the printed row, for all 21 cases."""
     cues = pll_cues()
@@ -447,62 +433,54 @@ def _pll_rows(names: list[str]) -> str:
     return _rows([deck[n] for n in names], "DF", gutter=0.6)
 
 
-def card3_front() -> str:
+def card3_front() -> list[Section]:
     left = _stack(
-        *[
-            _hdr("Adjacent corner swap", "exactly one face shows headlights"),
-            _pll_rows(["T", "Ja", "Jb", "Aa", "Ab", "F"]),
-            _cue(
-                "One face shows headlights: two corners of that face match. Hold as "
-                "drawn, run, then turn the top to finish."
-            ),
-        ]
+        _hdr("Adjacent corner swap", "exactly one face shows headlights"),
+        _pll_rows(_C3_ADJACENT_A),
+        _cue(
+            "One face shows headlights: two corners of that face match. Hold as "
+            "drawn, run, then turn the top to finish."
+        ),
     )
     right = _stack(
-        *[
-            _hdr("Adjacent corner swap", "continued"),
-            _pll_rows(["Ra", "Rb", "Ga", "Gb", "Gc", "Gd"]),
-            _cue(
-                "Learn in the printed order, three a week, about six weeks. Ja and Jb on "
-                "the same day — one is the mirror of the other."
-            ),
-        ]
+        _hdr("Adjacent corner swap", "continued"),
+        _pll_rows(_C3_ADJACENT_B),
+        _cue(
+            "Learn in the printed order, three a week, about six weeks. Ja and Jb on "
+            "the same day — one is the mirror of the other."
+        ),
     )
     return [(left, right)]
 
 
-def card3_back() -> str:
+def card3_back() -> list[Section]:
     left = _stack(
-        *[
-            _hdr("Edges only", "corners already home"),
-            _pll_rows(["Ua", "Ub", "H", "Z"]),
-            _hdr("How to look"),
-            _cue(
-                "1. Count the headlight faces. One = front of this card. Four = this "
-                "column. None = the column on the right."
-            ),
-            _cue("2. Only then read the edges to pick the exact case."),
-            _cue(
-                "3. Line the case up as drawn, run it, turn the top again to "
-                "finish — that last free turn is the AUF."
-            ),
-            _cue(f"{_OWNED_MARK} = already yours from Card 2."),
-            # The glossary sits in whichever column has room; F13 only requires
-            # it to be on the card that uses the terms, not in a fixed place.
-            _words("PLL", "headlights", "AUF", "adjacent corner swap", "diagonal corner swap"),
-        ]
+        _hdr("Edges only", "corners already home"),
+        _pll_rows(_C3_EDGES),
+        _hdr("How to look"),
+        _cue(
+            "1. Count the headlight faces. One = front of this card. Four = this "
+            "column. None = the column on the right."
+        ),
+        _cue("2. Only then read the edges to pick the exact case."),
+        _cue(
+            "3. Line the case up as drawn, run it, turn the top again to "
+            "finish — that last free turn is the AUF."
+        ),
+        _cue(f"{_OWNED_MARK} = already yours from Card 2."),
+        # The glossary sits in whichever column has room; F13 only requires
+        # it to be on the card that uses the terms, not in a fixed place.
+        _words("PLL", "headlights", "AUF", "adjacent corner swap", "diagonal corner swap"),
     )
     right = _stack(
-        *[
-            _hdr("Diagonal corner swap", "no headlights anywhere"),
-            _pll_rows(["Y", "V", "Na", "Nb", "E"]),
-            _hdr("Stuck?"),
-            _cue(
-                "Case you have not learned? Two-look it from Card 2 — T-Perm then Ub "
-                "still solves it. Nothing here can strand you."
-            ),
-            _cue("Beaten five times by one case? Park it, two-look it, come back next week."),
-        ]
+        _hdr("Diagonal corner swap", "no headlights anywhere"),
+        _pll_rows(_C3_DIAGONAL),
+        _hdr("Stuck?"),
+        _cue(
+            "Case you have not learned? Two-look it from Card 2 — T-Perm then Ub "
+            "still solves it. Nothing here can strand you."
+        ),
+        _cue("Beaten five times by one case? Park it, two-look it, come back next week."),
     )
     return [(left, right)]
 
@@ -510,19 +488,34 @@ def card3_back() -> str:
 # ── CARD A — ANNEX ────────────────────────────────────────────────────
 
 
+def _mark_move(markup: str, token: str, wrapper: str) -> str:
+    """Wrap the first *rendered* occurrence of one move in a Typst call.
+
+    The match has to run on the rendered markup, not the raw token: `prime()`
+    has already rewritten `'` to `#pr()`, so searching for `Rw'` found nothing
+    and `str.replace` reports that by silently doing nothing. The two parity
+    lines shipped unpadded, with no red move on the 5x5 line, while the cue
+    above them promised one. Raise instead of shipping the quiet version.
+    """
+    rendered = prime(token)
+    if rendered not in markup:
+        raise AssertionError(f"{token!r} renders as {rendered!r}, which is not in {markup!r}")
+    return markup.replace(rendered, wrapper.format(rendered), 1)
+
+
 def _bigcube_block() -> str:
     bc = bigcube_algs()
-    spaced = block_compactable(list(bc.values()))  # False -> the block keeps spaces
+    # False here means "a layer-count prefix makes compaction ambiguous", so
+    # the whole block keeps its real spaces (see notation.block_compactable).
+    compacted = block_compactable(list(bc.values()))
 
     def bcalg(name: str) -> str:
-        return alg(BIGCUBE_CHUNKS[name], compacted=spaced, size="AB")
+        return alg(BIGCUBE_CHUNKS[name], compacted=compacted, size="AB")
 
     # The 4x4 line pads its differing move to the width of "3Rw'" so the two
     # parity lines align move-for-move and the single difference is visible.
-    oll_p = bcalg("4x4-oll-parity").replace(PARITY_DIFF_4X4, f"#pad[{PARITY_DIFF_4X4}]", 1)
-    edge_p = bcalg("5x5-edge-parity").replace(
-        PARITY_DIFF_5X5, f"#text(fill: CR)[{PARITY_DIFF_5X5}]", 1
-    )
+    oll_p = _mark_move(bcalg("4x4-oll-parity"), PARITY_DIFF_4X4, "#pad[{}]")
+    edge_p = _mark_move(bcalg("5x5-edge-parity"), PARITY_DIFF_5X5, "#text(fill: CR)[{}]")
     return f"""{_hdr("Big cubes", "4x4 and 5x5")}
 #cue[Reduce: build the 6 centers #sym.arrow.r pair the 12 edges #sym.arrow.r solve it as a 3x3.]
 {_key("Rw = 2 layers wide. 3Rw = 3 layers. 2R = 2nd LAYER ONLY — never widen it.")}
@@ -543,118 +536,104 @@ def _bigcube_block() -> str:
 algorithms move corners.]"""
 
 
-def annex_front() -> list:
+def annex_front() -> list[Section]:
     """Big cubes run full width. Their algorithms keep real spaces (a
     layer-count prefix makes compaction ambiguous), so an 18-move parity
     algorithm needs the whole card rather than a 40.2 mm column."""
     notation = _stack(
-        *[
-            _hdr("Notation"),
-            _key(
-                "R U F L D B = turn that face clockwise, from outside the cube. "
-                "' = counter-clockwise. 2 = half turn."
-            ),
-            _key(
-                "M = middle slice, turning the way L turns. x y z = the whole cube, "
-                "turning the way R, U and F turn. Lowercase r f = that face plus the "
-                "layer behind it, turning together."
-            ),
-        ]
+        _hdr("Notation"),
+        _key(
+            "R U F L D B = turn that face clockwise, from outside the cube. "
+            "' = counter-clockwise. 2 = half turn."
+        ),
+        _key(
+            "M = middle slice, turning the way L turns. x y z = the whole cube, "
+            "turning the way R, U and F turn. Lowercase r f = that face plus the "
+            "layer behind it, turning together."
+        ),
     )
     shortcut = _stack(
-        *[
-            _hdr("Beginner shortcut", "use it until you know Sune"),
-            _cue(
-                "Twist a yellow corner four turns at a time, turning ONLY the top "
-                "face between corners."
-            ),
-            "#grid(columns: (14.5mm, 1fr), column-gutter: 0.8mm, row-gutter: 0.28mm,\n"
-            "  align: (left + horizon, left + horizon),\n"
-            f"  lbl[yellow faces RIGHT], [{_twice('Orient Corners Right')}],\n"
-            f"  lbl[yellow faces FRONT], [{_twice('Orient Corners Front')}],\n)",
-        ]
+        _hdr("Beginner shortcut", "use it until you know Sune"),
+        _cue(
+            "Twist a yellow corner four turns at a time, turning ONLY the top face between corners."
+        ),
+        "#grid(columns: (14.5mm, 1fr), column-gutter: 0.8mm, row-gutter: 0.28mm,\n"
+        "  align: (left + horizon, left + horizon),\n"
+        f"  lbl[yellow faces RIGHT], [{_twice('Orient Corners Right')}],\n"
+        f"  lbl[yellow faces FRONT], [{_twice('Orient Corners Front')}],\n)",
     )
     words = _stack(
-        *[
-            _hdr("Words"),
-            _cue(
-                gloss_line(
-                    "algorithm",
-                    "trigger",
-                    "sexy move",
-                    "sledgehammer",
-                    "parity",
-                    "edge pair",
-                )
-            ),
-        ]
+        _hdr("Words"),
+        _cue(
+            gloss_line(
+                "algorithm",
+                "trigger",
+                "sexy move",
+                "sledgehammer",
+                "parity",
+                "edge pair",
+            )
+        ),
     )
     return [_bigcube_block(), (notation, shortcut), words]
 
 
-def annex_back() -> list:
+def annex_back() -> list[Section]:
     ladder = _stack(
-        *[
-            _hdr("The ladder"),
-            _cue("1/3 FIRST SOLVE · 9 algorithms · unlock: five solves, card face down."),
-            _cue("2/3 TWO-LOOK · +13 · unlock: fifteen last layers in exactly two algorithms."),
-            _cue("3/3 ONE-LOOK PLL · +15 · done: all 21 named, twice on separate days."),
-            _cue(
-                "After that: full OLL, F2L, cross planning, look-ahead — in the app, "
-                "not on card stock."
-            ),
-            _hdr("Why there are only three"),
-            _cue(
-                "A card is good at a closed set of cases you tell apart by sight. It "
-                "is bad at a skill you drill. F2L, cross planning and look-ahead are "
-                "drills with no finite case list. Full OLL is 57 cases, 22 of which "
-                "differ only in a sliver a fifth of a millimetre wide at this size. "
-                "All of them are in the app, with a real cube and randomised setup. "
-                "This set stops where the medium stops."
-            ),
-        ]
+        _hdr("The ladder"),
+        _cue("1/3 FIRST SOLVE · 9 algorithms · unlock: five solves, card face down."),
+        _cue("2/3 TWO-LOOK · +13 · unlock: fifteen last layers in exactly two algorithms."),
+        _cue("3/3 ONE-LOOK PLL · +15 · done: all 21 named, twice on separate days."),
+        _cue(
+            "After that: full OLL, F2L, cross planning, look-ahead — in the app, not on card stock."
+        ),
+        _hdr("Why there are only three"),
+        _cue(
+            "A card is good at a closed set of cases you tell apart by sight. It "
+            "is bad at a skill you drill. F2L, cross planning and look-ahead are "
+            "drills with no finite case list. Full OLL is 57 cases, 22 of which "
+            "differ only in a sliver a fifth of a millimetre wide at this size. "
+            "All of them are in the app, with a real cube and randomised setup. "
+            "This set stops where the medium stops."
+        ),
     )
     words = _stack(
-        *[
-            _hdr("Words"),
-            _cue(
-                gloss_line(
-                    "OLL",
-                    "PLL",
-                    "Sune",
-                    "sexy move",
-                    "sledgehammer",
-                    "headlights",
-                    "trigger",
-                    "AUF",
-                )
-            ),
-            _cue(
-                gloss_line(
-                    "parity",
-                    "edge pair",
-                    "F2L",
-                    "look-ahead",
-                    "adjacent corner swap",
-                    "diagonal corner swap",
-                )
-            ),
-        ]
+        _hdr("Words"),
+        _cue(
+            gloss_line(
+                "OLL",
+                "PLL",
+                "Sune",
+                "sexy move",
+                "sledgehammer",
+                "headlights",
+                "trigger",
+                "AUF",
+            )
+        ),
+        _cue(
+            gloss_line(
+                "parity",
+                "edge pair",
+                "F2L",
+                "look-ahead",
+                "adjacent corner swap",
+                "diagonal corner swap",
+            )
+        ),
     )
     stamp = _stack(
-        *[
-            _hdr("Print and version"),
-            _cue(
-                "Every ALGORITHM on these cards is expanded from machine-verified data "
-                "and checked against a cube simulator at build time; if one were wrong "
-                "the build would fail rather than ship. Recognition wording is "
-                "generated from the same permutation the diagram is drawn from."
-            ),
-            _cue(
-                f"Set v1.0 · reprint any single card at {SITE}/print · print at 100% / "
-                f"Actual size, never 'Fit to page'."
-            ),
-        ]
+        _hdr("Print and version"),
+        _cue(
+            "Every ALGORITHM on these cards is expanded from machine-verified data "
+            "and checked against a cube simulator at build time; if one were wrong "
+            "the build would fail rather than ship. Recognition wording is "
+            "generated from the same permutation the diagram is drawn from."
+        ),
+        _cue(
+            f"Set v1.0 · reprint any single card at {SITE}/print · print at 100% / "
+            f"Actual size, never 'Fit to page'."
+        ),
     )
     return [(ladder, words), stamp]
 
@@ -669,18 +648,35 @@ class Card:
     slug: str
     title: str
     tint_L: int
-    front: Callable[[], list]  # sections: a string is full width, a pair is two columns
-    back: Callable[[], list]
+    front: Callable[[], list[Section]]
+    back: Callable[[], list[Section]]
     unlock: str = ""
     master: str = ""
-    next_title: str | None = None
     supersedes: str | None = None
-    superseded_by: str | None = None
     notes: tuple[str, ...] = field(default_factory=tuple)
 
     @property
     def ident(self) -> str:
-        return f"{self.num}/3" if self.num else "A"
+        return f"{self.num}/{TIERS}" if self.num else "A"
+
+    @property
+    def next(self) -> Card | None:
+        """The next numbered card. The annex is not on the ladder, so it has
+        no successor — and is nobody's successor either."""
+        if self.num is None:
+            return None
+        return next((c for c in DECK if c.num == self.num + 1), None)
+
+    @property
+    def next_title(self) -> str | None:
+        n = self.next
+        return f"{n.ident} {n.title.upper()}" if n else None
+
+    @property
+    def superseded_by(self) -> str | None:
+        """The inverse of `supersedes`. Typing both directions is how the two
+        halves of one seam end up disagreeing."""
+        return next((c.slug for c in DECK if c.supersedes == self.slug), None)
 
     @property
     def filled(self) -> int:
@@ -698,8 +694,6 @@ DECK: list[Card] = [
         back=card1_back,
         unlock="UNLOCK CARD 2 — five scrambles in a row with this card face down.",
         master="MASTER: those five under 3:00. My target: ______",
-        next_title="2/3 TWO-LOOK",
-        superseded_by="two-look",
         notes=(
             "LAST-LAYER ORDER ON THIS CARD: yellow cross, match edges, place corners, "
             "twist corners. Card 2 replaces this order permanently — it is the only "
@@ -719,9 +713,7 @@ DECK: list[Card] = [
             "two algorithms, case named out loud first. A repeat does not count."
         ),
         master="MASTER: solves averaging under 1:00. My target: ______",
-        next_title="3/3 ONE-LOOK PLL",
         supersedes="first-solve",
-        superseded_by=None,
         notes=(
             "THE NEW ORDER: yellow cross, yellow face, corners home, edges home. This never "
             "changes again. Card 1's order is retired, and so is Niklas: it moves corners "
@@ -741,7 +733,6 @@ DECK: list[Card] = [
             "two separate days."
         ),
         master="MASTER: PLL under 3 s, solves under 0:30. My target: ______",
-        next_title=None,
         supersedes=None,
         notes=(
             "Card 2 gives you 19/72 last layers in one look. This card gives 71/72.",
@@ -759,7 +750,6 @@ DECK: list[Card] = [
         back=annex_back,
         unlock="",
         master="",
-        next_title=None,
         notes=("Not a tier, no unlock, no order. Use it when you buy a 4x4.",),
     ),
 ]
@@ -772,8 +762,17 @@ BY_SLUG = {c.slug: c for c in DECK}
 FRONT_SLOTS: list[int] = [c.index for c in DECK for _ in range(2)]
 
 
+# How many numbered tiers the ladder has. The annex is not one of them.
+TIERS: int = sum(1 for c in DECK if c.num)
+
+
 def learn_order() -> list[str]:
-    """Card 3's printed learning order. Every unowned case appears once."""
+    """Card 3's printed learning order: the cases it introduces, in the order
+    they appear on the card, because that is what the card tells you to do.
+
+    Also the only place that asserts Card 3 lists all 21 exactly once — a case
+    dropped from a block would otherwise just quietly not be on the card."""
+    names = [r.name for r in pll_rows()]
+    assert sorted(_C3_PRINTED) == sorted(names), f"Card 3 does not print all 21: {_C3_PRINTED}"
     owned = {r.name for r in pll_rows() if r.source == "algs.py"}
-    assert set(_LEARN_ORDER) == {r.name for r in pll_rows()} - owned, "learn order drifted"
-    return list(_LEARN_ORDER)
+    return [n for n in _C3_PRINTED if n not in owned]

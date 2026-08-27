@@ -23,6 +23,17 @@ TRIGGER_COLORS: dict[str, str] = {
     "b": "12408C",  # sledgehammer:  R' F R F'
 }
 
+# The canonical trigger of each family: the move string the card footers print
+# in the legend, and the name the cards call it by. `glossary.DEMONSTRATED`
+# names these same three as "defined by showing rather than saying", and
+# `cheatcards._footer` builds the legend from here — so the claim and the
+# legend cannot come apart.
+FAMILIES: dict[str, tuple[str, str]] = {
+    "r": ("R U R' U'", "sexy move"),
+    "g": ("R U R' U", "Sune"),
+    "b": ("R' F R F'", "sledgehammer"),
+}
+
 # Exact token strings that belong to each family. A span is coloured if and
 # only if its token string is a key here — colour is never hand-assigned.
 FAMILY: dict[str, str] = {
@@ -65,3 +76,16 @@ def contrast(a: str, b: str) -> float:
     """WCAG contrast ratio between two colours, 1.0 (identical) to 21.0."""
     lo, hi = sorted((relative_luminance(a), relative_luminance(b)))
     return (hi + 0.05) / (lo + 0.05)
+
+
+def lstar_grey(lstar: float) -> int:
+    """CIE L* -> the 8-bit sRGB grey with that lightness.
+
+    The card identity bands are specified as a lightness ramp, because that is
+    what survives a photocopier. Keeping the ramp as L* and converting here
+    means a new card declares a lightness rather than looking a byte up in a
+    table only the four existing cards appear in.
+    """
+    y = ((lstar + 16) / 116) ** 3 if lstar > 8 else lstar / 903.3
+    channel = 12.92 * y if y <= 0.0031308 else 1.055 * y ** (1 / 2.4) - 0.055
+    return round(channel * 255)

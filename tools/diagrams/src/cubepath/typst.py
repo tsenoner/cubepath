@@ -13,8 +13,6 @@ from __future__ import annotations
 
 from cubepath.notation import CHUNKS, Chunk, compact, family
 
-_COLOR_FN = {"r": "r", "g": "g", "b": "b"}
-
 
 def prime(text: str) -> str:
     """Bind each prime to its move letter. `pr()` (not `pr`) so the call ends
@@ -24,7 +22,7 @@ def prime(text: str) -> str:
 
 def _segment(seg: str, compacted: bool) -> str:
     text = prime(compact(seg) if compacted else seg)
-    fn = _COLOR_FN.get(family(seg) or "")
+    fn = family(seg)  # "r" | "g" | "b" — already the Typst function name
     return f"#{fn}[{text}]" if fn else text
 
 
@@ -34,14 +32,24 @@ def _chunk(chunk: Chunk, compacted: bool) -> str:
     return f"[{body}]"
 
 
-def alg(chunks: list[Chunk], compacted: bool = True, size: str = "AS") -> str:
+def alg(
+    chunks: list[Chunk], compacted: bool = True, size: str = "AS", extra: str | None = None
+) -> str:
     """Typst call rendering one algorithm as gap-separated chunks.
 
     A spaced block needs the wider gap: its chunks already contain ordinary
     spaces, which a 0.55em break would not beat.
+
+    `extra` appends one more gap-separated group — a label like "x2" that rides
+    with the algorithm. It is built here rather than spliced into the returned
+    string, because reaching into emitted markup to append a chunk means every
+    caller has to know how this function closes its own call.
     """
     fn = "a" if compacted else "aw"
-    return f"#{fn}({size}, {', '.join(_chunk(c, compacted) for c in chunks)})"
+    groups = [_chunk(c, compacted) for c in chunks]
+    if extra is not None:
+        groups.append(f"[{extra}]")
+    return f"#{fn}({size}, {', '.join(groups)})"
 
 
 def key_alg(name: str, **kw) -> str:

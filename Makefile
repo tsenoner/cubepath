@@ -36,12 +36,12 @@ diagrams: ## Regenerate SVG diagrams and sync them into the app
 	cd $(PY) && uv run cubepath-diagrams
 	bash scripts/sync-diagrams.sh
 
+cheatcards: cards ## Deprecated alias for `cards`
+
 cards: ## Generate the printable card set + print sheets, sync into the app
 	cd $(PY) && uv run cubepath-cards
 	rm -rf $(APP)/public/cards && mkdir -p $(APP)/public/cards
-	cp guide/build/cards/*.pdf guide/build/cards/manifest.json $(APP)/public/cards/
-
-cheatcards: cards ## Deprecated alias for `cards`
+	cp guide/build/cards/*.pdf $(APP)/public/cards/
 
 logo: ## Regenerate the brand mark (favicon.svg) and rasterize the icon set
 	cd $(PY) && uv run cubepath-logo

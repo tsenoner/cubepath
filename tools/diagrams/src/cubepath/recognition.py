@@ -22,11 +22,11 @@ be ambiguous for F, Ra, Rb, Ga, Gb, Gc, Gd and the four edges-only cases.
 
 from __future__ import annotations
 
+import functools
 from collections import deque
-from dataclasses import dataclass
 
 from cubepath.algs import ALGORITHMS
-from cubepath.cube import Cube, state_before
+from cubepath.cube import state_before
 from cubepath.fullsets import _u_layer_permutation, _u_layer_views, case_state
 from cubepath.notation import pll_rows
 
@@ -151,6 +151,7 @@ def signature(alg: str) -> tuple:
     return (tuple(sorted(corner_facts(alg))), edge_phrase(alg))
 
 
+@functools.cache
 def _corner_collisions() -> set[tuple]:
     """Corner signatures shared by more than one case.
 
@@ -211,18 +212,8 @@ def pll_cues() -> dict[str, str]:
 # ── Card 2: how many Sunes get you out ────────────────────────────────
 
 
-@dataclass(frozen=True)
-class SuneFallback:
-    case: str
-    sunes: int
-
-
 _SUNE = ALGORITHMS["Sune"]
 _AUF = ("", "U", "U2", "U'")
-
-
-def _u_face_solved(cube: Cube) -> bool:
-    return all(s == "Y" for s in cube.faces["U"])
 
 
 def sune_count(alg: str, limit: int = 6) -> int:
@@ -232,7 +223,7 @@ def sune_count(alg: str, limit: int = 6) -> int:
     always finishes the step — it is measured, not folklore.
     """
     start = state_before(alg)
-    if _u_face_solved(start):
+    if start.u_face_solved():
         return 0
     seen = {tuple(map(tuple, start.faces.values()))}
     queue = deque([(start, 0)])
@@ -245,7 +236,7 @@ def sune_count(alg: str, limit: int = 6) -> int:
             if auf:
                 nxt.apply(auf)
             nxt.apply(_SUNE)
-            if _u_face_solved(nxt):
+            if nxt.u_face_solved():
                 return depth + 1
             key = tuple(map(tuple, nxt.faces.values()))
             if key not in seen:
@@ -265,6 +256,6 @@ OLL_CORNER_CASES = (
 )
 
 
-def sune_fallbacks() -> list[SuneFallback]:
-    """The Sune count for each of the seven corner-orientation cases."""
-    return [SuneFallback(c, sune_count(ALGORITHMS[c])) for c in OLL_CORNER_CASES]
+def sune_fallbacks() -> dict[str, int]:
+    """Case name -> the Sune count, for the seven corner-orientation cases."""
+    return {c: sune_count(ALGORITHMS[c]) for c in OLL_CORNER_CASES}

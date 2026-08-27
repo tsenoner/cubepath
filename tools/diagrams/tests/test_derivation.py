@@ -29,6 +29,11 @@ from cubepath.diagrams import (
     _u_layer_views,
 )
 
+# The generator owns the U-layer sticker map; importing it (rather than keeping
+# a second copy here) is what stops the two from drifting apart silently.
+from cubepath.fullsets import _CORNER_SIDES, _u_layer_permutation
+from cubepath.recognition import OLL_CORNER_CASES as _OCLL_ALGS
+
 GUIDE = Path(__file__).resolve().parents[3] / "guide" / "cubepath.md"
 
 # ── Frame anchors ────────────────────────────────────────────────────
@@ -85,25 +90,6 @@ def test_phase1_cross_chain():
 # The seven corner-orientation algorithms must cover all seven OCLL twist
 # classes exactly once — no gaps (like the old missing H), no duplicates.
 
-_OCLL_ALGS = [
-    "Sune",
-    "Anti-Sune",
-    "Pi",
-    "Headlights",
-    "Double Headlights",
-    "Chameleon",
-    "Bowtie",
-]
-
-# Per corner position (ring order tl→tr→br→bl, clockwise from above):
-# the sticker locations of the two side faces, in (preceding, following)
-# ring order. Encoded as (face, index) in the simulator's state.
-_CORNER_SIDES = {
-    "tl": (("L", 0), ("B", 2)),
-    "tr": (("B", 0), ("R", 2)),
-    "br": (("R", 0), ("F", 2)),
-    "bl": (("F", 0), ("L", 2)),
-}
 _CORNER_UP = {"tl": 0, "tr": 2, "br": 8, "bl": 6}
 _RING = ["tl", "tr", "br", "bl"]
 
@@ -138,26 +124,6 @@ def test_ocll_full_coverage():
 
 
 # ── PLL arrows match the real piece permutation ──────────────────────
-
-# Where each U-layer position's stickers live in the simulator state.
-_EDGE_STICKER = {"top": ("B", 1), "right": ("R", 1), "bottom": ("F", 1), "left": ("L", 1)}
-_EDGE_HOME = {"R": "bottom", "G": "right", "O": "top", "B": "left"}
-_CORNER_HOME = {
-    frozenset({"R", "G"}): "br",
-    frozenset({"R", "B"}): "bl",
-    frozenset({"O", "G"}): "tr",
-    frozenset({"O", "B"}): "tl",
-}
-
-
-def _u_layer_permutation(cube: Cube) -> dict[str, str]:
-    """Map each U-layer position to where its piece belongs (its destination)."""
-    perm = {}
-    for pos, (face, idx) in _EDGE_STICKER.items():
-        perm[pos] = _EDGE_HOME[cube.faces[face][idx]]
-    for pos, ((f1, i1), (f2, i2)) in _CORNER_SIDES.items():
-        perm[pos] = _CORNER_HOME[frozenset({cube.faces[f1][i1], cube.faces[f2][i2]})]
-    return perm
 
 
 def _arrows_to_permutation(case) -> dict[str, str]:

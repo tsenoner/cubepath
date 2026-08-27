@@ -1,78 +1,118 @@
-[
-  {
-    "index": 0,
-    "route": "/c0",
-    "slug": "first-solve",
-    "title": "First solve",
-    "num": 1,
-    "of": 3,
-    "unlock": "UNLOCK CARD 2 \u2014 five scrambles in a row with this card face down.",
-    "master": "MASTER: those five under 3:00. My target: ______",
-    "next": "2/3 TWO-LOOK",
-    "next_slug": "two-look",
-    "supersedes": null,
-    "superseded_by": "two-look",
-    "card_pdf": "card-0-first-solve.pdf",
-    "fold_pdf": {
-      "a4": "card-0-first-solve-fold-a4.pdf",
-      "letter": "card-0-first-solve-fold-letter.pdf"
+{
+  "cards": [
+    {
+      "index": 0,
+      "route": "/c0",
+      "slug": "first-solve",
+      "title": "First solve",
+      "num": 1,
+      "of": 3,
+      "unlock": "UNLOCK CARD 2 \u2014 five scrambles in a row with this card face down.",
+      "master": "MASTER: those five under 3:00. My target: ______",
+      "next": "2/3 TWO-LOOK",
+      "next_slug": "two-look",
+      "supersedes": null,
+      "superseded_by": "two-look",
+      "card_pdf": "card-0-first-solve.pdf",
+      "fold_pdf": {
+        "a4": "card-0-first-solve-fold-a4.pdf",
+        "letter": "card-0-first-solve-fold-letter.pdf"
+      }
+    },
+    {
+      "index": 1,
+      "route": "/c1",
+      "slug": "two-look",
+      "title": "Two-look",
+      "num": 2,
+      "of": 3,
+      "unlock": "UNLOCK CARD 3 \u2014 fifteen last layers in a row, each finished in exactly two algorithms, case named out loud first. A repeat does not count.",
+      "master": "MASTER: solves averaging under 1:00. My target: ______",
+      "next": "3/3 ONE-LOOK PLL",
+      "next_slug": "one-look-pll",
+      "supersedes": "first-solve",
+      "superseded_by": null,
+      "card_pdf": "card-1-two-look.pdf",
+      "fold_pdf": {
+        "a4": "card-1-two-look-fold-a4.pdf",
+        "letter": "card-1-two-look-fold-letter.pdf"
+      }
+    },
+    {
+      "index": 2,
+      "route": "/c2",
+      "slug": "one-look-pll",
+      "title": "One-look PLL",
+      "num": 3,
+      "of": 3,
+      "unlock": "DONE \u2014 all twenty-one named correctly, twenty-one in a row, no card in hand, on two separate days.",
+      "master": "MASTER: PLL under 3 s, solves under 0:30. My target: ______",
+      "next": null,
+      "next_slug": null,
+      "supersedes": null,
+      "superseded_by": null,
+      "card_pdf": "card-2-one-look-pll.pdf",
+      "fold_pdf": {
+        "a4": "card-2-one-look-pll-fold-a4.pdf",
+        "letter": "card-2-one-look-pll-fold-letter.pdf"
+      }
+    },
+    {
+      "index": 3,
+      "route": "/c3",
+      "slug": "annex",
+      "title": "Annex \u2014 big cubes and the map",
+      "num": null,
+      "of": null,
+      "unlock": "",
+      "master": "",
+      "next": null,
+      "next_slug": null,
+      "supersedes": null,
+      "superseded_by": null,
+      "card_pdf": "card-3-annex.pdf",
+      "fold_pdf": {
+        "a4": "card-3-annex-fold-a4.pdf",
+        "letter": "card-3-annex-fold-letter.pdf"
+      }
     }
-  },
-  {
-    "index": 1,
-    "route": "/c1",
-    "slug": "two-look",
-    "title": "Two-look",
-    "num": 2,
-    "of": 3,
-    "unlock": "UNLOCK CARD 3 \u2014 fifteen last layers in a row, each finished in exactly two algorithms, case named out loud first. A repeat does not count.",
-    "master": "MASTER: solves averaging under 1:00. My target: ______",
-    "next": "3/3 ONE-LOOK PLL",
-    "next_slug": "one-look-pll",
-    "supersedes": "first-solve",
-    "superseded_by": null,
-    "card_pdf": "card-1-two-look.pdf",
-    "fold_pdf": {
-      "a4": "card-1-two-look-fold-a4.pdf",
-      "letter": "card-1-two-look-fold-letter.pdf"
+  ],
+  "sheets": [
+    {
+      "file": "deck-a4-fold.pdf",
+      "paper": "a4",
+      "mode": "fold",
+      "flip": null
+    },
+    {
+      "file": "deck-a4-duplex-long.pdf",
+      "paper": "a4",
+      "mode": "duplex",
+      "flip": "long"
+    },
+    {
+      "file": "deck-a4-duplex-short.pdf",
+      "paper": "a4",
+      "mode": "duplex",
+      "flip": "short"
+    },
+    {
+      "file": "deck-letter-fold.pdf",
+      "paper": "letter",
+      "mode": "fold",
+      "flip": null
+    },
+    {
+      "file": "deck-letter-duplex-long.pdf",
+      "paper": "letter",
+      "mode": "duplex",
+      "flip": "long"
+    },
+    {
+      "file": "deck-letter-duplex-short.pdf",
+      "paper": "letter",
+      "mode": "duplex",
+      "flip": "short"
     }
-  },
-  {
-    "index": 2,
-    "route": "/c2",
-    "slug": "one-look-pll",
-    "title": "One-look PLL",
-    "num": 3,
-    "of": 3,
-    "unlock": "DONE \u2014 all twenty-one named correctly, twenty-one in a row, no card in hand, on two separate days.",
-    "master": "MASTER: PLL under 3 s, solves under 0:30. My target: ______",
-    "next": null,
-    "next_slug": null,
-    "supersedes": null,
-    "superseded_by": null,
-    "card_pdf": "card-2-one-look-pll.pdf",
-    "fold_pdf": {
-      "a4": "card-2-one-look-pll-fold-a4.pdf",
-      "letter": "card-2-one-look-pll-fold-letter.pdf"
-    }
-  },
-  {
-    "index": 3,
-    "route": "/c3",
-    "slug": "annex",
-    "title": "Annex \u2014 big cubes and the map",
-    "num": null,
-    "of": null,
-    "unlock": "",
-    "master": "",
-    "next": null,
-    "next_slug": null,
-    "supersedes": null,
-    "superseded_by": null,
-    "card_pdf": "card-3-annex.pdf",
-    "fold_pdf": {
-      "a4": "card-3-annex-fold-a4.pdf",
-      "letter": "card-3-annex-fold-letter.pdf"
-    }
-  }
-]
+  ]
+}

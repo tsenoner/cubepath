@@ -45,6 +45,10 @@ function workerSafePreloadHelper() {
 export default defineConfig({
   site: "https://cubepath-six.vercel.app",
   output: "static",
+  // Card 1 prints "cubepath-six.vercel.app/learn" on card stock, but the
+  // course index lives at "/" — `learn/[...slug]` only emits lesson pages, so
+  // the printed URL 404'd. A printed URL cannot be reissued; send it home.
+  redirects: { "/learn": "/" },
   integrations: [
     mdx(),
     sitemap(),

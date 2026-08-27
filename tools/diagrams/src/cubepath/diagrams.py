@@ -1510,6 +1510,23 @@ def render_overview(output_dir: Path) -> Path:
     return filepath
 
 
+def all_steps() -> list[StepDiagram]:
+    """Every 3D step diagram, in guide order.
+
+    The guide and the card set both render this list. Listing the groups twice
+    is how a new step group reaches one output and not the other.
+    """
+    return [
+        *_step_cases(),
+        *_corner_case_steps(),
+        *_edge_case_steps(),
+        _orient_corner_case(),
+        *_orient_corner_cases_15(),
+        _corner_pos_case(),
+        *_align_edge_cases(),
+    ]
+
+
 def main() -> None:
     # tools/diagrams/src/cubepath/diagrams.py -> repo root is 4 levels up
     output_dir = Path(__file__).resolve().parents[4] / "guide" / "figures" / "generated"
@@ -1534,16 +1551,7 @@ def main() -> None:
     print(f"  {render_overview(output_dir).relative_to(output_dir)}")
     total += 1
 
-    all_steps = [
-        *_step_cases(),
-        *_corner_case_steps(),
-        *_edge_case_steps(),
-        _orient_corner_case(),
-        *_orient_corner_cases_15(),
-        _corner_pos_case(),
-        *_align_edge_cases(),
-    ]
-    for step in all_steps:
+    for step in all_steps():
         path = render_step(step, output_dir)
         print(f"  {path.relative_to(output_dir)}")
         total += 1

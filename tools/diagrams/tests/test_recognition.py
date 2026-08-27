@@ -84,6 +84,20 @@ def test_only_the_colliding_pairs_mention_edges() -> None:
     assert with_edges == {"H", "Z", "Ua", "Ub"}
 
 
+def test_h_and_z_cannot_be_told_apart_by_corners() -> None:
+    """Card 2's H-vs-Z block is a *corner* cue on the card only if the corners
+    separate them, and they never do: both show headlights on all four faces,
+    under every AUF. The card said "two faces matched, two not = Z", which is
+    true of neither case, so every Z read as an H."""
+    from cubepath.algs import ALGORITHMS
+    from cubepath.recognition import LIGHTS
+
+    for name in ("H-Perm", "Z-Perm"):
+        facts = corner_facts(ALGORITHMS[name])
+        assert {kind for _, kind in facts} == {LIGHTS}, f"{name}: {sorted(facts)}"
+        assert len(facts) == 4, f"{name}: {sorted(facts)}"
+
+
 def test_the_two_collisions_are_separated_by_direction() -> None:
     cues = pll_cues()
     assert cues["H"] != cues["Z"]
@@ -107,7 +121,7 @@ def test_edge_permutation_is_a_legal_pll(row) -> None:
 
 
 def test_sune_counts_are_derived_not_claimed() -> None:
-    counts = {f.case: f.sunes for f in sune_fallbacks()}
+    counts = sune_fallbacks()
     assert counts == {
         "Sune": 1,
         "Anti-Sune": 2,
@@ -131,11 +145,10 @@ def test_niklas_wrecks_the_yellow_face() -> None:
     simulator's answer, not an opinion."""
     from cubepath.algs import ALGORITHMS
     from cubepath.cube import Cube
-    from cubepath.recognition import _u_face_solved
 
     cube = Cube.solved()
     cube.apply(ALGORITHMS["Niklas"])
-    assert not _u_face_solved(cube)
+    assert not cube.u_face_solved()
 
 
 # ── The geometry the cue wording rests on ─────────────────────────────
@@ -150,7 +163,7 @@ def test_strip_reading_order_matches_the_drawing(tmp_path) -> None:
     import re
 
     from cubepath.diagrams import YELLOW, CubeDiagram, render
-    from cubepath.recognition import _ENDS, _STRIP
+    from cubepath.recognition import _STRIP
 
     # One unique colour per (strip, index) so every rect is identifiable; a
     # shared palette cannot separate strips, since a whole strip shares an axis.
