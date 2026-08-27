@@ -29,7 +29,7 @@ local callout_styles = {
   },
 }
 
--- Keep in sync with tools/diagrams/src/cubepath/palette.py — the cheat card
+-- Keep in sync with tools/cubepath/src/cubepath/palette.py — the cheat card
 -- renders the same three families, and tests/test_notation.py asserts these
 -- hexes still match. Darkened from the original D32F2F/2E7D32/1565C0 triad,
 -- which converted to luma 96/93/88 — lighter than the black body text, so on
