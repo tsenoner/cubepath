@@ -13,7 +13,7 @@ make install   # install app + Python dependencies
 make dev       # app dev server -> http://localhost:4321
 make check     # local gate: check-py + check-app (what the pre-push hook runs)
 make ci        # check + Playwright E2E (what GitHub Actions runs)
-make build     # PDF guide + app
+make build     # PDF guide + card set + app
 make diagrams  # regenerate SVG diagrams + sync into the app
 ```
 
@@ -33,7 +33,9 @@ uv run ruff check src/ tests/
 uv run ruff format src/ tests/
 ```
 
-**Prerequisites:** uv, pandoc (>=3.0), typst, Node >= 22.12 (app/)
+**Prerequisites:** uv, pandoc (>=3.1.2, for the typst writer), typst,
+poppler (`pdfinfo` + `pdftotext` — the card build gates shell out to them),
+Node >= 22.12 (app/)
 
 **Local CI gate:** run `git config core.hooksPath .githooks` once per clone.
 The pre-push hook runs `make check` — a push that would fail CI is rejected
@@ -51,7 +53,7 @@ npx playwright test      # smoke + airplane-mode E2E (the PWA gate)
 node scripts/gen-cases.mjs      # regenerate src/data/fullsets.gen.ts + .rich.gen.ts
 node scripts/extract-algs.mjs   # re-extract + verify the JPerm dataset (gated write)
 node scripts/verify-f2l.mjs     # F2L-41 verifier
-node scripts/verify-l2e.mjs     # 5x5 L2E verifier
+node scripts/verify-l2e.mjs     # 5x5 L2E verifier (gated write of l2e-raw.json)
 node scripts/gen-icons.mjs      # rasterize the PWA icon set from favicon.svg
 ```
 
@@ -74,13 +76,14 @@ would need yellow on both its U and F facelets, and the U and F centres would bo
 be yellow. The mark is a graphic, not a derived position — the one place in this
 repo that does not follow the derive-everything rule.
 
-Data flow: `src/data/extracted/*.json` (verified extractions) → `gen-cases.mjs` →
+Data flow: `src/data/extracted/*.json` (verified extractions) + `src/data/recognition.json`
+(hand-written cues) → `gen-cases.mjs` →
 `fullsets.gen.ts` (lean, ships to client) + `fullsets.rich.gen.ts` (recognition +
 alternates, build-time only) → merged with curated entries in `src/data/algs.ts`
 (`ALL_CASES`). Never hand-edit generated files; never retype algorithms — every
 alg is kpuzzle-verified in `tests/algs.spec.ts`.
 
-Deploys: Vercel project `cubepath` (team in docs/DECISIONS.md), git-linked via
+Deploys: Vercel project `cubepath` (deploy setup in docs/DECISIONS.md § Deploys), git-linked via
 the Vercel GitHub App — **every push to master auto-deploys** to
 https://cubepath-six.vercel.app (root `vercel.json` builds from `app/`).
 Manual fallback only: `scripts/build-deploy-payload.py` (refuses incomplete
@@ -92,19 +95,24 @@ Python SVG generator + cube simulator feeding both the guide PDF and the app.
 
 ### Cube Simulator
 
-`tools/diagrams/src/cubepath/cube.py` is a minimal Rubik's cube simulator (~220 lines). Used by tests to verify diagram sticker colors and algorithm correctness. State: 6 faces × 9 stickers (row-major). Table-driven moves (R/L/U/D/F/B/M/S/E + wide/rotations). Algorithm parser handles `R U R' U'`, `R2`, lowercase wide (`r`, `f`), and `(R U)×2` repeats. Coordinate mapping `diagram_to_sim(face, a, b)` bridges diagram coords to simulator state.
+`tools/diagrams/src/cubepath/cube.py` is a minimal Rubik's cube simulator (~330 lines). Used at build time by `diagrams.py`, `fullsets.py` and `recognition.py` to derive sticker states and card recognition cues, and by tests to verify diagram sticker colors and algorithm correctness. State: 6 faces × 9 stickers (row-major). Table-driven moves (R/L/U/D/F/B/M/S/E + wide/rotations). Algorithm parser handles `R U R' U'`, `R2`, lowercase wide (`r`, `f`), and `(R U)×2` repeats. Coordinate mapping `diagram_to_sim(face, a, b)` bridges diagram coords to simulator state.
 
 ### Algorithm Data
 
-`tools/diagrams/src/cubepath/algs.py` is the single source of truth for all algorithms. Diagrams derive their sticker states from these strings via the simulator; `tests/test_derivation.py` asserts the guide's tables match, arrows match the real piece permutation, and the 7 corner-orientation algs cover all 7 OCLL classes. Never hand-define sticker layouts — derive them.
+`tools/diagrams/src/cubepath/algs.py` is the single source of truth for the 22 algorithms the guide teaches. The full 57-OLL / 21-PLL sets are derived from the app's verified extraction via `fullsets.py`; 15 of the 21 PLLs (all but `notation.PLL_OWNED`) and the four big-cube strings come from there too. Diagrams derive their sticker states from these strings via the simulator; `tests/test_derivation.py` asserts the guide's tables match, arrows match the real piece permutation, and the 7 corner-orientation algs cover all 7 OCLL classes. Never hand-define sticker layouts — derive them.
 
 ### Diagram Pipeline
 
-`tools/diagrams/src/cubepath/diagrams.py` defines all 17 cube diagrams as `CubeDiagram` dataclasses rendered to SVG using `svgwrite`. Case sticker data is **derived from algorithms** via `_derived_cross_case` / `_derived_oll_corner_case` / `_derived_pll_case` (OLL: yellow/grey masks; PLL: true colors). The entry point `cubepath-diagrams` writes to `guide/figures/generated/`.
+`tools/diagrams/src/cubepath/diagrams.py` defines the guide's 17 core cube diagrams as `CubeDiagram` dataclasses rendered to SVG using `svgwrite`. Case sticker data is **derived from algorithms** via `_derived_cross_case` / `_derived_oll_corner_case` / `_derived_pll_case` (OLL: yellow/grey masks; PLL: true colors). The entry point `cubepath-diagrams` writes to `guide/figures/generated/`.
 
-Four case groups: `_oll_cross_cases()` (3), `_oll_corner_cases()` (8), `_pll_corner_cases()` (2), `_pll_edge_cases()` (4). OLL cases have no arrows; PLL cases use `swaps` (bidirectional) and `cycles` (directional) arrow fields — hand-declared for layout but permutation-verified by tests.
+Four case groups: `_oll_cross_cases()` (3), `_oll_corner_cases()` (8), `_pll_corner_cases()` (2), `_pll_edge_cases()` (4). `fullsets.py` builds a further 78 (57 OLL + 21 PLL) from the app's extraction, into `oll-full/` and `pll-full/`.
 
-`StepDiagram` dataclasses produce 3D isometric progress/case diagrams: `_step_cases()` (8 steps), `_corner_case_steps()` (3), `_edge_case_steps()` (2), `_orient_corner_case()` (1), `_orient_corner_cases_15()` (2), `_corner_pos_case()` (1), `_align_edge_cases()` (2). Each specifies a solved-sticker set, optional face_colors override (e.g. flipped white-on-top), and sticker overrides for highlighting.
+OLL cases have no arrows; PLL cases use `swaps` (bidirectional), `cycles` (directional) and
+`dashed_swaps` (the secondary edge movement in a corner PLL) arrow fields — hand-declared for layout but permutation-verified by tests.
+
+`StepDiagram` dataclasses produce 3D isometric progress/case diagrams: `_step_cases()` (8 steps), `_corner_case_steps()` (3), `_edge_case_steps()` (2), `_orient_corner_case()` (1), `_orient_corner_cases_15()` (2), `_corner_pos_case()` (1), `_align_edge_cases()` (2) — 19 in all, composed by the public
+`all_steps()`, which both the guide build and the card generator render, so a new step group
+must be surfaced there or it reaches neither output. Each specifies a solved-sticker set, optional face_colors override (e.g. flipped white-on-top), and sticker overrides for highlighting.
 
 ### Guide Build
 
@@ -113,7 +121,11 @@ Four case groups: `_oll_cross_cases()` (3), `_oll_corner_cases()` (8), `_pll_cor
 ### Card set (`cubepath-cards`)
 
 **Four ID-1 panels** (85.6 × 53.98 mm): three numbered progression cards plus an annex.
-`make cards` builds them into `guide/build/cards/` and syncs to `app/public/cards/`;
+`make cards` builds them into `guide/build/cards/` and copies the **PDFs** to
+`app/public/cards/`; the same run writes the manifest payload (`{cards, sheets}`) to
+`guide/build/cards/manifest.json` and to `app/src/data/cards.json`, which is the copy the
+app imports and the one `tests/test_cards.py` pins to the generator (CI never runs
+`cubepath-cards`, so nothing else would catch drift);
 the app serves them from `/print` and from the frozen routes `/c0`–`/c3`.
 
 | module | owns |
@@ -121,8 +133,8 @@ the app serves them from `/print` and from the frozen routes `/c0`–`/c3`.
 | `cards.py` | what each card *says* — the deck table and the four cards' content |
 | `cheatcards.py` | imposition, build gates, CLI, `manifest.json` |
 | `recognition.py` | PLL cues and Sune counts, **derived** from the cube state |
-| `glossary.py` | `GLOSS` / `TEACH` / `DEMONSTRATED` / `BANNED` vocabulary tiers |
-| `typst.py` | algorithm → Typst markup, shared by the two above |
+| `glossary.py` | `GLOSS` / `TEACH` / `DEMONSTRATED` / `BANNED` / `PLAIN` tiers; `BANNED` + `PLAIN` are gated on every rendered card |
+| `typst.py` | algorithm → Typst markup, shared by `cards.py` and `cheatcards.py` |
 
 Nothing on a card is retyped. 3×3 algorithms come from `algs.py` via
 `notation.CHUNKS`, PLL via `notation.PLL_CHUNKS`; the four big-cube strings are read
@@ -135,8 +147,10 @@ Diagrams are **re-rendered** in `diagrams.CARD` style, never post-processed: the
 palette is chosen against `palette.contrast` and gated, because at card size on a mono
 printer hue is gone and only luminance survives.
 
-Five failure modes the generator gates on every build, because each silently ships a
-wrong card:
+Failure modes the generator gates on every build, because each silently ships a wrong
+card. The five below are the subtle ones; `gate_card` also checks page geometry, banned
+and never-introduce vocabulary, and raw-markup leaks (the leak patterns are *derived*
+from the preamble's `#let` helpers, so a helper added later is covered by construction):
 
 1. Typst rewrites ASCII primes to U+2019, which cubing.js refuses to parse.
 2. Typst exits 0 on an unknown font family (so `--ignore-system-fonts`, warnings fatal).
@@ -152,13 +166,17 @@ guidance and `docs/card-set-plan.md` for why the set stops at three cards.
 
 ### Lua Filter (`guide/filters/callouts.lua`)
 
-Handles three things:
+Handles five things:
 
-1. **Callout divs** — Fenced divs with classes `.algorithm`, `.tip`, `.caution`, `.info` become styled Typst `#block()` markup.
+1. **Callout divs** — Fenced divs with classes `.algorithm`, `.tip`, `.caution`, `.info` become styled Typst `#block()` markup. A `title=` attribute overrides the default label.
 
 2. **Steps div** — `:::: {.steps}` wraps the Phase 1 step tables in a mirrored 4-column Typst grid layout.
 
-3. **Image rotation** — `![alt](path){ rotate=180 }` attribute wraps in `#box(width, rotate(..., image(...)))`. This keeps rotated images inline (important for side-by-side figure rows).
+3. **Image rotation** — `![alt](path){ rotate=180 }` attribute wraps in `#box(width, rotate(..., image(...)))`. This keeps rotated images inline (important for side-by-side figure rows). Meaningful for plan-view (top-down) diagrams, where the turn picks a different AUF — **not** for 3D isometric ones, which it just prints upside down.
+
+4. **Trigger-colour spans** — `[R U R' U']{.trig-r}` (also `.trig-g`, `.trig-b`) becomes bold coloured Typst text. The hexes are kept in sync with `cubepath/palette.py` and `tests/test_notation.py` fails the build if they drift.
+
+5. **Borderless tables** — `::: {.borderless}` converts a table to a Typst `#grid()` so columns distribute equally.
 
 ## Rubik's Cube Color Scheme & Physics
 
@@ -173,13 +191,13 @@ Standard Western color scheme with **Yellow on top, White on bottom, Red in fron
 | R (Right) | +x (right) | **Green** | Blue (L) |
 | L (Left) | -x (left) | **Blue** | Green (R) |
 
-**Adjacency (CW from top):** Blue → Red → Green → Orange → Blue. So with Red in front: R=Green, L=Blue.
+**Adjacency (CW from top):** Orange → Green → Red → Blue → Orange. So with Red in front: R=Green, L=Blue.
 
 **3D isometric view** shows three faces: U (Yellow, top), F (Red, front-left), R (Green, front-right).
 
 **Move rotation direction:** CW when looking at the face from outside. For the isometric projection:
-- R CW from +x: top→front→bottom→back. In yz plane: (y, z) → (2−z, y).
-- U CW from +y: front→right→back→left. In xz plane: similar.
+- R CW from +x: top→back→bottom→front (F→U→B→D→F). In yz plane: (y, z) → (z, 2−y).
+- U CW from +y: front→left→back→right (F→L→B→R→F). In xz plane: similar.
 - F CW from +z: top→right→bottom→left. In xy plane: similar.
 - L/D follow opposite-face conventions. M follows L direction, S follows F direction, E follows D direction.
 
@@ -188,6 +206,8 @@ Standard Western color scheme with **Yellow on top, White on bottom, Red in fron
 Generated SVGs are organized in subdirectories under `guide/figures/generated/`:
 - `oll/` — OLL case diagrams (plan-view, top-down)
 - `pll/` — PLL case diagrams (plan-view with arrows)
+- `oll-full/` — the full 57-OLL set (from `fullsets.py`)
+- `pll-full/` — the full 21-PLL set (from `fullsets.py`)
 - `notation/` — 3D isometric move notation diagrams
 - `steps/` — 3D isometric step progress + case diagrams
 
@@ -197,7 +217,9 @@ The guide should be as small and concise as possible while containing all inform
 
 ## Key Conventions
 
-- The guide uses `Y` (YELLOW) and `G` (GREY) shorthand for u_face color arrays in diagrams.py.
+- `diagrams.py` defines `Y` (YELLOW) / `G` (GREY) shorthands for u_face color arrays, but they are
+  largely vestigial: cases are derived through `_yellow_mask()`, and only `oll_solved` still
+  writes `Y` literals. Derive, don't hand-write a mask.
 - U-face indices are row-major: 0=TL, 1=TC, 2=TR, 3=ML, 4=Center, 5=MR, 6=BL, 7=BC, 8=BR. Top row = back of cube, bottom row = front.
 - OLL cross algorithms: `F(R U R' U')F'` solves **Line** (hold horizontal), `f(R U R' U')f'` solves **Hook** (hold L in front-right).
 - Ruff config: Python 3.12, line-length 100, rules E/F/I/UP/W.

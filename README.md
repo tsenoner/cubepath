@@ -11,7 +11,7 @@
 
 ## Commands
 
-Prerequisites: [uv](https://docs.astral.sh/uv/), [pandoc](https://pandoc.org/) ≥ 3.0, [typst](https://typst.app/), Node ≥ 22.12
+Prerequisites: [uv](https://docs.astral.sh/uv/), [pandoc](https://pandoc.org/) ≥ 3.1.2 (typst writer), [typst](https://typst.app/), [poppler](https://poppler.freedesktop.org/) (card build gates), Node ≥ 22.12
 
 Run `make` on its own for the full list. The common ones:
 
