@@ -417,3 +417,60 @@ lamination guidance is in `docs/printing.md`.
 Deliberately *not* a copy of the prior art: the Z-Cube set is organised by
 algorithm family (F2L / OLL / PLL), this one by learner stage, so finishing any
 card still leaves you able to solve the whole cube.
+
+## Notation overview — redrawn (2026-08-28)
+
+`guide/figures/generated/notation/overview.svg` was a flat three-quad block with
+a spike out of each face centre and a ~280° ribbon ring around it. The idea —
+a pin per face, its letter at the tip, its turn around the pin — was right,
+and the user liked it; the drawing was not. At the two shipped sizes (272 px
+in the PDF, 360 px in the app) the rings were unreadable, the 1×1 block read
+as a whole-cube rotation, both consumers' captions called it "the x, y, z
+rotation axes", it was the one diagram that derived nothing, its only gate was
+"the file exists", and a layout commit (`817b7d1`) had evicted it from the
+Notation section to the last line of the PDF.
+
+**Shipped: the pins, drawn to read.** Same idea, same 3D ribbon geometry (the
+band around the axis, split around the pin, the arrowhead in the band's own
+plane — `_ribbon_arc` is the original code with parameters), with what made
+it unreadable fixed: ring radius 0.72 stickers instead of 0.6, a 250° sweep
+instead of 280°, a larger head, faint layer lines on the cube so it is a
+3×3 and not a block, and the six tips at two derived screen radii so the star
+is balanced and compact (167 × 174 units against 226 × 231). Dots at the
+tips and the letters just beyond them, as before. The arrowhead's position on
+each ring is derived from the view direction. Six face turns only.
+
+**Kept as backup: the F hub** (`overview_hub.svg`). F spins as a ring in the
+middle of the front face and every other letter slides its layer along an
+edge of a face you can see — the turns as seen from your seat — with the
+strip directions derived by marking the strip on a solved cube and applying
+the move. Not shipped anywhere; one filename swap away.
+
+**Tried and dropped, recorded so it is not retried.** A first redesign put
+all nine layer turns (faces plus slices) on one cube — arcs on the visible
+faces, hooks over the edges — with a small dashed cube for x / y / z and three
+micro cubes for the modifiers. Correct and gated, and judged by the user
+*more* confusing than the pins: three arrow idioms on one cube and labels far
+from the arrows they named. On this cube anything beyond the six face turns
+needs a second idiom, and the fifteen move diagrams sit right below.
+
+**Gates.** The rings must pass their face's edge-middle stickers in the order
+one turn of that face carries a sticker (simulator-checked for the visible
+faces; the ring basis is proven clockwise-from-outside for all six); pins
+start at the face centre, run along the normal and land at the layout's
+screen radius; every arrowhead's tip in the SVG is the projected end of its
+ring; every letter is present once and sits on the plate so it flips with the
+theme; the computed frame holds every coordinate and label; the committed
+SVGs match the generator byte for byte. The hub keeps its own gates (derived
+strip directions re-derived independently, reverse reading false, letters
+nearer their own arrow than any other, card halo by `palette.contrast`).
+
+**Placement.** Back in `# Notation` in the guide (a one-cell borderless
+table, so it centres without pandoc's captioned `#figure` wrapper — the old
+figure was the PDF's only "Figure 1"), at the top of the app's notation
+lesson as the map the sections then detail, and on the annex card beside the
+notation key in card ink.
+
+Larger question filed, not acted on: [#2](https://github.com/tsenoner/cubepath/issues/2),
+whether the generator should move to TypeScript on cubing.js so the repo has
+one cube model instead of `cube.py` plus kpuzzle.

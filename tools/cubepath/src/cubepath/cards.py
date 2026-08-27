@@ -549,17 +549,25 @@ def annex_front() -> list[Section]:
     """Big cubes run full width. Their algorithms keep real spaces (a
     layer-count prefix makes compaction ambiguous), so an 18-move parity
     algorithm needs the whole card rather than a 40.2 mm column."""
+    # The notation overview in card ink: the six face turns with their
+    # direction, which is the one thing the prose key cannot say.
     notation = _stack(
         _hdr("Notation"),
-        _key(
-            "R U F L D B = turn that face clockwise, from outside the cube. "
+        "#grid(columns: (15.5mm, 1fr), column-gutter: 0.8mm, align: (top, top),\n"
+        f"  {diagram('notation/overview.svg', '15.5mm')},\n"
+        "  ["
+        + _key(
+            "Each letter turns that face clockwise, seen from outside the cube — "
+            "so from your seat L, D and B look counter-clockwise. "
             "' = counter-clockwise. 2 = half turn."
-        ),
-        _key(
+        )
+        + "\n\n"
+        + _key(
             "M = middle slice, turning the way L turns. x y z = the whole cube, "
             "turning the way R, U and F turn. Lowercase r f = that face plus the "
             "layer behind it, turning together."
-        ),
+        )
+        + "],\n)",
     )
     shortcut = _stack(
         _hdr("Beginner shortcut", "use it until you know Sune"),

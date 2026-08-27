@@ -48,7 +48,7 @@ from cubepath.cards import (
     USABLE_W,
     Card,
 )
-from cubepath.diagrams import CARD, all_cases, all_steps, render, render_step
+from cubepath.diagrams import CARD, all_cases, all_steps, render, render_overview, render_step
 from cubepath.fullsets import card_pll_cases
 from cubepath.glossary import BANNED, PLAIN
 from cubepath.notation import (
@@ -109,8 +109,10 @@ def build_print_svgs() -> dict[str, int]:
         bump(render(case, _CARD_SVG, style=CARD))
     for step in all_steps():
         bump(render_step(step, _CARD_SVG, style=CARD))
+    # The annex's notation key: the six face turns, in card ink.
+    bump(render_overview(_CARD_SVG, style=CARD))
 
-    if set(counts) != {"oll", "pll", "pll-full", "steps"}:
+    if set(counts) != {"oll", "pll", "pll-full", "steps", "notation"}:
         raise AssertionError(f"unexpected card diagram categories: {sorted(counts)}")
     return counts
 
