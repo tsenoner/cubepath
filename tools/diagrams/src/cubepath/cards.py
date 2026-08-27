@@ -147,13 +147,22 @@ _C1_MATCH = [
 ]
 
 _C1_PLACE = [
-    Row("steps/corner_cycle.svg", "one corner home", "hold it FRONT-RIGHT", key_alg("Niklas")),
+    # FRONT-LEFT, not front-right: Niklas fixes the FL corner and 3-cycles the
+    # other three. The guide says the same ("Keeps front-left, cycles rest") and
+    # `corner_cycle.svg` draws FL as the solved one — the card was the outlier,
+    # and holding the solved corner front-right feeds it into the cycle.
+    # `test_cards.py` derives the fixed corner and pins this wording to it.
+    Row("steps/corner_cycle.svg", "one corner home", "hold it FRONT-LEFT", key_alg("Niklas")),
+    # No rotation here: `corner_cycle` is a 3D isometric drawing, so a 180deg
+    # turn does not re-orient the case the way it does for a top-down OLL plan
+    # view (see the Hook row on Card 2) — it just prints the cube upside down,
+    # yellow face underneath. The cue for this row is "from any hold" anyway,
+    # so there is no orientation to convey.
     Row(
         "steps/corner_cycle.svg",
         "no corner home",
         "run it once from any hold, then look again",
         key_alg("Niklas"),
-        180,
     ),
 ]
 

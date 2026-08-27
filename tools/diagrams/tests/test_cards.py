@@ -15,7 +15,8 @@ import subprocess
 
 import pytest
 
-from cubepath import cheatcards
+from cubepath import cards, cheatcards
+from cubepath.algs import ALGORITHMS
 from cubepath.cards import (
     _C3_ADJACENT_A,
     _C3_ADJACENT_B,
@@ -318,3 +319,49 @@ def test_every_card_front_carries_the_whole_legend(built, card) -> None:
     text = built[card.slug][1]
     for _, name in FAMILIES.values():
         assert name in text, f"{card.slug}: legend is missing {name!r}"
+
+
+# U-layer corners by the three sticker locations that identify the cubie,
+# independent of how it is twisted.
+_U_CORNERS = {
+    "BACK-LEFT": (("U", 0, 0), ("L", 0, 0), ("B", 0, 2)),
+    "BACK-RIGHT": (("U", 0, 2), ("B", 0, 0), ("R", 0, 2)),
+    "FRONT-RIGHT": (("U", 2, 2), ("R", 0, 0), ("F", 0, 2)),
+    "FRONT-LEFT": (("U", 2, 0), ("F", 0, 0), ("L", 0, 2)),
+}
+
+
+def _corner_niklas_keeps() -> str:
+    """The one U-layer corner Niklas leaves in place, from the simulator.
+
+    The stored alg is the 7-move form, which is the 3-cycle composed with a net
+    U' (`test_algorithms.test_niklas_cycles_corners` pins the order-4 property),
+    so the cycle is read after finishing the U.
+    """
+    from cubepath.cube import Cube
+
+    def ident(cube, pos):
+        return frozenset(cube.sticker_at(f, r, c) for f, r, c in _U_CORNERS[pos])
+
+    solved = Cube.solved()
+    cube = Cube.solved()
+    cube.apply(ALGORITHMS["Niklas"])
+    cube.apply("U")
+    kept = [p for p in _U_CORNERS if ident(cube, p) == ident(solved, p)]
+    assert len(kept) == 1, f"Niklas should fix exactly one corner, fixed {kept}"
+    return kept[0]
+
+
+def test_card1_holds_the_corner_niklas_actually_keeps() -> None:
+    """Card 1 tells the reader which corner to hold while Niklas cycles the
+    other three. Holding the wrong one feeds the solved corner into the cycle,
+    so the step never converges — and the card is printed, so it cannot be
+    corrected later. Derive the fixed corner and pin the wording to it.
+    """
+    kept = _corner_niklas_keeps()
+    assert kept == "FRONT-LEFT"  # also what guide/cubepath.md and corner_cycle.svg say
+    cues = " ".join(r.cue for r in cards._C1_PLACE).upper()
+    assert kept in cues, f"Card 1 must say hold it {kept}; it says {cues!r}"
+    other = {"FRONT-RIGHT", "BACK-LEFT", "BACK-RIGHT"} - {kept}
+    for wrong in other:
+        assert wrong not in cues, f"Card 1 names {wrong}, but Niklas keeps {kept}"
