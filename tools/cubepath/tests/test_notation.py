@@ -137,6 +137,15 @@ def test_big_cube_algs_match_their_verified_sources() -> None:
     assert f'"{bc["4x4-oll-parity"]}"' in extract
     assert f'"{bc["4x4-pll-parity"]}"' in extract
     assert f'"{bc["5x5-edge-parity"]}"' in l2e
+    # The flip is the one card string with no case of its own to be looked up
+    # in, so this is the only thing tying the printed string to the verifier
+    # that proves it is outer-turns-only and legal on both big cubes. Without
+    # it the card could quietly print a different algorithm under a cue —
+    # "slice out, run it, slice back -- both cubes" — that is only true of
+    # this one. It printed l2e-1 for exactly that reason until 2026-08-28.
+    assert f'const EDGE_FLIP = "{bc["l2e-flip"]}";' in l2e, (
+        "the card's flip string is not the one verify-l2e.mjs pins"
+    )
 
 
 def test_big_cube_chunks_round_trip() -> None:

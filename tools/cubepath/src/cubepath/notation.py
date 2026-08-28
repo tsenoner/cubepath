@@ -155,7 +155,6 @@ def block_compactable(algs: list[str]) -> bool:
 # forms) and writes it to case-states.json with its source path and the
 # signature it was found by.
 
-_L2E_DATA = _REPO / "app" / "src" / "data" / "extracted" / "l2e-raw.json"
 _CASE_STATES = _REPO / "app" / "src" / "data" / "extracted" / "case-states.json"
 
 

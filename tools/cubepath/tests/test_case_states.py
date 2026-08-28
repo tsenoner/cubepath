@@ -282,5 +282,8 @@ def test_notation_no_longer_parses_javascript_source() -> None:
     assert "_js_const" not in source
     # notation.py addresses `app/src/data/extracted/`, never `app/scripts/`.
     assert '"scripts"' not in source
-    for path in (notation._L2E_DATA, notation._CASE_STATES, notation._JPERM):
+    # _L2E_DATA went away when the edge flip started arriving through
+    # case-states.json like the parity algorithms — one JS→Python boundary,
+    # not two. The invariant is unchanged: every path here is JSON data.
+    for path in (notation._CASE_STATES, notation._JPERM):
         assert path.suffix == ".json", path

@@ -97,7 +97,9 @@ Pair edges with inner-slice turns, and don't repair the centers in between —
 that's the "free":
 
 - **Slice** — turn an inner layer so a wing rides next to its matching midge.
-  The pair forms at a front edge.
+  The pair forms at a front edge. Two inserts do almost all of this work, and
+  which one you reach for depends only on which gets the wing in the right way
+  round: <AlgText moves="R U' R'" /> or <AlgText moves="F R' F' R" />.
 - **Store** — move the finished edge into the top or bottom layer, out of the
   working zone, and drop an unpaired edge into its place.
 - **Repeat** — keep slicing and storing. The centers look wrecked mid-run.
@@ -110,13 +112,22 @@ that's the "free":
 - **Restore** — when no pairable edges remain, turn the slices back. The
   centers snap back with them.
 
+<Callout type="info">
+  The rule that keeps the centres recoverable: **for every `R` you make while
+  sliced out, make an `R'`.** Both inserts above obey it, and so does the flip
+  below — count them. Break it and the centres no longer come back with the
+  slices, which is the only way this step goes wrong.
+</Callout>
+
 <Figure size="card" height={320} caption="R U R' F R' F' R — the front-right group turns over in place. The four top groups move one place round, intact.">
   <TwistyPlayer alg="R U R' F R' F' R" puzzle="5x5x5" anchor="start" context={{ ladder: "555", stage: "555-pairing" }} />
 </Figure>
 
-Seven outer turns, and that is what makes it safe: an outer turn carries both
-wings of a group together, so this algorithm is **mechanically incapable of
-breaking a pair you have already made**. Fire it whenever a wing faces the
+You already know most of it: the last four moves are the second insert above,
+and the first three are the first insert with the middle turn reversed. Seven
+outer turns, and that is what makes it safe — an outer turn carries both wings
+of a group together, so this algorithm is **mechanically incapable of breaking
+a pair you have already made**. Fire it whenever a wing faces the
 wrong way. It is also the same seven moves on a 4×4 — nothing in it counts
 layers, so there is no wide-move trap to fall into.
 
