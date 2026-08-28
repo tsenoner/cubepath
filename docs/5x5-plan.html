@@ -430,14 +430,15 @@
     <h1>Two algorithms, one technique</h1>
     <p class="standfirst">
       Cutting the 5×5 course from thirteen memorised last-two-edges cases down to the
-      smallest set that provably finishes the puzzle — then checking the 4×4 against the same
-      source, and making the technique that has no algorithm <em>drillable anyway</em>.
+      smallest set that finishes the puzzle — then checking the 4×4 against the same source,
+      and making the technique that has no algorithm <em>drillable anyway</em>.
+      Built and shipped, with <em>one claim withdrawn</em> along the way.
     </p>
     <div class="statusbar">
-      <span><b>Status</b> planned, nothing written</span>
-      <span><b>Ships as</b> PR #5, after #4</span>
+      <span><b>Status</b> IMPLEMENTED — on <code>redesign</code>, PR #4</span>
+      <span><b>Repo gates</b> 677 pytest · 980 vitest · 116 Playwright</span>
       <span><b>Algorithms verified</b> on the cubing.js kpuzzle</span>
-      <span><b>Repo gates run</b> none</span>
+      
     </div>
   </header>
 
@@ -712,27 +713,50 @@
 
     <h3>The construction: actual solutions were found</h3>
 
+    <div class="note warn">
+      <span class="tag">Withdrawn — this is what implementation found</span>
+      <p>
+        A planning agent reported that all 13 cases fall to at most three slice-flip-slice macros,
+        and this document said so. Turning that into a regression test <strong>did not reproduce
+        it</strong>: an 850-macro vocabulary searched to depth 2 solves <strong>7 of the 13</strong>
+        — l2e-1, 2, 6, 8, 9, 10, 11. The other six may need a third macro or a better aiming
+        vocabulary; that was not established either way.
+      </p>
+      <p>
+        A lesson sentence briefly read "at most three rounds finishes any case — that is measured,
+        not an estimate." It was not measured. It is gone.
+      </p>
+      <p>
+        <strong>Nothing about the cut changes.</strong> What makes it safe was never a bound on how
+        many times a learner fires the flip — it is the necessity proof above, which holds, plus the
+        fact that the flip is the standard pairing tool. The table below is what shipped as a test.
+      </p>
+    </div>
+
     <p class="col">
-      The reduction model from <code>verify-l2e.mjs</code> was rebuilt in a scratch script and 1275
-      slice-flip-slice macros searched. <strong>All 13 shipped L2E cases solve.</strong>
+      What <em>is</em> pinned in <code>verify-l2e.mjs</code>, measured across all 13 cases and all 31
+      algorithms:
     </p>
 
     <div class="tablewrap col">
       <table>
-        <caption>Every shipped case, reduced to the two-algorithm course</caption>
-        <thead><tr><th>Cases</th><th>Wing parity</th><th>Solution under the cut</th></tr></thead>
+        <caption>Per-case wing parity (all 13 pinned) and how far the constructive search got</caption>
+        <thead><tr><th>Cases</th><th>Wing parity</th><th>Verified constructively?</th></tr></thead>
         <tbody>
-          <tr><td>l2e-1, l2e-2</td><td><span class="pill gen">even</span></td><td>2 flip macros</td></tr>
-          <tr><td>l2e-3, l2e-4, l2e-13</td><td><span class="pill gen">even</span></td><td>3 flip macros</td></tr>
-          <tr><td>l2e-6</td><td><span class="pill bug">odd</span></td><td>the parity algorithm alone</td></tr>
-          <tr><td>l2e-5, 7, 8, 9, 10, 11, 12</td><td><span class="pill bug">odd</span></td><td>parity algorithm + 2 flip macros</td></tr>
+          <tr><td>l2e-1, l2e-2</td><td><span class="pill gen">even</span></td><td><span class="pill ok">yes</span> — 2 macros</td></tr>
+          <tr><td>l2e-3, l2e-4, l2e-13</td><td><span class="pill gen">even</span></td><td><span class="pill todo">not found ≤2</span></td></tr>
+          <tr><td>l2e-6</td><td><span class="pill bug">odd</span></td><td><span class="pill ok">yes</span> — parity alone</td></tr>
+          <tr><td>l2e-8, 9, 10, 11</td><td><span class="pill bug">odd</span></td><td><span class="pill ok">yes</span> — parity + 2 macros</td></tr>
+          <tr><td>l2e-5, l2e-7, l2e-12</td><td><span class="pill bug">odd</span></td><td><span class="pill todo">not found ≤2</span></td></tr>
         </tbody>
       </table>
     </div>
 
     <p class="col">
-      Worked example, l2e-1: <code class="m">F R' F R F' R U' R'</code> then
-      <code class="m">L Uw' R U R' F R' F' R Uw</code>.
+      Every case has one parity — <strong>every alternate algorithm of a case agrees with it</strong>
+      — and one application of the parity algorithm clears every odd case. That is the sharp form of
+      what the lesson rests on: <strong>parity is the only obstruction the flip cannot pass</strong>,
+      and it is asserted per case rather than argued.
     </p>
 
     <h4>The rest of the solve, checked structurally</h4>
@@ -1312,10 +1336,10 @@ Rw2 U2 D2 Rw2          swaps pieces between the U and D centres</div>
       <li><s>The hard last-two-centres cases exist only in the video.</s> <b>RESOLVED, and there are
         none</b> — the 3:03 demonstration is the conjugate trick itself, not a set of cases with
         algorithms. The plan already described it correctly.</li>
-      <li><b>The completeness search was bounded</b> — 1275 macros, depth ≤ 3, at most one parity
-        application. All 13 cases solved, so no absence is being reported as a result; but minimality
-        was not proved and the space was not exhausted. <strong>The necessity half is a proof and does
-        not depend on the search.</strong></li>
+      <li><b>The completeness search did not hold up.</b> Re-run during implementation it solves
+        7 of 13, not all 13 — see §04. The necessity half is a proof and never depended on it, and the
+        per-case parity table is now pinned across all 13. <strong>This is the one claim in this
+        document that implementation overturned.</strong></li>
       <li><b>Solvability was verified in the move group, not at the table.</b> "At most three rounds"
         is a claim about existence, not about how hard the setup is to spot.</li>
       <li><b>No repo gates were run.</b> No <code>make check</code>, no verifier, no vitest, no
