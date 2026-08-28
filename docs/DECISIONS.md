@@ -833,9 +833,27 @@ outer turns and the flip EVEN, the flip conjugated by Uw/Rw/3Rw/Lw'/Uw2 EVEN,
 the parity algorithm ODD — so it is a regression test, not a paragraph.
 
 What is lost is speed at last-two-edges: the 13-case set is a one-look
-optimisation, replaced by an iterative loop of at most three slice-flip-slices.
-A time cost, never a can't-finish cost. Twelve cases are **locked, not
-deleted**, on the same mechanism and for the same reason as the 4×4 set.
+optimisation, replaced by an iterative loop of slice-flip-slices. A time cost,
+never a can't-finish cost. Twelve cases are **locked, not deleted**, on the
+same mechanism and for the same reason as the 4×4 set.
+
+**What is verified, and what is not.** The NECESSITY half is a proof and is
+pinned: parity cannot be reached or removed by any amount of pairing, so the
+parity algorithm is required. The per-case half is measured and pinned too —
+8 of the 13 are odd (l2e-5,6,7,8,9,10,11,12), every alternate algorithm of a
+case agrees with its case's parity, and one parity application clears every odd
+case, so parity is the only obstruction the flip cannot pass.
+
+The SUFFICIENCY half is weaker than a planning agent first reported. It claimed
+all 13 fall to at most three slice-flip-slice macros; searching an 850-macro
+vocabulary to depth 2 reproduces that for only 7 of them (l2e-1, 2, 6, 8, 9,
+10, 11). The remaining six may need a third macro, a different aiming vocabulary
+or a better search — not established either way. A lesson sentence briefly
+said "at most three rounds finishes any case — that is measured, not an
+estimate"; it was not, and it has been corrected to claim nothing about a round
+count. **Nothing about the course changes:** what makes the cut safe is the
+necessity proof plus the fact that the flip is the standard pairing tool, not a
+bound on how many times a learner fires it.
 
 **Three defects fell out of the work, all shipped:**
 

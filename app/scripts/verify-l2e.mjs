@@ -699,6 +699,54 @@ if (classToSlug.size !== 13) {
   }
 }
 
+// --- parity is the only obstruction, per case ---------------------------------
+// The wing-parity block above proves the flip can never change parity and the
+// parity algorithm always does. This turns that into a statement about the 13
+// cases we actually ship: each one is EVEN or ODD, every alternate algorithm of
+// a case agrees with it (a case has one parity, not one per algorithm), and one
+// application of the parity algorithm clears every odd case. So the only thing
+// standing between a learner and a finished 5x5 is the one algorithm they have.
+{
+  const src = solved.patternData.EDGES.pieces;
+  /** @param {import("cubing/kpuzzle").KPattern} pattern */
+  const parityOf = (pattern) => {
+    const now = pattern.patternData.EDGES.pieces;
+    const to = now.map((v) => src.indexOf(v));
+    const seen = new Array(to.length).fill(false);
+    let t = 0;
+    for (let i = 0; i < to.length; i++) {
+      if (seen[i]) continue;
+      let j = i;
+      let len = 0;
+      while (!seen[j]) {
+        seen[j] = true;
+        j = to[j];
+        len++;
+      }
+      t += len - 1;
+    }
+    return t % 2;
+  };
+  /** @param {string} alg */
+  const stateOf = (alg) => solved.applyTransformation(T(alg).invert());
+
+  // Measured, and pinned so a data edit that changes a case's parity is loud.
+  const ODD = new Set(["l2e-5", "l2e-6", "l2e-7", "l2e-8", "l2e-9", "l2e-10", "l2e-11", "l2e-12"]);
+  for (const c of L2E_CASES) {
+    const want = ODD.has(c.slug) ? 1 : 0;
+    for (const [j, alg] of c.algs.entries()) {
+      const got = parityOf(stateOf(alg));
+      if (got !== want) {
+        fail(`${c.slug} algs[${j}]: wing parity ${got}, expected ${want}`);
+      }
+    }
+    if (want === 1) {
+      const cleared = parityOf(stateOf(c.algs[0]).applyTransformation(T(EDGE_PARITY_5X5)));
+      if (cleared !== 0) fail(`${c.slug}: one parity application does not clear it`);
+    }
+  }
+}
+
 // --- cross-source: Sarah ------------------------------------------------------
 {
   const covered = new Set();
@@ -797,6 +845,11 @@ if (failures === 0) {
       `Uw/Rw/3Rw/Lw'/Uw2) are EVEN; the parity alg is ODD — so slice-flip-slice can ` +
       `never reach an odd state and the parity alg is the second generator the ` +
       `puzzle requires, not a convenience`,
+  );
+  report.push(
+    `✓ per-case parity: 8 of the 13 are ODD on wings (l2e-5,6,7,8,9,10,11,12) and 5 are ` +
+      `EVEN; every alternate alg agrees with its case; one parity application clears every ` +
+      `odd case — so parity is the only obstruction the flip cannot pass`,
   );
   report.push(`✓ ${NEGATIVE.length} negative controls fail as required`);
 }
