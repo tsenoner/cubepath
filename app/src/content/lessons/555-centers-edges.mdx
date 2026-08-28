@@ -3,9 +3,23 @@ title: "5×5: Centers and Freeslice Edges"
 description: "Fixed centers hand you the color scheme back — build them in bars, then pair every edge with freeslice."
 phase: "555"
 order: 340
+minutes: 14
+objectives:
+  - "Build a 5×5 centre in three bars, in the order white, yellow, then the ring."
+  - "Name the three pieces of a 5×5 edge and say when it counts as paired."
+  - "Run the freeslice loop and restore the centres at the end of it."
+prerequisites: ["444-edge-pairing"]
+algorithms: []
+practice:
+  groups: []
+  links:
+    - href: "/practice/"
+      label: "Open the trainer"
+  note: "Set the trainer to 5×5 and drill centres alone: scramble, solve all six, scramble again. Centres are often half the solve, so this buys more time than any algorithm in the course."
 ---
 
 import Callout from "../../components/Callout.astro";
+import Figure from "../../components/Figure.astro";
 import TwistyPlayer from "../../components/TwistyPlayer.astro";
 
 The 5×5 is your 4×4 toolkit with one gift attached: an odd layer count. Odd
@@ -23,7 +37,10 @@ centers, pair edges, solve as a 3×3. Only the sizes changed.
 One notation addition: a number in front of a wide move widens the grab.
 `Rw` still turns two layers; `3Rw` turns three.
 
-<TwistyPlayer alg="3Rw" puzzle="5x5x5" anchor="start" />
+<Figure size="card" height={320} caption="3Rw on a 5×5 — three layers in from the right, turning as one.">
+  {/* Notation demo — no stage, so every layer the move grabs stays visible. */}
+  <TwistyPlayer alg="3Rw" puzzle="5x5x5" anchor="start" />
+</Figure>
 
 ## Centers: three bars each
 

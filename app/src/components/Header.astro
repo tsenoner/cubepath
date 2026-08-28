@@ -1,12 +1,21 @@
 ---
+/**
+ * The site header: brand, the four destinations, the theme control, install.
+ *
+ * "Print" is a real destination now. The PDF guide and the printable card set
+ * — two of the project's four deliverables, one of them literally printed on
+ * card stock — used to be reachable only from a sentence inside the reference
+ * page's lead paragraph.
+ */
 interface Props {
-  active?: "learn" | "practice" | "reference";
+  active?: "learn" | "practice" | "reference" | "print";
 }
 const { active } = Astro.props;
 const links = [
   { href: "/", label: "Learn", key: "learn" },
   { href: "/practice/", label: "Practice", key: "practice" },
   { href: "/reference/", label: "Reference", key: "reference" },
+  { href: "/print/", label: "Print", key: "print" },
 ];
 ---
 
@@ -119,6 +128,39 @@ const links = [
       }
     </nav>
     <div class="spacer"></div>
+    {
+      /*
+      Three states, not two, and "system" is the default — see the comment in
+      the script below for why that is a correctness requirement and not a
+      preference.
+    */
+    }
+    <button
+      type="button"
+      class="theme"
+      data-theme-toggle
+      data-state="system"
+      title="Theme: follow system"
+      aria-label="Theme: follow system. Activate to switch to light."
+    >
+      <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+        <g class="i-system">
+          <circle cx="8" cy="8" r="6.1" fill="none" stroke="currentColor" stroke-width="1.5"
+          ></circle>
+          <path d="M8 1.9a6.1 6.1 0 0 1 0 12.2z" fill="currentColor"></path>
+        </g>
+        <g class="i-light" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <circle cx="8" cy="8" r="3.1" fill="none"></circle>
+          <path
+            d="M8 .9v1.6M8 13.5v1.6M.9 8h1.6M13.5 8h1.6M3 3l1.1 1.1M11.9 11.9 13 13M13 3l-1.1 1.1M4.1 11.9 3 13"
+          ></path>
+        </g>
+        <g class="i-dark">
+          <path d="M13.4 10.2A5.9 5.9 0 0 1 5.8 2.6a6.1 6.1 0 1 0 7.6 7.6z" fill="currentColor"
+          ></path>
+        </g>
+      </svg>
+    </button>
     <button data-install-slot hidden class="install">Install</button>
   </div>
 </header>
@@ -193,6 +235,32 @@ const links = [
   .spacer {
     flex-grow: 1;
   }
+  .theme {
+    display: grid;
+    place-items: center;
+    inline-size: 30px;
+    block-size: 30px;
+    flex: none;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--r-pill);
+    background: transparent;
+    color: var(--soft);
+    cursor: pointer;
+  }
+  .theme:hover {
+    color: var(--ink);
+  }
+  /* One <svg>, three icons — only the current state's group is painted, so the
+     button never reflows and there is nothing to load on a click. */
+  .theme g {
+    display: none;
+  }
+  .theme[data-state="system"] .i-system,
+  .theme[data-state="light"] .i-light,
+  .theme[data-state="dark"] .i-dark {
+    display: inline;
+  }
   .install {
     font: 600 13px var(--font-body);
     color: var(--accent);
@@ -207,25 +275,127 @@ const links = [
   /*
    * Phones: the bar needed 455px at a 375px viewport, so every page scrolled
    * sideways and the Install button sat off-screen. Dropping the wordmark (the
-   * logo carries the brand) and tightening the gaps fits it, Install included.
+   * logo carries the brand) and tightening the gaps is most of the fix.
+   *
+   * A fourth destination and the theme control put it back over — measured 392
+   * against a 375px viewport with Install shown — so Install leaves the bar at
+   * this size. It is not lost: the home page's "Take it offline" block carries
+   * the same `data-install-slot` button, with the iOS instructions beside it,
+   * and PwaShell surfaces every slot at once.
    */
   @media (max-width: 560px) {
     .bar {
-      gap: 14px;
+      gap: 12px;
       padding: 10px 14px;
     }
     .wordmark {
       display: none;
     }
     nav {
-      gap: 14px;
+      gap: 12px;
     }
     .navlink {
       font-size: 13px;
     }
+    .theme {
+      inline-size: 28px;
+      block-size: 28px;
+    }
     .install {
-      font-size: 12px;
-      padding: 5px 10px;
+      display: none;
     }
   }
 </style>
+
+<script>
+  /*
+   * Theme control — three states: system (default), light, dark.
+   *
+   * Why three and not a plain light/dark switch: the 130 generated cube
+   * diagrams are <img>-loaded SVGs. An <img>-loaded SVG cannot see the page's
+   * CSS or its `data-theme` attribute; it themes itself with its own
+   * `@media (prefers-color-scheme)` block. So a two-state toggle would
+   * necessarily desynchronise the diagrams from the page for every user whose
+   * OS disagrees with their choice. Defaulting to "system" keeps page and
+   * diagrams in step unless the reader deliberately overrides, and overriding
+   * is then their explicit, reversible act rather than the app's default.
+   *
+   * The residual cost of an override is small and measured: of the 130 SVGs,
+   * 114 are theme-independent (their only themed rule sets the background
+   * plate to `fill:none`, which both media branches do), and the 16 notation
+   * move diagrams carry a move letter that stays #222222 under a forced dark
+   * theme. Making that letter theme-independent belongs in the generator.
+   */
+  type Theme = "system" | "light" | "dark";
+
+  const KEY = "cubepath.theme";
+  const ORDER: readonly Theme[] = ["system", "light", "dark"];
+  const LABEL: Record<Theme, string> = {
+    system: "follow system",
+    light: "light",
+    dark: "dark",
+  };
+  const CHROME: Record<"light" | "dark", string> = { light: "#fcfbf8", dark: "#161412" };
+
+  const root = document.documentElement;
+
+  function stored(): Theme {
+    try {
+      const v = localStorage.getItem(KEY);
+      return v === "light" || v === "dark" ? v : "system";
+    } catch {
+      return "system";
+    }
+  }
+
+  /** The media-less <meta name="theme-color"> that outranks the two in <head>. */
+  function setChrome(theme: Theme): void {
+    const existing = document.querySelector<HTMLMetaElement>("meta[data-theme-color-forced]");
+    if (theme === "system") {
+      existing?.remove();
+      return;
+    }
+    const meta = existing ?? document.createElement("meta");
+    meta.name = "theme-color";
+    meta.setAttribute("data-theme-color-forced", "");
+    meta.content = CHROME[theme];
+    if (!existing) document.head.insertBefore(meta, document.head.firstChild);
+  }
+
+  function apply(theme: Theme, persist: boolean): void {
+    if (theme === "system") {
+      root.removeAttribute("data-theme");
+      root.style.removeProperty("color-scheme");
+    } else {
+      root.setAttribute("data-theme", theme);
+      root.style.colorScheme = theme;
+    }
+    setChrome(theme);
+    if (persist) {
+      try {
+        if (theme === "system") localStorage.removeItem(KEY);
+        else localStorage.setItem(KEY, theme);
+      } catch {
+        /* Storage denied — the choice lasts for this page only. */
+      }
+    }
+    const nextTheme = ORDER[(ORDER.indexOf(theme) + 1) % ORDER.length] ?? "system";
+    for (const btn of document.querySelectorAll<HTMLElement>("[data-theme-toggle]")) {
+      btn.dataset.state = theme;
+      btn.title = `Theme: ${LABEL[theme]}`;
+      btn.setAttribute(
+        "aria-label",
+        `Theme: ${LABEL[theme]}. Activate to switch to ${LABEL[nextTheme]}.`,
+      );
+    }
+  }
+
+  apply(stored(), false);
+
+  for (const btn of document.querySelectorAll<HTMLElement>("[data-theme-toggle]")) {
+    btn.addEventListener("click", () => {
+      const current = stored();
+      apply(ORDER[(ORDER.indexOf(current) + 1) % ORDER.length] ?? "system", true);
+    });
+  }
+</script>

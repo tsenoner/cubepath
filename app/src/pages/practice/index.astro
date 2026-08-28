@@ -1,11 +1,28 @@
 ---
 import Base from "../../layouts/Base.astro";
 import Header from "../../components/Header.astro";
-import { CASES } from "../../data/algs";
+import Page from "../../components/Page.astro";
+import EmptyState from "../../components/EmptyState.astro";
+import ProgressBar from "../../components/ProgressBar.astro";
 import { caseIcon } from "../../data/icons";
-import { TRAINER_GROUPS, groupSize } from "../../lib/trainer";
+import { defaultSettings, poolFor, selectionLabel, trainerSets } from "../../lib/trainer";
 
-const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
+// Every trainable set, resolved once and used twice: the picker on the left and
+// the per-set status accordions on the right. Both rails therefore always agree
+// about what a set contains — the tracker used to render a hand-filtered 16 of
+// 181 cases, so drilling all 57 OLLs could never put one in the review queue.
+const sets = trainerSets();
+
+// First paint uses the defaults. The island re-renders from stored settings —
+// or from a ?group= deep link — as soon as it boots, so this only has to be
+// right for the no-JS and first-frame cases.
+const boot = defaultSettings();
+const bootPool = poolFor(boot.groups);
+const bootSelected = (key: string) => boot.groups.includes(key);
+
+// A set small enough to read at a glance arrives expanded; Full OLL's 57 rows
+// do not.
+const OPEN_AT_MOST = 12;
 ---
 
 <Base
@@ -13,141 +30,230 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
   description="Drill cases with real scrambles and spaced-repetition reviews — fully offline."
 >
   <Header active="practice" />
-  <main>
-    <div class="columns">
-      <aside class="card panel">
-        <h3>Case sets</h3>
-        <div id="group-list">
-          {
-            TRAINER_GROUPS.map((g) => (
-              <label class="group-row" data-group={g.key}>
-                <input type="checkbox" data-group-box={g.key} />
-                <span class="group-name">{g.name}</span>
-                <span class="group-count">{groupSize(g.key)} cases</span>
-              </label>
-            ))
-          }
-        </div>
-        <h3 class="spaced">Frequencies</h3>
-        <div class="chip-row" id="freq-row">
-          <button class="chip" data-freq="realistic" type="button">Realistic</button>
-          <button class="chip" data-freq="balanced" type="button">Balanced</button>
-        </div>
-        <p class="tiny">Realistic weights cases by how often they appear in real solves.</p>
-        <h3 class="spaced">Your data</h3>
-        <div class="chip-row">
-          <button class="chip" id="export-btn" type="button">Export backup</button>
-          <button class="chip" id="import-btn" type="button">Import</button>
-        </div>
-        <input type="file" id="import-file" accept="application/json" hidden />
-        <p class="tiny" id="persist-note">Progress lives on this device.</p>
-      </aside>
+  <Page measure="app">
+    <h1>Practice</h1>
+    <p class="lead">
+      Drill a set against real scrambles; spaced repetition brings each case back just before you
+      would forget it. Offline, on this device.
+    </p>
 
-      <section class="main-col">
-        <div class="chip-row center" id="mode-row">
-          <button class="chip" data-mode="drill" type="button">Drill</button>
-          <button class="chip" data-mode="solve" type="button">Full solve</button>
-          <span class="chip-row" id="puzzle-row" hidden>
-            <button class="chip" data-puzzle="333" type="button">3×3</button>
-            <button class="chip" data-puzzle="444" type="button">4×4</button>
-            <button class="chip" data-puzzle="555" type="button">5×5</button>
+    <div class="columns">
+      <details class="card panel" id="sets-panel" data-collapse-to="1024" open>
+        <summary class="panel-head">
+          <span class="panel-head-text">
+            <h2>Case sets</h2>
+            <span class="hint" id="sets-summary" aria-live="polite"
+              >{selectionLabel(boot.groups)}</span
+            >
           </span>
-          <button class="chip" data-mode="review" type="button">
+        </summary>
+        <div class="panel-body">
+          <div id="group-list" role="group" aria-label="Case sets to drill">
+            {
+              sets.map((s) => (
+                <label class="group-row" data-group={s.key}>
+                  <input type="checkbox" data-group-box={s.key} checked={bootSelected(s.key)} />
+                  <span class="group-name">{s.name}</span>
+                  <span class="group-count hint">{s.cases.length} cases</span>
+                </label>
+              ))
+            }
+          </div>
+
+          <h3 class="spaced">Frequencies</h3>
+          <div class="chip-row" id="freq-row" role="group" aria-label="Case frequency">
+            <button class="chip" data-freq="realistic" type="button" aria-pressed="true"
+              >Realistic</button
+            >
+            <button class="chip" data-freq="balanced" type="button" aria-pressed="false"
+              >Balanced</button
+            >
+          </div>
+          <p class="hint">Realistic weights cases by how often they appear in real solves.</p>
+
+          <h3 class="spaced">Your data</h3>
+          <div class="chip-row">
+            <button class="chip" id="export-btn" type="button">Export backup</button>
+            <button class="chip" id="import-btn" type="button">Import</button>
+          </div>
+          <input type="file" id="import-file" accept="application/json" hidden />
+          <p class="hint" id="persist-note">Progress lives on this device.</p>
+        </div>
+      </details>
+
+      <section class="main-col" aria-label="Drill">
+        <p class="deep-note" id="deep-note" hidden></p>
+
+        <div class="chip-row center" id="mode-row" role="group" aria-label="Practice mode">
+          <button class="chip" data-mode="drill" type="button" aria-pressed="true">Drill</button>
+          <button class="chip" data-mode="solve" type="button" aria-pressed="false"
+            >Full solve</button
+          >
+          <button class="chip" data-mode="review" type="button" aria-pressed="false">
             Review <span id="due-badge" class="badge" hidden></span>
           </button>
         </div>
+        <div class="chip-row center" id="puzzle-row" role="group" aria-label="Puzzle size" hidden>
+          <button class="chip" data-puzzle="333" type="button" aria-pressed="true">3×3</button>
+          <button class="chip" data-puzzle="444" type="button" aria-pressed="false">4×4</button>
+          <button class="chip" data-puzzle="555" type="button" aria-pressed="false">5×5</button>
+        </div>
 
         <div class="card stage" id="drill-stage">
-          <span class="label" id="drill-label">SCRAMBLE · HOLD YELLOW UP</span>
-          <p class="alg scramble" id="drill-scramble" data-testid="scramble">…</p>
-          <p
-            class="mono timer"
-            id="timer"
-            tabindex="0"
-            role="button"
-            aria-label="Start or stop the timer"
-          >
-            0.00
-          </p>
-          <div class="chip-row center" id="stats-row">
-            <span class="chip ghost" id="stat-ao5">ao5 · —</span>
-            <span class="chip ghost" id="stat-ao12">ao12 · —</span>
-            <span class="chip ok" id="stat-best" hidden></span>
-          </div>
-          <div class="chip-row center">
-            <button class="btn primary" id="next-btn" type="button">Next scramble</button>
-            <button class="btn" id="show-case-btn" type="button">Show case</button>
-          </div>
-          <div id="case-reveal" hidden>
-            <!-- Both stay hidden until setCaseImage picks one: a visible <img>
-                 with no src paints the browser's broken-image glyph. -->
-            <img id="case-img" alt="" width="84" height="84" hidden />
-            <p class="no-diagram" id="case-no-diagram" hidden>
-              <span class="nd-set"></span><span class="nd-note">no diagram yet</span>
+          <h2 class="label" id="drill-label">SCRAMBLE · HOLD YELLOW UP</h2>
+          <div class="drill-live" id="drill-live">
+            <p class="alg scramble" id="drill-scramble" data-testid="scramble">…</p>
+            <p
+              class="timer"
+              id="timer"
+              tabindex="0"
+              role="button"
+              aria-label="Start or stop the timer"
+            >
+              0.00
             </p>
-            <div>
-              <p class="case-name" id="case-name"></p>
-              <p id="case-alg"></p>
+            <div class="chip-row center" id="stats-row">
+              <span class="chip chip--ghost" id="stat-ao5">ao5 · —</span>
+              <span class="chip chip--ghost" id="stat-ao12">ao12 · —</span>
+              <span class="chip chip--best" id="stat-best" hidden></span>
             </div>
+            <div class="chip-row center">
+              <button class="btn btn--primary" id="next-btn" type="button">Next scramble</button>
+              <button class="btn" id="show-case-btn" type="button">Show case</button>
+            </div>
+            <div id="case-reveal" hidden>
+              {
+                /* Both stay hidden until setCaseImage picks one: a visible <img>
+                  with no src paints the browser's broken-image glyph. */
+              }
+              <img id="case-img" alt="" width="84" height="84" hidden />
+              <p class="no-diagram" id="case-no-diagram" hidden>
+                <span class="nd-set"></span><span class="nd-note">no diagram yet</span>
+              </p>
+              <div>
+                <p class="case-name" id="case-name"></p>
+                <p id="case-alg"></p>
+              </div>
+            </div>
+            <p class="hint">Space starts and stops the timer · works in airplane mode</p>
           </div>
-          <p class="tiny">Space starts and stops the timer · works in airplane mode</p>
+          <div id="drill-empty" hidden>
+            <EmptyState glyph="◻" title="No case set selected">
+              Tick a set under <b>Case sets</b> and a scramble for one of its cases appears here. Lesson
+              links like <code>?group=full-pll</code> pick the set for you.
+            </EmptyState>
+          </div>
         </div>
 
         <div class="card stage" id="review-stage" hidden>
-          <span class="label">REVIEW · RECALL THE ALGORITHM</span>
+          <h2 class="label">REVIEW · RECALL THE ALGORITHM</h2>
           <div id="review-body" hidden>
             <img id="review-img" alt="" width="110" height="110" hidden />
             <p class="no-diagram" id="review-no-diagram" hidden>
               <span class="nd-set"></span><span class="nd-note">no diagram yet</span>
             </p>
             <p class="case-name" id="review-name"></p>
-            <button class="btn primary" id="reveal-btn" type="button">Reveal algorithm</button>
+            <button class="btn btn--primary" id="reveal-btn" type="button">Reveal algorithm</button>
             <div id="review-answer" hidden>
               <p id="review-alg" class="review-alg"></p>
               <div class="chip-row center" id="grade-row">
-                <button class="btn grade again" data-grade="1" type="button"
+                <button class="btn grade grade--again" data-grade="1" type="button"
                   >Again <small></small></button
                 >
                 <button class="btn grade" data-grade="2" type="button">Hard <small></small></button>
-                <button class="btn grade good" data-grade="3" type="button"
+                <button class="btn grade grade--good" data-grade="3" type="button"
                   >Good <small></small></button
                 >
                 <button class="btn grade" data-grade="4" type="button">Easy <small></small></button>
               </div>
             </div>
           </div>
-          <p id="review-empty" hidden>
-            Nothing due. Reviews appear here after you drill cases — spaced repetition keeps
-            algorithms from fading with a few reviews a day.
-          </p>
+          <div id="review-empty" hidden>
+            <EmptyState glyph="✓" title="Nothing due">
+              Cases arrive here once you mark them <b>learning</b> under <b>Your cases</b>. A few
+              reviews a day is what stops an algorithm from fading.
+            </EmptyState>
+          </div>
         </div>
       </section>
 
-      <aside class="card panel">
-        <h3>Your cases</h3>
-        <div id="case-status-list">
-          {
-            trainable.map((c) => (
-              <button
-                class="status-row"
-                data-case={c.id}
-                type="button"
-                title="Click to cycle status"
-              >
-                {caseIcon(c.id) && (
-                  <img src={caseIcon(c.id)} alt="" width="34" height="34" loading="lazy" />
-                )}
-                <span class="status-name">{c.name}</span>
-                <span class="status-chip" data-status-chip={c.id}>
-                  unseen
-                </span>
-              </button>
-            ))
-          }
+      <details class="card panel" id="cases-panel" data-collapse-to="768" open>
+        <summary class="panel-head">
+          <span class="panel-head-text">
+            <h2>Your cases</h2>
+            <span class="hint" id="cases-summary" aria-live="polite"
+              >{selectionLabel(boot.groups)}</span
+            >
+          </span>
+        </summary>
+        <div class="panel-body">
+          <ProgressBar id="learned-bar" label="Learned" value={0} max={bootPool.length} />
+          <p class="hint spaced-sm">
+            Tap a case to cycle it unseen → learning → learned. Marking one <b>learning</b> schedules
+            it for review.
+          </p>
+          <div id="case-status-list">
+            {
+              sets.map((s) => (
+                <details
+                  class="set"
+                  data-set-section={s.key}
+                  open={s.cases.length <= OPEN_AT_MOST}
+                  hidden={!bootSelected(s.key)}
+                >
+                  <summary class="set-head">
+                    <span class="set-name">{s.name}</span>
+                    <span class="set-count hint">{s.cases.length}</span>
+                  </summary>
+                  {s.cases.map((c) =>
+                    caseIcon(c.id) ? (
+                      <button class="status-row" data-case={c.id} type="button">
+                        <img src={caseIcon(c.id)} alt="" width="40" height="40" loading="lazy" />
+                        <span class="status-name">{c.name}</span>
+                        <span class="chip status-chip" data-status-chip={c.id}>
+                          unseen
+                        </span>
+                      </button>
+                    ) : (
+                      <button class="status-row" data-case={c.id} type="button">
+                        {/* Keeps the rows aligned where a case has no art yet —
+                            a missing thumbnail otherwise reads as a broken img. */}
+                        <span class="row-blank" aria-hidden="true" />
+                        <span class="status-name">{c.name}</span>
+                        <span class="chip status-chip" data-status-chip={c.id}>
+                          unseen
+                        </span>
+                      </button>
+                    ),
+                  )}
+                </details>
+              ))
+            }
+          </div>
+          <div id="cases-empty" hidden={bootPool.length > 0}>
+            <EmptyState glyph="◇" title="No sets selected">
+              Cases show up here for whichever sets are ticked under <b>Case sets</b>. Tap one to
+              mark it <b>learning</b> and it joins the review queue.
+            </EmptyState>
+          </div>
+          <p class="visually-hidden" role="status" id="status-announce"></p>
         </div>
-      </aside>
+      </details>
     </div>
-  </main>
+
+    <script is:inline>
+      // Runs during parse, before the first paint. The panels ship open, so a
+      // no-JS visitor and a wide viewport both get the full rails; anything
+      // narrower than a panel's own breakpoint collapses it here. That is what
+      // keeps the timer at the top of a phone screen instead of 1.15 screens
+      // down behind ten checkboxes and a settings panel.
+      document.querySelectorAll("[data-collapse-to]").forEach(function (el) {
+        if (window.innerWidth <= Number(el.getAttribute("data-collapse-to"))) {
+          el.removeAttribute("open");
+        }
+      });
+    </script>
+  </Page>
 </Base>
 
 <script>
@@ -159,9 +265,11 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
     formatTime,
     groupLabel,
     loadSettings,
+    parseGroupParam,
     pickCase,
     poolFor,
     saveSettings,
+    selectionLabel,
     setupScramble,
     type TrainerSettings,
   } from "../../lib/trainer";
@@ -212,6 +320,15 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
     console.error("cubepath: failed to load trainer settings, using defaults", err);
     settings = defaultSettings();
   }
+  /** Persisting is best-effort: private mode and a full quota both throw. */
+  async function persist() {
+    try {
+      await saveSettings(settings);
+    } catch (err) {
+      console.error("cubepath: failed to save trainer settings", err);
+    }
+  }
+
   let mode: "drill" | "solve" | "review" = "drill";
   let solvePuzzle: "333" | "444" | "555" = "333";
   let lastCase: string | undefined;
@@ -219,30 +336,59 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
   let timerStart = 0;
   let timerTick: number | undefined;
 
-  // ── Settings UI ─────────────────────────────────────────────────────
-  function renderSettings() {
+  // ── Selection ───────────────────────────────────────────────────────
+  /** Toggle one exclusive chip group, in both the class and the a11y tree. */
+  function setPressed(selector: string, active: Element | null) {
+    for (const chip of document.querySelectorAll<HTMLElement>(selector)) {
+      const on = chip === active;
+      chip.classList.toggle("chip--active", on);
+      chip.setAttribute("aria-pressed", String(on));
+    }
+  }
+
+  /**
+   * Push `settings` into every part of the page that reflects it: the
+   * checkboxes, both panel summaries, and which per-set accordions the tracker
+   * shows. The tracker follows the selection rather than a fixed list, so a
+   * case can be marked "learning" — and so enter the FSRS queue — for any of
+   * the 181 cases, not just the 16 curated ones.
+   */
+  function applySelection() {
     for (const box of document.querySelectorAll<HTMLInputElement>("[data-group-box]")) {
       box.checked = settings.groups.includes(box.dataset.groupBox!);
     }
-    for (const chip of document.querySelectorAll<HTMLElement>("[data-freq]")) {
-      chip.classList.toggle("active", chip.dataset.freq === settings.frequencies);
+    setPressed("[data-freq]", document.querySelector(`[data-freq="${settings.frequencies}"]`));
+
+    const label = selectionLabel(settings.groups);
+    $("sets-summary").textContent = label;
+    $("cases-summary").textContent = label;
+
+    let shown = 0;
+    for (const section of document.querySelectorAll<HTMLElement>("[data-set-section]")) {
+      const on = settings.groups.includes(section.dataset.setSection!);
+      section.hidden = !on;
+      if (on) shown++;
     }
+    $("cases-empty").hidden = shown > 0;
   }
+
   for (const box of document.querySelectorAll<HTMLInputElement>("[data-group-box]")) {
     box.addEventListener("change", async () => {
       const key = box.dataset.groupBox!;
       settings.groups = box.checked
         ? [...settings.groups, key]
         : settings.groups.filter((g) => g !== key);
-      await saveSettings(settings);
-      nextScramble();
+      await persist();
+      applySelection();
+      await renderStatuses();
+      await nextScramble();
     });
   }
   for (const chip of document.querySelectorAll<HTMLElement>("[data-freq]")) {
     chip.addEventListener("click", async () => {
       settings.frequencies = chip.dataset.freq as TrainerSettings["frequencies"];
-      await saveSettings(settings);
-      renderSettings();
+      await persist();
+      applySelection();
     });
   }
 
@@ -254,6 +400,8 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
     const gen = ++scrambleGen;
     if (mode === "solve") {
       $("drill-label").textContent = "SCRAMBLE · FULL SOLVE";
+      $("drill-live").hidden = false;
+      $("drill-empty").hidden = true;
       $("drill-scramble").textContent = "thinking…";
       $("show-case-btn").hidden = true;
       const { randomScrambleForEvent } = await import("cubing/scramble");
@@ -267,13 +415,16 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
     $("show-case-btn").hidden = false;
     const pool = poolFor(settings.groups);
     if (pool.length === 0) {
-      $("drill-scramble").textContent = "Select at least one case set.";
-      // There is no case to show — hide the trigger, or "Show case" reveals
-      // whatever the last one left behind.
-      $("show-case-btn").hidden = true;
+      // Nothing to drill: swap the whole live stage for the empty state rather
+      // than leaving a live timer and two buttons over a dead scramble.
+      $("drill-label").textContent = "SCRAMBLE";
+      $("drill-live").hidden = true;
+      $("drill-empty").hidden = false;
       clearCaseReveal();
       return;
     }
+    $("drill-live").hidden = false;
+    $("drill-empty").hidden = true;
     const def = pickCase(pool, settings.frequencies, lastCase);
     lastCase = def.id;
     const cubeName = { "3x3x3": "3×3", "4x4x4": "4×4", "5x5x5": "5×5" }[def.puzzle];
@@ -309,7 +460,7 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
     bestEl.hidden = false;
     bestEl.textContent = `best · ${formatTime(best)}`;
     void ensurePersistence();
-    nextScramble();
+    void nextScramble();
   }
   function startTimer() {
     timerStart = performance.now();
@@ -334,29 +485,49 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
 
   // ── Case status list ────────────────────────────────────────────────
   const STATUS_ORDER: CaseStatus[] = ["unseen", "learning", "learned"];
+
+  /** Repaint every status pill, the row labels, and the learned bar. */
   async function renderStatuses() {
     const progress = new Map((await allProgress()).map((p) => [p.caseId, p.status]));
-    for (const chip of document.querySelectorAll<HTMLElement>("[data-status-chip]")) {
-      const status = progress.get(chip.dataset.statusChip!) ?? "unseen";
+    // A case can appear in two sets at once (the 2-look sets overlap the full
+    // ones by id), so every row carrying the id is updated, not just the first.
+    for (const row of document.querySelectorAll<HTMLElement>("[data-case]")) {
+      const status = progress.get(row.dataset.case!) ?? "unseen";
+      const chip = row.querySelector<HTMLElement>("[data-status-chip]")!;
       chip.textContent = status;
       chip.dataset.value = status;
+      const name = row.querySelector(".status-name")?.textContent ?? row.dataset.case!;
+      row.setAttribute("aria-label", `${name} — ${status}. Activate to cycle status.`);
     }
+    const pool = poolFor(settings.groups);
+    const done = pool.filter((c) => progress.get(c.id) === "learned").length;
+    const bar = $("learned-bar");
+    bar.style.setProperty("--pct", pool.length === 0 ? "0%" : `${(done / pool.length) * 100}%`);
+    bar.querySelector("[data-progress-count]")!.textContent = `${done}/${pool.length}`;
+    const track = bar.querySelector('[role="progressbar"]')!;
+    track.setAttribute("aria-valuenow", String(done));
+    track.setAttribute("aria-valuemax", String(pool.length));
   }
-  for (const row of document.querySelectorAll<HTMLElement>("[data-case]")) {
-    row.addEventListener("click", async () => {
-      const id = row.dataset.case!;
-      const chip = document.querySelector<HTMLElement>(`[data-status-chip="${id}"]`)!;
-      const current = (chip.dataset.value ?? "unseen") as CaseStatus;
-      const next = STATUS_ORDER[(STATUS_ORDER.indexOf(current) + 1) % 3]!;
-      await setStatus(id, next);
-      // Entering "learning" seeds the FSRS card so the case joins the review
-      // queue; leaving keeps the card (its history must survive status cycles).
-      if (next === "learning") await ensureCard(id, new Date());
-      void ensurePersistence();
-      await renderStatuses();
-      await refreshDueBadge();
-    });
-  }
+
+  // One delegated listener: the tracker now renders every case in every set
+  // (~200 rows), and 200 listeners is 200 closures for nothing.
+  $("case-status-list").addEventListener("click", async (e) => {
+    const row = (e.target as Element | null)?.closest<HTMLElement>("[data-case]");
+    if (!row) return;
+    const id = row.dataset.case!;
+    const chip = row.querySelector<HTMLElement>("[data-status-chip]")!;
+    const current = (chip.dataset.value ?? "unseen") as CaseStatus;
+    const next = STATUS_ORDER[(STATUS_ORDER.indexOf(current) + 1) % 3]!;
+    await setStatus(id, next);
+    // Entering "learning" seeds the FSRS card so the case joins the review
+    // queue; leaving keeps the card (its history must survive status cycles).
+    if (next === "learning") await ensureCard(id, new Date());
+    void ensurePersistence();
+    // The pill is inside the button, so its change is not announced on its own.
+    $("status-announce").textContent = `${row.querySelector(".status-name")?.textContent}: ${next}`;
+    await renderStatuses();
+    await refreshDueBadge();
+  });
 
   // ── Review (FSRS) ───────────────────────────────────────────────────
   let reviewQueue: string[] = [];
@@ -420,9 +591,7 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
   for (const chip of document.querySelectorAll<HTMLElement>("[data-puzzle]")) {
     chip.addEventListener("click", async () => {
       solvePuzzle = chip.dataset.puzzle as typeof solvePuzzle;
-      for (const c of document.querySelectorAll<HTMLElement>("[data-puzzle]")) {
-        c.classList.toggle("active", c === chip);
-      }
+      setPressed("[data-puzzle]", chip);
       if (mode === "solve") await nextScramble();
     });
   }
@@ -431,9 +600,7 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
   for (const chip of document.querySelectorAll<HTMLElement>("[data-mode]")) {
     chip.addEventListener("click", async () => {
       mode = chip.dataset.mode as typeof mode;
-      for (const c of document.querySelectorAll<HTMLElement>("[data-mode]")) {
-        c.classList.toggle("active", c === chip);
-      }
+      setPressed("[data-mode]", chip);
       $("drill-stage").hidden = mode === "review";
       $("review-stage").hidden = mode !== "review";
       $("puzzle-row").hidden = mode !== "solve";
@@ -479,9 +646,22 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
   });
 
   // ── Boot ────────────────────────────────────────────────────────────
-  renderSettings();
-  document.querySelector<HTMLElement>('[data-mode="drill"]')!.classList.add("active");
-  document.querySelector<HTMLElement>('[data-puzzle="333"]')!.classList.add("active");
+  // `?group=` is the handoff from a lesson: "Practice this set" links here with
+  // the set it just taught. It wins over the stored selection (the reader asked
+  // for it explicitly) and is then persisted, so a reload keeps it. Unknown
+  // keys are dropped by parseGroupParam rather than emptying the pool.
+  const requested = parseGroupParam(new URLSearchParams(location.search).get("group"));
+  if (requested.length > 0) {
+    settings.groups = requested;
+    await persist();
+    const note = $("deep-note");
+    note.textContent = `From your link · ${selectionLabel(requested)}`;
+    note.hidden = false;
+  }
+
+  applySelection();
+  setPressed("[data-mode]", document.querySelector('[data-mode="drill"]'));
+  setPressed("[data-puzzle]", document.querySelector('[data-puzzle="333"]'));
   try {
     await Promise.all([nextScramble(), renderStatuses(), refreshDueBadge()]);
   } catch (err) {
@@ -491,130 +671,229 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
 </script>
 
 <style>
-  main {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 26px 20px 60px;
+  /*
+   * Layout only. Type, colour, padding and radius for .card, .chip, .btn,
+   * .hint, .label and .lead all come from tokens.css — this page used to
+   * restate .chip, .btn and .hint (as `.tiny`) locally, which is why a chip
+   * here and a chip on /case looked like different objects.
+   */
+  h1 {
+    margin-bottom: var(--space-2);
   }
+  .lead {
+    max-inline-size: 62ch;
+    margin-block-end: var(--space-5);
+  }
+  /* Every pixel above the stage is a pixel the timer sits below the fold on a
+     phone, which is the defect this page is being repaired for. */
+  @media (max-width: 768px) {
+    .lead {
+      margin-block-end: var(--space-4);
+    }
+  }
+
+  /*
+   * Three rails at xl/lg, the settings rail folding onto its own full-width row
+   * at md, one column at sm. Named areas rather than DOM order, so the source
+   * order (settings, stage, tracker) matches the reading order at every width
+   * and the drill stage never needs an `order` hack to climb the page.
+   */
   .columns {
     display: grid;
     grid-template-columns: 250px minmax(0, 1fr) 260px;
-    gap: 18px;
+    grid-template-areas: "sets stage cases";
+    gap: var(--space-4);
     align-items: start;
   }
-  @media (max-width: 900px) {
+  #sets-panel {
+    grid-area: sets;
+  }
+  .main-col {
+    grid-area: stage;
+  }
+  #cases-panel {
+    grid-area: cases;
+  }
+  /* Between 900 and 1200 the old layout left ~315px for a 58px timer beside
+     546px of fixed rails. The settings rail collapses to a bar here instead. */
+  @media (max-width: 1024px) {
     .columns {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr) 260px;
+      grid-template-areas:
+        "sets sets"
+        "stage cases";
     }
   }
-  .panel {
-    padding: 16px 18px;
+  @media (max-width: 768px) {
+    .columns {
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        "sets"
+        "stage"
+        "cases";
+    }
   }
-  .panel h3 {
-    margin-bottom: 8px;
+
+  /* ── Collapsible panels ─────────────────────────────────────────── */
+  .panel-head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    cursor: pointer;
+    list-style: none;
+  }
+  .panel-head::-webkit-details-marker {
+    display: none;
+  }
+  .panel-head::after {
+    content: "▾";
+    display: inline-block;
+    margin-inline-start: auto;
+    color: var(--faint);
+    transition: transform 160ms ease;
+  }
+  details[open] > .panel-head::after {
+    transform: rotate(180deg);
+  }
+  .panel-head-text {
+    display: grid;
+    gap: var(--space-1);
+    min-inline-size: 0;
+  }
+  .panel-body {
+    padding: 0 var(--space-4) var(--space-4);
   }
   .spaced {
-    margin-top: 18px;
+    margin-top: var(--space-4);
+    margin-bottom: var(--space-2);
   }
+  .spaced-sm {
+    margin-block: var(--space-2) var(--space-3);
+  }
+
   .group-row {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 8px 0;
+    gap: var(--space-3);
+    padding: var(--space-2) 0;
     border-top: 1px solid var(--line);
     cursor: pointer;
-    font-size: 14px;
   }
   .group-name {
     font-weight: 600;
     flex-grow: 1;
   }
   .group-count {
-    color: var(--faint);
-    font-size: 12px;
+    flex: none;
   }
+
+  /* ── Chips and stage ────────────────────────────────────────────── */
   .chip-row {
     display: flex;
-    gap: 8px;
+    gap: var(--space-2);
     flex-wrap: wrap;
   }
   .chip-row.center {
     justify-content: center;
   }
-  .chip {
+  button.chip {
     cursor: pointer;
   }
-  .chip.active {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: var(--on-accent);
-  }
-  .chip.ghost {
-    cursor: default;
-  }
-  .chip.ok {
+  /* Read-only success tag for the session best; the only chip tint the shared
+     vocabulary has no variant for. */
+  .chip--best {
     background: var(--ok-soft);
     border-color: transparent;
     color: var(--ok);
     cursor: default;
   }
-  /* A 20%-white overlay was invisible on the inactive chip (transparent on
-     paper) and washed out on the light dark-mode accent. Tokenised both ways. */
   .badge {
     background: var(--accent);
     color: var(--on-accent);
-    border-radius: 999px;
-    padding: 0 6px;
-    margin-left: 4px;
+    border-radius: var(--r-pill);
+    padding: 0 var(--space-2);
+    margin-left: var(--space-1);
   }
-  .chip.active .badge {
+  .chip--active .badge {
     background: color-mix(in srgb, var(--on-accent) 20%, transparent);
     color: inherit;
   }
+
+  .deep-note {
+    align-self: center;
+    margin: 0;
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--r-pill);
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
   .main-col {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: var(--space-3);
   }
   .stage {
-    padding: 26px;
+    padding: var(--space-5);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 14px;
+    gap: var(--space-3);
     text-align: center;
   }
+  /* .label sets the eyebrow type; the h2 rule would otherwise hand it the
+     display serif, since the element is a real heading now. */
+  h2.label {
+    font-family: var(--font-body);
+  }
+  .drill-live {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+    inline-size: 100%;
+  }
   .scramble {
-    font-size: 18px;
+    font-size: var(--text-lg);
     margin: 0;
     overflow-wrap: anywhere;
   }
+  /* A display numeral, not body type: it is deliberately outside the scale, and
+     clamped so it cannot crowd a 375px screen. */
   .timer {
-    font-size: 58px;
+    font-family: var(--font-mono);
+    font-size: clamp(40px, 8vw, 58px);
     font-weight: 600;
+    line-height: 1.1;
     margin: 0;
     cursor: pointer;
     user-select: none;
+    font-variant-numeric: tabular-nums;
   }
-  .btn.grade small {
+  .grade small {
     display: block;
     font-weight: 500;
     color: inherit;
     opacity: 0.75;
-    font-size: 11px;
+    font-size: var(--text-xs);
   }
-  .btn.grade.again {
+  /* The two semantic buttons on the page. tokens.css has no --warn/--ok button
+     variant; if a third caller appears, promote these. */
+  .grade--again {
     border-color: var(--warn);
     color: var(--warn);
   }
-  .btn.grade.good {
+  .grade--good {
     background: var(--ok);
     border-color: var(--ok);
     color: var(--on-ok);
   }
   #case-reveal {
     display: flex;
-    gap: 14px;
+    gap: var(--space-3);
     align-items: center;
   }
   /* Placeholder shown where a case has no diagram art yet — a labelled tile,
@@ -623,12 +902,12 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
     display: flex;
     flex-direction: column;
     justify-content: center;
-    gap: 3px;
+    gap: var(--space-1);
     flex: none;
     margin: 0;
-    padding: 6px;
+    padding: var(--space-2);
     border: 1px dashed var(--line);
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     background: var(--paper);
     text-align: center;
   }
@@ -641,59 +920,78 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
     min-height: 110px;
   }
   .nd-set {
-    font-size: 11px;
+    font-size: var(--text-xs);
     font-weight: 600;
     line-height: 1.25;
     color: var(--soft);
   }
   .nd-note {
-    font-size: 11px;
+    font-size: var(--text-xs);
     color: var(--faint);
   }
   .case-name {
     font-weight: 600;
-    margin: 0 0 4px;
+    margin: 0 0 var(--space-1);
   }
   #review-body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
+    gap: var(--space-3);
   }
   .review-alg {
-    font-size: 16px;
+    font-size: var(--text-lg);
   }
-  .tiny {
-    color: var(--faint);
-    font-size: 12px;
-    margin: 0;
+  #drill-empty,
+  #review-empty,
+  #cases-empty {
+    inline-size: 100%;
+  }
+
+  /* ── Case tracker ───────────────────────────────────────────────── */
+  .set > .set-head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) 0;
+    border-top: 1px solid var(--line);
+    cursor: pointer;
+    font-weight: 600;
+    font-size: var(--text-sm);
+  }
+  .set-name {
+    flex-grow: 1;
   }
   .status-row {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: var(--space-2);
     width: 100%;
-    padding: 6px 0;
+    padding: var(--space-1) 0;
     border: 0;
-    border-top: 1px solid var(--line);
     background: transparent;
     cursor: pointer;
     font: inherit;
     color: inherit;
     text-align: left;
   }
+  .status-row img,
+  .row-blank {
+    flex: none;
+    inline-size: 40px;
+    block-size: 40px;
+    border-radius: var(--r-sm);
+  }
+  .row-blank {
+    border: 1px dashed var(--line);
+  }
   .status-name {
+    font-size: var(--text-sm);
     font-weight: 600;
-    font-size: 13.5px;
     flex-grow: 1;
   }
   .status-chip {
-    font-size: 11.5px;
-    font-weight: 600;
-    border-radius: 999px;
-    padding: 2px 9px;
-    border: 1px solid var(--line);
-    color: var(--faint);
+    flex: none;
   }
   .status-chip[data-value="learning"] {
     background: var(--accent-soft);
@@ -704,5 +1002,17 @@ const trainable = CASES.filter((c) => c.puzzle === "3x3x3");
     background: var(--ok-soft);
     color: var(--ok);
     border-color: transparent;
+  }
+
+  .visually-hidden {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+    clip-path: inset(50%);
+    overflow: hidden;
+    white-space: nowrap;
   }
 </style>

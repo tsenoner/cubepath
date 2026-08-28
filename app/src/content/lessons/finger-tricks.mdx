@@ -3,10 +3,21 @@ title: "Finger Tricks and Lookahead"
 description: "Turn without regripping and read the cube while your hands work — pauses, not turn speed, are where solves lose time."
 phase: "full-cfop"
 order: 240
+minutes: 10
+objectives:
+  - "Execute U, R, L and F turns from one home grip, with no regrip mid-algorithm."
+  - "Run the slow-solving drill and use it to find where your lookahead breaks."
+  - "Read the honest time-to-skill table and know which skill your average is waiting on."
+prerequisites: ["f2l-intuition"]
+algorithms: []
+practice:
+  groups: ["2look-pll-corners"]
+  note: "Drill T-Perm until you can run it with your eyes off the cube — that is the test this lesson sets, and an algorithm only frees your eyes once it runs without thought."
 ---
 
 import AlgText from "../../components/AlgText.astro";
 import Callout from "../../components/Callout.astro";
+import Figure from "../../components/Figure.astro";
 import TwistyPlayer from "../../components/TwistyPlayer.astro";
 
 Fast solvers do not turn much faster than you — they stop less. Two skills
@@ -30,7 +41,10 @@ Practice on the trigger you know best. <AlgText moves="R U R' U'" /> should
 collapse into one gesture: wrist, flick, wrist, flick — four turns, zero
 regrips.
 
-<TwistyPlayer alg="R U R' U'" anchor="start" />
+<Figure size="card" height={320} caption="Four turns, one gesture. Step through it, then run it without watching.">
+  {/* A finger-trick demo, not a solving step — no stage, so nothing is greyed. */}
+  <TwistyPlayer alg="R U R' U'" anchor="start" />
+</Figure>
 
 <Callout type="tip">
   Drill in bursts of six repetitions. When six run clean — no regrip, no
@@ -57,8 +71,8 @@ the solve is one continuous stream, then let the pace creep up.
 
 ## Honest metrics
 
-| Average | What it actually takes                                                                          |
-| ------- | ----------------------------------------------------------------------------------------------- |
+| Average | What it actually takes                                                                        |
+| ------- | --------------------------------------------------------------------------------------------- |
 | 60s     | 2-Look OLL/PLL from memory, beginner-speed F2L, pauses everywhere. No finger tricks required.   |
 | 40s     | Intuitive F2L and clean finger tricks. You still stop before every pair. Full PLL not needed.   |
 | 25s     | Cross planned in inspection; lookahead carries F2L with only brief stops. Full PLL helps here.  |

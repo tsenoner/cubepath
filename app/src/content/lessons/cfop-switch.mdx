@@ -3,6 +3,16 @@ title: "The CFOP Switch"
 description: "Reorder the last layer to orientation-first — two new algorithms, and the order never changes again."
 phase: "phase-2"
 order: 110
+minutes: 14
+objectives:
+  - "Run the last layer in CFOP order: orient edges, orient corners, permute corners, permute edges."
+  - "Chain Sune to orient every corner case without learning a second algorithm."
+  - "Read headlights and finish with T-Perm and Ub."
+prerequisites: ["speed-tricks"]
+algorithms: ["oll.27", "pll.t", "pll.ub"]
+practice:
+  groups: ["2look-pll-corners", "2look-pll-edges"]
+  note: "Drill T-Perm and Ub until each runs without a pause, then do full solves in the new order until you stop reaching for Niklas out of habit."
 ---
 
 import CaseRow from "../../components/CaseRow.astro";

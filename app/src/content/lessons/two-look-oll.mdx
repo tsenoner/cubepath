@@ -3,10 +3,21 @@ title: "Orient Corners: Anti-Sune + 5 New Cases"
 description: "Every corner-orientation case gets its own algorithm — all built from triggers you already know."
 phase: "phase-3"
 order: 120
+minutes: 16
+objectives:
+  - "Count yellow corners on top and narrow seven cases to one or two."
+  - "Tell the look-alikes apart from their headlights."
+  - "Solve any corner-orientation case in one look and one algorithm."
+prerequisites: ["cfop-switch"]
+algorithms: ["oll.27", "oll.26", "oll.22", "oll.23", "oll.21", "oll.24", "oll.25"]
+practice:
+  groups: ["2look-oll-corners"]
+  note: "Drill all seven together, not one at a time — the whole point of this lesson is telling them apart, and that only happens when they arrive in random order."
 ---
 
 import CaseRow from "../../components/CaseRow.astro";
 import Callout from "../../components/Callout.astro";
+import Figure from "../../components/Figure.astro";
 
 In Phase 2 you chained Sune until the corners fell into place. Now you finish
 the job properly: **one look, one algorithm**. Anti-Sune completes the Sune
@@ -37,12 +48,28 @@ You already know Sune. Tap any case to see it solve in 3D.
 
 ## How to tell the look-alikes apart
 
-- **0 yellow corners** — check the headlights: on the left *and* right it's
-  **Double Headlights**; on the left only, it's **Pi**.
-- **2 yellow corners** — adjacent (right column) is **Chameleon**; diagonal is
-  **Bowtie**; if the two unsolved corners show headlights facing you, it's
-  **Headlights**.
-- **1 yellow corner** — Sune or Anti-Sune, by where the solved corner sits.
+Count the yellow corners on top. Every caption below is the case's own
+recognition line — the same text the case page shows.
+
+### One yellow corner
+
+<Figure src="/diagrams/oll/oll_sune.svg" alt="Sune — one yellow corner in the front-left, the other three twisted clockwise" caption="Sune — yellow corner front-left" />
+
+<Figure src="/diagrams/oll/oll_antisune.svg" alt="Anti-Sune — one yellow corner in the back-right, the other three twisted counter-clockwise" caption="Anti-Sune — yellow corner back-right" />
+
+### Two yellow corners
+
+<Figure src="/diagrams/oll/oll_chameleon.svg" alt="Chameleon — two adjacent yellow corners on the right" caption="Chameleon — adjacent, on the right" />
+
+<Figure src="/diagrams/oll/oll_bowtie.svg" alt="Bowtie — two diagonal yellow corners" caption="Bowtie — diagonal" />
+
+<Figure src="/diagrams/oll/oll_headlights.svg" alt="Headlights — two yellow corners at the back, with headlights facing you" caption="Headlights — the pair at the back, headlights facing you" />
+
+### No yellow corners
+
+<Figure src="/diagrams/oll/oll_double_headlights.svg" alt="Double Headlights — headlights on the left and the right" caption="Double Headlights — headlights both sides" />
+
+<Figure src="/diagrams/oll/oll_pi.svg" alt="Pi — headlights on the left only" caption="Pi — headlights on the left only" />
 
 <Callout type="tip">
   Anti-Sune is Sune backwards. If you can already do Sune smoothly, practice

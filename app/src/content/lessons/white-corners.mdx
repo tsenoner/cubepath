@@ -3,18 +3,37 @@ title: "Step 2: White Corners"
 description: "One trigger, three cases — read where the white sticker points and righty does the rest."
 phase: "phase-1"
 order: 40
+minutes: 12
+objectives:
+  - "Run the righty trigger, R U R' U', as one motion."
+  - "Read where a corner's white sticker points and pick the right case."
+  - "Complete the whole first layer: solid white face, side colours matching."
+prerequisites: ["white-cross"]
+algorithms: []
+practice:
+  groups: []
+  links:
+    - href: "/practice/"
+      label: "Open the trainer"
+  note: "Set the trainer to Full solve and take it as far as the first layer — ten scrambles, cross plus four corners, no lookups."
 ---
 
 import Callout from "../../components/Callout.astro";
 import AlgText from "../../components/AlgText.astro";
+import Figure from "../../components/Figure.astro";
 import TwistyPlayer from "../../components/TwistyPlayer.astro";
+
+<Figure
+  size="side"
+  src="/diagrams/steps/step_2_corners.svg"
+  alt="Goal state: white face down with the first layer's side colors matching their centers"
+  caption="The goal: a finished first layer."
+/>
 
 Cross done, cube flipped (`x2`): white on the bottom, yellow on top, and it
 stays that way for the rest of the solve. Now place the four white corners.
 Each belongs in the bottom layer between the two centers that match its side
 colors — all four in, and the first layer is complete.
-
-<img src="/diagrams/steps/step_2_corners.svg" alt="Goal state: white face down with the first layer's side colors matching their centers" width="60" />
 
 ## The righty trigger
 
@@ -25,7 +44,11 @@ motion, not four letters. `R` lifts the front-right corner slot into the top
 layer, `U` feeds a corner in (or swings one out of the way), `R'` `U'` puts
 everything back. Watch it run:
 
-<TwistyPlayer alg="R U R' U'" anchor="start" />
+<Figure size="card" height={320} caption="Righty, from a solved cube. Watch the front-right corner leave and come back.">
+  {/* Beginner ladder, `f1l`: the white cross is already dim, the white corner
+      this trigger moves is the only thing in full colour. */}
+  <TwistyPlayer alg="R U R' U'" anchor="start" context={{ ladder: "beginner", stage: "f1l" }} />
+</Figure>
 
 ## Fetch a corner
 
@@ -38,11 +61,11 @@ cube so corner and slot are at the front-right.
 
 Look at where the white sticker points:
 
-| | White faces | Do |
-| :---: | :--- | :--- |
-| <img src="/diagrams/steps/corner_right.svg" alt="Corner at front-right with the white sticker facing right" width="60" /> | **Right** | righty ×1 |
-| <img src="/diagrams/steps/corner_front.svg" alt="Corner at front-right with the white sticker facing front" width="60" /> | **Front** | `y` — corner and slot are now front-left — then lefty ×1 |
-| <img src="/diagrams/steps/corner_up.svg" alt="Corner at front-right with the white sticker facing up" width="60" /> | **Up** | righty ×3 |
+<Figure src="/diagrams/steps/corner_right.svg" alt="Corner at front-right with the white sticker facing right" caption="White right — righty ×1" />
+
+<Figure src="/diagrams/steps/corner_front.svg" alt="Corner at front-right with the white sticker facing front" caption="White front — y, then lefty ×1" />
+
+<Figure src="/diagrams/steps/corner_up.svg" alt="Corner at front-right with the white sticker facing up" caption="White up — righty ×3" />
 
 Lefty is righty in the mirror, run with the left hand:
 
@@ -52,10 +75,10 @@ Lefty is righty in the mirror, run with the left hand:
 
 Can't recall the cases? Repeat righty until the corner drops in with white
 facing down — it always does. Each pass swaps the corner between the slot and
-the top layer, twisting it as it goes: white-right lands in one pass, white-up
-in three, white-front in five (which is why the `y` + lefty shortcut exists).
-Then turn **only U** to bring the next white corner above its slot, and go
-again until all four are in.
+the top layer, twisting it as it goes, which is where the counts above come
+from: white-right lands in one pass, white-up in three, white-front in five
+(which is why the `y` + lefty shortcut exists). Then turn **only U** to bring
+the next white corner above its slot, and go again until all four are in.
 
 <Callout type="caution">
   Mid-trigger the cross looks broken. It isn't — every full pass of righty

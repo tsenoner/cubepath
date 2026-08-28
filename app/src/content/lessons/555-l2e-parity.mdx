@@ -3,6 +3,16 @@ title: "5×5: Last Two Edges"
 description: "The final two edge groups have no spare slot to freeslice into — a small case set finishes them, and the only parity a 5×5 has lives here."
 phase: "555"
 order: 350
+minutes: 14
+objectives:
+  - "Solve the last two edge groups with the flip/insert family."
+  - "Recognise 5×5 edge parity and know why it is legal here but impossible on a 3×3."
+  - "Keep the 5×5 parity algorithm separate from its 4×4 near-twin."
+prerequisites: ["555-centers-edges"]
+algorithms: ["555.l2e-1", "555.l2e-2", "555.l2e-3", "555.l2e-6"]
+practice:
+  groups: ["555-l2e"]
+  note: "Drill all thirteen L2E cases together — the family is one idea at many angles, and mixed drilling is what turns that from a claim into recognition."
 ---
 
 import CaseRow from "../../components/CaseRow.astro";
@@ -48,9 +58,9 @@ One dedicated algorithm fixes it.
 <Callout type="caution">
   This algorithm is a **near-twin** of the 4×4 OLL parity algorithm. Muscle
   memory will happily execute the wrong one and shred your paired edges.
-  Keep them separate from day one — compare
-  [4×4 OLL parity](/reference/#444-oll-parity) and
-  [5×5 edge parity](/reference/#555-l2e-6) side by side until the
+  Keep them separate from day one — open
+  [4×4 OLL parity](/case/444.oll-parity/) and
+  [5×5 edge parity](/case/555.l2e-6/) side by side until the
   difference is burned in.
 </Callout>
 
@@ -58,23 +68,18 @@ One dedicated algorithm fixes it.
 
 The other nine cases (l2e-4 through l2e-13, minus the parity case above)
 are combinations of what you just learned — flips on both groups, parity
-plus a flip, both wings wrong at once. Nothing conceptually new. Learn them
-from the [L2E reference](/reference/), which lists all thirteen with
-recognition and 3D playback.
+plus a flip, both wings wrong at once. Nothing conceptually new. All
+thirteen are listed with recognition and 3D playback in the
+[L2E reference](/reference/#555-l2e), and the
+[trainer](/practice/?group=555-l2e) drills them.
 
 ## Why there is no PLL parity
 
-The 4×4 hides an ambiguity: its centers are built from four identical
-pieces, so "solved" centers can be internally rearranged, and half of those
-hidden arrangements force an odd edge permutation that surfaces at the end
-as PLL parity. A 5×5 has a true fixed center piece on every face — the color
-scheme is anchored absolutely, and midges obey the same permutation
-arithmetic as 3×3 edges. Once your edges are paired against those fixed
-anchors, midge and corner permutations always share the same parity — the
-3×3 law holds. Every last layer you meet is a genuine 3×3 last layer,
-solvable by the algorithms you already own. The flipped-looking edge above
-is the only surprise a 5×5 can throw, and it lives here in L2E — not at the
-end of your solve.
+A 5×5 has a true fixed center piece on every face, so the color scheme is
+anchored absolutely and its midges obey 3×3 permutation law. Every last
+layer you meet is a genuine 3×3 last layer, solvable by the algorithms you
+already own — the flipped-looking edge above is the only surprise a 5×5 can
+throw, and it lives here in L2E rather than at the end of your solve.
 
 ## You're done learning
 

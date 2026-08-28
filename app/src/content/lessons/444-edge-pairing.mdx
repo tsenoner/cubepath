@@ -3,9 +3,23 @@ title: "4×4: Edge Pairing"
 description: "Join 24 wings into 12 full edges with one slice move — after this, your 4×4 is a 3×3."
 phase: "444"
 order: 310
+minutes: 16
+objectives:
+  - "See what Uw does to the wings and to the top row of every side centre."
+  - "Run the pairing loop: line up, slice out, store, repeat, slice back."
+  - "Finish the last two edges with the flip trick, when storing no longer works."
+prerequisites: ["444-centers"]
+algorithms: []
+practice:
+  groups: []
+  links:
+    - href: "/practice/"
+      label: "Open the trainer"
+  note: "Set the trainer to 4×4, build the centers and pair all twelve edges — if a centre ends up broken, one Uw did not meet its Uw', and that is the only bug this step has."
 ---
 
 import Callout from "../../components/Callout.astro";
+import Figure from "../../components/Figure.astro";
 import TwistyPlayer from "../../components/TwistyPlayer.astro";
 
 Centers banked — skill two of two: **edge pairing**. A 4×4 edge slot holds
@@ -16,7 +30,12 @@ pairs and the cube is, functionally, a 3×3.
 
 Slice out with `Uw` — the top two layers turn together. Watch the middle band:
 
-<TwistyPlayer alg="Uw" puzzle="4x4x4" anchor="start" />
+<Figure size="card" height={320} caption="Uw — the top two layers turn as one. Watch the middle band, and the top row of every side centre going with it.">
+  {/* No stage: this is a notation demo, and the caption asks the reader to
+      watch the wings AND the top row of every side centre. Dimming the centres
+      to say "already solved" would hide the half of the move being taught. */}
+  <TwistyPlayer alg="Uw" puzzle="4x4x4" anchor="start" />
+</Figure>
 
 Two things happen at once:
 

@@ -1,135 +1,424 @@
 ---
+/**
+ * The course index.
+ *
+ * It used to be a hero plus 25 undifferentiated links in five bordered boxes:
+ * nothing said which of them you had done, and the primary call to action
+ * pointed at lesson one on your twentieth visit as surely as on your first.
+ * It read as a table of contents because that is all it was.
+ *
+ * Three things change that, and all three are driven from the `lessons` store
+ * in lib/db.ts, written by LessonMeta.astro when a lesson's pager is followed:
+ *
+ *   - a progress bar per phase, and one for the course,
+ *   - a ✓ against every lesson you have finished,
+ *   - a hero button that becomes "Resume: <lesson>" the moment there is
+ *     anything to resume.
+ *
+ * All of it is applied client-side, after paint, from IndexedDB. The HTML
+ * Astro emits is the honest zero-progress state, so the static build is
+ * unaffected, the page is correct with JavaScript off, and there is nothing to
+ * hydrate.
+ */
 import { getCollection } from "astro:content";
 import Base from "../layouts/Base.astro";
 import Header from "../components/Header.astro";
+import Page from "../components/Page.astro";
+import ProgressBar from "../components/ProgressBar.astro";
 import { PHASES } from "../data/phases";
 
 const lessons = (await getCollection("lessons")).sort((a, b) => a.data.order - b.data.order);
+
+/**
+ * A picture per phase, from the generated diagram set — the phase cards were
+ * eight identical boxes of links, and a cube is what this course is about.
+ *
+ * Each one is the cube state the phase leaves you in, drawn by the same
+ * generator as the lesson diagrams, so nothing here is a stock illustration:
+ * the beginner method ends solved, Phase 1.5 moves the first layer to the
+ * bottom where it stays, CFOP's headline is the first two layers finished as
+ * pairs. The two big-cube phases have no step diagram of their own — nothing
+ * in the generator draws a 4×4 or a 5×5 — so they borrow the move that defines
+ * each reduction: the wide turn, and the slice.
+ */
+const PHASE_ART: Record<string, { src: string; alt: string; w: number; h: number }> = {
+  basics: {
+    src: "/diagrams/steps/step_flip.svg",
+    alt: "A cube with an arrow around it, turning the whole puzzle over",
+    w: 96,
+    h: 105,
+  },
+  "phase-1": {
+    src: "/diagrams/steps/step_7_solved.svg",
+    alt: "A fully solved cube",
+    w: 92,
+    h: 101,
+  },
+  "phase-1.5": {
+    src: "/diagrams/steps/step_2_corners.svg",
+    alt: "A cube with its whole bottom layer solved",
+    w: 92,
+    h: 101,
+  },
+  "phase-2": {
+    src: "/diagrams/steps/step_4_ycross.svg",
+    alt: "A cube showing a yellow cross on the top face",
+    w: 92,
+    h: 101,
+  },
+  "phase-3": {
+    src: "/diagrams/steps/step_6_ycorners_pos.svg",
+    alt: "A cube with every last-layer corner in its place, still twisted",
+    w: 92,
+    h: 101,
+  },
+  "full-cfop": {
+    src: "/diagrams/steps/step_3_edges.svg",
+    alt: "A cube with its first two layers complete",
+    w: 92,
+    h: 101,
+  },
+  "444": {
+    src: "/diagrams/notation/move_rw.svg",
+    alt: "The wide r turn: two layers of the right-hand side rotating together",
+    w: 155,
+    h: 137,
+  },
+  "555": {
+    src: "/diagrams/notation/move_m.svg",
+    alt: "The M slice: the middle layer rotating between the two outer ones",
+    w: 155,
+    h: 137,
+  },
+};
+
+const groups = PHASES.map((phase) => ({
+  phase,
+  art: PHASE_ART[phase.key],
+  items: lessons.filter((l) => l.data.phase === phase.key),
+})).filter((g) => g.items.length > 0);
+
+const firstHref = `/learn/${lessons[0]?.id}/`;
 ---
 
 <Base title="Cubepath — speedcubing from zero">
   <Header active="learn" />
-  <main>
+  <Page>
     <section class="hero">
       <h1>Speedcubing from zero.</h1>
-      <p>
+      <p class="lead">
         One unbroken ladder from your first solve to full CFOP — every algorithm machine-verified,
         every case interactive in 3D. Free, offline, no account.
       </p>
       <div class="cta">
-        <a class="btn primary" href={`/learn/${lessons[0]?.id}/`}>Start learning</a>
-        <a class="btn" href="/reference/">All algorithms</a>
+        <a class="btn btn--primary" id="hero-cta" href={firstHref} data-hero-cta>Start learning</a>
+        <a class="btn btn--accent" href="/reference/">All algorithms</a>
+      </div>
+      {/* Hidden until there is progress: "0 of 25" on a first visit is noise. */}
+      <div class="course-bar" hidden data-course-bar>
+        <ProgressBar value={0} max={lessons.length} label="Course" />
       </div>
     </section>
 
-    <section class="ladder">
+    <ol class="ladder">
       {
-        PHASES.map((s) => {
-          const items = lessons.filter((l) => l.data.phase === s.key);
-          if (items.length === 0) return null;
-          return (
-            <div class="section card">
-              <div class="section-head">
-                <h2>{s.name}</h2>
-                <span class="blurb">{s.blurb}</span>
+        groups.map(({ phase, art, items }) => (
+          <li class="phase card" data-phase>
+            {art && (
+              <img
+                class="phase-art"
+                src={art.src}
+                alt={art.alt}
+                width={art.w}
+                height={art.h}
+                loading="lazy"
+                decoding="async"
+              />
+            )}
+            <div class="phase-body">
+              <h2>{phase.name}</h2>
+              <p class="hint blurb">{phase.blurb}</p>
+              <div class="phase-bar">
+                <ProgressBar value={0} max={items.length} label={`${phase.name} lessons`} />
               </div>
-              <ol>
+              <ol class="lessons">
                 {items.map((l) => (
-                  <li>
+                  <li data-lesson-slug={l.id}>
                     <a href={`/learn/${l.id}/`}>{l.data.title}</a>
+                    <span class="tick" hidden data-tick>
+                      <span aria-hidden="true">✓</span>
+                      <span class="sr-only">Completed</span>
+                    </span>
                     <span class="desc">{l.data.description}</span>
                   </li>
                 ))}
               </ol>
             </div>
-          );
-        })
+          </li>
+        ))
       }
-    </section>
+    </ol>
 
-    <footer>
-      <span
-        >Free forever · MIT + CC BY 4.0 · <a href="https://github.com/tsenoner/cubepath"
-          >Open source</a
-        ></span
-      >
-    </footer>
-  </main>
+    {
+      /*
+      Three of the project's four deliverables — the PDF guide, the printable
+      card set, the installable app — were reachable from exactly one sentence
+      buried in the reference page's lead paragraph. The cards are printed on
+      physical card stock; nothing on the site pointed at them.
+    */
+    }
+    <section class="offline card" aria-labelledby="offline-title">
+      <h2 id="offline-title">Take it offline</h2>
+      <p class="lead">
+        Everything here works in airplane mode once the page has been visited. For paper, pocket and
+        home screen:
+      </p>
+      <ul class="deliverables">
+        <li>
+          <a href="/cubepath.pdf">The PDF guide</a>
+          <span class="desc">The whole method as one printable document, diagrams included.</span>
+        </li>
+        <li>
+          <a href="/print/">The printable card set</a>
+          <span class="desc">
+            Three credit-card progression cards plus an annex — print, fold, carry.
+          </span>
+        </li>
+        <li>
+          <span class="install-line">
+            <button class="btn install-btn" data-install-slot hidden type="button">
+              Install Cubepath
+            </button>
+            <span class="no-install">Install as an app</span>
+          </span>
+          <span class="desc">
+            On iPhone: <strong>Share</strong> → <strong>Add to Home Screen</strong>. Elsewhere your
+            browser offers an install button in the address bar.
+          </span>
+        </li>
+      </ul>
+    </section>
+  </Page>
 </Base>
 
 <style>
-  main {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 34px 20px 60px;
-  }
   .hero {
-    max-width: 640px;
-    margin-bottom: 30px;
+    margin-bottom: var(--space-6);
   }
   .hero h1 {
-    margin-bottom: 8px;
-  }
-  .hero p {
-    color: var(--soft);
-    font-size: 16px;
-    margin: 0 0 16px;
+    margin-bottom: var(--space-2);
   }
   .cta {
     display: flex;
-    gap: 12px;
-  }
-  .btn {
-    padding: 10px 18px;
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-  /* The scoped .btn color would out-cascade the global .btn.primary. */
-  .btn.primary {
-    color: #fff;
-  }
-  .ladder {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-  .section {
-    padding: 18px 22px;
-  }
-  .section-head {
-    display: flex;
-    align-items: baseline;
-    gap: 12px;
     flex-wrap: wrap;
-    margin-bottom: 8px;
+    gap: var(--space-3);
+    margin-top: var(--space-4);
   }
-  .section h2 {
-    font-size: 19px;
+  .course-bar {
+    max-width: 22rem;
+    margin-top: var(--space-5);
+  }
+
+  .ladder {
+    display: grid;
+    gap: var(--space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /*
+   * Picture first, then the phase. The art is a plain <img>, not a <Figure>:
+   * Figure paints its own --card frame, and a framed figure inside a card is
+   * the card-in-a-card the audit called out. Here the card *is* the frame.
+   */
+  .phase {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: var(--space-5);
+    padding: var(--space-5);
+  }
+  .phase-art {
+    inline-size: 96px;
+    block-size: auto;
+    object-fit: contain;
+  }
+  .phase-body {
+    display: grid;
+    gap: var(--space-2);
   }
   .blurb {
-    color: var(--faint);
-    font-size: 13px;
-  }
-  ol {
     margin: 0;
-    padding-left: 22px;
   }
-  li {
-    margin: 6px 0;
+  .phase-bar {
+    max-width: 18rem;
+    margin: var(--space-1) 0 var(--space-2);
   }
-  li a {
+
+  .lessons {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .lessons > li {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: baseline;
+    gap: 0 var(--space-2);
+    padding-inline-start: var(--space-5);
+    /* The row's own bullet: a hollow ring that the ✓ replaces once done. */
+    position: relative;
+  }
+  .lessons > li::before {
+    content: "";
+    position: absolute;
+    inset-inline-start: var(--space-1);
+    inset-block-start: 0.45em;
+    inline-size: 8px;
+    block-size: 8px;
+    border: 1.5px solid var(--line);
+    border-radius: var(--r-pill);
+  }
+  .lessons > li[data-complete]::before {
+    background: var(--ok);
+    border-color: var(--ok);
+  }
+  .lessons a {
     font-weight: 600;
+    grid-column: 1;
+  }
+  .tick {
+    grid-column: 2;
+    font-weight: 600;
+    color: var(--ok);
   }
   .desc {
+    grid-column: 1 / -1;
     color: var(--soft);
-    font-size: 13px;
-    margin-left: 8px;
+    font-size: var(--text-sm);
   }
-  footer {
-    margin-top: 30px;
-    padding-top: 14px;
-    border-top: 1px solid var(--line);
-    color: var(--faint);
-    font-size: 12.5px;
+  /* A finished lesson steps back: the ladder should read as "what is left". */
+  .lessons > li[data-complete] a {
+    color: var(--soft);
+  }
+
+  .offline {
+    margin-top: var(--space-6);
+    padding: var(--space-5);
+  }
+  .deliverables {
+    display: grid;
+    gap: var(--space-4);
+    margin: var(--space-4) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .deliverables > li {
+    display: grid;
+    gap: var(--space-1);
+  }
+  .deliverables a {
+    font-weight: 600;
+    justify-self: start;
+  }
+  .install-line {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+  .install-btn {
+    font-size: var(--text-sm);
+    padding: var(--space-1) var(--space-3);
+  }
+  .no-install {
+    font-weight: 600;
+  }
+  /* When the browser offers a real install prompt, the button says it all. */
+  .install-line:has(.install-btn:not([hidden])) .no-install {
+    display: none;
+  }
+
+  .sr-only {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  @media (max-width: 560px) {
+    .phase {
+      grid-template-columns: 1fr;
+      gap: var(--space-3);
+      padding: var(--space-4);
+    }
+    .phase-art {
+      inline-size: 72px;
+    }
   }
 </style>
+
+<script>
+  import { completedLessons } from "../lib/db";
+
+  /**
+   * Everything below reads the DOM the page already rendered — the lesson rows
+   * are in course order, each carrying its slug — so there is no second copy of
+   * the ladder to keep in step with the markup.
+   */
+  const rows = Array.from(document.querySelectorAll<HTMLElement>("[data-lesson-slug]"));
+  const cta = document.querySelector<HTMLAnchorElement>("[data-hero-cta]");
+  const courseBar = document.querySelector<HTMLElement>("[data-course-bar]");
+
+  function paint(el: HTMLElement, done: number, total: number): void {
+    el.style.setProperty("--pct", `${total === 0 ? 0 : (done / total) * 100}%`);
+    const count = el.querySelector("[data-progress-count]");
+    if (count) count.textContent = `${done}/${total}`;
+    el.querySelector('[role="progressbar"]')?.setAttribute("aria-valuenow", String(done));
+  }
+
+  async function render(): Promise<void> {
+    const done = await completedLessons();
+    if (done.size === 0) return;
+
+    for (const row of rows) {
+      const slug = row.dataset.lessonSlug;
+      if (!slug || !done.has(slug)) continue;
+      row.dataset.complete = "1";
+      const tick = row.querySelector<HTMLElement>("[data-tick]");
+      if (tick) tick.hidden = false;
+    }
+
+    for (const phase of document.querySelectorAll<HTMLElement>("[data-phase]")) {
+      const items = phase.querySelectorAll("[data-lesson-slug]");
+      const bar = phase.querySelector<HTMLElement>("[data-progress]");
+      if (bar) paint(bar, phase.querySelectorAll("[data-complete]").length, items.length);
+    }
+
+    if (courseBar) {
+      const bar = courseBar.querySelector<HTMLElement>("[data-progress]");
+      if (bar) paint(bar, done.size, rows.length);
+      courseBar.hidden = false;
+    }
+
+    // Resume points at the first unfinished lesson in ladder order — not the
+    // last one visited, which on a re-read would send you backwards.
+    const next = rows.find((r) => !r.dataset.complete);
+    const link = next?.querySelector("a");
+    if (cta && link) {
+      cta.href = link.getAttribute("href") ?? cta.href;
+      cta.textContent = `Resume: ${link.textContent?.trim() ?? "next lesson"}`;
+    } else if (cta) {
+      cta.href = "/practice/";
+      cta.textContent = "Course complete — go practice";
+    }
+  }
+
+  void render().catch(() => undefined);
+</script>

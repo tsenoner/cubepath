@@ -3,6 +3,16 @@ title: "4×4: The 3×3 Stage and Parity"
 description: "The outer layers are a 3×3 you already solve — plus two parity cases that show up on schedule, not by accident."
 phase: "444"
 order: 320
+minutes: 14
+objectives:
+  - "Finish a reduced 4×4 with the 3×3 method, turning outer layers only."
+  - "Recognise OLL parity from an odd count of oriented edges, and fix it before anything else."
+  - "Recognise PLL parity as a straight two-piece swap and pick the right fix."
+prerequisites: ["444-edge-pairing"]
+algorithms: ["444.oll-parity"]
+practice:
+  groups: ["444-parity"]
+  note: "Drill the three parity cases until the fix is reflex — you meet at least one parity in three solves out of four, so this is the highest-frequency thing on the whole 4×4."
 ---
 
 import CaseRow from "../../components/CaseRow.astro";
@@ -67,7 +77,10 @@ your normal PLLs, and one of the two cases above remains.
 
 ## Two looks is enough
 
-The [Reference](/reference/) holds the full parity-embedded case sets —
-every last-layer orientation and permutation with the parity fix folded into
-a single algorithm. Worth mining later for speed. For now, 2-Look OLL and
-PLL plus the parity algorithms above finish **any** 4×4.
+2-Look OLL and PLL plus the three algorithms above finish **any** 4×4.
+Faster solvers later replace them with parity-embedded cases — a single
+algorithm that orients or permutes *and* fixes the parity in one go. Each one
+is a last-layer algorithm you already know with the parity fix spliced into
+it, so they cost recognition, not understanding. That is a speed refinement,
+not a gap in the method — and Cubepath does not teach them yet, so the
+reference ships only the three cases above.

@@ -3,11 +3,22 @@ title: "Speed Tricks: Same Method, Fewer Moves"
 description: "Three Phase 1 upgrades — cross on the bottom, a wide-f Hook, corner twists without the flip — and not one new algorithm to learn."
 phase: "phase-1.5"
 order: 100
+minutes: 14
+objectives:
+  - "Build the white cross straight onto the bottom, with yellow up the whole solve."
+  - "Solve the Hook in one pass with f R U R' U' f' and chain Line into Hook for the Dot."
+  - "Orient the last corners without ever flipping the cube."
+prerequisites: ["orient-corners"]
+algorithms: ["eo.hook", "eo.line", "eo.dot"]
+practice:
+  groups: ["cross-eo"]
+  note: "Drill the three cross cases with the new Hook algorithm until the wide f is as automatic as the plain F, then do ten full solves in one grip — no flip, start to finish."
 ---
 
 import CaseRow from "../../components/CaseRow.astro";
 import Callout from "../../components/Callout.astro";
 import AlgText from "../../components/AlgText.astro";
+import Figure from "../../components/Figure.astro";
 
 Phase 1 gets you solving; this lesson strips the wasted motion out of it.
 Three upgrades, and none is genuinely new — each reuses a trigger you already
@@ -66,11 +77,13 @@ on top.
 Turn U until an unsolved corner — one with no yellow on top — sits at the
 **front-right**. Read where its yellow sticker points:
 
-- <img src="/diagrams/steps/orient_right.svg" alt="Front-right corner with yellow sticker facing right" width="60" />
-  Yellow faces **right** → <AlgText moves="R' D' R D" /> **twice**.
-- <img src="/diagrams/steps/orient_front.svg" alt="Front-right corner with yellow sticker facing front" width="60" />
-  Yellow faces **front** → <AlgText moves="D' R' D R" /> **twice** — the
-  first algorithm undone: the same moves inverted, in reverse order.
+<Figure src="/diagrams/steps/orient_right.svg" alt="Front-right corner with yellow sticker facing right" caption="Yellow right — R' D' R D, twice" />
+
+<Figure src="/diagrams/steps/orient_front.svg" alt="Front-right corner with yellow sticker facing front" caption="Yellow front — D' R' D R, twice" />
+
+Yellow to the **right** is <AlgText moves="R' D' R D" /> twice; yellow to the
+**front** is <AlgText moves="D' R' D R" /> twice — the first algorithm undone,
+the same moves inverted in reverse order.
 
 Then turn **only U** to bring the next unsolved corner to the front-right and
 repeat. When all four corners show yellow, a final U turn or two lines the
@@ -83,9 +96,8 @@ side colors up — solved.
 </Callout>
 
 <Callout type="info">
-  Why it repairs itself: each round of <AlgText moves="R' D' R D" /> borrows
-  pieces from the bottom layers, and six identical rounds return the cube
-  exactly to where it started. Corner twists always cancel in multiples of
-  three, so by the time the last corner shows yellow the borrowed pieces have
-  landed back home. Any move other than U in between breaks that accounting.
+  It repairs itself for the same reason Step 7 did: six identical rounds
+  return the cube exactly to where it started, and corner twists always
+  cancel in multiples of three. Any move other than U in between breaks that
+  accounting.
 </Callout>

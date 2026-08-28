@@ -3,10 +3,21 @@ title: "F2L: Solve Two Layers at Once"
 description: "Corner and edge drop in together as a pair — the single change that roughly halves your first-two-layers move count."
 phase: "full-cfop"
 order: 200
+minutes: 20
+objectives:
+  - "Recognise a corner and its middle-layer edge as one pair, and name its slot."
+  - "Tell the three states of a pair apart and get every one of them to 'made'."
+  - "Run both basic inserts and read which of the two a made pair needs."
+prerequisites: ["course-complete"]
+algorithms: []
+practice:
+  groups: ["full-f2l"]
+  note: "Drill one pair at a time, untimed: scramble, solve the cross, then talk one pair out loud — which state is it in, which face does it go in through — before you turn anything."
 ---
 
 import Callout from "../../components/Callout.astro";
 import AlgText from "../../components/AlgText.astro";
+import Figure from "../../components/Figure.astro";
 import TwistyPlayer from "../../components/TwistyPlayer.astro";
 
 The beginner method fills the first two layers in two passes: white corners,
@@ -27,7 +38,14 @@ You have been handling pairs all along. One sexy move,
 <AlgText moves="R U R' U'" />, pops the front-right pair out of its slot —
 corner and edge leave home **together** and land on top still joined:
 
-<TwistyPlayer alg="R U R' U'" stickering="F2L" anchor="start" />
+<Figure size="card" height={320} caption="Sexy move from solved. The corner and its edge leave the slot as one object.">
+  <TwistyPlayer
+    alg="R U R' U'"
+    stickering="F2L"
+    anchor="start"
+    context={{ ladder: "cfop", stage: "f2l" }}
+  />
+</Figure>
 
 Played in reverse, the same motion puts the pair back. Every F2L insert is
 a version of that reversal.
@@ -66,17 +84,36 @@ pair itself tells you which. Read the color on top of the pair: it matches
 one of the slot's two centers — the pair goes in through the **other**
 face.
 
-- **Through the side** — the 3-move insert. Set the pair on top, to the
-  left of the slot, white pointing away. Open the slot by turning its side
-  face up, carry the pair over the opening with one turn of the top,
-  close.
-- **Through the front** — the mirror: **back, rotate, join**. Park the
-  pair at the back-right, open the slot with the front face instead, let
-  the pair fall in, close. Still three moves, mirrored.
+### Through the side
 
-That is the whole engine. Every awkward position — white on top, corner
-stuck in a slot, flipped edge — is a short setup that produces a made pair
-pointing one of these two ways.
+<AlgText moves="U R U' R'" />
+
+<Figure size="card" height={320} caption="U R U' R' — the pair is set to the left of the slot, the slot opens with R, the top carries the pair over, R' closes.">
+  <TwistyPlayer
+    alg="U R U' R'"
+    stickering="F2L"
+    anchor="end"
+    context={{ ladder: "cfop", stage: "f2l" }}
+  />
+</Figure>
+
+### Through the front
+
+<AlgText moves="U' F' U F" />
+
+<Figure size="card" height={320} caption="U' F' U F — the same three beats mirrored: the pair parks at the back-right and the slot opens with F' instead.">
+  <TwistyPlayer
+    alg="U' F' U F"
+    stickering="F2L"
+    anchor="end"
+    context={{ ladder: "cfop", stage: "f2l" }}
+  />
+</Figure>
+
+Open, carry, close — three beats either way, and which face opens is the
+only decision. That is the whole engine. Every awkward position — white on
+top, corner stuck in a slot, flipped edge — is a short setup that produces
+a made pair pointing one of these two ways.
 
 ## An empty slot is workspace
 
@@ -86,19 +123,11 @@ nothing, while turns that open a solved one must be paid back. Early in
 the solve you have workspace everywhere; the last pair is the cramped
 one — another reason to clear the back slots early.
 
-## Why pairs beat the beginner method
-
-Count it. Beginner: up to three sexy moves to place the corner, then a
-full edge-insertion sequence — around twenty moves per slot. An intuitive
-pair averages seven or eight. Across four slots that is the same two
-layers for roughly **half the moves**, before any speed tricks, with
-nothing new memorized.
-
 <Callout type="tip">
-  Practice one pair at a time, slowly, no timer. Scramble, solve the
-  cross, then talk yourself through a single pair out loud: which state
-  is it in, and which face does it go in through? Speed comes from seeing
-  faster, not turning faster.
+  Count the difference once and you will not go back. The beginner method
+  spends around twenty moves per slot; an intuitive pair averages seven or
+  eight — the same two layers for roughly half the moves, with nothing new
+  memorized.
 </Callout>
 
 Intuition covers most pairs you will meet. The awkward minority — corner

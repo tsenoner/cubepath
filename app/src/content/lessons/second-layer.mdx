@@ -3,12 +3,31 @@ title: "Step 3: Second-Layer Edges"
 description: "Fill the four middle-layer edges by matching an upside-down T, then inserting with the two triggers you already know."
 phase: "phase-1"
 order: 50
+minutes: 12
+objectives:
+  - "Spot which top-layer edges belong in the middle layer."
+  - "Form the upside-down T and read whether the edge points left or right."
+  - "Run both inserts, and evict an edge that is stuck in the wrong slot."
+prerequisites: ["white-corners"]
+algorithms: []
+practice:
+  groups: []
+  links:
+    - href: "/practice/"
+      label: "Open the trainer"
+  note: "Full solve in the trainer, stopping at the end of the middle layer — when ten scrambles in a row reach two solved layers with nothing flipped, move on."
 ---
 
 import Callout from "../../components/Callout.astro";
 import AlgText from "../../components/AlgText.astro";
+import Figure from "../../components/Figure.astro";
 
-<img src="/diagrams/steps/step_3_edges.svg" alt="Cube with the first two layers solved" width="60" />
+<Figure
+  size="side"
+  src="/diagrams/steps/step_3_edges.svg"
+  alt="Cube with the first two layers solved"
+  caption="The goal: two solid layers, only yellow left."
+/>
 
 First layer done. Hold the cube **white on the bottom, yellow on top** — the
 solved layer stays at the bottom from here on. This step fills the four
@@ -34,14 +53,14 @@ left center — that is the slot it belongs in, and it picks the insert:
 
 ### Points right
 
-<img src="/diagrams/steps/edge_right.svg" alt="Edge inserting into the front-right slot" width="60" />
+<Figure src="/diagrams/steps/edge_right.svg" alt="Edge inserting into the front-right slot" caption="Top sticker matches the right centre." />
 
 `U`, then <AlgText moves="R U R' U'" /> (righty), then `y`, then
 <AlgText moves="L' U' L U" /> (lefty).
 
 ### Points left
 
-<img src="/diagrams/steps/edge_left.svg" alt="Edge inserting into the front-left slot" width="60" />
+<Figure src="/diagrams/steps/edge_left.svg" alt="Edge inserting into the front-left slot" caption="Top sticker matches the left centre." />
 
 `U'`, then <AlgText moves="L' U' L U" /> (lefty), then `y'`, then
 <AlgText moves="R U R' U'" /> (righty).
@@ -49,10 +68,9 @@ left center — that is the slot it belongs in, and it picks the insert:
 `y` rotates the whole cube like a `U` turn — the right face swings round to
 face you; `y'` is the reverse.
 
-Why two triggers? No move drops an edge straight into a middle-layer slot,
-so the insert borrows the solved white corner beside the slot: the first
-trigger drags the edge in and pops that corner out, the rotation hands the
-slot to your other hand, and the mirror trigger puts the corner back.
+Why two triggers? No move drops an edge straight into a middle-layer slot, so
+the insert borrows the solved corner beside it: the first trigger takes the
+corner out and the mirrored one puts it back.
 
 <Callout type="caution">
   Match the **front** sticker first, every time. If you line up the top

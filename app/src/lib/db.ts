@@ -14,6 +14,15 @@ export interface ProgressEntry {
   updatedAt: number;
 }
 
+/**
+ * A lesson the learner has finished. Keyed by the content-collection slug, so
+ * an entry outlives a re-order of the ladder but not a rename of the file.
+ */
+export interface LessonProgressEntry {
+  slug: string;
+  completedAt: number;
+}
+
 export interface ReviewLogEntry {
   caseId: string;
   rating: number;
@@ -29,10 +38,16 @@ interface CubepathDB extends DBSchema {
   };
   reviews: { key: number; value: ReviewLogEntry; indexes: { "by-case": string } };
   settings: { key: string; value: unknown };
+  lessons: { key: string; value: LessonProgressEntry };
 }
 
 const DB_NAME = "cubepath";
-const DB_VERSION = 1;
+/**
+ * v2 added the `lessons` store. Bumping is safe in both directions that matter:
+ * an existing v1 database gains the store through `upgrade`, and a v1 backup
+ * imports unchanged because its envelope simply carries no `lessons` array.
+ */
+const DB_VERSION = 2;
 
 let dbPromise: Promise<IDBPDatabase<CubepathDB>> | null = null;
 
@@ -52,6 +67,9 @@ export function getDB(): Promise<IDBPDatabase<CubepathDB>> {
         reviews.createIndex("by-case", "caseId");
         db.createObjectStore("settings");
       }
+      if (oldVersion < 2) {
+        db.createObjectStore("lessons", { keyPath: "slug" });
+      }
     },
     blocking() {
       // A newer tab wants to upgrade — release the connection.
@@ -68,6 +86,38 @@ export async function allProgress(): Promise<ProgressEntry[]> {
 
 export async function setStatus(caseId: string, status: CaseStatus): Promise<void> {
   await (await getDB()).put("progress", { caseId, status, updatedAt: Date.now() });
+}
+
+// ── Lesson progress ────────────────────────────────────────
+
+/**
+ * The course had no "where am I" signal at all: 25 lessons rendered as 25
+ * identical links, and the home page CTA pointed at lesson one on your
+ * twentieth visit. These three functions are the whole progress layer — the
+ * home page reads them, `LessonMeta.astro` writes them. Client-side only, so
+ * the static build is untouched and it keeps working offline.
+ */
+export async function allLessonProgress(): Promise<LessonProgressEntry[]> {
+  return (await getDB()).getAll("lessons");
+}
+
+/** Completed slugs as a set — what every caller actually wants. */
+export async function completedLessons(): Promise<Set<string>> {
+  return new Set((await allLessonProgress()).map((l) => l.slug));
+}
+
+/**
+ * Idempotent: re-reading a lesson you have already finished keeps the original
+ * `completedAt`, so "first finished on" stays true.
+ */
+export async function markLessonComplete(slug: string): Promise<void> {
+  const db = await getDB();
+  // One transaction, so the read-then-write cannot interleave with a second
+  // tab doing the same and reset an older completedAt to now.
+  const tx = db.transaction("lessons", "readwrite");
+  const store = tx.objectStore("lessons");
+  if (!(await store.get(slug))) await store.put({ slug, completedAt: Date.now() });
+  await tx.done;
 }
 
 /** Persist a graded review atomically: card state + log entry + progress. */
@@ -144,15 +194,18 @@ interface BackupEnvelope {
     cards: (Card & { caseId: string })[];
     reviews: ReviewLogEntry[];
     settings: { key: string; value: unknown }[];
+    /** Added in schema v2. Absent in every v1 backup — read it defensively. */
+    lessons?: LessonProgressEntry[];
   };
 }
 
 export async function exportBackup(): Promise<BackupEnvelope> {
   const db = await getDB();
-  const [progress, cards, reviews, settingKeys] = await Promise.all([
+  const [progress, cards, reviews, lessons, settingKeys] = await Promise.all([
     db.getAll("progress"),
     db.getAll("cards"),
     db.getAll("reviews"),
+    db.getAll("lessons"),
     db.getAllKeys("settings"),
   ]);
   const settings = await Promise.all(
@@ -162,7 +215,7 @@ export async function exportBackup(): Promise<BackupEnvelope> {
     app: "cubepath",
     schemaVersion: DB_VERSION,
     exportedAt: new Date().toISOString(),
-    data: { progress, cards, reviews, settings },
+    data: { progress, cards, reviews, settings, lessons },
   };
 }
 
@@ -186,7 +239,7 @@ export async function importBackup(
   }
   const skipped = new Set<string>();
   const db = await getDB();
-  const tx = db.transaction(["progress", "cards", "reviews", "settings"], "readwrite");
+  const tx = db.transaction(["progress", "cards", "reviews", "settings", "lessons"], "readwrite");
   // Queue everything without awaiting each request — IndexedDB executes
   // requests of one transaction in order, so the clears run before the puts.
   const ops: Promise<unknown>[] = [
@@ -194,6 +247,7 @@ export async function importBackup(
     tx.objectStore("cards").clear(),
     tx.objectStore("reviews").clear(),
     tx.objectStore("settings").clear(),
+    tx.objectStore("lessons").clear(),
   ];
   for (const p of env.data.progress ?? []) {
     if (!isKnownCase(p.caseId)) {
@@ -222,6 +276,9 @@ export async function importBackup(
     ops.push(tx.objectStore("reviews").add({ ...r, review: new Date(r.review) }));
   }
   for (const s of env.data.settings ?? []) ops.push(tx.objectStore("settings").put(s.value, s.key));
+  // Lesson slugs are not case ids — `isKnownCase` does not apply. A slug this
+  // build no longer has is inert: nothing ever looks it up.
+  for (const l of env.data.lessons ?? []) ops.push(tx.objectStore("lessons").put(l));
   await Promise.all([...ops, tx.done]);
   return { skipped: [...skipped] };
 }
