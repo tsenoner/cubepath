@@ -1,0 +1,5169 @@
+{
+  "schema": 1,
+  "generator": "app/scripts/gen-case-states.mjs",
+  "faces": [
+    "U",
+    "L",
+    "F",
+    "R",
+    "B",
+    "D"
+  ],
+  "faceColors": {
+    "U": "YELLOW",
+    "L": "BLUE",
+    "F": "RED",
+    "R": "GREEN",
+    "B": "ORANGE",
+    "D": "WHITE"
+  },
+  "maskLegend": {
+    ".": "home piece, home orientation",
+    "o": "home piece, wrong orientation",
+    "x": "a different piece occupies this slot"
+  },
+  "parityAlgs": {
+    "4x4-oll-parity": {
+      "alg": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'",
+      "source": "jperm-raw.json#4x4oll[1].algs[0]",
+      "signature": "inserted verbatim into 37 other 4x4oll algorithms"
+    },
+    "4x4-pll-parity": {
+      "alg": "2R2 U2 2R2 Uw2 2R2 Uw2",
+      "source": "jperm-raw.json#4x4pll[0].algs[0]",
+      "signature": "inserted verbatim into 21 other 4x4pll algorithms"
+    },
+    "5x5-edge-parity": {
+      "alg": "Rw U2 x Rw U2 Rw U2 3Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'",
+      "source": "l2e-raw.json#[5].algs[1]",
+      "signature": "the 4x4 OLL-parity form with token 7 widened (Rw' -> 3Rw')"
+    }
+  },
+  "layouts": {
+    "3x3x3": {
+      "n": 3,
+      "orbits": [
+        {
+          "name": "EDGES",
+          "numPieces": 12,
+          "numOrientations": 2
+        },
+        {
+          "name": "CORNERS",
+          "numPieces": 8,
+          "numOrientations": 3
+        },
+        {
+          "name": "CENTERS",
+          "numPieces": 6,
+          "numOrientations": 4
+        }
+      ],
+      "facelets": {
+        "U": [
+          "CORNERS:2:0",
+          "EDGES:2:0",
+          "CORNERS:1:0",
+          "EDGES:3:0",
+          "CENTERS:0:0",
+          "EDGES:1:0",
+          "CORNERS:3:0",
+          "EDGES:0:0",
+          "CORNERS:0:0"
+        ],
+        "L": [
+          "CORNERS:2:1",
+          "EDGES:3:1",
+          "CORNERS:3:2",
+          "EDGES:11:1",
+          "CENTERS:1:0",
+          "EDGES:9:1",
+          "CORNERS:6:2",
+          "EDGES:7:1",
+          "CORNERS:5:1"
+        ],
+        "F": [
+          "CORNERS:3:1",
+          "EDGES:0:1",
+          "CORNERS:0:2",
+          "EDGES:9:0",
+          "CENTERS:2:0",
+          "EDGES:8:0",
+          "CORNERS:5:2",
+          "EDGES:4:1",
+          "CORNERS:4:1"
+        ],
+        "R": [
+          "CORNERS:0:1",
+          "EDGES:1:1",
+          "CORNERS:1:2",
+          "EDGES:8:1",
+          "CENTERS:3:0",
+          "EDGES:10:1",
+          "CORNERS:4:2",
+          "EDGES:5:1",
+          "CORNERS:7:1"
+        ],
+        "B": [
+          "CORNERS:1:1",
+          "EDGES:2:1",
+          "CORNERS:2:2",
+          "EDGES:10:0",
+          "CENTERS:4:0",
+          "EDGES:11:0",
+          "CORNERS:7:2",
+          "EDGES:6:1",
+          "CORNERS:6:1"
+        ],
+        "D": [
+          "CORNERS:5:0",
+          "EDGES:4:0",
+          "CORNERS:4:0",
+          "EDGES:7:0",
+          "CENTERS:5:0",
+          "EDGES:5:0",
+          "CORNERS:6:0",
+          "EDGES:6:0",
+          "CORNERS:7:0"
+        ]
+      }
+    },
+    "4x4x4": {
+      "n": 4,
+      "orbits": [
+        {
+          "name": "CORNERS",
+          "numPieces": 8,
+          "numOrientations": 3
+        },
+        {
+          "name": "EDGES",
+          "numPieces": 24,
+          "numOrientations": 2
+        },
+        {
+          "name": "CENTERS",
+          "numPieces": 24,
+          "numOrientations": 1
+        }
+      ],
+      "facelets": {
+        "U": [
+          "CORNERS:2:0",
+          "EDGES:0:0",
+          "EDGES:16:0",
+          "CORNERS:1:0",
+          "EDGES:4:0",
+          "CENTERS:0:0",
+          "CENTERS:1:0",
+          "EDGES:1:0",
+          "EDGES:3:0",
+          "CENTERS:3:0",
+          "CENTERS:2:0",
+          "EDGES:12:0",
+          "CORNERS:3:0",
+          "EDGES:8:0",
+          "EDGES:2:0",
+          "CORNERS:0:0"
+        ],
+        "L": [
+          "CORNERS:2:1",
+          "EDGES:4:1",
+          "EDGES:3:1",
+          "CORNERS:3:2",
+          "EDGES:17:1",
+          "CENTERS:4:0",
+          "CENTERS:5:0",
+          "EDGES:5:1",
+          "EDGES:7:1",
+          "CENTERS:7:0",
+          "CENTERS:6:0",
+          "EDGES:11:1",
+          "CORNERS:6:2",
+          "EDGES:23:1",
+          "EDGES:6:1",
+          "CORNERS:5:1"
+        ],
+        "F": [
+          "CORNERS:3:1",
+          "EDGES:8:1",
+          "EDGES:2:1",
+          "CORNERS:0:2",
+          "EDGES:5:0",
+          "CENTERS:8:0",
+          "CENTERS:9:0",
+          "EDGES:9:0",
+          "EDGES:11:0",
+          "CENTERS:11:0",
+          "CENTERS:10:0",
+          "EDGES:15:0",
+          "CORNERS:5:2",
+          "EDGES:20:1",
+          "EDGES:10:1",
+          "CORNERS:4:1"
+        ],
+        "R": [
+          "CORNERS:0:1",
+          "EDGES:12:1",
+          "EDGES:1:1",
+          "CORNERS:1:2",
+          "EDGES:9:1",
+          "CENTERS:12:0",
+          "CENTERS:13:0",
+          "EDGES:13:1",
+          "EDGES:15:1",
+          "CENTERS:15:0",
+          "CENTERS:14:0",
+          "EDGES:19:1",
+          "CORNERS:4:2",
+          "EDGES:21:1",
+          "EDGES:14:1",
+          "CORNERS:7:1"
+        ],
+        "B": [
+          "CORNERS:1:1",
+          "EDGES:16:1",
+          "EDGES:0:1",
+          "CORNERS:2:2",
+          "EDGES:13:0",
+          "CENTERS:16:0",
+          "CENTERS:17:0",
+          "EDGES:17:0",
+          "EDGES:19:0",
+          "CENTERS:19:0",
+          "CENTERS:18:0",
+          "EDGES:7:0",
+          "CORNERS:7:2",
+          "EDGES:22:1",
+          "EDGES:18:1",
+          "CORNERS:6:1"
+        ],
+        "D": [
+          "CORNERS:5:0",
+          "EDGES:20:0",
+          "EDGES:10:0",
+          "CORNERS:4:0",
+          "EDGES:6:0",
+          "CENTERS:20:0",
+          "CENTERS:21:0",
+          "EDGES:21:0",
+          "EDGES:23:0",
+          "CENTERS:23:0",
+          "CENTERS:22:0",
+          "EDGES:14:0",
+          "CORNERS:6:0",
+          "EDGES:18:0",
+          "EDGES:22:0",
+          "CORNERS:7:0"
+        ]
+      }
+    },
+    "5x5x5": {
+      "n": 5,
+      "orbits": [
+        {
+          "name": "EDGES",
+          "numPieces": 24,
+          "numOrientations": 2
+        },
+        {
+          "name": "EDGES2",
+          "numPieces": 12,
+          "numOrientations": 2
+        },
+        {
+          "name": "CORNERS",
+          "numPieces": 8,
+          "numOrientations": 3
+        },
+        {
+          "name": "CENTERS",
+          "numPieces": 24,
+          "numOrientations": 1
+        },
+        {
+          "name": "CENTERS2",
+          "numPieces": 24,
+          "numOrientations": 1
+        },
+        {
+          "name": "CENTERS3",
+          "numPieces": 6,
+          "numOrientations": 4
+        }
+      ],
+      "facelets": {
+        "U": [
+          "CORNERS:2:0",
+          "EDGES:0:0",
+          "EDGES2:9:0",
+          "EDGES:16:0",
+          "CORNERS:1:0",
+          "EDGES:4:0",
+          "CENTERS2:0:0",
+          "CENTERS:0:0",
+          "CENTERS2:1:0",
+          "EDGES:1:0",
+          "EDGES2:8:0",
+          "CENTERS:3:0",
+          "CENTERS3:3:0",
+          "CENTERS:1:0",
+          "EDGES2:6:0",
+          "EDGES:3:0",
+          "CENTERS2:3:0",
+          "CENTERS:2:0",
+          "CENTERS2:2:0",
+          "EDGES:12:0",
+          "CORNERS:3:0",
+          "EDGES:8:0",
+          "EDGES2:11:0",
+          "EDGES:2:0",
+          "CORNERS:0:0"
+        ],
+        "L": [
+          "CORNERS:2:1",
+          "EDGES:4:1",
+          "EDGES2:8:1",
+          "EDGES:3:1",
+          "CORNERS:3:2",
+          "EDGES:17:1",
+          "CENTERS2:4:0",
+          "CENTERS:4:0",
+          "CENTERS2:5:0",
+          "EDGES:5:1",
+          "EDGES2:10:1",
+          "CENTERS:7:0",
+          "CENTERS3:4:0",
+          "CENTERS:5:0",
+          "EDGES2:1:1",
+          "EDGES:7:1",
+          "CENTERS2:7:0",
+          "CENTERS:6:0",
+          "CENTERS2:6:0",
+          "EDGES:11:1",
+          "CORNERS:6:2",
+          "EDGES:23:1",
+          "EDGES2:5:1",
+          "EDGES:6:1",
+          "CORNERS:5:1"
+        ],
+        "F": [
+          "CORNERS:3:1",
+          "EDGES:8:1",
+          "EDGES2:11:1",
+          "EDGES:2:1",
+          "CORNERS:0:2",
+          "EDGES:5:0",
+          "CENTERS2:8:0",
+          "CENTERS:8:0",
+          "CENTERS2:9:0",
+          "EDGES:9:0",
+          "EDGES2:1:0",
+          "CENTERS:11:0",
+          "CENTERS3:0:0",
+          "CENTERS:9:0",
+          "EDGES2:4:0",
+          "EDGES:11:0",
+          "CENTERS2:11:0",
+          "CENTERS:10:0",
+          "CENTERS2:10:0",
+          "EDGES:15:0",
+          "CORNERS:5:2",
+          "EDGES:20:1",
+          "EDGES2:0:1",
+          "EDGES:10:1",
+          "CORNERS:4:1"
+        ],
+        "R": [
+          "CORNERS:0:1",
+          "EDGES:12:1",
+          "EDGES2:6:1",
+          "EDGES:1:1",
+          "CORNERS:1:2",
+          "EDGES:9:1",
+          "CENTERS2:12:0",
+          "CENTERS:12:0",
+          "CENTERS2:13:0",
+          "EDGES:13:1",
+          "EDGES2:4:1",
+          "CENTERS:15:0",
+          "CENTERS3:1:0",
+          "CENTERS:13:0",
+          "EDGES2:7:1",
+          "EDGES:15:1",
+          "CENTERS2:15:0",
+          "CENTERS:14:0",
+          "CENTERS2:14:0",
+          "EDGES:19:1",
+          "CORNERS:4:2",
+          "EDGES:21:1",
+          "EDGES2:2:1",
+          "EDGES:14:1",
+          "CORNERS:7:1"
+        ],
+        "B": [
+          "CORNERS:1:1",
+          "EDGES:16:1",
+          "EDGES2:9:1",
+          "EDGES:0:1",
+          "CORNERS:2:2",
+          "EDGES:13:0",
+          "CENTERS2:16:0",
+          "CENTERS:16:0",
+          "CENTERS2:17:0",
+          "EDGES:17:0",
+          "EDGES2:7:0",
+          "CENTERS:19:0",
+          "CENTERS3:5:0",
+          "CENTERS:17:0",
+          "EDGES2:10:0",
+          "EDGES:19:0",
+          "CENTERS2:19:0",
+          "CENTERS:18:0",
+          "CENTERS2:18:0",
+          "EDGES:7:0",
+          "CORNERS:7:2",
+          "EDGES:22:1",
+          "EDGES2:3:1",
+          "EDGES:18:1",
+          "CORNERS:6:1"
+        ],
+        "D": [
+          "CORNERS:5:0",
+          "EDGES:20:0",
+          "EDGES2:0:0",
+          "EDGES:10:0",
+          "CORNERS:4:0",
+          "EDGES:6:0",
+          "CENTERS2:20:0",
+          "CENTERS:20:0",
+          "CENTERS2:21:0",
+          "EDGES:21:0",
+          "EDGES2:5:0",
+          "CENTERS:23:0",
+          "CENTERS3:2:0",
+          "CENTERS:21:0",
+          "EDGES2:2:0",
+          "EDGES:23:0",
+          "CENTERS2:23:0",
+          "CENTERS:22:0",
+          "CENTERS2:22:0",
+          "EDGES:14:0",
+          "CORNERS:6:0",
+          "EDGES:18:0",
+          "EDGES2:3:0",
+          "EDGES:22:0",
+          "CORNERS:7:0"
+        ]
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "oll.1",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 1",
+      "group": "Dot",
+      "alg": "R U2 R' R' F R F' U2 R' F R F'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "BLFBUFRRR",
+        "L": "UUULLLLLL",
+        "F": "FUBFFFFFF",
+        "R": "UUURRRRRR",
+        "B": "LULBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "oxxx.xxxx",
+        "L": "oxx......",
+        "F": "xxx......",
+        "R": "xxx......",
+        "B": "xxo......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.2",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 2",
+      "group": "Dot",
+      "alg": "r U r' U2 r U2 R' U2 R U' r'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "RLLBUFBRB",
+        "L": "FUULLLLLL",
+        "F": "RULFFFFFF",
+        "R": "UUFRRRRRR",
+        "B": "UUUBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx.xxxx",
+        "L": "xxx......",
+        "F": "xxx......",
+        "R": "xxx......",
+        "B": "xxx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.3",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 3",
+      "group": "Dot",
+      "alg": "r' R2 U R' U r U2 r' U M'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "FRLBUFULB",
+        "L": "LUFLLLLLL",
+        "F": "RUUFFFFFF",
+        "R": "RUURRRRRR",
+        "B": "BUUBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx.xxxx",
+        "L": "xxx......",
+        "F": "xxx......",
+        "R": "xxx......",
+        "B": "xxx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.4",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 4",
+      "group": "Dot",
+      "alg": "M U' r U2 r' U' R U' R' M'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "RLFFUBBRU",
+        "L": "UULLLLLLL",
+        "F": "UULFFFFFF",
+        "R": "FURRRRRRR",
+        "B": "UUBBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx.xxxx",
+        "L": "xxx......",
+        "F": "xxx......",
+        "R": "xxx......",
+        "B": "xxx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.5",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 5",
+      "group": "Square Shape",
+      "alg": "l' U2 L U L' U l",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUFUUFBLL",
+        "L": "RRULLLLLL",
+        "F": "RUUFFFFFF",
+        "R": "BUURRRRRR",
+        "B": "LBFBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "x.xx.xxxx",
+        "L": "xxx......",
+        "F": "xxx......",
+        "R": "xxx......",
+        "B": "x.x......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.6",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 6",
+      "group": "Square Shape",
+      "alg": "r U2 R' U' R U' r'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "FUUFUURRB",
+        "L": "UUBLLLLLL",
+        "F": "UULFFFFFF",
+        "R": "ULLRRRRRR",
+        "B": "FBRBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "x.xx.xxxx",
+        "L": "xxx......",
+        "F": "xxx......",
+        "R": "xxx......",
+        "B": "x.x......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.7",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 7",
+      "group": "Small Lightning Bolt",
+      "alg": "r U R' U R U2 r'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "RUFUUFULL",
+        "L": "FRRLLLLLL",
+        "F": "BUUFFFFFF",
+        "R": "BUURRRRRR",
+        "B": "LBUBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "x.xx.xxxx",
+        "L": "xxx......",
+        "F": "xxx......",
+        "R": "xxx......",
+        "B": "x.x......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.8",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 8",
+      "group": "Small Lightning Bolt",
+      "alg": "l' U' L U' L' U2 l",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "FULFUURRU",
+        "L": "UUBLLLLLL",
+        "F": "UUBFFFFFF",
+        "R": "LLFRRRRRR",
+        "B": "UBRBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "x.xx.xxxx",
+        "L": "xxx......",
+        "F": "xxx......",
+        "R": "xxx......",
+        "B": "x.x......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.9",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 9",
+      "group": "Fish Shape",
+      "alg": "R U R' U' R' F R2 U R' U' F'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "FURUUFBBU",
+        "L": "ULLLLLLLL",
+        "F": "UULFFFFFF",
+        "R": "FUBRRRRRR",
+        "B": "URRBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxo..xxxx",
+        "L": "x.x......",
+        "F": "xxx......",
+        "R": "xxo......",
+        "B": "oxx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.10",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 10",
+      "group": "Fish Shape",
+      "alg": "R U R' U R' F R F' R U2 R'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "BBUUURRUF",
+        "L": "RLULLLLLL",
+        "F": "FFUFFFFFF",
+        "R": "LUBRRRRRR",
+        "B": "LUUBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xox..ox.x",
+        "L": "x.x......",
+        "F": "x.x......",
+        "R": "xox......",
+        "B": "xox......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.11",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 11",
+      "group": "Small Lightning Bolt",
+      "alg": "r U R' U R' F R F' R U2 r'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "BUUUURRFF",
+        "L": "RLULLLLLL",
+        "F": "FUUFFFFFF",
+        "R": "LUBRRRRRR",
+        "B": "LBUBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "x.x..oxox",
+        "L": "x.x......",
+        "F": "xox......",
+        "R": "xox......",
+        "B": "x.x......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.12",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 12",
+      "group": "Small Lightning Bolt",
+      "alg": "M' R' U' R U' R' U2 R U' R r'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUFFUUBLL",
+        "L": "BULLLLLLL",
+        "F": "UUFFFFFFF",
+        "R": "URRRRRRRR",
+        "B": "UBRBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "x.xx..xxx",
+        "L": "xxx......",
+        "F": "xxx......",
+        "R": "x.x......",
+        "B": "x.x......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.13",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 13",
+      "group": "Knight Move Shape",
+      "alg": "F U R U' R2 F' R U R U' R'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "FFBUUUURL",
+        "L": "LLFLLLLLL",
+        "F": "RUUFFFFFF",
+        "R": "BBURRRRRR",
+        "B": "RUUBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxo..xxxx",
+        "L": "x.x......",
+        "F": "xxx......",
+        "R": "xxo......",
+        "B": "oxx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.14",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 14",
+      "group": "Knight Move Shape",
+      "alg": "R' F R U R' F' R F U' F'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "RFLUUUBRU",
+        "L": "ULLLLLLLL",
+        "F": "UUFFFFFFF",
+        "R": "RBFRRRRRR",
+        "B": "UUBBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxx..xxx.",
+        "L": "x.x......",
+        "F": "xx.......",
+        "R": ".xx......",
+        "B": "xxx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.15",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 15",
+      "group": "Knight Move Shape",
+      "alg": "l' U' l L' U' L U l' U l",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UFFUUUBLL",
+        "L": "RBULLLLLL",
+        "F": "RUUFFFFFF",
+        "R": "BRURRRRRR",
+        "B": "LUFBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx..xxx",
+        "L": "xxx......",
+        "F": "xxx......",
+        "R": "x.x......",
+        "B": "xxx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.16",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 16",
+      "group": "Knight Move Shape",
+      "alg": "r U r' R U R' U' r U' r'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "FFUUUURRB",
+        "L": "ULBLLLLLL",
+        "F": "UULFFFFFF",
+        "R": "UBLRRRRRR",
+        "B": "FURBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxx..xxxx",
+        "L": "x.x......",
+        "F": "xxx......",
+        "R": "xxx......",
+        "B": "xxx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.17",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 17",
+      "group": "Dot",
+      "alg": "F R' F' R2 r' U R U' R' U' M'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "URRBUFLLU",
+        "L": "LUFLLLLLL",
+        "F": "UURFFFFFF",
+        "R": "BUURRRRRR",
+        "B": "FUBBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": ".xxx.xoxx",
+        "L": ".xo......",
+        "F": "oxx......",
+        "R": "xxx......",
+        "B": "xx.......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.18",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 18",
+      "group": "Dot",
+      "alg": "r U R' U R U2 r' r' U' R U' R' U2 r",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "ULUBUFLRR",
+        "L": "LUFLLLLLL",
+        "F": "UUUFFFFFF",
+        "R": "FURRRRRRR",
+        "B": "BUBBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": ".x.x.xoxo",
+        "L": ".xo......",
+        "F": "oxo......",
+        "R": "ox.......",
+        "B": ".x.......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.19",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 19",
+      "group": "Dot",
+      "alg": "r' R U R U R' U' M' R' F R F'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "ULUFUBFRR",
+        "L": "LUULLLLLL",
+        "F": "LUBFFFFFF",
+        "R": "UUFRRRRRR",
+        "B": "RUBBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": ".xxx.xoxx",
+        "L": ".xo......",
+        "F": "oxx......",
+        "R": "xxx......",
+        "B": "xx.......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.20",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 20",
+      "group": "Dot",
+      "alg": "r U R' U' M2 U R U' R' U' M'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "URUBUFULU",
+        "L": "FUFLLLLLL",
+        "F": "RURFFFFFF",
+        "R": "BUBRRRRRR",
+        "B": "LULBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx.xxxx",
+        "L": "xxx......",
+        "F": "xxx......",
+        "R": "xxx......",
+        "B": "xxx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.21",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 21",
+      "group": "Cross",
+      "alg": "R U2 R' U' R U R' U' R U' R'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "LURUUULUR",
+        "L": "BRFLLLLLL",
+        "F": "UFUFFFFFF",
+        "R": "FBBRRRRRR",
+        "B": "ULUBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "oxox.xo.o",
+        "L": "oxo......",
+        "F": "o.o......",
+        "R": "oxo......",
+        "B": "oxo......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.22",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 22",
+      "group": "Cross",
+      "alg": "R U2 (R2 U' R2 U' R2) U2 R",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "FULUUUBUL",
+        "L": "UFULLLLLL",
+        "F": "RBUFFFFFF",
+        "R": "BRFRRRRRR",
+        "B": "ULRBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx..xxx",
+        "L": "xxx......",
+        "F": "xxx......",
+        "R": "x.x......",
+        "B": "xxx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.23",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 23",
+      "group": "Cross",
+      "alg": "R2 D' R U2 R' D R U2 R",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "RUBUUUUUU",
+        "L": "FLLLLLLLL",
+        "F": "FFRFFFFFF",
+        "R": "BRLRRRRRR",
+        "B": "UBUBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "x.x.....x",
+        "L": "x........",
+        "F": "..x......",
+        "R": "x.x......",
+        "B": "x.x......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.24",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 24",
+      "group": "Cross",
+      "alg": "r U R' U' r' F R F'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "FUUUUURUU",
+        "L": "LLBLLLLLL",
+        "F": "UFFFFFFFF",
+        "R": "RRBRRRRRR",
+        "B": "LBUBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "x.x...x..",
+        "L": "x.x......",
+        "F": "x........",
+        "R": "..x......",
+        "B": "x.x......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.25",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 25",
+      "group": "Cross",
+      "alg": "F' r U R' U' r' F R",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "FUUUUUUUB",
+        "L": "ULLLLLLLL",
+        "F": "FFUFFFFFF",
+        "R": "RRBRRRRRR",
+        "B": "LBRBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "x.x.....x",
+        "L": "x........",
+        "F": "..x......",
+        "R": "x.x......",
+        "B": "x.x......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.26",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 26",
+      "group": "Cross",
+      "alg": "(R U2 R') U' R U' R'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "FUUUUURUB",
+        "L": "UBBLLLLLL",
+        "F": "UFLFFFFFF",
+        "R": "ULLRRRRRR",
+        "B": "FRRBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx.xx.x",
+        "L": "xxx......",
+        "F": "x.x......",
+        "R": "xxx......",
+        "B": "xxx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.27",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 27",
+      "group": "Cross",
+      "alg": "R U R' U R U2 R'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "RUFUUUUUL",
+        "L": "FRRLLLLLL",
+        "F": "BFUFFFFFF",
+        "R": "BBURRRRRR",
+        "B": "LLUBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx.xx.x",
+        "L": "xxx......",
+        "F": "x.x......",
+        "R": "xxx......",
+        "B": "xxx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.28",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 28",
+      "group": "Corners Oriented",
+      "alg": "r U R' U' r' R U R U' R'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUFUBU",
+        "L": "LLLLLLLLL",
+        "F": "FUFFFFFFF",
+        "R": "RURRRRRRR",
+        "B": "BRBBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": ".x...x.x.",
+        "L": ".........",
+        "F": ".x.......",
+        "R": ".x.......",
+        "B": ".x.......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.29",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 29",
+      "group": "Awkward Shape",
+      "alg": "R U R' U' R U' R' F' U' F R U R'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "RUUUUFRRU",
+        "L": "FLBLLLLLL",
+        "F": "UULFFFFFF",
+        "R": "FUBRRRRRR",
+        "B": "LBUBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "x.x..xxxx",
+        "L": "x.x......",
+        "F": "xxx......",
+        "R": "xxx......",
+        "B": "x.x......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.30",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 30",
+      "group": "Awkward Shape",
+      "alg": "F R' F R2 U' R' U' R U R' F2",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "LULUUFUBU",
+        "L": "URFLLLLLL",
+        "F": "RURFFFFFF",
+        "R": "BUURRRRRR",
+        "B": "BLFBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx.xxxx",
+        "L": "xxx......",
+        "F": "xxx......",
+        "R": "xxx......",
+        "B": "xxx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.31",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 31",
+      "group": "P Shape",
+      "alg": "R' U' F U R U' R' F' R",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "BUUBUULFU",
+        "L": "RUFLLLLLL",
+        "F": "UUFFFFFFF",
+        "R": "RRBRRRRRR",
+        "B": "LLUBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx..oo.",
+        "L": "xxo......",
+        "F": "oo.......",
+        "R": "..x......",
+        "B": "xxx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.32",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 32",
+      "group": "P Shape",
+      "alg": "L U F' U' L' U L F L'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUBUUBUFR",
+        "L": "BLLLLLLLL",
+        "F": "FUUFFFFFF",
+        "R": "FULRRRRRR",
+        "B": "URRBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxx..x.oo",
+        "L": "x........",
+        "F": ".oo......",
+        "R": "oxx......",
+        "B": "xxx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.33",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 33",
+      "group": "T Shape",
+      "alg": "R U R' U' R' F R F'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "FFUUUURRU",
+        "L": "LLBLLLLLL",
+        "F": "UUFFFFFFF",
+        "R": "RBBRRRRRR",
+        "B": "LUUBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxx..xxx.",
+        "L": "x.x......",
+        "F": "xx.......",
+        "R": ".xx......",
+        "B": "xxx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.34",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 34",
+      "group": "C Shape",
+      "alg": "R U R2 U' R' F R U R U' F'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "RFFUUUURU",
+        "L": "ULBLLLLLL",
+        "F": "LUFFFFFFF",
+        "R": "RBURRRRRR",
+        "B": "LUBBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxx..xxx.",
+        "L": "x.x......",
+        "F": "xx.......",
+        "R": ".xx......",
+        "B": "xxx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.35",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 35",
+      "group": "Fish Shape",
+      "alg": "R U2 R' R' F R F' R U2 R'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "URRBUUBUU",
+        "L": "FULLLLLLL",
+        "F": "UFRFFFFFF",
+        "R": "BLURRRRRR",
+        "B": "FULBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx.xx.x",
+        "L": "xxx......",
+        "F": "x.x......",
+        "R": "xxx......",
+        "B": "xxx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.36",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 36",
+      "group": "W Shape",
+      "alg": "L' U' L U' L' U L U L F' L' F",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UULFUURLU",
+        "L": "LUULLLLLL",
+        "F": "FURFFFFFF",
+        "R": "BBFRRRRRR",
+        "B": "URBBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": ".xxx.xxxx",
+        "L": ".xx......",
+        "F": "xxx......",
+        "R": "xxx......",
+        "B": "xx.......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.37",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 37",
+      "group": "Fish Shape",
+      "alg": "F R' F' R U R U' R'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUFUUFBBU",
+        "L": "BLLLLLLLL",
+        "F": "UUFFFFFFF",
+        "R": "RUURRRRRR",
+        "B": "LRRBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxx..xxx.",
+        "L": "x.x......",
+        "F": "xx.......",
+        "R": ".xx......",
+        "B": "xxx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.38",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 38",
+      "group": "W Shape",
+      "alg": "R U R' U R U' R' U' R' F R F'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "RUUUUFURL",
+        "L": "FBBLLLLLL",
+        "F": "LUFFFFFFF",
+        "R": "UURRRRRRR",
+        "B": "BLUBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xx.x.xxxx",
+        "L": "xxx......",
+        "F": "xxx......",
+        "R": "xx.......",
+        "B": ".xx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.39",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 39",
+      "group": "Big Lightning Bolt",
+      "alg": "L F' L' U' L U F U' L'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "BRUUUUUFF",
+        "L": "RLLLLLLLL",
+        "F": "FURFFFFFF",
+        "R": "UBBRRRRRR",
+        "B": "LUUBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxx..x.oo",
+        "L": "x........",
+        "F": ".oo......",
+        "R": "oxx......",
+        "B": "xxx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.40",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 40",
+      "group": "Big Lightning Bolt",
+      "alg": "R' F R U R' U' F' U R",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "ULBUUUFFU",
+        "L": "BBULLLLLL",
+        "F": "LUFFFFFFF",
+        "R": "RRLRRRRRR",
+        "B": "UURBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx..oo.",
+        "L": "xxo......",
+        "F": "oo.......",
+        "R": "..x......",
+        "B": "xxx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.41",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 41",
+      "group": "Awkward Shape",
+      "alg": "R U R' U R U2 R' F R U R' U' F'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "FUFUUFURU",
+        "L": "LBBLLLLLL",
+        "F": "LURFFFFFF",
+        "R": "BURRRRRRR",
+        "B": "ULUBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx.xxxx",
+        "L": "xxx......",
+        "F": "xxx......",
+        "R": "xxx......",
+        "B": "xxx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.42",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 42",
+      "group": "Awkward Shape",
+      "alg": "R' U' R U' R' U2 R F R U R' U' F'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UFUUURBUB",
+        "L": "FBLLLLLLL",
+        "F": "ULUFFFFFF",
+        "R": "RUFRRRRRR",
+        "B": "RULBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx.oxxx",
+        "L": "xxx......",
+        "F": "xxx......",
+        "R": "xox......",
+        "B": "xxx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.43",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 43",
+      "group": "P Shape",
+      "alg": "F' U' L' U L F",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "RUUFUURBU",
+        "L": "UUULLLLLL",
+        "F": "FULFFFFFF",
+        "R": "FRBRRRRRR",
+        "B": "LLBBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx..xxx",
+        "L": "xxx......",
+        "F": "xxx......",
+        "R": "x.x......",
+        "B": "xxx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.44",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 44",
+      "group": "P Shape",
+      "alg": "F U R U' R' F'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UULUUFUBL",
+        "L": "BLFLLLLLL",
+        "F": "RUFFFFFFF",
+        "R": "UUURRRRRR",
+        "B": "BRRBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxx..xxxx",
+        "L": "x.x......",
+        "F": "xxx......",
+        "R": "xxx......",
+        "B": "xxx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.45",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 45",
+      "group": "T Shape",
+      "alg": "F R U R' U' F'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "RFUUUURRU",
+        "L": "ULULLLLLL",
+        "F": "FULFFFFFF",
+        "R": "FBBRRRRRR",
+        "B": "LUBBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxx..xxxx",
+        "L": "x.x......",
+        "F": "xxx......",
+        "R": "xxx......",
+        "B": "xxx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.46",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 46",
+      "group": "C Shape",
+      "alg": "R' U' R' F R F' U R",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UULFULUUL",
+        "L": "BUFLLLLLL",
+        "F": "RRFFFFFFF",
+        "R": "UUURRRRRR",
+        "B": "BBRBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "x.xx.xxxx",
+        "L": "xxx......",
+        "F": "xxx......",
+        "R": "xxx......",
+        "B": "x.x......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.47",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 47",
+      "group": "Small L Shape",
+      "alg": "R' U' R' F R F' R' F R F' U R",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "LUBRUULLF",
+        "L": "BUFLLLLLL",
+        "F": "UURFFFFFF",
+        "R": "UFURRRRRR",
+        "B": "RBUBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "o.ox.xoxo",
+        "L": "oxo......",
+        "F": "oxo......",
+        "R": "oxo......",
+        "B": "o.o......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.48",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 48",
+      "group": "Small L Shape",
+      "alg": "F R U R' U' R U R' U' F'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "BURUUFFBR",
+        "L": "ULULLLLLL",
+        "F": "LUUFFFFFF",
+        "R": "FUBRRRRRR",
+        "B": "URLBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "oxo..xoxo",
+        "L": "o.o......",
+        "F": "oxo......",
+        "R": "oxo......",
+        "B": "oxo......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.49",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 49",
+      "group": "Small L Shape",
+      "alg": "r U' r2 U r2 U r2 U' r",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "FULBUUBLL",
+        "L": "UUULLLLLL",
+        "F": "RUUFFFFFF",
+        "R": "BRFRRRRRR",
+        "B": "UFRBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx..xxx",
+        "L": "xxx......",
+        "F": "xxx......",
+        "R": "x.x......",
+        "B": "xxx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.50",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 50",
+      "group": "Small L Shape",
+      "alg": "r' U r2 U' r2 U' r2 U r'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "FLLFUUBUL",
+        "L": "UUULLLLLL",
+        "F": "RBUFFFFFF",
+        "R": "BRFRRRRRR",
+        "B": "UURBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx..xxx",
+        "L": "xxx......",
+        "F": "xxx......",
+        "R": "x.x......",
+        "B": "xxx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.51",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 51",
+      "group": "I Shape",
+      "alg": "F U R U' R' U R U' R' F'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "LFBUUULRF",
+        "L": "BLFLLLLLL",
+        "F": "UURFFFFFF",
+        "R": "UBURRRRRR",
+        "B": "RUUBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "oxo..xoxo",
+        "L": "o.o......",
+        "F": "oxo......",
+        "R": "oxo......",
+        "B": "oxo......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.52",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 52",
+      "group": "I Shape",
+      "alg": "R U R' U R U' B U' B' R'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "BULLURFUL",
+        "L": "RURLLLLLL",
+        "F": "UFFFFFFFF",
+        "R": "UUURRRRRR",
+        "B": "BBUBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "x.xo.ox.x",
+        "L": "xox......",
+        "F": "x.x......",
+        "R": "xox......",
+        "B": "x.x......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.53",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 53",
+      "group": "Small L Shape",
+      "alg": "l' U2 L U L' U' L U L' U l",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "LURFUULRR",
+        "L": "BUFLLLLLL",
+        "F": "UUUFFFFFF",
+        "R": "FLBRRRRRR",
+        "B": "UBUBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "o.ox.xoxo",
+        "L": "oxo......",
+        "F": "oxo......",
+        "R": "oxo......",
+        "B": "o.o......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.54",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 54",
+      "group": "Small L Shape",
+      "alg": "(r U2 R' U') R U R' U' R U' r'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "LURUUFLLR",
+        "L": "BRFLLLLLL",
+        "F": "UUUFFFFFF",
+        "R": "FUBRRRRRR",
+        "B": "UBUBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "o.ox.xoxo",
+        "L": "oxo......",
+        "F": "oxo......",
+        "R": "oxo......",
+        "B": "o.o......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.55",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 55",
+      "group": "I Shape",
+      "alg": "R' F R U R U' R2 F' R2 U' R' U R U R'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "FFBUUUFRB",
+        "L": "LBRLLLLLL",
+        "F": "UUUFFFFFF",
+        "R": "RLLRRRRRR",
+        "B": "UUUBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx.xxxx",
+        "L": "xxx......",
+        "F": "xxx......",
+        "R": "xxx......",
+        "B": "xxx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.56",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 56",
+      "group": "I Shape",
+      "alg": "(r' U' r) U' R' U R U' R' U R r' U r",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "BRBUUUFBF",
+        "L": "ULULLLLLL",
+        "F": "LURFFFFFF",
+        "R": "UFURRRRRR",
+        "B": "RULBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "oxo..xoxo",
+        "L": "o.o......",
+        "F": "oxo......",
+        "R": "oxo......",
+        "B": "oxo......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "oll.57",
+      "puzzle": "3x3x3",
+      "set": "oll",
+      "name": "OLL 57",
+      "group": "Corners Oriented",
+      "alg": "R U R' U' M' U R U' r'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UFUUUUURU",
+        "L": "LLLLLLLLL",
+        "F": "FUFFFFFFF",
+        "R": "RBRRRRRRR",
+        "B": "BUBBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": ".x...x.x.",
+        "L": ".........",
+        "F": ".x.......",
+        "R": ".x.......",
+        "B": ".x.......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "pll.h",
+      "puzzle": "3x3x3",
+      "set": "pll",
+      "name": "H-Perm",
+      "group": "Edges Only",
+      "alg": "M2 U M2 U2 M2 U M2",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUU",
+        "L": "LRLLLLLLL",
+        "F": "FBFFFFFFF",
+        "R": "RLRRRRRRR",
+        "B": "BFBBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": ".x.x.x.x.",
+        "L": ".x.......",
+        "F": ".x.......",
+        "R": ".x.......",
+        "B": ".x.......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "pll.z",
+      "puzzle": "3x3x3",
+      "set": "pll",
+      "name": "Z-Perm",
+      "group": "Edges Only",
+      "alg": "M' U M2 U M2 U M' U2 M2",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUU",
+        "L": "BLBLLLLLL",
+        "F": "LBLFFFFFF",
+        "R": "FRFRRRRRR",
+        "B": "RFRBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxx...xxx",
+        "L": "x.x......",
+        "F": "xxx......",
+        "R": "x.x......",
+        "B": "xxx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "pll.ua",
+      "puzzle": "3x3x3",
+      "set": "pll",
+      "name": "Ua-Perm",
+      "group": "Edges Only",
+      "alg": "M2 U M U2 M' U M2",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUU",
+        "L": "LFLLLLLLL",
+        "F": "FRFFFFFFF",
+        "R": "RLRRRRRRR",
+        "B": "BBBBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "...x.x.x.",
+        "L": ".x.......",
+        "F": ".x.......",
+        "R": ".x.......",
+        "B": ".........",
+        "D": "........."
+      }
+    },
+    {
+      "id": "pll.ub",
+      "puzzle": "3x3x3",
+      "set": "pll",
+      "name": "Ub-Perm",
+      "group": "Edges Only",
+      "alg": "M2 U' M U2 M' U' M2",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUU",
+        "L": "LRLLLLLLL",
+        "F": "FLFFFFFFF",
+        "R": "RFRRRRRRR",
+        "B": "BBBBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "...x.x.x.",
+        "L": ".x.......",
+        "F": ".x.......",
+        "R": ".x.......",
+        "B": ".........",
+        "D": "........."
+      }
+    },
+    {
+      "id": "pll.aa",
+      "puzzle": "3x3x3",
+      "set": "pll",
+      "name": "Aa-Perm",
+      "group": "Adjacent Corner Swap",
+      "alg": "x L2 D2 L' U' L D2 L' U L'",
+      "derivation": "inverse",
+      "preRotation": "x",
+      "state": {
+        "U": "UUUUUUUUU",
+        "L": "BLBLLLLLL",
+        "F": "LFFFFFFFF",
+        "R": "RRLRRRRRR",
+        "B": "FBRBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "x.x...x..",
+        "L": "x.x......",
+        "F": "x........",
+        "R": "..x......",
+        "B": "x.x......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "pll.ab",
+      "puzzle": "3x3x3",
+      "set": "pll",
+      "name": "Ab-Perm",
+      "group": "Adjacent Corner Swap",
+      "alg": "x' L2 D2 L U L' D2 L U' L",
+      "derivation": "inverse",
+      "preRotation": "x'",
+      "state": {
+        "U": "UUUUUUUUU",
+        "L": "FLFLLLLLL",
+        "F": "RFBFFFFFF",
+        "R": "LRRRRRRRR",
+        "B": "BBLBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "x.....x.x",
+        "L": "x.x......",
+        "F": "x.x......",
+        "R": "x........",
+        "B": "..x......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "pll.e",
+      "puzzle": "3x3x3",
+      "set": "pll",
+      "name": "E-Perm",
+      "group": "Diagonal Corner Swap",
+      "alg": "x' L' U L D' L' U' L D L' U' L D' L' U L D",
+      "derivation": "inverse",
+      "preRotation": "x'",
+      "state": {
+        "U": "UUUUUUUUU",
+        "L": "FLBLLLLLL",
+        "F": "LFRFFFFFF",
+        "R": "BRFRRRRRR",
+        "B": "RBLBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "x.x...x.x",
+        "L": "x.x......",
+        "F": "x.x......",
+        "R": "x.x......",
+        "B": "x.x......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "pll.f",
+      "puzzle": "3x3x3",
+      "set": "pll",
+      "name": "F-Perm",
+      "group": "Adjacent Corner Swap",
+      "alg": "R' U' F' R U R' U' R' F R2 U' R' U' R U R' U R",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUU",
+        "L": "LLLLLLLLL",
+        "F": "FBRFFFFFF",
+        "R": "BRFRRRRRR",
+        "B": "RFBBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": ".xx....xx",
+        "L": ".........",
+        "F": ".xx......",
+        "R": "x.x......",
+        "B": "xx.......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "pll.ja",
+      "puzzle": "3x3x3",
+      "set": "pll",
+      "name": "Ja-Perm",
+      "group": "Adjacent Corner Swap",
+      "alg": "x R2 F R F' R U2 r' U r U2",
+      "derivation": "inverse",
+      "preRotation": "x",
+      "state": {
+        "U": "UUUUUUUUU",
+        "L": "LLLLLLLLL",
+        "F": "FFRFFFFFF",
+        "R": "BBFRRRRRR",
+        "B": "RRBBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": ".xx..x..x",
+        "L": ".........",
+        "F": "..x......",
+        "R": "xxx......",
+        "B": "xx.......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "pll.jb",
+      "puzzle": "3x3x3",
+      "set": "pll",
+      "name": "Jb-Perm",
+      "group": "Adjacent Corner Swap",
+      "alg": "R U R' F' R U R' U' R' F R2 U' R'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUU",
+        "L": "BBBLLLLLL",
+        "F": "LFFFFFFFF",
+        "R": "RLLRRRRRR",
+        "B": "FRRBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx.xx..",
+        "L": "xxx......",
+        "F": "x........",
+        "R": ".xx......",
+        "B": "xxx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "pll.ra",
+      "puzzle": "3x3x3",
+      "set": "pll",
+      "name": "Ra-Perm",
+      "group": "Adjacent Corner Swap",
+      "alg": "R U' R' U' R U R D R' U' R D' R' U2 R'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUU",
+        "L": "BRBLLLLLL",
+        "F": "LLFFFFFFF",
+        "R": "RFLRRRRRR",
+        "B": "FBRBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "x.xx.xxx.",
+        "L": "xxx......",
+        "F": "xx.......",
+        "R": ".xx......",
+        "B": "x.x......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "pll.rb",
+      "puzzle": "3x3x3",
+      "set": "pll",
+      "name": "Rb-Perm",
+      "group": "Adjacent Corner Swap",
+      "alg": "R2 F R U R U' R' F' R U2 R' U2 R",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUU",
+        "L": "FRFLLLLLL",
+        "F": "RFBFFFFFF",
+        "R": "LBRRRRRRR",
+        "B": "BLLBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xx.x.xx.x",
+        "L": "xxx......",
+        "F": "x.x......",
+        "R": "xx.......",
+        "B": ".xx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "pll.t",
+      "puzzle": "3x3x3",
+      "set": "pll",
+      "name": "T-Perm",
+      "group": "Adjacent Corner Swap",
+      "alg": "R U R' U' R' F R2 U' R' U' (R U R') F'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUU",
+        "L": "LRLLLLLLL",
+        "F": "FFRFFFFFF",
+        "R": "BLFRRRRRR",
+        "B": "RBBBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "..xx.x..x",
+        "L": ".x.......",
+        "F": "..x......",
+        "R": "xxx......",
+        "B": "x........",
+        "D": "........."
+      }
+    },
+    {
+      "id": "pll.y",
+      "puzzle": "3x3x3",
+      "set": "pll",
+      "name": "Y-Perm",
+      "group": "Diagonal Corner Swap",
+      "alg": "F R U' R' U' R U R' F' R U R' U' R' F R F'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUU",
+        "L": "RBLLLLLLL",
+        "F": "FFBFFFFFF",
+        "R": "LRRRRRRRR",
+        "B": "BLFBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xx.x....x",
+        "L": "xx.......",
+        "F": "..x......",
+        "R": "x........",
+        "B": ".xx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "pll.v",
+      "puzzle": "3x3x3",
+      "set": "pll",
+      "name": "V-Perm",
+      "group": "Diagonal Corner Swap",
+      "alg": "R' U R' U' y R' F' R2 U' R' U R' F R F",
+      "derivation": "inverse",
+      "preRotation": "y",
+      "state": {
+        "U": "UUUUUUUUU",
+        "L": "RLLLLLLLL",
+        "F": "FFBFFFFFF",
+        "R": "LBRRRRRRR",
+        "B": "BRFBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xx...x..x",
+        "L": "x........",
+        "F": "..x......",
+        "R": "xx.......",
+        "B": ".xx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "pll.na",
+      "puzzle": "3x3x3",
+      "set": "pll",
+      "name": "Na-Perm",
+      "group": "Diagonal Corner Swap",
+      "alg": "R U R' U R U R' F' R U R' U' R' F R2 U' R' U2 R U' R'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUU",
+        "L": "LRRLLLLLL",
+        "F": "BFFFFFFFF",
+        "R": "RLLRRRRRR",
+        "B": "FBBBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "..xx.xx..",
+        "L": ".xx......",
+        "F": "x........",
+        "R": ".xx......",
+        "B": "x........",
+        "D": "........."
+      }
+    },
+    {
+      "id": "pll.nb",
+      "puzzle": "3x3x3",
+      "set": "pll",
+      "name": "Nb-Perm",
+      "group": "Diagonal Corner Swap",
+      "alg": "R' (U R U' R') F' U' F R U R' F R' F' R U' R",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUU",
+        "L": "RRLLLLLLL",
+        "F": "FFBFFFFFF",
+        "R": "LLRRRRRRR",
+        "B": "BBFBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "x..x.x..x",
+        "L": "xx.......",
+        "F": "..x......",
+        "R": "xx.......",
+        "B": "..x......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "pll.ga",
+      "puzzle": "3x3x3",
+      "set": "pll",
+      "name": "Ga-Perm",
+      "group": "Adjacent Corner Swap",
+      "alg": "R2 U R' U R' U' R U' R2 (U' D) R' U R D'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUU",
+        "L": "LBLLLLLLL",
+        "F": "FRRFFFFFF",
+        "R": "BLFRRRRRR",
+        "B": "RFBBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": ".xxx.x.xx",
+        "L": ".x.......",
+        "F": ".xx......",
+        "R": "xxx......",
+        "B": "xx.......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "pll.gb",
+      "puzzle": "3x3x3",
+      "set": "pll",
+      "name": "Gb-Perm",
+      "group": "Adjacent Corner Swap",
+      "alg": "R' U' R (U D') R2 U R' U R U' R U' R2 D",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUU",
+        "L": "LRLLLLLLL",
+        "F": "FBRFFFFFF",
+        "R": "BFFRRRRRR",
+        "B": "RLBBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": ".xxx.x.xx",
+        "L": ".x.......",
+        "F": ".xx......",
+        "R": "xxx......",
+        "B": "xx.......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "pll.gc",
+      "puzzle": "3x3x3",
+      "set": "pll",
+      "name": "Gc-Perm",
+      "group": "Adjacent Corner Swap",
+      "alg": "R2 U' R U' R U R' U R2 (U D') R U' R' D",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUU",
+        "L": "LFLLLLLLL",
+        "F": "FBRFFFFFF",
+        "R": "BLFRRRRRR",
+        "B": "RRBBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": ".xxx.x.xx",
+        "L": ".x.......",
+        "F": ".xx......",
+        "R": "xxx......",
+        "B": "xx.......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "pll.gd",
+      "puzzle": "3x3x3",
+      "set": "pll",
+      "name": "Gd-Perm",
+      "group": "Adjacent Corner Swap",
+      "alg": "R U R' (U' D) R2 U' R U' R' U R' U R2 D'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUU",
+        "L": "LRLLLLLLL",
+        "F": "FLRFFFFFF",
+        "R": "BBFRRRRRR",
+        "B": "RFBBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": ".xxx.x.xx",
+        "L": ".x.......",
+        "F": ".xx......",
+        "R": "xxx......",
+        "B": "xx.......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "f2l.1",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 1",
+      "group": "Free Pairs",
+      "alg": "F R' F' R",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "UULUUFRRF",
+        "L": "LLBLLLLLL",
+        "F": "UUDFFFFFF",
+        "R": "RRFURRURR",
+        "B": "UBBBBBBBB",
+        "D": "DDRDDDDDD"
+      },
+      "mask": {
+        "U": "..x..xxxx",
+        "L": "..x......",
+        "F": "xxx..x..x",
+        "R": "xxxx..x..",
+        "B": "x........",
+        "D": "..x......"
+      }
+    },
+    {
+      "id": "f2l.2",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 2",
+      "group": "Free Pairs",
+      "alg": "R' F R F'",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "UUFUUFBRR",
+        "L": "LLULLLLLL",
+        "F": "RFFFFUFFU",
+        "R": "DUURRRRRR",
+        "B": "LBBBBBBBB",
+        "D": "DDFDDDDDD"
+      },
+      "mask": {
+        "U": "..x..xxxx",
+        "L": "..x......",
+        "F": "xxx..x..x",
+        "R": "xxxx..x..",
+        "B": "x........",
+        "D": "..x......"
+      }
+    },
+    {
+      "id": "f2l.3",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 3",
+      "group": "Free Pairs",
+      "alg": "F' U F",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "RUURUUUUF",
+        "L": "FFLLLLLLL",
+        "F": "FFDFFRFFR",
+        "R": "RBBURRURR",
+        "B": "LLUBBBBBB",
+        "D": "DDBDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx.x..x",
+        "L": "xx.......",
+        "F": "..x..x..x",
+        "R": "xxxx..x..",
+        "B": "xxx......",
+        "D": "..x......"
+      }
+    },
+    {
+      "id": "f2l.4",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 4",
+      "group": "Free Pairs",
+      "alg": "R U' R'",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "FFUUUUUUR",
+        "L": "UBBLLLLLL",
+        "F": "LLFFFUFFU",
+        "R": "DRRFRRFRR",
+        "B": "BRRBBBBBB",
+        "D": "DDLDDDDDD"
+      },
+      "mask": {
+        "U": "xx.x..xxx",
+        "L": "xxx......",
+        "F": "xxx..x..x",
+        "R": "x..x..x..",
+        "B": ".xx......",
+        "D": "..x......"
+      }
+    },
+    {
+      "id": "f2l.5",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 5",
+      "group": "Disconnected Pairs",
+      "alg": "R U R' U2' R U' R' U",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "LFLUUUUUF",
+        "L": "BRFLLLLLL",
+        "F": "RFDFFUFFU",
+        "R": "RBFLRRBRR",
+        "B": "URUBBBBBB",
+        "D": "DDRDDDDDD"
+      },
+      "mask": {
+        "U": "oxxx.xx.x",
+        "L": "oxx......",
+        "F": "x.x..x..x",
+        "R": "xxxx..x..",
+        "B": "xxo......",
+        "D": "..x......"
+      }
+    },
+    {
+      "id": "f2l.6",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 6",
+      "group": "Disconnected Pairs",
+      "alg": "F' U' F U2' F' U F U'",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "BUURUUBUR",
+        "L": "UFULLLLLL",
+        "F": "RLFFFBFFL",
+        "R": "DRFURRURR",
+        "B": "RFLBBBBBB",
+        "D": "DDFDDDDDD"
+      },
+      "mask": {
+        "U": "oxxx..xxx",
+        "L": "oxx......",
+        "F": "xxx..x..x",
+        "R": "x.xx..x..",
+        "B": "xxo......",
+        "D": "..x......"
+      }
+    },
+    {
+      "id": "f2l.7",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 7",
+      "group": "Disconnected Pairs",
+      "alg": "R U R' U2' R U2' R' U",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "LUFFUUBUF",
+        "L": "URULLLLLL",
+        "F": "RFDFFUFFL",
+        "R": "RLRRRRBRR",
+        "B": "UBFBBBBBB",
+        "D": "DDUDDDDDD"
+      },
+      "mask": {
+        "U": "x.xx.xx.x",
+        "L": "xxx......",
+        "F": "x.x..x..x",
+        "R": "xxxx..x..",
+        "B": "x.x......",
+        "D": "..x......"
+      }
+    },
+    {
+      "id": "f2l.8",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 8",
+      "group": "Disconnected Pairs",
+      "alg": "r' U' R2 U' R2' U2' r",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "URRBUUBUR",
+        "L": "FUULLLLLL",
+        "F": "RFFFFUFFU",
+        "R": "DRULRRLRR",
+        "B": "FFLBBBBBB",
+        "D": "DDBDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx..x.x",
+        "L": "xxx......",
+        "F": "x.x..x..x",
+        "R": "x.xx..x..",
+        "B": "xxx......",
+        "D": "..x......"
+      }
+    },
+    {
+      "id": "f2l.9",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 9",
+      "group": "Disconnected Pairs",
+      "alg": "F' U F U' R U R' U",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "RRRRUULUF",
+        "L": "UUULLLLLL",
+        "F": "BFDFFUFFL",
+        "R": "RLUBRRURR",
+        "B": "FFBBBBBBB",
+        "D": "DDFDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx.xx.x",
+        "L": "xxx......",
+        "F": "x.x..x..x",
+        "R": "xxxx..x..",
+        "B": "xxx......",
+        "D": "..x......"
+      }
+    },
+    {
+      "id": "f2l.10",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 10",
+      "group": "Disconnected Pairs",
+      "alg": "R U' R' U' R U' R' U",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "UUBFUUFUR",
+        "L": "BRULLLLLL",
+        "F": "LLFFFUFFF",
+        "R": "DFLBRRURR",
+        "B": "URRBBBBBB",
+        "D": "DDRDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx.xoxx",
+        "L": "xxo......",
+        "F": "oxx..x..x",
+        "R": "xxxx..x..",
+        "B": "xxx......",
+        "D": "..x......"
+      }
+    },
+    {
+      "id": "f2l.11",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 11",
+      "group": "Connected Pairs",
+      "alg": "F' U F U' R U2' R' U",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "LRRUURFUF",
+        "L": "UBRLLLLLL",
+        "F": "UFDFFUFFU",
+        "R": "RFBLRRLRR",
+        "B": "UUFBBBBBB",
+        "D": "DDBDDDDDD"
+      },
+      "mask": {
+        "U": "xxox.xx.x",
+        "L": "xxx......",
+        "F": "x.x..x..x",
+        "R": "xxox..x..",
+        "B": "oxx......",
+        "D": "..x......"
+      }
+    },
+    {
+      "id": "f2l.12",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 12",
+      "group": "Connected Pairs",
+      "alg": "R U R' U2' R U R' U' R U R'",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "UUBUUULFR",
+        "L": "BLFLLLLLL",
+        "F": "URFFFUFFR",
+        "R": "DBLFRRFRR",
+        "B": "URRBBBBBB",
+        "D": "DDUDDDDDD"
+      },
+      "mask": {
+        "U": "xxx..xoxx",
+        "L": "x.o......",
+        "F": "oxx..x..x",
+        "R": "xxxx..x..",
+        "B": "xxx......",
+        "D": "..x......"
+      }
+    },
+    {
+      "id": "f2l.13",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 13",
+      "group": "Connected Pairs",
+      "alg": "r U2' R' U R U' R' U M",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "FURFUULRF",
+        "L": "UUULLLLLL",
+        "F": "BFDFFUFFF",
+        "R": "RLBRRRLRR",
+        "B": "UBRBBBBBB",
+        "D": "DDUDDDDDD"
+      },
+      "mask": {
+        "U": "x.ox.xxxx",
+        "L": "xxx......",
+        "F": "xxx..x..x",
+        "R": "xxox..x..",
+        "B": "o.x......",
+        "D": "..x......"
+      }
+    },
+    {
+      "id": "f2l.14",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 14",
+      "group": "Connected Pairs",
+      "alg": "R U' R' U' R U R' U",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "UUFUUFBUR",
+        "L": "FFULLLLLL",
+        "F": "RLFFFUFFB",
+        "R": "DRRRRRURR",
+        "B": "UBLBBBBBB",
+        "D": "DDLDDDDDD"
+      },
+      "mask": {
+        "U": "x.xx.xxxx",
+        "L": "xxx......",
+        "F": "xxx..x..x",
+        "R": "xxxx..x..",
+        "B": "x.x......",
+        "D": "..x......"
+      }
+    },
+    {
+      "id": "f2l.15",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 15",
+      "group": "Connected Pairs",
+      "alg": "R U R' U' R U R' U2' R U' R'",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "LUFUUUBFF",
+        "L": "UBULLLLLL",
+        "F": "RRDFFUFFL",
+        "R": "RFRLRRBRR",
+        "B": "URFBBBBBB",
+        "D": "DDUDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx.xxxx",
+        "L": "xxx......",
+        "F": "xxx..x..x",
+        "R": "xxxx..x..",
+        "B": "xxx......",
+        "D": "..x......"
+      }
+    },
+    {
+      "id": "f2l.16",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 16",
+      "group": "Connected Pairs",
+      "alg": "F' U F U2' R U R'",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUURRRR",
+        "L": "LLBLLLLLL",
+        "F": "UUFFFUFFU",
+        "R": "DFLFRRRRR",
+        "B": "FBBBBBBBB",
+        "D": "DDFDDDDDD"
+      },
+      "mask": {
+        "U": "..x..xxxx",
+        "L": "..x......",
+        "F": "xxx..x..x",
+        "R": "xxxx..x..",
+        "B": "x........",
+        "D": "..x......"
+      }
+    },
+    {
+      "id": "f2l.17",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 17",
+      "group": "Connected Pairs",
+      "alg": "R U' R' U R U2' R'",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "UUFUUFRUD",
+        "L": "FFBLLLLLL",
+        "F": "UBRFFUFFU",
+        "R": "FRRLRRLRR",
+        "B": "URLBBBBBB",
+        "D": "DDBDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx.xxxx",
+        "L": "xxx......",
+        "F": "xxx..x..x",
+        "R": "xxxx..x..",
+        "B": "xxx......",
+        "D": "..x......"
+      }
+    },
+    {
+      "id": "f2l.18",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 18",
+      "group": "Connected Pairs",
+      "alg": "R U R' U' R U R' F R' F' R",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "UURUUUURD",
+        "L": "FFBLLLLLL",
+        "F": "LFRFFBFFU",
+        "R": "FRUURRBRR",
+        "B": "FLLBBBBBB",
+        "D": "DDRDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx..xxx",
+        "L": "xxx......",
+        "F": "xxx..x..x",
+        "R": "x.xx..x..",
+        "B": "xxx......",
+        "D": "..x......"
+      }
+    },
+    {
+      "id": "f2l.19",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 19",
+      "group": "Disconnected Pairs",
+      "alg": "R U R' U' R U2' R' U'",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "LFFUUUFUD",
+        "L": "BFRLLLLLL",
+        "F": "UBRFFUFFU",
+        "R": "FRULRRBRR",
+        "B": "LRUBBBBBB",
+        "D": "DDRDDDDDD"
+      },
+      "mask": {
+        "U": "oxxx..xxx",
+        "L": "oxx......",
+        "F": "xxx..x..x",
+        "R": "x.xx..x..",
+        "B": "xxo......",
+        "D": "..x......"
+      }
+    },
+    {
+      "id": "f2l.20",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 20",
+      "group": "Disconnected Pairs",
+      "alg": "R U R' F R' F' R2' U R' U",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "URRRUUFUD",
+        "L": "LFULLLLLL",
+        "F": "LBRFFUFFR",
+        "R": "FFBLRRFRR",
+        "B": "UUBBBBBBB",
+        "D": "DDUDDDDDD"
+      },
+      "mask": {
+        "U": ".xox.xoxx",
+        "L": ".xo......",
+        "F": "oxx..x..x",
+        "R": "xxox..x..",
+        "B": "ox.......",
+        "D": "..x......"
+      }
+    },
+    {
+      "id": "f2l.21",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 21",
+      "group": "Disconnected Pairs",
+      "alg": "R U' R' U2' R U R'",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "UUUFUUUUD",
+        "L": "BRLLLLLLL",
+        "F": "FFRFFUFFR",
+        "R": "FBBLRRFRR",
+        "B": "LRRBBBBBB",
+        "D": "DDUDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx.x..x",
+        "L": "xx.......",
+        "F": "..x..x..x",
+        "R": "xxxx..x..",
+        "B": "xxx......",
+        "D": "..x......"
+      }
+    },
+    {
+      "id": "f2l.22",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 22",
+      "group": "Disconnected Pairs",
+      "alg": "F' L' U2' L F",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "URFUUFRRD",
+        "L": "LLBLLLLLL",
+        "F": "UURFFBFFR",
+        "R": "FUUURRFRR",
+        "B": "LFBBBBBBB",
+        "D": "DDUDDDDDD"
+      },
+      "mask": {
+        "U": ".xx..xxxx",
+        "L": "..x......",
+        "F": "xxx..x..x",
+        "R": "xxxx..x..",
+        "B": "xx.......",
+        "D": "..x......"
+      }
+    },
+    {
+      "id": "f2l.23",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 23",
+      "group": "Connected Pairs",
+      "alg": "R U' R' U R U' R' U2' R U' R'",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "BUUUUUFFD",
+        "L": "RLULLLLLL",
+        "F": "LRRFFUFFF",
+        "R": "FBBFRRURR",
+        "B": "LRUBBBBBB",
+        "D": "DDRDDDDDD"
+      },
+      "mask": {
+        "U": "xxx..xoxx",
+        "L": "x.o......",
+        "F": "oxx..x..x",
+        "R": "xxxx..x..",
+        "B": "xxx......",
+        "D": "..x......"
+      }
+    },
+    {
+      "id": "f2l.24",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 24",
+      "group": "Connected Pairs",
+      "alg": "R U R' F R U R' U' F'",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "UUFUURLLD",
+        "L": "BFULLLLLL",
+        "F": "BURFFUFFF",
+        "R": "FFUBRRURR",
+        "B": "LRRBBBBBB",
+        "D": "DDRDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx.xxxx",
+        "L": "xxx......",
+        "F": "xxx..x..x",
+        "R": "xxxx..x..",
+        "B": "xxx......",
+        "D": "..x......"
+      }
+    },
+    {
+      "id": "f2l.25",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 25",
+      "group": "Corner In Slot",
+      "alg": "F' R U R' U' R' F R",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "UUFUUFUUL",
+        "L": "BLLLLLLLL",
+        "F": "FFUFFUFFF",
+        "R": "BRRBRRRRR",
+        "B": "URRBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxx..x..x",
+        "L": "x........",
+        "F": "..x..x...",
+        "R": "xxxx.....",
+        "B": "xxx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "f2l.26",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 26",
+      "group": "Corner In Slot",
+      "alg": "F' U' F U R U R' U'",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "UUFUULBRU",
+        "L": "BFLLLLLLL",
+        "F": "UFFFFUFFF",
+        "R": "RUUBRRRRR",
+        "B": "LRRBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx.xxx.",
+        "L": "xxx......",
+        "F": "xx...x...",
+        "R": ".xxx.....",
+        "B": "xxx......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "f2l.27",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 27",
+      "group": "Corner In Slot",
+      "alg": "R U R' U' R U R'",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "UULUUFFUB",
+        "L": "FFRLLLLLL",
+        "F": "UBUFFUFFD",
+        "R": "RRURRRFRR",
+        "B": "BLLBBBBBB",
+        "D": "DDRDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx.xxxx",
+        "L": "xxx......",
+        "F": "xxx..x..o",
+        "R": "xxxx..o..",
+        "B": "xxx......",
+        "D": "..o......"
+      }
+    },
+    {
+      "id": "f2l.28",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 28",
+      "group": "Corner In Slot",
+      "alg": "R' F R F' U R U' R'",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUBRR",
+        "L": "FLULLLLLL",
+        "F": "RFUFFFFFR",
+        "R": "FBBURRDRR",
+        "B": "LRLBBBBBB",
+        "D": "DDFDDDDDD"
+      },
+      "mask": {
+        "U": "xxx..xxxo",
+        "L": "x.x......",
+        "F": "xxo..x..o",
+        "R": "oxxx..o..",
+        "B": "xxx......",
+        "D": "..o......"
+      }
+    },
+    {
+      "id": "f2l.29",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 29",
+      "group": "Corner In Slot",
+      "alg": "F R' F' R F R' F' R",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "UUBUUFFRF",
+        "L": "LLULLLLLL",
+        "F": "LFRFFUFFD",
+        "R": "UUURRRFRR",
+        "B": "RBBBBBBBB",
+        "D": "DDRDDDDDD"
+      },
+      "mask": {
+        "U": "..o..xoxo",
+        "L": "..o......",
+        "F": "oxo..x..o",
+        "R": "oxox..o..",
+        "B": "o........",
+        "D": "..o......"
+      }
+    },
+    {
+      "id": "f2l.30",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 30",
+      "group": "Corner In Slot",
+      "alg": "R U' R' U R U' R'",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "RUFUUFUUF",
+        "L": "UBBLLLLLL",
+        "F": "LLUFFUFFR",
+        "R": "LRRRRRDRR",
+        "B": "UFBBBBBBB",
+        "D": "DDFDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx.xxxx",
+        "L": "xxx......",
+        "F": "xxx..x..o",
+        "R": "xxxx..o..",
+        "B": "xxx......",
+        "D": "..o......"
+      }
+    },
+    {
+      "id": "f2l.31",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 31",
+      "group": "Edge In Slot",
+      "alg": "R U R' F R' F' R U",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "RUURUUFUD",
+        "L": "UURLLLLLL",
+        "F": "UBRFFRFFU",
+        "R": "FLLFRRLRR",
+        "B": "FFBBBBBBB",
+        "D": "DDBDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx.xxxx",
+        "L": "xxx......",
+        "F": "xxx..o..x",
+        "R": "xxxo..x..",
+        "B": "xxx......",
+        "D": "..x......"
+      }
+    },
+    {
+      "id": "f2l.32",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 32",
+      "group": "Edge In Slot",
+      "alg": "R U' R' U R U' R' U R U' R'",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "RURUUUUUD",
+        "L": "FBBLLLLLL",
+        "F": "LLRFFFFFF",
+        "R": "FFBRRRLRR",
+        "B": "URUBBBBBB",
+        "D": "DDUDDDDDD"
+      },
+      "mask": {
+        "U": "xxox.xxxx",
+        "L": "xxx......",
+        "F": "xxx.....x",
+        "R": "xxo...x..",
+        "B": "oxx......",
+        "D": "..x......"
+      }
+    },
+    {
+      "id": "f2l.33",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 33",
+      "group": "Edge In Slot",
+      "alg": "R U R' U2' R U R' U",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "FUUUUUBUF",
+        "L": "UBLLLLLLL",
+        "F": "UFDFFFFFL",
+        "R": "RRRRRRURR",
+        "B": "BLRBBBBBB",
+        "D": "DDFDDDDDD"
+      },
+      "mask": {
+        "U": "xx.x..x.x",
+        "L": "xxx......",
+        "F": "x.x.....x",
+        "R": "x.....x..",
+        "B": ".xx......",
+        "D": "..x......"
+      }
+    },
+    {
+      "id": "f2l.34",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 34",
+      "group": "Edge In Slot",
+      "alg": "R U' R' U2' R U' R' U'",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "UUFUUURUR",
+        "L": "LFULLLLLL",
+        "F": "FLFFFFFFU",
+        "R": "DRURRRBRR",
+        "B": "LBBBBBBBB",
+        "D": "DDRDDDDDD"
+      },
+      "mask": {
+        "U": "..xx..xxx",
+        "L": ".xx......",
+        "F": "xxx.....x",
+        "R": "x.x...x..",
+        "B": "x........",
+        "D": "..x......"
+      }
+    },
+    {
+      "id": "f2l.35",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 35",
+      "group": "Edge In Slot",
+      "alg": "F' U F U' R U' R' U",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "UULUURUUF",
+        "L": "LLRLLLLLL",
+        "F": "BFDFFRFFR",
+        "R": "RUFFRRFRR",
+        "B": "UBBBBBBBB",
+        "D": "DDUDDDDDD"
+      },
+      "mask": {
+        "U": "..x..ox.x",
+        "L": "..x......",
+        "F": "x.x..o..x",
+        "R": "xoxo..x..",
+        "B": "x........",
+        "D": "..x......"
+      }
+    },
+    {
+      "id": "f2l.36",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 36",
+      "group": "Edge In Slot",
+      "alg": "R U' R' U2' F R' F' R U2'",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "UBBUUURUR",
+        "L": "FFBLLLLLL",
+        "F": "ULFFFRFFR",
+        "R": "DRLFRRFRR",
+        "B": "UULBBBBBB",
+        "D": "DDUDDDDDD"
+      },
+      "mask": {
+        "U": "xoxx..xxx",
+        "L": "xxx......",
+        "F": "xxx..o..x",
+        "R": "x.xo..x..",
+        "B": "xox......",
+        "D": "..x......"
+      }
+    },
+    {
+      "id": "f2l.37",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 37",
+      "group": "Pieces In Slot",
+      "alg": "R U' R U2' F R2' F' U2' R2'",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "BFUUUUUUF",
+        "L": "URFLLLLLL",
+        "F": "RLUFFRFFF",
+        "R": "LBRFRRRRR",
+        "B": "BULBBBBBB",
+        "D": "DDDDDDDDD"
+      },
+      "mask": {
+        "U": "ox.x.xxxx",
+        "L": "oxx......",
+        "F": "xxx..o...",
+        "R": "xx.o.....",
+        "B": ".xo......",
+        "D": "........."
+      }
+    },
+    {
+      "id": "f2l.38",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 38",
+      "group": "Pieces In Slot",
+      "alg": "R U' R' U R U2' R' U R U' R'",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "RUUUUURUL",
+        "L": "FFBLLLLLL",
+        "F": "UBUFFFFFD",
+        "R": "BRLRRRFRR",
+        "B": "FLUBBBBBB",
+        "D": "DDRDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx..xxx",
+        "L": "xxx......",
+        "F": "xxx.....o",
+        "R": "x.x...o..",
+        "B": "xxx......",
+        "D": "..o......"
+      }
+    },
+    {
+      "id": "f2l.39",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 39",
+      "group": "Pieces In Slot",
+      "alg": "R U' R' U' R U R' U2' R U' R'",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "RUUUUUBUU",
+        "L": "FFULLLLLL",
+        "F": "RLBFFFFFR",
+        "R": "LBLRRRDRR",
+        "B": "FRUBBBBBB",
+        "D": "DDFDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx.xxxx",
+        "L": "xxx......",
+        "F": "xxx.....o",
+        "R": "xxx...o..",
+        "B": "xxx......",
+        "D": "..o......"
+      }
+    },
+    {
+      "id": "f2l.40",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 40",
+      "group": "Pieces In Slot",
+      "alg": "R U R' F U R U' R' F' R U R'",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "BUURUUFUU",
+        "L": "UURLLLLLL",
+        "F": "UBRFFRFFD",
+        "R": "BLLFRRFRR",
+        "B": "FFLBBBBBB",
+        "D": "DDRDDDDDD"
+      },
+      "mask": {
+        "U": "oxxx.xxxx",
+        "L": "oxx......",
+        "F": "xxx..o..o",
+        "R": "xxxo..o..",
+        "B": "xxo......",
+        "D": "..o......"
+      }
+    },
+    {
+      "id": "f2l.41",
+      "puzzle": "3x3x3",
+      "set": "f2l",
+      "name": "F2L 41",
+      "group": "Pieces In Slot",
+      "alg": "R F U R U' R' F' U' R'",
+      "derivation": "setup",
+      "preRotation": "",
+      "state": {
+        "U": "UUUFUURUF",
+        "L": "LUULLLLLL",
+        "F": "FLUFFRFFR",
+        "R": "LRRFRRDRR",
+        "B": "BBBBBBBBB",
+        "D": "DDFDDDDDD"
+      },
+      "mask": {
+        "U": "...x..xxx",
+        "L": ".xx......",
+        "F": "xxx..o..o",
+        "R": "x..o..o..",
+        "B": ".........",
+        "D": "..o......"
+      }
+    },
+    {
+      "id": "444.oll.solved",
+      "puzzle": "4x4x4",
+      "set": "4x4oll",
+      "name": "Solved (4×4 OLL)",
+      "group": "4 Corners",
+      "alg": "R U2 R' U' Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' F R' F' R",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUUUUUUFFU",
+        "L": "RRRLLLLLLLLLLLLL",
+        "F": "FUURFFFFFFFFFFFF",
+        "R": "BBBBRRRRRRRRRRRR",
+        "B": "LLLFBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxxx..xx..x.xxx",
+        "L": "xxx.............",
+        "F": ".xxx............",
+        "R": "xxxx............",
+        "B": "xxxx............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.oll.u-f",
+      "puzzle": "4x4x4",
+      "set": "4x4oll",
+      "name": "U (F) (4×4 OLL)",
+      "group": "2 Corners",
+      "alg": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUUUUUFFFF",
+        "L": "LRRRLLLLLLLLLLLL",
+        "F": "UUUUFFFFFFFFFFFF",
+        "R": "LLLRRRRRRRRRRRRR",
+        "B": "BBBBBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "....x..xx..xxxxx",
+        "L": ".xxx............",
+        "F": "xxxx............",
+        "R": "xxx.............",
+        "B": "................",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.oll.u-r",
+      "puzzle": "4x4x4",
+      "set": "4x4oll",
+      "name": "U (R) (4×4 OLL)",
+      "group": "2 Corners",
+      "alg": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' U' R U R' U R U2 R'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUURUUUUUUUUUBBB",
+        "L": "BLLLLLLLLLLLLLLL",
+        "F": "FUULFFFFFFFFFFFF",
+        "R": "UFFURRRRRRRRRRRR",
+        "B": "FRRRBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx...x...x.xxx",
+        "L": "x...............",
+        "F": ".xxx............",
+        "R": "xxxx............",
+        "B": "xxxx............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.oll.u-l",
+      "puzzle": "4x4x4",
+      "set": "4x4oll",
+      "name": "U (L) (4×4 OLL)",
+      "group": "2 Corners",
+      "alg": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' R U2 R' U' R U' R'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "FUUUUUUUUUUULFFU",
+        "L": "ULLULLLLLLLLLLLL",
+        "F": "BUURFFFFFFFFFFFF",
+        "R": "BBBLRRRRRRRRRRRR",
+        "B": "FRRRBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx...x...xxxxx",
+        "L": "x..x............",
+        "F": "xxxx............",
+        "R": "xxxx............",
+        "B": "xxxx............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.oll.u-b",
+      "puzzle": "4x4x4",
+      "set": "4x4oll",
+      "name": "U (B) (4×4 OLL)",
+      "group": "2 Corners",
+      "alg": "m Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' m'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UBBUUUUUUUUUFUUF",
+        "L": "LRRRLLLLLLLLLLLL",
+        "F": "UFFUFFFFFFFFFFFF",
+        "R": "LLLRRRRRRRRRRRRR",
+        "B": "BUUBBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": ".xx.x..xx..xx..x",
+        "L": ".xxx............",
+        "F": "x..x............",
+        "R": "xxx.............",
+        "B": ".xx.............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.oll.t-f",
+      "puzzle": "4x4x4",
+      "set": "4x4oll",
+      "name": "T (F) (4×4 OLL)",
+      "group": "2 Corners",
+      "alg": "R U R' U' R Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' R' U R U' R'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUUUUURFFL",
+        "L": "LBBULLLLLLLLLLLL",
+        "F": "FUUFFFFFFFFFFFFF",
+        "R": "URRRRRRRRRRRRRRR",
+        "B": "BLLBBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": ".xx.x...x...xxxx",
+        "L": ".xxx............",
+        "F": "xxxx............",
+        "R": "x...............",
+        "B": ".xx.............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.oll.t-r",
+      "puzzle": "4x4x4",
+      "set": "4x4oll",
+      "name": "T (R) (4×4 OLL)",
+      "group": "2 Corners",
+      "alg": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' R U R' U' R' F R F'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "FFFUUUUUUUUUFUUU",
+        "L": "LBBRLLLLLLLLLLLL",
+        "F": "URRRFFFFFFFFFFFF",
+        "R": "BLLBRRRRRRRRRRRR",
+        "B": "LUUUBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxxx..xx..xxxxx",
+        "L": "xxxx............",
+        "F": "xxxx............",
+        "R": "xxxx............",
+        "B": "xxxx............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.oll.t-l",
+      "puzzle": "4x4x4",
+      "set": "4x4oll",
+      "name": "T (L) (4×4 OLL)",
+      "group": "2 Corners",
+      "alg": "F R U' R' U' R U R' F' Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "FUUUUUUUUUUUBBBU",
+        "L": "LLLLLLLLLLLLLLLL",
+        "F": "UUURFFFFFFFFFFFF",
+        "R": "BFFFRRRRRRRRRRRR",
+        "B": "RRRUBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx...x...xxxxx",
+        "L": "x..x............",
+        "F": "xxxx............",
+        "R": "xxxx............",
+        "B": "xxxx............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.oll.t-b",
+      "puzzle": "4x4x4",
+      "set": "4x4oll",
+      "name": "T (B) (4×4 OLL)",
+      "group": "2 Corners",
+      "alg": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' U R U2 (R2 U' R2 U' R2) U2 R",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "LUULUUUUUUUUUFFU",
+        "L": "UBBRLLLLLLLLLLLL",
+        "F": "BUUFFFFFFFFFFFFF",
+        "R": "RLLURRRRRRRRRRRR",
+        "B": "BRRFBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxxx..xx..xxxx.",
+        "L": "xxxx............",
+        "F": "xxx.............",
+        "R": ".xxx............",
+        "B": "xxxx............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.oll.l-fr",
+      "puzzle": "4x4x4",
+      "set": "4x4oll",
+      "name": "L (FR) (4×4 OLL)",
+      "group": "2 Corners",
+      "alg": "R' U' R Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' R' U R",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "FUUULUUULUUUUUUL",
+        "L": "UUULLLLLLLLLLLLL",
+        "F": "FFFUFFFFFFFFFFFF",
+        "R": "BBBRRRRRRRRRRRRR",
+        "B": "BRRRBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxx.x..xx..x...x",
+        "L": "xxx.............",
+        "F": "...x............",
+        "R": "xxx.............",
+        "B": ".xxx............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.oll.l-fl",
+      "puzzle": "4x4x4",
+      "set": "4x4oll",
+      "name": "L (FL) (4×4 OLL)",
+      "group": "2 Corners",
+      "alg": "L U L' Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' L U' L'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUFUUURUUURRUUU",
+        "L": "LBBBLLLLLLLLLLLL",
+        "F": "UFFFFFFFFFFFFFFF",
+        "R": "RUUURRRRRRRRRRRR",
+        "B": "LLLBBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": ".xxxx..xx..xx...",
+        "L": ".xxx............",
+        "F": "x...............",
+        "R": ".xxx............",
+        "B": "xxx.............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.oll.l-br",
+      "puzzle": "4x4x4",
+      "set": "4x4oll",
+      "name": "L (BR) (4×4 OLL)",
+      "group": "2 Corners",
+      "alg": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' U R' U2 R U R' U R",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "FUUUUUUUUUUUUFFF",
+        "L": "LRRRLLLLLLLLLLLL",
+        "F": "BUURFFFFFFFFFFFF",
+        "R": "UBBBRRRRRRRRRRRR",
+        "B": "LLLUBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxxx..xx..xxxxo",
+        "L": "xxxx............",
+        "F": "xxxo............",
+        "R": "oxxx............",
+        "B": "xxxx............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.oll.l-bl",
+      "puzzle": "4x4x4",
+      "set": "4x4oll",
+      "name": "L (BL) (4×4 OLL)",
+      "group": "2 Corners",
+      "alg": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' R' U' R U' R' U2 R",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUULUUUUUUUULLLU",
+        "L": "RFFULLLLLLLLLLLL",
+        "F": "BUURFFFFFFFFFFFF",
+        "R": "BRRFRRRRRRRRRRRR",
+        "B": "UBBFBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "x..xx...x...xxxx",
+        "L": "xxxx............",
+        "F": "xxxx............",
+        "R": "x..x............",
+        "B": "x..x............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.oll.sune-fr",
+      "puzzle": "4x4x4",
+      "set": "4x4oll",
+      "name": "Sune (FR) (4×4 OLL)",
+      "group": "1 Corner",
+      "alg": "m' U R U' 3Rw' Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' U R U2 R'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "FUUBUUUUUUUURFFU",
+        "L": "LBBULLLLLLLLLLLL",
+        "F": "FUUBFFFFFFFFFFFF",
+        "R": "LLLURRRRRRRRRRRR",
+        "B": "RRRUBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxox..xx..xxxxx",
+        "L": "xxxx............",
+        "F": "xxxx............",
+        "R": "xxxo............",
+        "B": "oxxx............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.oll.sune-fl",
+      "puzzle": "4x4x4",
+      "set": "4x4oll",
+      "name": "Sune (FL) (4×4 OLL)",
+      "group": "1 Corner",
+      "alg": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' R U R' U R U2 R'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "RUUFUUUUUUUUUFFB",
+        "L": "FBBBLLLLLLLLLLLL",
+        "F": "LUUUFFFFFFFFFFFF",
+        "R": "RRRURRRRRRRRRRRR",
+        "B": "LLLUBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxxx...x...xxxx",
+        "L": "xxxx............",
+        "F": "xxxx............",
+        "R": "x..x............",
+        "B": "xxxx............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.oll.sune-br",
+      "puzzle": "4x4x4",
+      "set": "4x4oll",
+      "name": "Sune (BR) (4×4 OLL)",
+      "group": "1 Corner",
+      "alg": "L F' L' F Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' L' U L",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "BUUUUUUUUUUUFFFL",
+        "L": "RBBULLLLLLLLLLLL",
+        "F": "LUUUFFFFFFFFFFFF",
+        "R": "BLLFRRRRRRRRRRRR",
+        "B": "RRRUBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxxx..xx..xoxxx",
+        "L": "xxxo............",
+        "F": "oxxx............",
+        "R": "xxxx............",
+        "B": "xxxx............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.oll.sune-bl",
+      "puzzle": "4x4x4",
+      "set": "4x4oll",
+      "name": "Sune (BL) (4×4 OLL)",
+      "group": "1 Corner",
+      "alg": "F' L' U' L U F Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUULUUUUUUUUFRRR",
+        "L": "BBBULLLLLLLLLLLL",
+        "F": "LUUUFFFFFFFFFFFF",
+        "R": "FLLURRRRRRRRRRRR",
+        "B": "BFFRBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxxx..xx..xoxxo",
+        "L": "xxxo............",
+        "F": "oxxo............",
+        "R": "oxxx............",
+        "B": "xxxx............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.oll.antisune-fr",
+      "puzzle": "4x4x4",
+      "set": "4x4oll",
+      "name": "Antisune (FR) (4×4 OLL)",
+      "group": "1 Corner",
+      "alg": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' U' R U2 R' U' R U' R'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "RUUFUUUUUUUULLLU",
+        "L": "URRFLLLLLLLLLLLL",
+        "F": "UUUBFFFFFFFFFFFF",
+        "R": "LFFRRRRRRRRRRRRR",
+        "B": "UBBBBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "x..xx..xx..xoxxx",
+        "L": "xxxo............",
+        "F": "oxxx............",
+        "R": "xxxx............",
+        "B": "x..x............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.oll.antisune-fl",
+      "puzzle": "4x4x4",
+      "set": "4x4oll",
+      "name": "Antisune (FL) (4×4 OLL)",
+      "group": "1 Corner",
+      "alg": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' R U2 (R2 U' R2 U' R2) U2 R",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "FUULUUUUUUUUUBBR",
+        "L": "URRBLLLLLLLLLLLL",
+        "F": "LUUBFFFFFFFFFFFF",
+        "R": "UFFFRRRRRRRRRRRR",
+        "B": "ULLRBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxxx..xx..xxxxx",
+        "L": "xxxx............",
+        "F": "xxxx............",
+        "R": "xxxx............",
+        "B": "xxxx............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.oll.antisune-br",
+      "puzzle": "4x4x4",
+      "set": "4x4oll",
+      "name": "Antisune (BR) (4×4 OLL)",
+      "group": "1 Corner",
+      "alg": "F R U R' U' F' Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "RUUUUUUUUUUULLLF",
+        "L": "URRFLLLLLLLLLLLL",
+        "F": "UUURFFFFFFFFFFFF",
+        "R": "UBBBRRRRRRRRRRRR",
+        "B": "LFFBBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxxx..xx..xoxxo",
+        "L": "xxxo............",
+        "F": "oxxo............",
+        "R": "oxxx............",
+        "B": "xxxx............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.oll.antisune-bl",
+      "puzzle": "4x4x4",
+      "set": "4x4oll",
+      "name": "Antisune (BL) (4×4 OLL)",
+      "group": "1 Corner",
+      "alg": "R' F R F' Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' R U' R'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUBUUUUUUUURFFF",
+        "L": "FRRBLLLLLLLLLLLL",
+        "F": "UUURFFFFFFFFFFFF",
+        "R": "UBBLRRRRRRRRRRRR",
+        "B": "ULLLBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxxx..xx..xxxxo",
+        "L": "xxxx............",
+        "F": "xxxo............",
+        "R": "oxxx............",
+        "B": "xxxx............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.oll.h-fb",
+      "puzzle": "4x4x4",
+      "set": "4x4oll",
+      "name": "H (FB) (4×4 OLL)",
+      "group": "0 Corners",
+      "alg": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' R2 D' R U2 R' D R U2 R",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "RUUBUUUUUUUURFFF",
+        "L": "FRRBLLLLLLLLLLLL",
+        "F": "UUUUFFFFFFFFFFFF",
+        "R": "LLLLRRRRRRRRRRRR",
+        "B": "UBBUBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "x..xx..xx..xxxxx",
+        "L": "xxxx............",
+        "F": "xxxx............",
+        "R": "xxxx............",
+        "B": "x..x............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.oll.h-lr",
+      "puzzle": "4x4x4",
+      "set": "4x4oll",
+      "name": "H (LR) (4×4 OLL)",
+      "group": "0 Corners",
+      "alg": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' R U R' U R U' R' U R U2 R'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "BUUBUUUUUUUURFFL",
+        "L": "ULLULLLLLLLLLLLL",
+        "F": "FUUFFFFFFFFFFFFF",
+        "R": "UBBURRRRRRRRRRRR",
+        "B": "RRRLBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "oxxo...x...xxxxx",
+        "L": "o..x............",
+        "F": "xxxx............",
+        "R": "xxxo............",
+        "B": "oxxo............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.oll.pi-f",
+      "puzzle": "4x4x4",
+      "set": "4x4oll",
+      "name": "Pi (F) (4×4 OLL)",
+      "group": "0 Corners",
+      "alg": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' U' R U2 (R2 U' R2 U' R2) U2 R",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "BUUFUUUUUUUUFRRB",
+        "L": "RLLULLLLLLLLLLLL",
+        "F": "LUULFFFFFFFFFFFF",
+        "R": "UBBRRRRRRRRRRRRR",
+        "B": "UFFUBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx...x...xoxxx",
+        "L": "x..o............",
+        "F": "oxxx............",
+        "R": "xxxx............",
+        "B": "xxxx............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.oll.pi-r",
+      "puzzle": "4x4x4",
+      "set": "4x4oll",
+      "name": "Pi (R) (4×4 OLL)",
+      "group": "0 Corners",
+      "alg": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' U R' U' R U' R' U2 R",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "LUUBUUUUUUUUBRRR",
+        "L": "ULLULLLLLLLLLLLL",
+        "F": "RUUUFFFFFFFFFFFF",
+        "R": "FBBLRRRRRRRRRRRR",
+        "B": "UFFFBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx...x...xxxxo",
+        "L": "x..x............",
+        "F": "xxxo............",
+        "R": "oxxx............",
+        "B": "xxxx............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.oll.pi-l",
+      "puzzle": "4x4x4",
+      "set": "4x4oll",
+      "name": "Pi (L) (4×4 OLL)",
+      "group": "0 Corners",
+      "alg": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' R' U2 R U R' U R",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "RUUFUUUUUUUUBRRR",
+        "L": "FLLLLLLLLLLLLLLL",
+        "F": "UUUBFFFFFFFFFFFF",
+        "R": "UFFURRRRRRRRRRRR",
+        "B": "LBBUBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "x..x...x...xxxxx",
+        "L": "x..x............",
+        "F": "xxxx............",
+        "R": "xxxx............",
+        "B": "x..x............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.oll.pi-b",
+      "puzzle": "4x4x4",
+      "set": "4x4oll",
+      "name": "Pi (B) (4×4 OLL)",
+      "group": "0 Corners",
+      "alg": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' U' 3Rw U R' U' 3Rw' F R F'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "RUUFUUUUUUUUBRRR",
+        "L": "UBBLLLLLLLLLLLLL",
+        "F": "UUUUFFFFFFFFFFFF",
+        "R": "FFFURRRRRRRRRRRR",
+        "B": "LLLBBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxxx..xx..xxxxo",
+        "L": "xxxx............",
+        "F": "xxxo............",
+        "R": "oxxx............",
+        "B": "xxxx............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.pll.pure-e",
+      "puzzle": "4x4x4",
+      "set": "4x4pll",
+      "name": "Pure-E (4×4 PLL)",
+      "group": "Edges Only",
+      "alg": "2R2 U2 2R2 Uw2 2R2 Uw2",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUUUUUUUUU",
+        "L": "RRRRLLLLLLLLLLLL",
+        "F": "BFFBFFFFFFFFFFFF",
+        "R": "LLLLRRRRRRRRRRRR",
+        "B": "FBBFBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "x..xx..xx..xx..x",
+        "L": "xxxx............",
+        "F": "x..x............",
+        "R": "xxxx............",
+        "B": "x..x............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.pll.adj-e",
+      "puzzle": "4x4x4",
+      "set": "4x4pll",
+      "name": "Adj-E (4×4 PLL)",
+      "group": "Edges Only",
+      "alg": "R U R' U' 2R2 U2 2R2 Uw2 2R2 Uw2 U' R U' R'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUUUUUUUUU",
+        "L": "LLLLLLLLLLLLLLLL",
+        "F": "FRRFFFFFFFFFFFFF",
+        "R": "RFFRRRRRRRRRRRRR",
+        "B": "BBBBBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": ".......x...x.xx.",
+        "L": "................",
+        "F": ".xx.............",
+        "R": ".xx.............",
+        "B": "................",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.pll.o-plus",
+      "puzzle": "4x4x4",
+      "set": "4x4pll",
+      "name": "O+ (4×4 PLL)",
+      "group": "Edges Only",
+      "alg": "m' U' m2 U' m2 U' m' U2 m2 2R2 U2 2R2 Uw2 2R2 Uw2",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUUUUUUUUU",
+        "L": "BRRBLLLLLLLLLLLL",
+        "F": "LBBLFFFFFFFFFFFF",
+        "R": "FLLFRRRRRRRRRRRR",
+        "B": "RFFRBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxxx..xx..xxxxx",
+        "L": "xxxx............",
+        "F": "xxxx............",
+        "R": "xxxx............",
+        "B": "xxxx............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.pll.o-minus",
+      "puzzle": "4x4x4",
+      "set": "4x4pll",
+      "name": "O- (4×4 PLL)",
+      "group": "Edges Only",
+      "alg": "m' U' m2 U' m2 U' m' U2 m2 U' 2R2 U2 2R2 Uw2 2R2 Uw2",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUUUUUUUUU",
+        "L": "LFFLLLLLLLLLLLLL",
+        "F": "FRRFFFFFFFFFFFFF",
+        "R": "RBBRRRRRRRRRRRRR",
+        "B": "BLLBBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": ".xx.x..xx..x.xx.",
+        "L": ".xx.............",
+        "F": ".xx.............",
+        "R": ".xx.............",
+        "B": ".xx.............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.pll.w",
+      "puzzle": "4x4x4",
+      "set": "4x4pll",
+      "name": "W (4×4 PLL)",
+      "group": "Edges Only",
+      "alg": "R U' R U R U R U' R' U' R2 2R2 U2 2R2 Uw2 2R2 Uw2",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUUUUUUUUU",
+        "L": "RFFRLLLLLLLLLLLL",
+        "F": "BLLBFFFFFFFFFFFF",
+        "R": "LRRLRRRRRRRRRRRR",
+        "B": "FBBFBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "x..xx...x...xxxx",
+        "L": "xxxx............",
+        "F": "xxxx............",
+        "R": "x..x............",
+        "B": "x..x............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.pll.ba",
+      "puzzle": "4x4x4",
+      "set": "4x4pll",
+      "name": "Ba (4×4 PLL)",
+      "group": "Adjacent Corner Swap",
+      "alg": "2R2 U2 2R2 Uw2 2R2 Uw2 U R U R' F' R U R' U' R' F R2 U' R'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUUUUUUUUU",
+        "L": "LFFFLLLLLLLLLLLL",
+        "F": "RBBLFFFFFFFFFFFF",
+        "R": "FRRRRRRRRRRRRRRR",
+        "B": "BLLBBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": ".xx.x...x...xxxx",
+        "L": ".xxx............",
+        "F": "xxxx............",
+        "R": "x...............",
+        "B": ".xx.............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.pll.bb",
+      "puzzle": "4x4x4",
+      "set": "4x4pll",
+      "name": "Bb (4×4 PLL)",
+      "group": "Adjacent Corner Swap",
+      "alg": "R U R' U' R' F R2 U' R' 2R2 U2 2R2 Uw2 2R2 Uw2 U R U R' F'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUUUUUUUUU",
+        "L": "LBBLLLLLLLLLLLLL",
+        "F": "FFFRFFFFFFFFFFFF",
+        "R": "BLLFRRRRRRRRRRRR",
+        "B": "RRRBBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": ".xxxx..xx..x...x",
+        "L": ".xx.............",
+        "F": "...x............",
+        "R": "xxxx............",
+        "B": "xxx.............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.pll.ca",
+      "puzzle": "4x4x4",
+      "set": "4x4pll",
+      "name": "Ca (4×4 PLL)",
+      "group": "Adjacent Corner Swap",
+      "alg": "2R2 U2 2R2 Uw2 2R2 Uw2 U R' U2 R U2 R' F R U R' U' R' F' R2",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUUUUUUUUU",
+        "L": "LFFLLLLLLLLLLLLL",
+        "F": "FBBRFFFFFFFFFFFF",
+        "R": "BRRFRRRRRRRRRRRR",
+        "B": "RLLBBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": ".xxxx...x....xxx",
+        "L": ".xx.............",
+        "F": ".xxx............",
+        "R": "x..x............",
+        "B": "xxx.............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.pll.cb",
+      "puzzle": "4x4x4",
+      "set": "4x4pll",
+      "name": "Cb (4×4 PLL)",
+      "group": "Adjacent Corner Swap",
+      "alg": "2R2 U2 2R2 Uw2 2R2 Uw2 R U R' F' R U2 R' U2 R' F R U R U2 R'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUUUUUUUUU",
+        "L": "RFFLLLLLLLLLLLLL",
+        "F": "FLLRFFFFFFFFFFFF",
+        "R": "BRRBRRRRRRRRRRRR",
+        "B": "LBBFBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "x..xx...x....xxx",
+        "L": "xxx.............",
+        "F": ".xxx............",
+        "R": "x..x............",
+        "B": "x..x............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.pll.da",
+      "puzzle": "4x4x4",
+      "set": "4x4pll",
+      "name": "Da (4×4 PLL)",
+      "group": "Adjacent Corner Swap",
+      "alg": "R' U L' U2 R U' R' U2 R L U' 2R2 U2 2R2 Uw2 2R2 Uw2",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUUUUUUUUU",
+        "L": "FBBRLLLLLLLLLLLL",
+        "F": "BFFBFFFFFFFFFFFF",
+        "R": "LLLFRRRRRRRRRRRR",
+        "B": "RRRLBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxxx..xx..xx..x",
+        "L": "xxxx............",
+        "F": "x..x............",
+        "R": "xxxx............",
+        "B": "xxxx............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.pll.db",
+      "puzzle": "4x4x4",
+      "set": "4x4pll",
+      "name": "Db (4×4 PLL)",
+      "group": "Adjacent Corner Swap",
+      "alg": "R U R' F' R U R' U' R' F R2 U' R' 2R2 U2 2R2 Uw2 2R2 Uw2",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUUUUUUUUU",
+        "L": "FBBFLLLLLLLLLLLL",
+        "F": "RFFBFFFFFFFFFFFF",
+        "R": "LRRRRRRRRRRRRRRR",
+        "B": "BLLLBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxx.x...x...x..x",
+        "L": "xxxx............",
+        "F": "x..x............",
+        "R": "x...............",
+        "B": ".xxx............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.pll.pa",
+      "puzzle": "4x4x4",
+      "set": "4x4pll",
+      "name": "Pa (4×4 PLL)",
+      "group": "Adjacent Corner Swap",
+      "alg": "R U R' F' R U R' U' R' F R2 U' R' U' 2R2 U2 2R2 Uw2 2R2 Uw2",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUUUUUUUUU",
+        "L": "RRRRLLLLLLLLLLLL",
+        "F": "BLLLFFFFFFFFFFFF",
+        "R": "FFFBRRRRRRRRRRRR",
+        "B": "LBBFBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "x..xx..xx..xxxxx",
+        "L": "xxxx............",
+        "F": "xxxx............",
+        "R": "xxxx............",
+        "B": "x..x............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.pll.pb",
+      "puzzle": "4x4x4",
+      "set": "4x4pll",
+      "name": "Pb (4×4 PLL)",
+      "group": "Adjacent Corner Swap",
+      "alg": "2R2 U2 2R2 Uw2 2R2 Uw2 R U R' F' R U R' U' R' F R2 U' R'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUUUUUUUUU",
+        "L": "RLLLLLLLLLLLLLLL",
+        "F": "FFFRFFFFFFFFFFFF",
+        "R": "BBBBRRRRRRRRRRRR",
+        "B": "LRRFBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxx...x...x...x",
+        "L": "x...............",
+        "F": "...x............",
+        "R": "xxxx............",
+        "B": "xxxx............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.pll.ka",
+      "puzzle": "4x4x4",
+      "set": "4x4pll",
+      "name": "Ka (4×4 PLL)",
+      "group": "Adjacent Corner Swap",
+      "alg": "2R2 U2 2R2 Uw2 2R2 Uw2 x R2 D2 R U R' D2 R U' R",
+      "derivation": "inverse",
+      "preRotation": "x",
+      "state": {
+        "U": "UUUUUUUUUUUUUUUU",
+        "L": "BRRBLLLLLLLLLLLL",
+        "F": "LFFFFFFFFFFFFFFF",
+        "R": "RLLLRRRRRRRRRRRR",
+        "B": "FBBRBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "x..xx..xx..xx...",
+        "L": "xxxx............",
+        "F": "x...............",
+        "R": ".xxx............",
+        "B": "x..x............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.pll.kb",
+      "puzzle": "4x4x4",
+      "set": "4x4pll",
+      "name": "Kb (4×4 PLL)",
+      "group": "Adjacent Corner Swap",
+      "alg": "2R2 U2 2R2 Uw2 2R2 Uw2 U x R' U R' D2 R U' R' D2 R2",
+      "derivation": "inverse",
+      "preRotation": "x",
+      "state": {
+        "U": "UUUUUUUUUUUUUUUU",
+        "L": "FFFBLLLLLLLLLLLL",
+        "F": "LLLFFFFFFFFFFFFF",
+        "R": "RBBRRRRRRRRRRRRR",
+        "B": "BRRLBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxx.x..xx..xxxx.",
+        "L": "xxxx............",
+        "F": "xxx.............",
+        "R": ".xx.............",
+        "B": ".xxx............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.pll.q",
+      "puzzle": "4x4x4",
+      "set": "4x4pll",
+      "name": "Q (4×4 PLL)",
+      "group": "Diagonal Corner Swap",
+      "alg": "x' R U' R' D R U R' D' R U R' D R U' R' D' x U 2R2 U2 2R2 Uw2 2R2 Uw2",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUUUUUUUUU",
+        "L": "RBBLLLLLLLLLLLLL",
+        "F": "FRRBFFFFFFFFFFFF",
+        "R": "LFFRRRRRRRRRRRRR",
+        "B": "BLLFBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxx.x..xx..x.xxx",
+        "L": "xxx.............",
+        "F": ".xxx............",
+        "R": "xxx.............",
+        "B": ".xxx............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.pll.sa",
+      "puzzle": "4x4x4",
+      "set": "4x4pll",
+      "name": "Sa (4×4 PLL)",
+      "group": "Diagonal Corner Swap",
+      "alg": "F R U' R' U' R U R' F' R U R' U' R' F R F' U' 2R2 U2 2R2 Uw2 2R2 Uw2",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUUUUUUUUU",
+        "L": "FRRBLLLLLLLLLLLL",
+        "F": "LLLRFFFFFFFFFFFF",
+        "R": "BBBFRRRRRRRRRRRR",
+        "B": "RFFLBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxxx..xx..xxxxx",
+        "L": "xxxx............",
+        "F": "xxxx............",
+        "R": "xxxx............",
+        "B": "xxxx............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.pll.sb",
+      "puzzle": "4x4x4",
+      "set": "4x4pll",
+      "name": "Sb (4×4 PLL)",
+      "group": "Diagonal Corner Swap",
+      "alg": "F R U' R' U' R U R' F' R U R' U' R' F R F' 2R2 U2 2R2 Uw2 2R2 Uw2",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUUUUUUUUU",
+        "L": "LBBRLLLLLLLLLLLL",
+        "F": "BFFFFFFFFFFFFFFF",
+        "R": "RLLLRRRRRRRRRRRR",
+        "B": "FRRBBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": ".xxxx..xx..xx...",
+        "L": ".xxx............",
+        "F": "x...............",
+        "R": ".xxx............",
+        "B": "xxx.............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.pll.x",
+      "puzzle": "4x4x4",
+      "set": "4x4pll",
+      "name": "X (4×4 PLL)",
+      "group": "Diagonal Corner Swap",
+      "alg": "x' R U' R' D R U R' D' R U R' D R U' R' D' x 2R2 U2 2R2 Uw2 2R2 Uw2",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUUUUUUUUU",
+        "L": "BRRFLLLLLLLLLLLL",
+        "F": "RFFLFFFFFFFFFFFF",
+        "R": "FLLBRRRRRRRRRRRR",
+        "B": "LBBRBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "x..xx..xx..xx..x",
+        "L": "xxxx............",
+        "F": "x..x............",
+        "R": "xxxx............",
+        "B": "x..x............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.pll.m",
+      "puzzle": "4x4x4",
+      "set": "4x4pll",
+      "name": "M (4×4 PLL)",
+      "group": "Adjacent Corner Swap",
+      "alg": "R U R' U' R' F R2 U' R' U' R U R' F' 2R2 U2 2R2 Uw2 2R2 Uw2",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUUUUUUUUU",
+        "L": "RLLRLLLLLLLLLLLL",
+        "F": "BFFLFFFFFFFFFFFF",
+        "R": "FRRBRRRRRRRRRRRR",
+        "B": "LBBFBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "x..x........x..x",
+        "L": "x..x............",
+        "F": "x..x............",
+        "R": "x..x............",
+        "B": "x..x............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.pll.adj-c",
+      "puzzle": "4x4x4",
+      "set": "4x4pll",
+      "name": "Adj-C (4×4 PLL)",
+      "group": "Adjacent Corner Swap",
+      "alg": "R U R' U' R' F R2 U' R' U' R U R' F' U' 2R2 U2 2R2 Uw2 2R2 Uw2",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUUUUUUUUU",
+        "L": "BBBBLLLLLLLLLLLL",
+        "F": "LLLFFFFFFFFFFFFF",
+        "R": "RFFLRRRRRRRRRRRR",
+        "B": "FRRRBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxxxx..xx..xxxx.",
+        "L": "xxxx............",
+        "F": "xxx.............",
+        "R": ".xxx............",
+        "B": "xxxx............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "444.pll.diag-c",
+      "puzzle": "4x4x4",
+      "set": "4x4pll",
+      "name": "Diag-C (4×4 PLL)",
+      "group": "Diagonal Corner Swap",
+      "alg": "F R U' R' U' R U R' F' U' 2R2 U2 2R2 Uw2 2R2 Uw2 U' R U R' U' R' F R F'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUUUUUUUUU",
+        "L": "RLLLLLLLLLLLLLLL",
+        "F": "FFFBFFFFFFFFFFFF",
+        "R": "LRRRRRRRRRRRRRRR",
+        "B": "BBBFBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "x..............x",
+        "L": "x...............",
+        "F": "...x............",
+        "R": "x...............",
+        "B": "...x............",
+        "D": "................"
+      }
+    },
+    {
+      "id": "555.l2e-1",
+      "puzzle": "5x5x5",
+      "set": "555l2e",
+      "name": "L2E 1",
+      "group": "555-l2e",
+      "alg": "Rw' U' R' U R' F R F' Rw",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUBUUUUFUUUUFUUUUFUUFUF",
+        "L": "LLLLRLLLLLLLLLLLLLLLLLLLL",
+        "F": "BBUFDFFFFDFFFFDFFFFDFFFFR",
+        "R": "RRRRRRRRRRRRRRRRRRRRFBBBF",
+        "B": "DFBBBUBBBBUBBBBUBBBBLBBBB",
+        "D": "DDDDUDDDDRDDDDRDDDDRDDDDU"
+      },
+      "mask": {
+        "U": "...xx....x....x....xxxo.x",
+        "L": "....x....................",
+        "F": "xxo.x....x....x....x....x",
+        "R": "xxxxxx...xx...xx...xxxxxx",
+        "B": "xx...x....x....x....x....",
+        "D": "....x....x....x....x....x"
+      }
+    },
+    {
+      "id": "555.l2e-2",
+      "puzzle": "5x5x5",
+      "set": "555l2e",
+      "name": "L2E 2",
+      "group": "555-l2e",
+      "alg": "Lw U' R' U R' F R F' Lw'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUULUUUUFUUUUFUUUUFUUFUB",
+        "L": "RLLLLLLLLLLLLLLLLLLLLLLLL",
+        "F": "FFUBUFFFFDFFFFDFFFFDFFFFD",
+        "R": "RRRRURRRRURRRRURRRRURRRRD",
+        "B": "BBBFFRBBBBRBBBBRBBBBFBBBB",
+        "D": "DDDDBDDDDBDDDDBDDDDBDDDDR"
+      },
+      "mask": {
+        "U": "xx..x....x....x....x..oxx",
+        "L": "x........................",
+        "F": "..oxx....x....x....x....x",
+        "R": "xxxxxx...xx...xx...xxxxxx",
+        "B": "x..xxx....x....x....x....",
+        "D": "....x....x....x....x....x"
+      }
+    },
+    {
+      "id": "555.l2e-3",
+      "puzzle": "5x5x5",
+      "set": "555l2e",
+      "name": "L2E 3",
+      "group": "555-l2e",
+      "alg": "x' M' U' R' U R' F R F' M x",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "BBUBBUUUUFUUUUFUUUUFUUFUF",
+        "L": "RLLLLLLLLLLLLLLLLLLLLLLLL",
+        "F": "FFUFDFFFFDFFFFDFFFFDFFFFR",
+        "R": "RRRRRRRRRRRRRRRRRRRRFBBBU",
+        "B": "DUBUUUBBBBUBBBBUBBBBLBBBB",
+        "D": "DDDDUDDDDRDDDDRDDDDRDDDDB"
+      },
+      "mask": {
+        "U": "xx.xx....x....x....x..o.x",
+        "L": "x........................",
+        "F": "..o.x....x....x....x....x",
+        "R": "xxxxxx...xx...xx...xxxxxx",
+        "B": "xx.xxx....x....x....x....",
+        "D": "....x....x....x....x....x"
+      }
+    },
+    {
+      "id": "555.l2e-4",
+      "puzzle": "5x5x5",
+      "set": "555l2e",
+      "name": "L2E 4",
+      "group": "555-l2e",
+      "alg": "Rw2 F2 U2 Rw2 U2 F2 Rw2",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUUUUUUUUUUUUUUUUUU",
+        "L": "RRRRRLLLLRLLLLRLLLLRLLLLL",
+        "F": "BBFBBFFFFFFFFFFFFFFFFFFFF",
+        "R": "LLLLLLRRRRLRRRRLRRRRRRRRR",
+        "B": "FFBFFBBBBBBBBBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "xx.xxx...xx...xx...xxx.xx",
+        "L": "xxxxx....x....x....x.....",
+        "F": "xx.xxx...xx...xx...x.....",
+        "R": "xxxxxx....x....x.........",
+        "B": "xx.xx....................",
+        "D": "........................."
+      }
+    },
+    {
+      "id": "555.l2e-5",
+      "puzzle": "5x5x5",
+      "set": "555l2e",
+      "name": "L2E 5",
+      "group": "555-l2e",
+      "alg": "Rw2 B2 Rw' U2 Rw' U2' x' U2 Rw' U2' Rw U2 Rw' U2' Rw2 U2 x",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUUUUUUUUUUUUUBBUBB",
+        "L": "RRRRLLLLLLLLLLLLLLLLLLLLL",
+        "F": "UUFUUFFFFFFFFFFFFFFFFFFFF",
+        "R": "RLLLLRRRRRRRRRRRRRRRRRRRR",
+        "B": "FFBFFBBBBBBBBBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "xx.xxx...xx...xx...xxx.xx",
+        "L": "xxxxx....................",
+        "F": "xx.xx....................",
+        "R": "xxxxx....................",
+        "B": "xx.xx....................",
+        "D": "........................."
+      }
+    },
+    {
+      "id": "555.l2e-6",
+      "puzzle": "5x5x5",
+      "set": "555l2e",
+      "name": "L2E 6",
+      "group": "555-l2e",
+      "alg": "Rw' U2 3Rw U2 3Rw' F2 Rw2 U2 Rw U2 Rw' U2 F2 Rw2 F2",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUUUUUUUUUUUUUFFUFF",
+        "L": "LRRRRLLLLLLLLLLLLLLLLLLLL",
+        "F": "UUFUUFFFFFFFFFFFFFFFFFFFF",
+        "R": "LLLLRRRRRRRRRRRRRRRRRRRRR",
+        "B": "BBBBBBBBBBBBBBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": ".....x...xx...xx...xxx.xx",
+        "L": ".xxxx....................",
+        "F": "xx.xx....................",
+        "R": "xxxx.....................",
+        "B": ".........................",
+        "D": "........................."
+      }
+    },
+    {
+      "id": "555.l2e-7",
+      "puzzle": "5x5x5",
+      "set": "555l2e",
+      "name": "L2E 7",
+      "group": "555-l2e",
+      "alg": "y2 Rw U2 Rw U2' x U2 Rw U2' 3Rw' U2 Lw U2' Rw2",
+      "derivation": "inverse",
+      "preRotation": "y2",
+      "state": {
+        "U": "UUUFFUUUUUUUUUUUUUUUUUUBB",
+        "L": "LRRRLLLLLLLLLLLLLLLLLLLLL",
+        "F": "FFFUUFFFFFFFFFFFFFFFFFFFF",
+        "R": "RLLLRRRRRRRRRRRRRRRRRRRRR",
+        "B": "UUBBBBBBBBBBBBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "...xxx...xx...xx...x...xx",
+        "L": ".xxx.....................",
+        "F": "...xx....................",
+        "R": "xxxxx....................",
+        "B": "xx.......................",
+        "D": "........................."
+      }
+    },
+    {
+      "id": "555.l2e-8",
+      "puzzle": "5x5x5",
+      "set": "555l2e",
+      "name": "L2E 8",
+      "group": "555-l2e",
+      "alg": "Lw2 F2 U2 Lw' U2 Lw2 F2 Lw' U2 Lw2 U2 F2 Lw' F2",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUUUUUUUUUUUUUUUUUU",
+        "L": "LRRRRLLLLLLLLLLLLLLLLLLLL",
+        "F": "BBFFFFFFFFFFFFFFFFFFFFFFF",
+        "R": "RLLLLRRRRRRRRRRRRRRRRRRRR",
+        "B": "FFBBBBBBBBBBBBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "...xxx...xx...xx...xxx...",
+        "L": ".xxxx....................",
+        "F": "xx.......................",
+        "R": ".xxxx....................",
+        "B": "xx.......................",
+        "D": "........................."
+      }
+    },
+    {
+      "id": "555.l2e-9",
+      "puzzle": "5x5x5",
+      "set": "555l2e",
+      "name": "L2E 9",
+      "group": "555-l2e",
+      "alg": "B2 Rw' U2 Rw' U2' Rw B2 Rw U2 Rw U2' Rw' U2 Rw U2' Rw2",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "UUUUUUUUUUUUUUUUUUUUUUUUU",
+        "L": "RRRRLLLLLLLLLLLLLLLLLLLLL",
+        "F": "FFFBBFFFFFFFFFFFFFFFFFFFF",
+        "R": "LLLLRRRRRRRRRRRRRRRRRRRRR",
+        "B": "BBBFFBBBBBBBBBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "xx...x...xx...xx...x...xx",
+        "L": "xxxx.....................",
+        "F": "...xx....................",
+        "R": "xxxx.....................",
+        "B": "...xx....................",
+        "D": "........................."
+      }
+    },
+    {
+      "id": "555.l2e-10",
+      "puzzle": "5x5x5",
+      "set": "555l2e",
+      "name": "L2E 10",
+      "group": "555-l2e",
+      "alg": "Rw' U2 Rw2 U2 Rw U2 Rw' U2 Rw U2 Rw2 U2 Rw'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "FFUBBUUUUUUUUUUUUUUUFFUBB",
+        "L": "LRRRRLLLLLLLLLLLLLLLLLLLL",
+        "F": "UUFUUFFFFFFFFFFFFFFFFFFFF",
+        "R": "RLLLLRRRRRRRRRRRRRRRRRRRR",
+        "B": "UUBUUBBBBBBBBBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "xx.xxx...xx...xx...xxx.xx",
+        "L": "xxxxx....................",
+        "F": "xx.xx....................",
+        "R": "xxxxx....................",
+        "B": "xx.xx....................",
+        "D": "........................."
+      }
+    },
+    {
+      "id": "555.l2e-11",
+      "puzzle": "5x5x5",
+      "set": "555l2e",
+      "name": "L2E 11",
+      "group": "555-l2e",
+      "alg": "Rw U2 Rw2 U2 Rw' U2 Rw U2 Rw' U2 Rw2 U2 Rw",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "BBUFFUUUUUUUUUUUUUUUBBUFF",
+        "L": "RRRRLLLLLLLLLLLLLLLLLLLLL",
+        "F": "UUFUUFFFFFFFFFFFFFFFFFFFF",
+        "R": "LLLLRRRRRRRRRRRRRRRRRRRRR",
+        "B": "UUBUUBBBBBBBBBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "xx.xxx...xx...xx...xxx.xx",
+        "L": "xxxxx....................",
+        "F": "xx.xx....................",
+        "R": "xxxxx....................",
+        "B": "xx.xx....................",
+        "D": "........................."
+      }
+    },
+    {
+      "id": "555.l2e-12",
+      "puzzle": "5x5x5",
+      "set": "555l2e",
+      "name": "L2E 12",
+      "group": "555-l2e",
+      "alg": "Rw' U2 Rw U2 3Lw' U2 Rw U2 Rw U2' Rw' U2 Rw U2' Rw2 D2 F2 U2 D2",
+      "derivation": "inverse",
+      "preRotation": "x",
+      "state": {
+        "U": "FFUUUUUUUUUUUUUUUUUUBBUUU",
+        "L": "LRRRLLLLLLLLLLLLLLLLLRRRL",
+        "F": "UUBFFFFFFFFFFFFFFFFFFFFFF",
+        "R": "RLLLRRRRRRRRRRRRRRRRRLLLR",
+        "B": "BBFUUBBBBBBBBBBBBBBBBBBBB",
+        "D": "DDDDDDDDDDDDDDDDDDDDDDDDD"
+      },
+      "mask": {
+        "U": "xxx..x...xx...xx...xxxx..",
+        "L": "xxxxx................xxx.",
+        "F": "xxx......................",
+        "R": ".xxx.................xxx.",
+        "B": "..xxx....................",
+        "D": ".....x...xx...xx...x....."
+      }
+    },
+    {
+      "id": "555.l2e-13",
+      "puzzle": "5x5x5",
+      "set": "555l2e",
+      "name": "L2E 13",
+      "group": "555-l2e",
+      "alg": "r U R' U' r2 U' R' U r2 U R' U' r'",
+      "derivation": "inverse",
+      "preRotation": "",
+      "state": {
+        "U": "RBUBRUUUUDUUUUDUUUUDRFUFR",
+        "L": "DLLLDLLLLLLLLLLLLLLLLLLLL",
+        "F": "BUBUBFFFFBFFFFBFFFFBFFFFB",
+        "R": "URRRURRRRRRRRRRRRRRRURRRU",
+        "B": "FUFUFFBBBBFBBBBFBBBBFBBBB",
+        "D": "DDDDLDDDDUDDDDUDDDDUDDDDL"
+      },
+      "mask": {
+        "U": "xxxxx....x....x....xxxxxx",
+        "L": "x...x....................",
+        "F": "xxxxx....x....x....x....x",
+        "R": "xxxxxx...xx...xx...xxxxxx",
+        "B": "xxxxxx....x....x....x....",
+        "D": "....x....x....x....x....x"
+      }
+    }
+  ]
+}

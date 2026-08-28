@@ -24,7 +24,8 @@ from pathlib import Path
 
 import pytest
 
-from cubepath.cube import Cube
+from cubepath import cube as cube_module
+from cubepath.cube import SIZE, Cube, UnsupportedPuzzleError
 
 CLAUDE_MD = Path(__file__).resolve().parents[3] / "CLAUDE.md"
 
@@ -204,3 +205,68 @@ def test_u_face_index_convention_matches_the_simulator(doc) -> None:
     bottom_row_moved = [before.faces["U"][i] != after.faces["U"][i] for i in (6, 7, 8)]
     assert all(top_row_moved), "U indices 0-2 should be the BACK row; a B turn did not change them"
     assert not any(bottom_row_moved), "U indices 6-8 should be the FRONT row; a B turn changed them"
+
+
+# ── Scope: cube.py is a 3x3 mirror, and both documents say so ─────────
+#
+# The judged architecture ruling is that cube.py stays a 3x3-only mirror and
+# the cubing.js kpuzzle is the source of truth for anything larger. A ruling
+# that lives only in prose is a ruling that gets forgotten, so it is checked
+# the same way every other convention in this file is: the documents are the
+# input, the simulator is the oracle, and widening one without the other fails
+# the build.
+
+
+def test_claude_md_still_describes_a_3x3_state_shape(doc) -> None:
+    """CLAUDE.md pins the simulator's state as "6 faces x 9 stickers". If
+    someone ever parameterises cube.py by cube size, that sentence silently
+    becomes false — so assert it against the real object instead."""
+    m = re.search(r"State: (\d+) faces × (\d+) stickers", doc)
+    assert m, "CLAUDE.md's 'State: 6 faces × 9 stickers' sentence changed — this gate is blind"
+    faces, stickers = int(m.group(1)), int(m.group(2))
+
+    solved = Cube.solved()
+    assert len(solved.faces) == faces, (
+        f"CLAUDE.md says {faces} faces; the simulator has {len(solved.faces)}"
+    )
+    for name, face in solved.faces.items():
+        assert len(face) == stickers, (
+            f"CLAUDE.md says {stickers} stickers per face; {name} has {len(face)}"
+        )
+
+
+def test_cube_py_declares_its_own_scope_and_names_the_real_source_of_truth() -> None:
+    """The docstring is where the next reader looks before adding a move table.
+    It has to tell them not to, and where to go instead."""
+    text = cube_module.__doc__ or ""
+    assert "3×3×3" in text, "cube.py's docstring no longer states that it models a 3x3 only"
+    assert "kpuzzle" in text and "cubing.js" in text, (
+        "cube.py's docstring must name the cubing.js kpuzzle as the source of truth "
+        "for anything larger than a 3x3 — otherwise the next session writes a 4x4 "
+        "simulator here, which is the duplicated-cube-model mistake made twice"
+    )
+    assert "4×4" in text and "5×5" in text, (
+        "the docstring must say out loud which puzzles do NOT belong in this file"
+    )
+
+
+def test_the_simulator_really_is_3x3_shaped() -> None:
+    """The oracle half of the docstring's claim. Every layer count in cube.py is
+    a literal 3; if that ever stops being true the docstring above is a lie and
+    this fails before anyone can derive a diagram from it."""
+    assert SIZE == 3
+    labels = [str(i) for i in range(SIZE * SIZE)]
+    assert sorted(cube_module._rotate_face_cw(labels)) == sorted(labels), (
+        f"a face rotation must permute exactly {SIZE * SIZE} stickers"
+    )
+    for move, (_, strips) in cube_module._MOVE_DEFS.items():
+        assert len(strips) == 4, f"{move} should cycle 4 strips"
+        for strip in strips:
+            assert len(strip) == SIZE, f"{move} has a strip of {len(strip)} on a {SIZE}x{SIZE}"
+
+
+def test_a_declared_big_cube_is_refused_rather_than_answered() -> None:
+    """The concrete promise the docstring makes: ask this module a 4x4 question
+    and it declines, instead of returning a plausible 3x3 answer."""
+    with pytest.raises(UnsupportedPuzzleError):
+        Cube.solved(size=4)

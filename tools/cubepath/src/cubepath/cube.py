@@ -1,4 +1,55 @@
-"""Minimal Rubik's cube simulator for verifying diagrams and algorithms.
+"""Minimal Rubik's cube simulator — a **3×3×3 mirror**, gated to stay one.
+
+Scope, and why it is fixed
+--------------------------
+This module models a 3×3×3 cube and nothing else, and it is not going to grow.
+Every layer count in it is a literal 3: `_make_face` builds nine stickers,
+`_rotate_face_cw` hardcodes the 3×3 index permutation, every strip in
+`_MOVE_DEFS` is three stickers long, and `sticker_at`/`diagram_to_sim` index
+with `row * 3 + col` and `2 - b`.
+
+**The cubing.js kpuzzle is this repo's source of truth for every puzzle larger
+than 3×3×3.** It already ships 4×4×4 and 5×5×5 definitions, they are already
+load-bearing in `app/scripts/verify-l2e.mjs` and `app/src/lib/stickering.ts`,
+and the agreed seam is that JavaScript derives big-cube state and writes JSON
+which Python reads and draws — the `jperm-raw.json` pattern, generalised. Do
+**not** add 4×4/5×5 logic here. That would be a second copy of a cube model the
+repo already owns, in the language that owns neither the definitions nor the
+verifiers. If you find yourself parameterising this file by cube size, stop.
+
+The failure this gate closes
+----------------------------
+`parse_algorithm` used to be `_TOKEN_RE.findall`, which silently discarded
+whatever it could not match. `3Rw` became `r` (the layer count dropped), `2R2`
+became `R2` (an inner slice became an outer turn), `m'` vanished entirely, and
+the standard 4×4 OLL-parity algorithm parsed, raised nothing, and returned a
+confident, meaningless 3×3 state. In a repo whose whole value is the
+correctness of derived algorithm data, a plausible-looking wrong picture is the
+worst available outcome — worse than a crash, because nothing catches it.
+
+So the parser now consumes the **entire** string and raises rather than drop
+anything. Rejected: layer-numbered moves (`2R`, `3Rw'`), SiGN wide moves
+(`Rw`, `Lw2`, `Uw2'`), wing slices (`m`), triple-turn suffixes (`R3`),
+postfix group repeats (`(R' F R F')2`), and any other unrecognised text.
+Accepted, because they are legitimate 3×3 notation this repo's own algorithms
+use: bare lowercase wide moves (`r l u d f b`), slices (`M S E`), rotations
+(`x y z`), `'`/`2` suffixes, `(…)` visual groups and `(…)×N` repeats.
+
+Bare `r` and `Rw` mean the same turn on a 3×3, so rejecting only the SiGN
+spelling looks arbitrary until you measure the corpus: across the 22 canonical
+algorithms in `algs.py`, the 98 extracted OLL strings, the 55 PLL strings and
+the 146 F2L strings, SiGN `w` notation appears **zero** times — while every one
+of the four big-cube strings the repo stores (`OLL_PARITY`, `PLL_PARITY`,
+`EDGE_PARITY_5X5`, the L2E flip) is written in it. `Rw` is therefore not a 3×3
+spelling this repo uses; it is the signature of a big-cube algorithm arriving
+at the wrong door, and turning it away costs nothing that exists.
+
+That check is a heuristic on notation, not a proof: a big-cube algorithm
+transcribed entirely into 3×3-legal tokens (`r U2 x r U2 …`) is, token for
+token, a legal 3×3 algorithm and cannot be detected from the string alone. For
+that case declare the puzzle — `Cube.solved(size=4)` and
+`parse_algorithm(alg, size=4)` raise `UnsupportedPuzzleError` — and get the
+state from the kpuzzle instead.
 
 State: 6 faces × 9 stickers (row-major: idx = row*3 + col).
 Standard orientation: U=Yellow, D=White, F=Red, B=Orange, R=Green, L=Blue.
@@ -11,6 +62,40 @@ from dataclasses import dataclass, field
 
 # Face colors (standard Western, yellow top, red front)
 COLORS = {"U": "Y", "D": "W", "F": "R", "B": "O", "R": "G", "L": "B"}
+
+SIZE = 3
+"""The only cube size this module models. Read the module docstring before
+touching this — it is a statement of scope, not a parameter."""
+
+
+class UnsupportedPuzzleError(ValueError):
+    """Asked to model a puzzle that is not a 3×3×3.
+
+    Subclasses `ValueError` so existing callers that catch one still work.
+    """
+
+
+class UnsupportedNotationError(ValueError):
+    """A move token this module cannot faithfully model.
+
+    Raised instead of silently dropping the token, which is what produced a
+    confident wrong 3×3 state from a 4×4 algorithm. Subclasses `ValueError`.
+    """
+
+
+_KPUZZLE_HINT = (
+    "Big-cube state comes from the cubing.js kpuzzle (app/scripts/), which "
+    "writes it to JSON for Python to draw; cube.py is a 3x3-only mirror and "
+    "must not grow NxN logic. See the cube.py module docstring."
+)
+
+
+def _require_3x3(size: int) -> None:
+    """Refuse any declared puzzle size this module cannot model."""
+    if size != SIZE:
+        raise UnsupportedPuzzleError(
+            f"cube.py models {SIZE}x{SIZE}x{SIZE} only; asked for size={size}. {_KPUZZLE_HINT}"
+        )
 
 
 def _make_face(color: str) -> list[str]:
@@ -170,21 +255,34 @@ _COMPOUNDS: dict[str, list[str]] = {
 
 @dataclass
 class Cube:
-    """Rubik's cube state."""
+    """Rubik's cube state — 3x3x3 only.
+
+    `size` exists so a caller can *declare* what it thinks it is simulating.
+    Declaring anything but 3 raises rather than quietly handing back a 3x3
+    answer to a big-cube question; there is no size at which this class does
+    something else.
+    """
 
     faces: dict[str, list[str]] = field(default_factory=dict)
+    size: int = SIZE
+
+    def __post_init__(self) -> None:
+        _require_3x3(self.size)
 
     @classmethod
-    def solved(cls) -> Cube:
-        return cls(faces={f: _make_face(c) for f, c in COLORS.items()})
+    def solved(cls, size: int = SIZE) -> Cube:
+        _require_3x3(size)
+        return cls(faces={f: _make_face(c) for f, c in COLORS.items()}, size=size)
 
     def copy(self) -> Cube:
-        return Cube(faces={f: list(s) for f, s in self.faces.items()})
+        return Cube(faces={f: list(s) for f, s in self.faces.items()}, size=self.size)
 
     def is_solved(self) -> bool:
         return all(len(set(stickers)) == 1 for stickers in self.faces.values())
 
     def sticker_at(self, face: str, row: int, col: int) -> str:
+        """Row-major lookup. The 3 is `SIZE`, spelled literally on purpose —
+        this class is a 3x3 mirror, not an NxN model."""
         return self.faces[face][row * 3 + col]
 
     def u_face_solved(self) -> bool:
@@ -215,7 +313,9 @@ class Cube:
 
         # Base moves: R/L/U/D/F/B/M/S/E
         if base not in _MOVE_DEFS:
-            raise ValueError(f"Unknown move: {move_str!r}")
+            raise UnsupportedNotationError(
+                f"cube.py cannot model the move {move_str!r}. {_KPUZZLE_HINT}"
+            )
 
         if is_double:
             _apply_cw(self.faces, base)
@@ -226,8 +326,9 @@ class Cube:
             _apply_cw(self.faces, base)
 
     def apply(self, algorithm: str) -> None:
-        """Parse and apply an algorithm string."""
-        for token in parse_algorithm(algorithm):
+        """Parse and apply an algorithm string, raising on anything a 3x3
+        cannot express (see `parse_algorithm`)."""
+        for token in parse_algorithm(algorithm, size=self.size):
             self.apply_move(token)
 
     def visible_sticker(self, face: str, a: int, b: int) -> str:
@@ -251,15 +352,15 @@ def _invert_token(token: str) -> str:
     return token + "'"
 
 
-def invert_algorithm(alg: str) -> str:
+def invert_algorithm(alg: str, *, size: int = SIZE) -> str:
     """Invert an algorithm: reverse the token order and invert each token."""
-    return " ".join(_invert_token(t) for t in reversed(parse_algorithm(alg)))
+    return " ".join(_invert_token(t) for t in reversed(parse_algorithm(alg, size=size)))
 
 
-def state_before(alg: str) -> Cube:
+def state_before(alg: str, *, size: int = SIZE) -> Cube:
     """The state an algorithm solves: its inverse applied to a solved cube."""
-    c = Cube.solved()
-    c.apply(invert_algorithm(alg))
+    c = Cube.solved(size)
+    c.apply(invert_algorithm(alg, size=size))
     return c
 
 
@@ -274,21 +375,93 @@ def diagram_to_sim(face: str, a: int, b: int) -> tuple[str, int, int]:
     raise ValueError(f"Unknown visible face: {face!r}")
 
 
-# SiGN wide-move aliases: Rw == r etc.
-_WIDE_ALIASES = {f"{u}w{s}": f"{u.lower()}{s}" for u in "RLUDFB" for s in ("", "'", "2")}
+# ── Tokenizer ─────────────────────────────────────────────────────────
+#
+# One ordered alternation, scanned across the WHOLE string. The first three
+# groups exist only to be refused: they are matched deliberately so the error
+# can name what it saw instead of leaving a stray character behind. Anything
+# the scanner cannot place at all lands in `bad`. Nothing is ever dropped.
+#
+# Order is load-bearing: `layered` must precede `sign`, and `sign` must precede
+# `move`, or `3Rw` degrades to `Rw` and `Rw` degrades to `R` — the exact
+# silent-truncation bug this scanner exists to end.
+_SUFFIX = r"(?:2'|'|2)?"
 
-_TOKEN_RE = re.compile(r"[RLUDFBMSExyz][w]?[2']?|[rludfb][2']?|\(|\)|×\d+")
+_SCAN_RE = re.compile(
+    r"(?P<layered>\d+[RLUDFBrludfb]w?[2']*)"  # 2R, 2R2, 3Rw' — big-cube only
+    r"|(?P<sign>[RLUDFB]w" + _SUFFIX + r")"  # Rw, Lw2, Uw2' — SiGN, see docstring
+    r"|(?P<move>[RLUDFBMSExyzrludfb]" + _SUFFIX + r")"
+    r"|(?P<repeat>×\d+)"
+    r"|(?P<paren>[()])"
+    r"|(?P<space>\s+)"
+    r"|(?P<bad>[^\s()]+)"
+)
+
+# group name -> why it is refused. `bad` is the catch-all.
+_REFUSALS = {
+    "layered": "a layer-numbered move; cube.py has exactly three layers",
+    "sign": "SiGN wide-move notation, which in this repo only ever spells a "
+    "big-cube algorithm (write a 3x3 wide move as lowercase 'r')",
+    "bad": "not notation cube.py models",
+}
 
 
-def parse_algorithm(alg: str) -> list[str]:
-    """Parse an algorithm string into move tokens.
+def _word_at(alg: str, index: int) -> str:
+    """The whitespace-delimited word containing `index`.
 
-    Supports: R U R' U' R2, lowercase wide (r, f), parenthesized repeats (R U)×2.
-    Parentheses not followed by a repeat count are visual grouping only: a
-    closed group is held until the next token — a ×N multiplies it, anything
-    else (a move, another "(", or the end of the string) flushes it in order.
+    The scanner may notice the problem partway through a token (`R3` is a
+    legal `R` followed by an orphan `3`), so errors quote the whole word —
+    that is the string the reader has to go and find.
     """
-    tokens = [_WIDE_ALIASES.get(t, t) for t in _TOKEN_RE.findall(alg)]
+    start, end = index, index
+    while start > 0 and not alg[start - 1].isspace():
+        start -= 1
+    while end < len(alg) and not alg[end].isspace():
+        end += 1
+    return alg[start:end]
+
+
+def _scan(alg: str, size: int) -> list[str]:
+    """Whole-string tokenizer. Raises on anything a 3x3 cannot express."""
+    _require_3x3(size)
+    tokens: list[str] = []
+    pos = 0
+    for m in _SCAN_RE.finditer(alg):
+        if m.start() != pos:  # unreachable while `bad` matches everything
+            raise UnsupportedNotationError(f"unparsed text {alg[pos : m.start()]!r} in {alg!r}")
+        pos = m.end()
+        kind = m.lastgroup
+        assert kind is not None
+        if kind in _REFUSALS:
+            word = _word_at(alg, m.start())
+            raise UnsupportedNotationError(
+                f"refusing to simulate {word!r} in {alg!r}: {_REFUSALS[kind]}. {_KPUZZLE_HINT}"
+            )
+        if kind == "space":
+            continue
+        tok = m.group()
+        # `X2'` and `X2` are the same half turn; normalise so `apply_move`'s
+        # prime/double detection cannot read the apostrophe as a direction.
+        tokens.append(tok[:-1] if tok.endswith("2'") else tok)
+    if pos != len(alg):
+        raise UnsupportedNotationError(f"unparsed trailing text {alg[pos:]!r} in {alg!r}")
+    return tokens
+
+
+def parse_algorithm(alg: str, *, size: int = SIZE) -> list[str]:
+    """Parse an algorithm string into move tokens, or raise.
+
+    Supports: R U R' U' R2, lowercase wide (r, f), rotations, slices, and
+    parenthesized repeats (R U)×2. Parentheses not followed by a repeat count
+    are visual grouping only: a closed group is held until the next token — a
+    ×N multiplies it, anything else (a move, another "(", or the end of the
+    string) flushes it in order.
+
+    Raises `UnsupportedNotationError` on any token a 3x3 cannot express, and
+    `UnsupportedPuzzleError` if `size` is not 3. It never silently drops a
+    token — see the module docstring for what that used to cost.
+    """
+    tokens = _scan(alg, size)
     result: list[str] = []
     group: list[str] | None = None  # open "(… " being collected
     closed: list[str] | None = None  # "(…)" seen, awaiting a possible ×N
@@ -311,10 +484,12 @@ def parse_algorithm(alg: str) -> list[str]:
             else:
                 closed, group = group, None
         elif tok.startswith("×"):
-            if closed is not None:
-                result.extend(closed * int(tok[1:]))
-                closed = None
-            # a ×N with no closed group is malformed — drop it
+            if closed is None:
+                raise UnsupportedNotationError(
+                    f"repeat count {tok!r} in {alg!r} follows no '(...)' group"
+                )
+            result.extend(closed * int(tok[1:]))
+            closed = None
         elif group is not None:
             group.append(tok)
         else:
