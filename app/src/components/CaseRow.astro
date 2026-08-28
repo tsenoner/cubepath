@@ -2,28 +2,48 @@
 /**
  * A case row: diagram icon, name + recognition, colored algorithm, and an
  * inline 3D player that shows the case and plays it to solved.
+ *
+ * The row carries its own `data-case` and `data-search` hooks so a page that
+ * lists many of them — /reference/ — can filter and annotate rows without
+ * being handed a parallel copy of the dataset it already rendered.
  */
 import AlgText from "./AlgText.astro";
 import TwistyPlayer from "./TwistyPlayer.astro";
 import { caseById, primaryAlg } from "../data/algs";
 import { RICH } from "../data/fullsets.rich.gen";
 import { caseIcon } from "../data/icons";
+import { contextForCase } from "../lib/ladders";
 
 interface Props {
   id: string;
   /** Show the 3D player expanded instead of behind a toggle. */
   open?: boolean;
+  /**
+   * DOM id, making the row a link target. Opt-in: the same case may be listed
+   * twice on one page, and two rows sharing an id is an accessibility fault.
+   */
+  anchor?: string;
 }
-const { id, open = false } = Astro.props;
+const { id, open = false, anchor } = Astro.props;
 const def = caseById.get(id);
 if (!def) throw new Error(`CaseRow: unknown case id ${id}`);
 const icon = caseIcon(id);
 const alg = primaryAlg(def);
 // Lean generated entries omit recognition; RICH carries it at build time.
 const recognition = def.recognition ?? RICH[id]?.recognition ?? "";
+// The row knows exactly which case it is showing, so it names the step rather
+// than leaving the player to infer one: `group` gives the stage, `phase` the
+// ladder. This is the three-tier ladder's only always-correct entry point.
+const context = contextForCase(def);
 ---
 
-<details class="case-row" open={open}>
+<details
+  class="case-row"
+  open={open}
+  id={anchor}
+  data-case={id}
+  data-search={`${def.name} ${recognition} ${id}`.toLowerCase()}
+>
   <summary>
     {
       icon && (
@@ -35,6 +55,7 @@ const recognition = def.recognition ?? RICH[id]?.recognition ?? "";
       <span class="recognition">{recognition}</span>
     </span>
     <AlgText moves={alg} class="row-alg" />
+    <span class="chip status" data-case-status hidden></span>
     <span class="play" aria-hidden="true">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"
         ><path d="M7 5l10 7-10 7z"></path></svg
@@ -51,26 +72,35 @@ const recognition = def.recognition ?? RICH[id]?.recognition ?? "";
         alg={alg}
         puzzle={def.puzzle}
         stickering={def.stickering}
+        context={context}
         {...icon ? { poster: icon } : {}}
         posterAlt={`${def.name} case diagram`}
       />
-      <p class="hint">Starts at the case. Only the pieces this algorithm fixes stay in colour.</p>
+      <p class="hint">
+        Starts at the case. Full colour is what this step solves, dim is already solved and has to
+        survive it, grey is further down the method.
+      </p>
     </div>
   </div>
 </details>
 
 <style>
+  /*
+   * .chip, .label and .hint come from tokens.css — this component used to
+   * restate .hint's three declarations under its own name. Only layout is set
+   * on them here.
+   */
   .case-row {
-    border-top: 1px solid var(--line);
+    border-block-start: 1px solid var(--line);
   }
   .case-row:first-of-type {
-    border-top: 0;
+    border-block-start: 0;
   }
   summary {
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 12px 16px;
+    gap: var(--space-4);
+    padding: var(--space-3) var(--space-4);
     cursor: pointer;
     list-style: none;
   }
@@ -89,22 +119,27 @@ const recognition = def.recognition ?? RICH[id]?.recognition ?? "";
   }
   .name {
     font-weight: 600;
-    font-size: 15.5px;
+    font-size: var(--text-md);
   }
   .recognition {
     color: var(--soft);
-    font-size: 13px;
+    font-size: var(--text-sm);
   }
   :global(.row-alg) {
     flex-grow: 1;
     min-width: 0;
     overflow-wrap: anywhere;
   }
+  /* Written by /reference/'s progress script; absent everywhere else. */
+  .status {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
   .play {
     display: inline-flex;
     width: 36px;
     height: 36px;
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     background: var(--accent-soft);
     color: var(--accent);
     align-items: center;
@@ -113,7 +148,7 @@ const recognition = def.recognition ?? RICH[id]?.recognition ?? "";
   }
   .case-row[open] .play {
     background: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
   }
   /* Tint the open row and hang the demo off it, so the player reads as part of
      the case rather than a loose box at the bottom of the list. */
@@ -121,7 +156,7 @@ const recognition = def.recognition ?? RICH[id]?.recognition ?? "";
     background: var(--accent-soft);
   }
   .player-slot {
-    padding: 0 16px 18px 16px;
+    padding: 0 var(--space-4) var(--space-5);
     background: var(--accent-soft);
   }
   .demo {
@@ -130,34 +165,31 @@ const recognition = def.recognition ?? RICH[id]?.recognition ?? "";
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
-    padding: 12px 14px 14px;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4) var(--space-4);
     background: var(--card);
     border: 1px solid var(--line);
-    border-left: 3px solid var(--accent);
-    border-radius: 10px;
+    border-inline-start: 3px solid var(--accent);
+    border-radius: var(--r-md);
   }
   .demo-head {
     display: flex;
     align-items: baseline;
-    gap: 8px;
+    gap: var(--space-2);
     align-self: stretch;
     margin: 0;
   }
   .demo-name {
     font-weight: 600;
-    font-size: 14px;
+    font-size: var(--text-sm);
   }
-  .hint {
-    margin: 0;
-    color: var(--faint);
-    font-size: 12px;
+  .demo .hint {
     text-align: center;
   }
   @media (max-width: 640px) {
     summary {
       flex-wrap: wrap;
-      gap: 10px;
+      gap: var(--space-3);
     }
     .meta {
       width: calc(100% - 130px);
@@ -165,6 +197,9 @@ const recognition = def.recognition ?? RICH[id]?.recognition ?? "";
     :global(.row-alg) {
       width: 100%;
       order: 3;
+    }
+    .status {
+      order: 4;
     }
   }
 </style>

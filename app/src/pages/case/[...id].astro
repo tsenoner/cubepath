@@ -1,15 +1,31 @@
 ---
 import Base from "../../layouts/Base.astro";
 import Header from "../../components/Header.astro";
+import Page from "../../components/Page.astro";
+import Figure from "../../components/Figure.astro";
+import EmptyState from "../../components/EmptyState.astro";
 import AlgText from "../../components/AlgText.astro";
 import TwistyPlayer from "../../components/TwistyPlayer.astro";
-import { ALL_CASES, CURATED_IDS, primaryAlg } from "../../data/algs";
+import { ALL_CASES, CURATED_IDS, primaryAlg, type CaseDef } from "../../data/algs";
 import { CASE_SCRAMBLES } from "../../data/fullsets.gen";
 import { RICH } from "../../data/fullsets.rich.gen";
 import { caseIcon } from "../../data/icons";
+import { TAUGHT_444_CASES, isLocked } from "../../lib/unlocks";
+import { contextForCase } from "../../lib/ladders";
 
+/**
+ * Locked cases get no page. They are reachable from nothing — not the
+ * reference, not the trainer, not a lesson — so building them would recreate
+ * exactly the defect this repo was already pulled up on: case pages linked
+ * from nowhere, and here they would also be precached into every visitor's
+ * service worker and listed in the sitemap. Their URLs 404 while locked and
+ * come back, unchanged, the moment lib/unlocks.ts flips.
+ */
 export async function getStaticPaths() {
-  return ALL_CASES.map((def) => ({ params: { id: def.id }, props: { def } }));
+  return ALL_CASES.filter((def) => !isLocked(def)).map((def) => ({
+    params: { id: def.id },
+    props: { def },
+  }));
 }
 
 const { def } = Astro.props;
@@ -20,161 +36,272 @@ const alternates = CURATED_IDS.has(def.id)
   ? def.algs.filter((a) => !a.primary)
   : (RICH[def.id]?.alternates ?? []);
 const scrambles = (CASE_SCRAMBLES[def.id] ?? []).slice(0, 4);
+
+/**
+ * Group keys are internal slugs — the page used to print `2look-oll-corners`
+ * at the reader in a chip. Named families first, then a derived
+ * "FAMILY · Shape" for the generated sets.
+ */
+const NAMED: Record<string, string> = {
+  "cross-eo": "Yellow cross",
+  "2look-oll-corners": "2-look OLL · corners",
+  "2look-pll-corners": "2-look PLL · corners",
+  "2look-pll-edges": "2-look PLL · edges",
+  "444-parity": "4×4 parity",
+  "555-l2e": "5×5 last two edges",
+};
+const FAMILY: Record<string, string> = {
+  oll: "OLL",
+  pll: "PLL",
+  f2l: "F2L",
+  "4x4oll": "4×4 OLL",
+  "4x4pll": "4×4 PLL",
+};
+function groupLabel(key: string): string {
+  // The two PLL-parity faces were generated into "4x4pll-edges-only", but what
+  // the course teaches them as is parity — chipping them "4×4 PLL" would name
+  // a set this build does not ship.
+  if (TAUGHT_444_CASES.has(def.id)) return NAMED["444-parity"]!;
+  const named = NAMED[key];
+  if (named) return named;
+  const parts = /^(4x4oll|4x4pll|oll|pll|f2l)-(.+)$/.exec(key);
+  if (!parts) return key.replace(/-/g, " ");
+  const family = FAMILY[parts[1]!] ?? parts[1]!;
+  const shape = parts[2]!.replace(/-/g, " ");
+  return `${family} · ${shape.charAt(0).toUpperCase()}${shape.slice(1)}`;
+}
+
+const PUZZLE: Record<string, string> = { "3x3x3": "3×3", "4x4x4": "4×4", "5x5x5": "5×5" };
+const puzzleLabel = PUZZLE[def.puzzle] ?? def.puzzle;
+
+/** Most F2L and big-cube cases have no diagram file; say so, don't leave a hole. */
+const noDiagram =
+  def.phase === "full-f2l"
+    ? "F2L cases are read off the two pieces in your hand, not from a picture of the top face. The 3D replay below starts at the case."
+    : "This set has no generated diagram yet. The 3D replay below starts at the case.";
+
+/** Same-group neighbours, so a case page is not a dead end (and never a 404). */
+const siblings: CaseDef[] = ALL_CASES.filter((k) => k.group === def.group && !isLocked(k));
+const here = siblings.findIndex((k) => k.id === def.id);
+const prev = here > 0 ? siblings[here - 1] : undefined;
+const next = here >= 0 && here < siblings.length - 1 ? siblings[here + 1] : undefined;
+
+/** The case's anchor in the reference list — see pages/reference/index.astro. */
+const refAnchor = `/reference/#${def.id.replace(/\./g, "-")}`;
 ---
 
 <Base title={`${def.name} — Cubepath`} description={recognition}>
   <Header active="reference" />
-  <main>
-    <nav class="crumbs">
+  <Page>
+    <nav class="crumbs" aria-label="Breadcrumb">
       <a href="/reference/">Reference</a>
-      <span>›</span>
+      <span aria-hidden="true">›</span>
       <span>{def.name}</span>
     </nav>
-    <div class="layout">
-      <div class="left">
-        <TwistyPlayer alg={primaryAlg(def)} puzzle={def.puzzle} stickering={def.stickering} />
-        <p class="hint">The player starts at the case and solves it — drag to rotate.</p>
-      </div>
-      <div class="right">
-        <div class="title-row">
-          {icon && <img src={icon} alt={`${def.name} diagram`} width="84" height="84" />}
-          <div>
-            <h1>{def.name}</h1>
-            <p class="recognition">{recognition}</p>
-          </div>
+
+    {
+      /*
+       * Learn order, one column: what the case looks like, what it is called,
+       * how to spot it, what to do — and only then the 3D replay. The page was
+       * a two-column grid whose left column was the player, so on a phone you
+       * scrolled past 400px of cube before reaching the name of the case.
+       */
+    }
+    {
+      icon ? (
+        <Figure size="card" src={icon} alt={`${def.name}: ${recognition}`} />
+      ) : (
+        <div class="diagram">
+          <EmptyState glyph="◇" title="No diagram yet">
+            {noDiagram}
+          </EmptyState>
         </div>
-        <div class="chips">
-          <span class="chip">{def.group}</span>
-          {def.probability && <span class="chip">probability {def.probability}</span>}
-        </div>
-        <section class="card block">
-          <span class="label">ALGORITHM</span>
-          <p class="main-alg"><AlgText moves={primaryAlg(def)} /></p>
-          {
-            alternates.length > 0 && (
-              <details>
-                <summary>
-                  {alternates.length} alternate{alternates.length > 1 ? "s" : ""}
-                </summary>
-                <ul>
-                  {alternates.map((a) => (
-                    <li>
-                      <AlgText moves={a.moves} />
-                      {a.note && <span class="note"> — {a.note}</span>}
-                    </li>
-                  ))}
-                </ul>
-              </details>
-            )
-          }
+      )
+    }
+
+    <header class="head">
+      <h1>{def.name}</h1>
+      {recognition && <p class="recognition">{recognition}</p>}
+      <p class="chips">
+        <span class="chip chip--ghost">{groupLabel(def.group)}</span>
+        {def.puzzle !== "3x3x3" && <span class="chip chip--ghost">{puzzleLabel}</span>}
+        {def.probability && <span class="chip chip--ghost">probability {def.probability}</span>}
+      </p>
+    </header>
+
+    <section class="card block" aria-labelledby="alg-heading">
+      <h2 class="label" id="alg-heading">Algorithm</h2>
+      <p class="main-alg"><AlgText moves={primaryAlg(def)} /></p>
+    </section>
+
+    <Figure
+      size="card"
+      width={320}
+      height={300}
+      caption="The replay starts at the case and solves it — step through it, or drag to rotate."
+    >
+      {
+        /*
+        `context` is not optional here. Without it the player falls back to
+        resolving the case from (puzzle, stickering, alg), and two cases share
+        one algorithm — eo.line and oll.45 are both `F R U R' U' F'` at
+        different stages — so the resolver correctly refuses and those two
+        pages dropped to cubing.js's stock two tiers. This page KNOWS which
+        case it is rendering; it should never be asking.
+      */
+      }
+      <TwistyPlayer
+        alg={primaryAlg(def)}
+        puzzle={def.puzzle}
+        stickering={def.stickering}
+        context={contextForCase(def)}
+        {...icon ? { poster: icon } : {}}
+        posterAlt={`${def.name} case diagram`}
+      />
+    </Figure>
+
+    {
+      alternates.length > 0 && (
+        <details class="card block alts">
+          <summary>
+            {alternates.length} alternate {alternates.length > 1 ? "algorithms" : "algorithm"}
+          </summary>
+          <ul>
+            {alternates.map((a) => (
+              <li>
+                <AlgText moves={a.moves} />
+                {a.note && <span class="hint"> — {a.note}</span>}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )
+    }
+
+    {
+      scrambles.length > 0 && (
+        <section class="card block" aria-labelledby="scramble-heading">
+          <h2 class="label" id="scramble-heading">
+            Setup scrambles
+          </h2>
+          <ul class="scrambles">
+            {scrambles.map((s) => (
+              <li class="alg">{s}</li>
+            ))}
+          </ul>
+          <p class="hint">Each scramble produces this case from a solved cube (hold yellow up).</p>
         </section>
+      )
+    }
+
+    <nav class="pager" aria-label="Cases in this group">
+      <span class="side">
         {
-          scrambles.length > 0 && (
-            <section class="card block">
-              <span class="label">SETUP SCRAMBLES</span>
-              <ul class="scrambles">
-                {scrambles.map((s) => (
-                  <li class="alg">{s}</li>
-                ))}
-              </ul>
-              <p class="hint">
-                Each scramble produces this case from a solved cube (hold yellow up).
-              </p>
-            </section>
+          prev && (
+            <a href={`/case/${prev.id}/`} rel="prev">
+              ← {prev.name}
+            </a>
           )
         }
-      </div>
-    </div>
-  </main>
+      </span>
+      <a href={refAnchor} class="in-list">See it in the reference</a>
+      <span class="side end">
+        {
+          next && (
+            <a href={`/case/${next.id}/`} rel="next">
+              {next.name} →
+            </a>
+          )
+        }
+      </span>
+    </nav>
+  </Page>
 </Base>
 
 <style>
-  main {
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 26px 20px 60px;
-  }
   .crumbs {
-    margin-bottom: 16px;
+    margin-block-end: var(--space-4);
   }
-  .layout {
-    display: grid;
-    grid-template-columns: 340px minmax(0, 1fr);
-    gap: 30px;
-    align-items: start;
+  .diagram {
+    margin-block: var(--space-5);
   }
-  @media (max-width: 760px) {
-    .layout {
-      grid-template-columns: 1fr;
-    }
-  }
-  .left {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-  }
-  .title-row {
-    display: flex;
-    gap: 16px;
-    align-items: center;
-    margin-bottom: 10px;
-  }
-  h1 {
-    font-size: 28px;
+  .head {
+    margin-block-end: var(--space-5);
   }
   .recognition {
     color: var(--soft);
-    margin: 4px 0 0;
+    margin: var(--space-2) 0 0;
   }
   .chips {
     display: flex;
-    gap: 8px;
-    margin-bottom: 14px;
-  }
-  .chip {
-    padding: 3px 10px;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: var(--space-3) 0 0;
   }
   .block {
-    padding: 14px 18px;
-    margin-bottom: 12px;
+    padding: var(--space-3) var(--space-4);
+    margin-block-end: var(--space-3);
   }
-  .label {
-    letter-spacing: 0.08em;
-    color: var(--accent);
+  /*
+   * tokens.css tells you to put .label on a real heading element, but does not
+   * set font-family — so on an <h2> it inherits --font-display from the
+   * heading rule and comes out serif, unlike every other .label on the site.
+   * Worth folding `font-family: var(--font-body)` into the token class.
+   */
+  h2.label {
+    font-family: var(--font-body);
+    text-transform: uppercase;
   }
   .main-alg {
-    font-size: 16.5px;
-    margin: 6px 0;
+    margin: var(--space-2) 0 0;
     overflow-wrap: anywhere;
   }
-  details summary {
+  .alts summary {
     cursor: pointer;
-    font-size: 13px;
+    font-size: var(--text-sm);
     color: var(--soft);
   }
-  ul {
-    margin: 8px 0 0;
-    padding-left: 18px;
+  .alts ul {
+    margin: var(--space-2) 0 0;
+    padding-inline-start: var(--space-5);
   }
-  li {
-    margin: 4px 0;
+  .alts li {
+    margin: var(--space-1) 0;
     overflow-wrap: anywhere;
-  }
-  .note {
-    color: var(--faint);
-    font-size: 12.5px;
   }
   .scrambles {
     list-style: none;
+    margin: var(--space-2) 0 var(--space-3);
     padding: 0;
   }
   .scrambles li {
-    font-size: 13px;
-    padding: 4px 0;
-    border-top: 1px solid var(--line);
+    font-size: var(--text-sm);
+    padding: var(--space-1) 0;
+    border-block-start: 1px solid var(--line);
   }
   .scrambles li:first-child {
-    border-top: 0;
+    border-block-start: 0;
+  }
+  /* A case page used to end at its last card with no way onward but Back. */
+  .pager {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-block-start: var(--space-6);
+    padding-block-start: var(--space-4);
+    border-block-start: 1px solid var(--line);
+    font-size: var(--text-sm);
+  }
+  .side {
+    flex: 1 1 0;
+    min-inline-size: 0;
+  }
+  .side.end {
+    text-align: end;
+  }
+  .in-list {
+    flex: 0 0 auto;
+    color: var(--soft);
   }
 </style>
