@@ -1,0 +1,1353 @@
+<title>The Big-Cube Cut</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+  /* ── Tokens ────────────────────────────────────────────────────────
+     Same palette as docs/redesign-plan.html, itself inherited from the
+     product's tokens.css, so the two planning documents read as a pair.
+     One accent: the logo's yellow route. Blue stays interactive. */
+  :root {
+    --paper:      #fbfaf7;
+    --surface:    #ffffff;
+    --surface-2:  #f4f2ec;
+    --ink:        #1b1917;
+    --soft:       #56514b;
+    --faint:      #7b746b;
+    --line:       #e2ded5;
+    --line-firm:  #cdc7ba;
+    --route:      #1257a8;
+    --route-soft: #e6f0fa;
+    --brand:      #e8bf00;
+    --brand-ink:  #6b5300;
+    --broken:     #b3261e;
+    --broken-bg:  #fbeae8;
+    --plan:       #9a5b00;
+    --plan-bg:    #fdf0e0;
+    --done:       #106b32;
+    --done-bg:    #e6f3ea;
+
+    --f-display: "Newsreader", Georgia, "Times New Roman", serif;
+    --f-body:    "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+    --f-mono:    "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    --s1: 4px;  --s2: 8px;  --s3: 12px; --s4: 16px;
+    --s5: 24px; --s6: 32px; --s7: 48px; --s8: 72px;
+    --measure: 68ch;
+    --wide: 1040px;
+    --r-sm: 6px; --r-md: 10px; --r-lg: 16px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:      #141210;
+      --surface:    #1c1917;
+      --surface-2:  #232019;
+      --ink:        #ece7de;
+      --soft:       #b6afa4;
+      --faint:      #8d8579;
+      --line:       #302b25;
+      --line-firm:  #494239;
+      --route:      #79b2ec;
+      --route-soft: #16283c;
+      --brand:      #f2ce33;
+      --brand-ink:  #f2ce33;
+      --broken:     #f08a80;
+      --broken-bg:  #2c1614;
+      --plan:       #e8a64e;
+      --plan-bg:    #2b1e10;
+      --done:       #77c78f;
+      --done-bg:    #14281a;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper:      #141210;
+    --surface:    #1c1917;
+    --surface-2:  #232019;
+    --ink:        #ece7de;
+    --soft:       #b6afa4;
+    --faint:      #8d8579;
+    --line:       #302b25;
+    --line-firm:  #494239;
+    --route:      #79b2ec;
+    --route-soft: #16283c;
+    --brand:      #f2ce33;
+    --brand-ink:  #f2ce33;
+    --broken:     #f08a80;
+    --broken-bg:  #2c1614;
+    --plan:       #e8a64e;
+    --plan-bg:    #2b1e10;
+    --done:       #77c78f;
+    --done-bg:    #14281a;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--f-body);
+    font-size: 16px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: var(--wide);
+    margin: 0 auto;
+    padding: var(--s7) var(--s5) var(--s8);
+  }
+
+  /* Everything is one measure column; only tables and specimens break out. */
+  .col { max-width: var(--measure); }
+
+  /* ── Masthead ─────────────────────────────────────────────────── */
+  .mast {
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: var(--s5);
+    margin-bottom: var(--s6);
+  }
+  .eyebrow {
+    font-family: var(--f-mono);
+    font-size: 11.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--faint);
+    margin: 0 0 var(--s4);
+  }
+  h1 {
+    font-family: var(--f-display);
+    font-weight: 500;
+    font-size: clamp(38px, 6vw, 62px);
+    line-height: 1.04;
+    letter-spacing: -0.02em;
+    margin: 0 0 var(--s4);
+    text-wrap: balance;
+  }
+  .standfirst {
+    font-family: var(--f-display);
+    font-size: clamp(18px, 2.2vw, 21px);
+    line-height: 1.5;
+    color: var(--soft);
+    max-width: 62ch;
+    margin: 0;
+  }
+  .standfirst em { color: var(--ink); font-style: italic; }
+
+  .statusbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s2) var(--s5);
+    margin-top: var(--s5);
+    padding-top: var(--s4);
+    border-top: 1px solid var(--line);
+    font-family: var(--f-mono);
+    font-size: 12px;
+    color: var(--faint);
+  }
+  .statusbar b { color: var(--soft); font-weight: 500; }
+
+  /* ── Sections ─────────────────────────────────────────────────── */
+  section { margin-top: var(--s8); scroll-margin-top: var(--s5); }
+  .rule {
+    display: flex;
+    align-items: baseline;
+    gap: var(--s4);
+    border-top: 1px solid var(--line-firm);
+    padding-top: var(--s3);
+    margin-bottom: var(--s5);
+  }
+  .rule .num {
+    font-family: var(--f-mono);
+    font-size: 12px;
+    color: var(--brand-ink);
+    background: color-mix(in srgb, var(--brand) 22%, transparent);
+    padding: 2px var(--s2);
+    border-radius: var(--r-sm);
+    flex: none;
+  }
+  h2 {
+    font-family: var(--f-display);
+    font-weight: 500;
+    font-size: clamp(25px, 3.4vw, 33px);
+    line-height: 1.18;
+    letter-spacing: -0.012em;
+    margin: 0;
+    text-wrap: balance;
+  }
+  h3 {
+    font-family: var(--f-body);
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: 0.005em;
+    margin: var(--s6) 0 var(--s3);
+  }
+  h4 {
+    font-family: var(--f-mono);
+    font-weight: 500;
+    font-size: 11.5px;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--faint);
+    margin: var(--s5) 0 var(--s2);
+  }
+  p { margin: 0 0 var(--s4); max-width: var(--measure); }
+  a { color: var(--route); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible { outline: 2px solid var(--route); outline-offset: 3px; border-radius: 2px; }
+  strong { font-weight: 600; }
+
+  ul, ol { max-width: var(--measure); margin: 0 0 var(--s4); padding-left: 1.35em; }
+  li { margin-bottom: var(--s2); }
+  li::marker { color: var(--faint); }
+
+  code, .m { font-family: var(--f-mono); font-size: 0.9em; }
+  p code, li code, td code {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--r-sm);
+    padding: 0.08em 0.34em;
+    white-space: nowrap;
+  }
+
+  /* ── Verdict panel ────────────────────────────────────────────── */
+  .verdict {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: var(--s3);
+    margin: var(--s5) 0 var(--s6);
+  }
+  .vcard {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: var(--s5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--s2);
+  }
+  .vcard .kind {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+  .vcard .what {
+    font-family: var(--f-display);
+    font-size: 21px;
+    line-height: 1.25;
+    color: var(--ink);
+  }
+  .vcard p { font-size: 14px; color: var(--soft); margin: 0; }
+  .vcard.alg { border-left: 3px solid var(--route); }
+  .vcard.tech { border-left: 3px solid var(--brand); }
+
+  /* ── Algorithm specimen ───────────────────────────────────────── */
+  .spec {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: var(--s5);
+    margin: var(--s4) 0 var(--s5);
+    max-width: var(--wide);
+  }
+  .spec-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--s3);
+    margin-bottom: var(--s4);
+  }
+  .spec-name { font-family: var(--f-body); font-weight: 600; font-size: 15px; }
+  .moves {
+    font-family: var(--f-mono);
+    font-weight: 500;
+    font-size: clamp(14px, 1.9vw, 19px);
+    line-height: 1.55;
+    color: var(--ink);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    padding: var(--s4);
+    overflow-x: auto;
+    white-space: pre;
+  }
+  .effect { margin-top: var(--s4); }
+  .effect dl {
+    margin: 0;
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: var(--s2) var(--s5);
+    font-size: 14.5px;
+  }
+  .effect dt {
+    font-family: var(--f-mono);
+    font-size: 11.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--faint);
+    padding-top: 3px;
+  }
+  .effect dd { margin: 0; color: var(--soft); }
+  .effect dd b { color: var(--ink); font-weight: 500; }
+  @media (max-width: 600px) {
+    .effect dl { grid-template-columns: 1fr; gap: 0; }
+    .effect dd { margin-bottom: var(--s3); }
+  }
+
+  /* ── Callouts ─────────────────────────────────────────────────── */
+  .note {
+    border-radius: var(--r-md);
+    padding: var(--s4) var(--s5);
+    margin: var(--s5) 0;
+    max-width: var(--measure);
+    font-size: 15px;
+  }
+  .note p:last-child { margin-bottom: 0; }
+  .note .tag {
+    display: block;
+    font-family: var(--f-mono);
+    font-size: 11px;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    margin-bottom: var(--s2);
+  }
+  .note.proof   { background: var(--done-bg);   border: 1px solid color-mix(in srgb, var(--done) 34%, transparent); }
+  .note.proof   .tag { color: var(--done); }
+  .note.warn    { background: var(--broken-bg); border: 1px solid color-mix(in srgb, var(--broken) 34%, transparent); }
+  .note.warn    .tag { color: var(--broken); }
+  .note.caution { background: var(--plan-bg);   border: 1px solid color-mix(in srgb, var(--plan) 34%, transparent); }
+  .note.caution .tag { color: var(--plan); }
+  .note.src     { background: var(--surface-2); border: 1px solid var(--line); }
+  .note.src     .tag { color: var(--faint); }
+
+  /* ── Tables ───────────────────────────────────────────────────── */
+  .tablewrap { overflow-x: auto; margin: var(--s4) 0 var(--s5); }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 520px;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+  }
+  caption {
+    text-align: left;
+    font-family: var(--f-mono);
+    font-size: 11.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--faint);
+    padding-bottom: var(--s3);
+  }
+  th {
+    text-align: left;
+    font-family: var(--f-mono);
+    font-weight: 500;
+    font-size: 11px;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--faint);
+    border-bottom: 1px solid var(--line-firm);
+    padding: 0 var(--s4) var(--s2) 0;
+    vertical-align: bottom;
+  }
+  td {
+    border-bottom: 1px solid var(--line);
+    padding: var(--s3) var(--s4) var(--s3) 0;
+    vertical-align: top;
+    color: var(--soft);
+  }
+  td:first-child { color: var(--ink); }
+  tr:last-child td { border-bottom: none; }
+  td .path { font-family: var(--f-mono); font-size: 12.5px; color: var(--ink); word-break: break-word; }
+
+  .pill {
+    display: inline-block;
+    font-family: var(--f-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 2px var(--s2);
+    border-radius: 100px;
+    white-space: nowrap;
+  }
+  .pill.ok    { background: var(--done-bg);   color: var(--done); }
+  .pill.bug   { background: var(--broken-bg); color: var(--broken); }
+  .pill.todo  { background: var(--plan-bg);   color: var(--plan); }
+  .pill.gen   { background: var(--route-soft); color: var(--route); }
+
+  /* ── Step list for the change plan ────────────────────────────── */
+  .phase {
+    font-family: var(--f-mono);
+    font-size: 11.5px;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--brand-ink);
+    border-top: 2px solid var(--brand);
+    padding-top: var(--s2);
+    margin: var(--s6) 0 var(--s3);
+  }
+
+  /* ── Unverified list — deliberately plain and stark ───────────── */
+  .unver { max-width: var(--measure); counter-reset: u; list-style: none; padding: 0; }
+  .unver li {
+    counter-increment: u;
+    border-left: 2px solid var(--line-firm);
+    padding: 0 0 var(--s3) var(--s4);
+    margin: 0 0 var(--s3);
+    position: relative;
+  }
+  .unver li::before {
+    content: counter(u);
+    font-family: var(--f-mono);
+    font-size: 11px;
+    color: var(--faint);
+    position: absolute;
+    left: calc(-1 * var(--s4) - 8px);
+    top: 3px;
+  }
+  .unver li b { color: var(--ink); font-weight: 600; }
+
+  footer {
+    margin-top: var(--s8);
+    padding-top: var(--s4);
+    border-top: 1px solid var(--line);
+    font-family: var(--f-mono);
+    font-size: 12px;
+    color: var(--faint);
+    max-width: var(--measure);
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="mast">
+    <p class="eyebrow">Cubepath · course plan · not yet implemented</p>
+    <h1>Two algorithms, one technique</h1>
+    <p class="standfirst">
+      Cutting the 5×5 course from thirteen memorised last-two-edges cases down to the
+      smallest set that provably finishes the puzzle — then checking the 4×4 against the same
+      source, and making the technique that has no algorithm <em>drillable anyway</em>.
+    </p>
+    <div class="statusbar">
+      <span><b>Status</b> planned, nothing written</span>
+      <span><b>Ships as</b> PR #5, after #4</span>
+      <span><b>Algorithms verified</b> on the cubing.js kpuzzle</span>
+      <span><b>Repo gates run</b> none</span>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <section id="verdict">
+    <div class="rule"><span class="num">01</span><h2>What the course becomes</h2></div>
+
+    <p class="col">
+      You asked to orient the 5×5 on J Perm's beginner tutorial, with three things to learn:
+      switching a centre piece, switching the edges, and the edge parity algorithm. You then
+      corrected the first one — the centre step "isn't a proper alg, it is more a learned
+      approach." That correction is right, and the repo already agrees with it in code.
+      So the honest count is <strong>two algorithms plus one technique</strong>.
+    </p>
+
+    <div class="verdict">
+      <div class="vcard alg">
+        <span class="kind">Algorithm 1</span>
+        <span class="what">Edge flip</span>
+        <p>Seven outer turns. Cannot break a finished pair. Identical on the 4×4.</p>
+      </div>
+      <div class="vcard alg">
+        <span class="kind">Algorithm 2</span>
+        <span class="what">Edge parity</span>
+        <p>The one odd generator the puzzle mathematically requires. Already shipped.</p>
+      </div>
+      <div class="vcard tech">
+        <span class="kind">Technique — no algorithm</span>
+        <span class="what">The centre insert</span>
+        <p>A conjugate you aim. No case, no trainer entry, no drillable string.</p>
+      </div>
+    </div>
+
+    <div class="note proof">
+      <span class="tag">Provenance — resolved</span>
+      <p>
+        <strong>The video's transcript and description are now in hand</strong>, supplied directly
+        rather than fetched. Every attribution below is first-hand and quotable; the earlier version
+        of this document had to route everything through jperm.net/5x5 as a proxy, and that caveat is
+        withdrawn.
+      </p>
+      <p>
+        The description publishes both algorithms in plain text — <span class="m">Edge Flip Algorithm
+        ► R U R' F R' F' R</span> and <span class="m">Parity Algorithm ► Rw U2 x Rw U2 Rw U2 3Rw' U2
+        Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'</span> — <strong>both byte-identical to what this plan
+        recommends and to what the repo already ships.</strong>
+      </p>
+      <p>
+        Three claims in this document were second-hand and are now confirmed from the source itself:
+        that the flip is the same algorithm on every big cube, that the centre step is explicitly
+        <em>not</em> an algorithm, and that there is exactly one parity. Each is quoted where it is used.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <section id="algorithms">
+    <div class="rule"><span class="num">02</span><h2>The two algorithms</h2></div>
+
+    <div class="spec">
+      <div class="spec-head">
+        <span class="spec-name">Edge flip — turns one edge group over in place</span>
+        <span class="pill ok">verified</span>
+      </div>
+      <div class="moves">R U R' F R' F' R</div>
+      <div class="effect">
+        <dl>
+          <dt>Centres</dt>
+          <dd><b>Zero pieces visually changed.</b> Exact cycles exist inside the U face, but they
+            move same-colour pieces — the cube shows no centre disturbance at all.</dd>
+          <dt>Edges</dt>
+          <dd>The FR slot's two wings swap and its midge flips: <b>the front-right group turns
+            over as one object</b>. The other eight wings and four midges are exactly a U turn of
+            the four top-layer groups, intact.</dd>
+          <dt>Corners</dt>
+          <dd>A 4-cycle plus one twist. Corners are free during reduction — the 3×3 stage places them.</dd>
+          <dt>Safety</dt>
+          <dd><b>It is mechanically incapable of breaking a finished pair.</b> Outer turns only, so it
+            maps intact edge groups to intact edge groups everywhere on the cube. Verified directly,
+            not reasoned about.</dd>
+          <dt>Cross-puzzle</dt>
+          <dd>Legal on the 4×4×4 kpuzzle too, and being outer-turn-only it means <b>literally the same
+            thing on both puzzles</b> — unlike anything containing <code>Rw</code>.</dd>
+        </dl>
+      </div>
+      <p style="margin:var(--s4) 0 0;font-size:14.5px;color:var(--soft);">
+        Confirmed by the source, unprompted — at 4:15 in the video:
+        <em>"the algorithm to flip one edge is the same as the one you would have used for a 4×4, and
+        it's the same as what you used for larger cubes as well."</em> This was the plan's own claim
+        before the transcript arrived; it is now a quotation rather than an inference.
+      </p>
+    </div>
+
+    <div class="spec">
+      <div class="spec-head">
+        <span class="spec-name">Edge parity — the one odd generator</span>
+        <span class="pill ok">verified · already shipped</span>
+      </div>
+      <div class="moves">Rw U2 x Rw U2 Rw U2 3Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'</div>
+      <div class="effect">
+        <dl>
+          <dt>Centres</dt>
+          <dd>Exact 6- and 8-piece permutations, <b>zero visually changed</b>; a whole-cube rotation
+            brings them home. The algorithm is centre-clean.</dd>
+          <dt>Edges</dt>
+          <dd>The UF group's two wings exchange places, each turned around, while its midge stays
+            put — <b>that is the flipped-edge look</b>. UR and UL swap intact.</dd>
+          <dt>Corners</dt>
+          <dd>Two swap. Harmless during reduction; the 3×3 stage cleans it up.</dd>
+          <dt>Frequency</dt>
+          <dd><b>Half of all solves</b> — the video, at 6:10: <em>"there's a 50% chance you will have
+            finished all the edges, but the other 50% of the time you'll get one flipped edge left."</em>
+            Their 4×4 page says the same of each 4×4 parity. Worth stating in the lesson: parity is not
+            a mistake you made, it arrives on schedule.</dd>
+          <dt>The hold</dt>
+          <dd><b>Load-bearing, and measured.</b> A synthetic single-flipped-group state was built at
+            five different slots. At <b>UF it solves</b>; at UB, UR, FR and DF it does not. "Hold the
+            flipped group at UF" is an instruction, not decoration.</dd>
+          <dt>Provenance</dt>
+          <dd>Already pinned as <code>5x5-edge-parity</code> in <code>case-states.json</code>, already
+            verified by <code>verify-l2e.mjs</code>, already printed on the cheat card, already
+            asserted token-for-token against the 4×4 form in <code>test_notation.py</code>.
+            <b>Nothing new needs to be trusted.</b></dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="note warn">
+      <span class="tag">Rejected — both destroy 5×5 centres</span>
+      <p>
+        Ruwix publishes <code class="m">Rw U2 Rw' U2 Rw U2 Rw U2 Lw' U2 Rw U2 Rw' U2 x' U2 Rw2</code>
+        as the 5×5 parity algorithm, claiming it also serves the 4×4. Measured: <strong>8 of the 24
+        "+" centre pieces visually changed and the fixed centres 4-cycle. No whole-cube rotation
+        brings them home.</strong> The 4×4 OLL-parity form fails identically.
+      </p>
+      <p>
+        Both differ from the correct string by exactly the token the repo already pins —
+        <code>Rw'</code> versus <code>3Rw'</code> at index 7. Do not cite ruwix as corroboration for
+        parity. It is fine for the edge flip, where it agrees character-for-character and the
+        layer-count trap cannot apply.
+      </p>
+      <p>
+        This is the concrete stake for the lesson's caution callout: the wrong algorithm does not
+        shred your paired edges, <strong>it shreds your centres, unrecoverably</strong>.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <section id="technique">
+    <div class="rule"><span class="num">03</span><h2>The centre insert, as taught technique</h2></div>
+
+    <div class="note proof">
+      <span class="tag">The source says this outright — 3:15, quoted verbatim</span>
+      <p>
+        <em>"I'm gonna teach you a trick that can bring any piece from up here down into the front…
+        make sure you remember this whole pattern — <strong>it's not necessarily one algorithm</strong>,
+        but this pattern will apply no matter which pieces you're trying to move into here."</em>
+      </p>
+      <p>
+        Your correction was not a softening of the source, it <em>was</em> the source. J Perm then walks
+        two different worked instances of the same pattern rather than one string, which is exactly the
+        shape §03 recommends. <strong>There is no centre algorithm anywhere in the video</strong> — the
+        earlier finding stands, now from the primary text.
+      </p>
+    </div>
+
+    <p class="col">
+      Your description — align the piece, move it down where it belongs, move it away, bring the
+      column down, put the face back, move the layer up, return — is a conjugate: <strong>take away,
+      act, put back</strong>. It also tracks the video's own narration beat for beat. The repo already
+      ships exactly this shape one puzzle down.
+      <code>444-centers.mdx</code> carries <code>algorithms: []</code>, no case row, and a single
+      figure: <code>Rw U Rw'</code>, captioned "lift a column of the front centre into the top, turn
+      the top, lower it home."
+    </p>
+
+    <h4>Why the conjugate restores what it disturbs</h4>
+    <p class="col">
+      <code>Rw</code> carries a whole column away, <code>U</code> only touches the top layer,
+      <code>Rw'</code> carries the column back. Every piece the grab moved that the middle beat did
+      not touch returns to the exact slot it left. The only pieces that end up somewhere new are the
+      one you wanted to move and the one you displaced to make room.
+    </p>
+
+    <div class="note proof">
+      <span class="tag">Measured on the 5×5, so the claim survives the extra layer</span>
+      <p>
+        <code>Rw U Rw'</code> — visually changed: <strong>U+F and F+R (+ centres), UxFL and FxRU
+        (X centres). Nothing else.</strong> The R, L, B and D centres are untouched: all four
+        finished faces come back exactly as they were.
+      </p>
+      <p>
+        <code>M U M'</code> — visually changed: U+R, U+L, B+U, B+D (+ centres only); X centres
+        untouched. <strong>This is the 5×5's extra grab</strong> — the middle column of a centre
+        grid does not exist on a 4×4, and the two-wide grab cannot reach it.
+      </p>
+    </div>
+
+    <h4>How to write it</h4>
+    <ol class="col">
+      <li>The invariant in two sentences — take away, act, put back.</li>
+      <li>One worked instance on one concrete position, <code>Rw U Rw'</code>, <strong>labelled
+        explicitly as one instance of the pattern, not the algorithm</strong>, and carrying the
+        measured guarantee: the R, L, B and D centres come back untouched. That is what makes a
+        learner trust it.</li>
+      <li>The recognition that generalises it: which layer you grab is chosen by which column the
+        piece must land in; the middle beat is chosen by what you want on top.</li>
+      <li>The 5×5-only note that the middle column needs the middle slice.</li>
+    </ol>
+
+    <p class="col">
+      Frontmatter keeps <code>algorithms: []</code> — that field holds case ids and there is no case
+      here. But the copy must say the quiet part out loud, once: <strong>"There is no algorithm on
+      this page. Centres are a pattern you aim, not a sequence you recall."</strong> The site
+      otherwise reads an empty <code>algorithms:</code> as "nothing to learn here", which is the
+      opposite of true for the step that is half the solve.
+    </p>
+
+    <p class="col">
+      No <code>CaseDef</code>, no trainer case, no drillable entry. Practice for centres is already
+      correctly wired as a trainer note — scramble, solve all six centres, scramble again.
+    </p>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <section id="proof">
+    <div class="rule"><span class="num">04</span><h2>Is the cut safe?</h2></div>
+
+    <p class="col">
+      This is the question that matters, and it deserves an answer from the puzzle's structure
+      rather than from deference. <strong>Yes — and it is provable rather than customary.</strong>
+      Two independent lines.
+    </p>
+
+    <h3>The invariant: why exactly two, not one and not three</h3>
+
+    <div class="tablewrap col">
+      <table>
+        <caption>Parity of the permutation induced on the 24 wings</caption>
+        <thead><tr><th>Generator</th><th>Wing parity</th></tr></thead>
+        <tbody>
+          <tr><td>Any outer turn (U, R, F …)</td><td><span class="pill gen">even</span></td></tr>
+          <tr><td><code>R U R' F R' F' R</code> — the flip</td><td><span class="pill gen">even</span></td></tr>
+          <tr><td>The flip conjugated by <code>Uw</code></td><td><span class="pill gen">even</span></td></tr>
+          <tr><td>The flip conjugated by <code>Rw</code></td><td><span class="pill gen">even</span></td></tr>
+          <tr><td>The parity algorithm</td><td><span class="pill bug">odd</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="col">
+      Conjugation cannot change permutation parity. So <strong>every slice-flip-slice — any setup,
+      any slice, any repetition, interleaved with any outer turns — is even on wings.</strong> A
+      reduced cube is necessarily even on wings. Therefore an odd-wing-parity state is unreachable
+      by any amount of pairing technique, and the parity algorithm is not a convenience: it is the
+      second generator the puzzle requires. Conversely nothing beyond it is required, because one
+      application flips the class and everything left over is even.
+    </p>
+
+    <div class="note proof">
+      <span class="tag">This is the best sentence available for the lesson</span>
+      <p>
+        "Everything you do while pairing swaps wings in pairs. Parity is the state where one swap is
+        left over — and no amount of pairing can produce an odd number of swaps."
+      </p>
+      <p>
+        It replaces the current lesson's hand-wavy "wings have no orientation of their own", which
+        is a weaker claim about a different thing.
+      </p>
+    </div>
+
+    <h3>The construction: actual solutions were found</h3>
+
+    <p class="col">
+      The reduction model from <code>verify-l2e.mjs</code> was rebuilt in a scratch script and 1275
+      slice-flip-slice macros searched. <strong>All 13 shipped L2E cases solve.</strong>
+    </p>
+
+    <div class="tablewrap col">
+      <table>
+        <caption>Every shipped case, reduced to the two-algorithm course</caption>
+        <thead><tr><th>Cases</th><th>Wing parity</th><th>Solution under the cut</th></tr></thead>
+        <tbody>
+          <tr><td>l2e-1, l2e-2</td><td><span class="pill gen">even</span></td><td>2 flip macros</td></tr>
+          <tr><td>l2e-3, l2e-4, l2e-13</td><td><span class="pill gen">even</span></td><td>3 flip macros</td></tr>
+          <tr><td>l2e-6</td><td><span class="pill bug">odd</span></td><td>the parity algorithm alone</td></tr>
+          <tr><td>l2e-5, 7, 8, 9, 10, 11, 12</td><td><span class="pill bug">odd</span></td><td>parity algorithm + 2 flip macros</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="col">
+      Worked example, l2e-1: <code class="m">F R' F R F' R U' R'</code> then
+      <code class="m">L Uw' R U R' F R' F' R Uw</code>.
+    </p>
+
+    <h4>The rest of the solve, checked structurally</h4>
+    <ul class="col">
+      <li><strong>Centres</strong> — no parity exists on an odd cube, and the conjugate technique
+        reaches every centre piece, so centres always finish.</li>
+      <li><strong>The 3×3 stage</strong> — a 5×5 has a true fixed centre on every face, so midges and
+        corners obey 3×3 law and there is <strong>no PLL parity</strong>. The existing lesson already
+        says this and is correct.</li>
+      <li><strong>No mirror form is needed</strong> — any group can be rotated to FR, and the parity
+        algorithm's single hold is reachable by cube rotation.</li>
+    </ul>
+
+    <div class="note caution">
+      <span class="tag">Two things that are close to being a fourth item, but are not</span>
+      <p>
+        <strong>(a)</strong> The parity hold is UF and only UF. Recognition is load-bearing, so the
+        lesson must state it.<br>
+        <strong>(b)</strong> On a 5×5 the centre conjugate needs a <em>choice</em> of grab — two-wide
+        versus the middle slice — that the 4×4 never needed. One technique, two grabs; not a new
+        algorithm.
+      </p>
+    </div>
+
+    <p class="col">
+      <strong>What is lost is speed, never the ability to finish.</strong> The 13-case set is a
+      one-look optimisation; the beginner path replaces it with an iterative loop of up to three
+      slice-flip-slices. That is a time cost.
+    </p>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <section id="cases">
+    <div class="rule"><span class="num">05</span><h2>What happens to the thirteen cases</h2></div>
+
+    <p class="col">
+      They lock — they are not deleted. <code>app/src/lib/unlocks.ts</code> already does exactly this
+      job for the 47 parity-embedded 4×4 cases behind one boolean, keyed by case id so individually
+      taught cases inside a locked group stay visible. <strong>Add one key beside it; do not invent a
+      second mechanism.</strong>
+    </p>
+
+    <div class="spec">
+      <div class="spec-head"><span class="spec-name">app/src/lib/unlocks.ts</span></div>
+      <div class="moves">export type UnlockKey = "444-parity-embedded" | "555-l2e-onelook";
+
+UNLOCKED["555-l2e-onelook"] = false;
+
+export const TAUGHT_555_CASES: ReadonlySet&lt;string&gt; = new Set(["555.l2e-6"]);
+
+hidesCase:  (def) =&gt; def.id.startsWith("555.l2e-") &amp;&amp; !TAUGHT_555_CASES.has(def.id)
+hidesGroup: () =&gt; false   // deliberately NOT hiding "555-l2e"</div>
+    </div>
+
+    <p class="col">
+      <strong>Stays visible:</strong> <code>555.l2e-6</code> only.
+      <strong>Locks:</strong> the other twelve. The <code>555-l2e</code> group itself stays visible so
+      <code>/reference/#555-l2e</code> and <code>/practice/?group=555-l2e</code> still resolve — and a
+      one-case trainer group is genuinely useful here, because it drills the only recognition question
+      a 5×5 asks: <em>is this parity or not?</em> Relabel the set from "5×5 last two edges" to
+      <strong>"5×5 edge parity"</strong>.
+    </p>
+
+    <h4>Two reasons the twelve should go regardless of what the video teaches</h4>
+    <ul class="col">
+      <li>All thirteen carry the <strong>same placeholder recognition string</strong>, "Last two edges
+        (5×5)" — <code>gen-cases.mjs</code> hardcodes it at the 555 branch and bypasses the
+        <code>recognition.json</code> lookup the OLL and PLL branches use. All thirteen names are
+        "L2E 1"…"L2E 13". With no 5×5 diagrams, <code>/reference/#555-l2e</code> renders thirteen
+        identically-labelled text tiles. <strong>They are not distinguishable in the UI at all, so they
+        cannot be drilled.</strong></li>
+      <li><code>555-l2e-parity.mdx</code> currently tells the reader "the recognition text on each case
+        tells you the exact angle". <strong>That sentence is false as shipped.</strong></li>
+    </ul>
+
+    <div class="note warn">
+      <span class="tag">Live bug — the caution callout does not work today</span>
+      <p>
+        The lesson asks the reader to open <code>/case/444.oll-parity/</code> and
+        <code>/case/555.l2e-6/</code> side by side because they are "near-twins". What the two pages
+        actually show are <strong>different algorithms of different lengths</strong> — the comparison
+        is impossible. The real near-twin is l2e-6's <code>algs[1]</code>, the jperm.net string, which
+        <code>gen-cases.mjs</code> demotes to a build-time-only alternate.
+      </p>
+      <p>
+        <strong>Fix:</strong> reorder l2e-6's algs in <code>verify-l2e.mjs</code>'s pinned
+        <code>L2E_CASES</code> so the jperm string is <code>algs[0]</code>, then run
+        <code>verify-l2e.mjs</code> (it rewrites the raw JSON only on a clean pass) →
+        <code>gen-cases.mjs</code> → <code>gen-case-states.mjs</code>.
+        <strong>Never hand-edit <code>l2e-raw.json</code>.</strong> Both algorithms were confirmed to
+        solve the same case with identical visible effect, so this is purely which-string-do-we-print.
+      </p>
+    </div>
+
+    <div class="note caution">
+      <span class="tag">Correction to an earlier claim of mine</span>
+      <p>
+        I previously said the repo's <code>l2e-1</code> (<code class="m">Rw' U' R' U R' F R F' Rw</code>)
+        was J Perm's flip wrapped in a slice. <strong>It is not — they are genuinely different
+        algorithms</strong>, tested exhaustively against all 24 rotation-conjugates of the flip and its
+        inverse, with free pre- and post-AUF. No match.
+      </p>
+      <p>
+        The real difference is worth one sentence to a learner: <strong>the flip is a tool you aim —
+        you supply the slice yourself, so the same seven moves work anywhere, on either big cube.</strong>
+        <code>l2e-1</code> is a finisher with the slice baked in at a fixed width, so it applies to its
+        one case only, and its <code>Rw</code> means two layers on a 5×5 and something else on a 4×4.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <section id="lessons">
+    <div class="rule"><span class="num">06</span><h2>The lessons, section by section</h2></div>
+
+    <p class="col">
+      Keep both files and both slugs — minimal churn. Net effect: three case rows and one section
+      removed, two short sections added. <strong>Shorter than it is now</strong>, and every algorithm
+      shown stays machine-verified.
+    </p>
+
+    <h3>555-centers-edges.mdx — "5×5: Centres and Edge Pairing"</h3>
+    <ul class="col">
+      <li><span class="pill ok">keep</span> the intro, the fixed-centre gift callout, and the
+        <code>3Rw</code> notation figure — already an allowed notation demo in
+        <code>algs.spec.ts</code>.</li>
+      <li><span class="pill ok">keep</span> "Centres: three bars each" as-is.</li>
+      <li><span class="pill todo">new</span> <strong>"The insert"</strong> — the centre technique per
+        §03: the invariant, the <code>Rw U Rw'</code> worked instance at stage
+        <code>555-centers</code>, the middle-slice grab, and the explicit "there is no algorithm on
+        this page" line.</li>
+      <li><span class="pill ok">keep</span> "Edges: a midge and two wings" as-is.</li>
+      <li><span class="pill todo">extend</span> "Freeslice pairing" — <strong>the loop currently has
+        no answer for "the wing is facing the wrong way."</strong> Add the flip as its fourth beat:
+        one <code>&lt;AlgText&gt;</code>, one player at stage <code>555-pairing</code>, and the
+        verified safety line. The freeslice material below sharpens this whole section.</li>
+      <li><span class="pill ok">keep</span> the closing pointer and the centres-are-half-the-solve tip.
+        Frontmatter unchanged.</li>
+    </ul>
+
+    <h3>555-l2e-parity.mdx — "5×5: Last Two Edges"</h3>
+    <ul class="col">
+      <li><span class="pill gen">frontmatter</span> <code>algorithms: ["555.l2e-6"]</code>, down from
+        four. Keep <code>groups: ["555-l2e"]</code>; rewrite the practice note, which currently says
+        "drill all thirteen".</li>
+      <li><span class="pill bug">delete</span> "the recognition text on each case tells you the exact
+        angle" — false as shipped, and moot once the twelve lock.</li>
+      <li><span class="pill todo">replace</span> "The flip/insert family" (three case rows) with
+        <strong>"Slice, flip, slice back"</strong> — the same three moves the 4×4 lesson already
+        teaches as prose, now with a named algorithm doing the middle beat, and the honest statement
+        that you repeat it: <strong>at most three rounds finishes any case</strong> (measured).</li>
+      <li><span class="pill ok">keep</span> "Edge parity" with its single case row; add the verified
+        hold and the two verified side effects — UR/UL groups swap, two corners swap, both legal 3×3
+        states the reader's method already finishes. Saying so pre-empts the "it wrecked my cube"
+        panic.</li>
+      <li><span class="pill todo">rewrite</span> the caution callout around the measured stake from
+        §02. Only lands correctly after the l2e-6 reorder.</li>
+      <li><span class="pill bug">delete</span> "The remaining cases" entirely — it links to a locked set.</li>
+      <li><span class="pill todo">new</span> the wing-parity invariant in three sentences, as the reason
+        parity exists and needs its own algorithm.</li>
+      <li><span class="pill ok">keep</span> "Why there is no PLL parity" and "You're done learning" —
+        both correct; update the latter to name two algorithms and one technique.</li>
+    </ul>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <section id="diagrams">
+    <div class="rule"><span class="num">07</span><h2>A known blocker disappears</h2></div>
+
+    <p class="col">
+      The 13 L2E states are exported raw and are not drawable, because reconstructing the displayed
+      pattern needs the reduction model inside <code>verify-l2e.mjs</code>. That limit is pinned by
+      <code>test_case_states.py</code> so it cannot be forgotten. It has been blocking thirteen 5×5
+      diagrams.
+    </p>
+
+    <p class="col">
+      <strong>With twelve cases locked, the entire remaining picture budget is three items — and all
+      three are player material, not SVG material.</strong> The centre insert and the flip are
+      <code>anchor="start"</code> players from a solved cube, exactly how <code>444-centers.mdx</code>
+      and <code>f2l-intuition.mdx</code> already work. For parity: applying the algorithm to a solved
+      cube <em>creates</em> the parity state and applying it twice returns to reduced, so the existing
+      case row already shows it correctly today with no case-state export at all.
+    </p>
+
+    <div class="note proof">
+      <span class="tag">Do not build a 5×5 SVG path</span>
+      <p>
+        <code>diagrams.py</code> is a 3×3 plan and isometric generator; a 5×5 plan diagram for one
+        case is disproportionate. <strong>Leave the KNOWN LIMIT comment and its Python pin exactly as
+        they are</strong> — both remain true statements about the data, and they still guard the
+        twelve locked cases if anyone later unlocks them. The blocker does not need to be solved; the
+        course change sidesteps it.
+      </p>
+      <p>
+        The only gap left is a 62px tile icon on <code>/reference/</code>, and that page already has
+        its "no diagrams for this set yet" fallback for precisely this.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <section id="fourbyfour">
+    <div class="rule"><span class="num">08</span><h2>The 4×4, checked against the same source</h2></div>
+
+    <p class="col">
+      <a href="https://jperm.net/4x4">jperm.net/4x4</a> <em>was</em> fetched — unlike the 5×5 video,
+      this one is a written page and it read cleanly. Three of its four algorithm strings already
+      match what we ship, byte for byte. The findings below are the divergences.
+    </p>
+
+    <div class="tablewrap col">
+      <table>
+        <caption>What jperm.net/4x4 publishes, against what we ship</caption>
+        <thead><tr><th>Their string</th><th>Us</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="path">Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'</span><br><span class="pill gen">OLL parity</span></td>
+            <td><span class="pill ok">identical</span> — already <code>444.oll-parity</code></td>
+          </tr>
+          <tr>
+            <td><span class="path">2R2 U2 2R2 Uw2 2R2 Uw2</span><br><span class="pill gen">PLL parity</span></td>
+            <td><span class="pill ok">identical</span> — already <code>4x4-pll-parity</code></td>
+          </tr>
+          <tr>
+            <td><span class="path">R U R' F R' F' R</span><br><span class="pill gen">edge flip</span></td>
+            <td><span class="pill bug">taught as prose, no string</span> — our "flip trick" section
+              describes the motion and never names it</td>
+          </tr>
+          <tr>
+            <td><span class="path">Rw' F2 Rw2 U2 Rw'</span><br><span class="pill gen">last two centres, U/F</span></td>
+            <td><span class="pill bug">absent</span></td>
+          </tr>
+          <tr>
+            <td><span class="path">Rw2 U2 D2 Rw2</span><br><span class="pill gen">last two centres, U/D</span></td>
+            <td><span class="pill bug">absent</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>The two centre algorithms — verified, and they answer your original question</h3>
+
+    <p class="col">
+      You originally named "switching a center piece" as one of the three things to learn. On the
+      5×5 page there is no such algorithm — which is why I came back with a technique instead. On the
+      <strong>4×4</strong> page there are two, and they are almost certainly what you were remembering.
+      Both measured on the kpuzzle:
+    </p>
+
+    <div class="spec">
+      <div class="spec-head">
+        <span class="spec-name">Last two centres — U/F, then U/D</span>
+        <span class="pill ok">verified</span>
+      </div>
+      <div class="moves">Rw' F2 Rw2 U2 Rw'      swaps pieces between the U and F centres
+Rw2 U2 D2 Rw2          swaps pieces between the U and D centres</div>
+      <div class="effect">
+        <dl>
+          <dt>Centres</dt>
+          <dd>The first touches <b>all four U pieces and all four F pieces, and nothing else</b> —
+            R, L, D and B come back untouched. The second touches all four U and all four D pieces,
+            leaving F, B, L and R untouched. <b>Each is a pure two-face operation</b>, which is
+            exactly what "last two centres" means.</dd>
+          <dt>Corners and edges</dt>
+          <dd>Both wreck them — 4 to 8 corners and 12 to 16 wings move. <b>That is fine and is the
+            point:</b> these run during the centres step, when no corner or edge is placed yet.
+            They are unusable later, and the lesson must say so.</dd>
+          <dt>On a 5×5</dt>
+          <dd>Legal, but <b>not the same tool</b> — they reach only half the + centres, so they do
+            not finish a 5×5 face. Do not carry them across.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="note caution">
+      <span class="tag">Recommendation — a decision for you, not a default</span>
+      <p>
+        <strong>Teach them as optional shortcuts in the 4×4 centres lesson, not as course
+        algorithms.</strong> The conjugate technique already solves every centre case; these two only
+        make the two most annoying last-two-centres positions fast. That keeps the course's "as few new
+        algorithms as possible" rule intact, matches how J Perm's own page presents them, and gives the
+        drill below something to graduate <em>into</em>: learn the pattern, then learn the two shortcuts
+        for when you are tired of doing it the slow way.
+      </p>
+      <p>
+        The alternative — promoting them to real cases with trainer entries — would take the 4×4 from
+        two taught algorithms to four, for two positions. I would not.
+      </p>
+    </div>
+
+    <h3>The structural divergence: J Perm teaches Yau from the start</h3>
+
+    <p class="col">
+      Their page is explicit — "In this video I teach the Yau Method… the most popular 4×4 method and
+      was used to set the current world record" — and its six steps put the partial white cross
+      <em>third</em>, before the remaining centres. <strong>We teach plain reduction and put Yau in an
+      optional advanced lesson</strong> at order 330, after the 3×3 stage.
+    </p>
+
+    <div class="note proof">
+      <span class="tag">Decided — reduction is the method, Yau stays optional</span>
+      <p>
+        <strong>You settled this: teach reduction, keep Yau as the optional upgrade.</strong> Our
+        existing order stands, and it goes into <code>DECISIONS.md</code> as a deliberate divergence
+        from the source rather than an accident. The reasoning below is the record.
+      </p>
+      <p>
+        Yau's partial-cross step is an optimisation
+        whose <em>point</em> is invisible until you have felt why centres-then-edges is slow. Our
+        course already teaches the 3×3 first and reaches the 4×4 with a solver who can finish it;
+        reduction-first then Yau-as-upgrade fits that reader. J Perm's page is aimed at someone
+        buying their first 4×4 and wanting the fast method immediately.
+      </p>
+      <p>
+        Worth adding to <code>444-yau-intro.mdx</code>: one line saying this is the method J Perm
+        teaches first, so a reader who arrives from that video is not confused by the ordering.
+      </p>
+    </div>
+
+    <div class="note warn">
+      <span class="tag">The flip-trick gap is now confirmed from their side</span>
+      <p>
+        <code>444-edge-pairing.mdx</code> promises "finish the last two edges with the flip trick" in
+        its objectives and then <strong>never gives the reader a string</strong> — it describes the
+        motion in prose and stops. J Perm's 4×4 page publishes <code>R U R' F R' F' R</code> for
+        exactly that job, and it is <strong>the same seven moves as the 5×5 flip</strong>.
+      </p>
+      <p>
+        The 5×5 plan had this as "optional, high value". It is now the strongest single content fix in
+        this document: <strong>one verified string closes a promise the lesson already makes, on both
+        cubes at once.</strong>
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <section id="drill">
+    <div class="rule"><span class="num">09</span><h2>Making the technique drillable</h2></div>
+
+    <p class="col">
+      Your idea: a drill that hands the learner a random centre-piece position and makes them adapt
+      the pattern to it. <strong>It is buildable, it is the right instinct, and it is bigger than
+      everything else on this page put together.</strong>
+    </p>
+
+    <h3>Why it does not fit the existing trainer</h3>
+
+    <p class="col">
+      Every trainer set today is a fixed list of cases with a stored answer, scheduled by FSRS —
+      "recall this algorithm." A centre insert has <strong>no answer key</strong>: the whole point is
+      that the moves change with the position. Graded as recall, it is ungradeable.
+    </p>
+
+    <div class="note proof">
+      <span class="tag">The unlock — grade the state, not the moves</span>
+      <p>
+        We never need to know what the learner did. Generate a position, let them work, and check the
+        <strong>resulting state</strong> against a predicate: are all six centres uniform, and is the
+        piece that had to move now home? Any sequence that gets there is correct — which is not merely
+        easier to implement, it is <em>more correct</em> for a technique with no canonical solution.
+      </p>
+      <p>
+        That predicate already exists in prototype: it is the centres-visually-home check I wrote for
+        the 5×5 verification work, in <code class="m">scratchpad/5x5/l2e-core.mjs</code>.
+      </p>
+    </div>
+
+    <h3>Generating positions by running the technique backwards</h3>
+
+    <p class="col">
+      Do not hand-author positions — the repo's derive-everything rule applies here too. Instead:
+      take a cube with solved centres, pick a random grab (<code>Rw</code>, <code>M</code>,
+      <code>3Rw</code>…) and a random middle beat (<code>U</code>, <code>U'</code>, <code>U2</code>),
+      and apply <strong>the inverse of that conjugate</strong>. The result is guaranteed solvable in
+      exactly one conjugate, and you already know a solution to offer as a hint.
+    </p>
+
+    <p class="col">
+      <strong>Difficulty grades itself:</strong> one conjugate, two, three. No case list, no
+      recognition table, and an effectively unbounded supply of positions — which is precisely what a
+      pattern needs and a case set cannot give.
+    </p>
+
+    <h3>Input</h3>
+
+    <p class="col">
+      cubing.js 0.63.3 does expose interactive input — <code>experimentalDragInput</code> and
+      <code>experimentalMovePressInput</code> on the player, plus <code>experimentalAddMove</code> to
+      push moves in. So the learner can turn the cube directly rather than tapping a button pad.
+      <strong>Two cautions:</strong> it is <code>experimental*</code> API, which we already carry risk
+      on with the stickering mask; and dragging is awkward on a phone, so a move pad should exist as
+      well, not instead.
+    </p>
+
+    <h3>What it is really worth</h3>
+
+    <p class="col">
+      The reason to build this properly is that <strong>centres are not the only thing we teach as
+      technique and cannot drill.</strong> The same machine — generate backwards, grade the state —
+      covers F2L intuition, 4×4 edge pairing, 5×5 freeslice and both centre steps. Those are four
+      lessons that currently end by sending the reader to a trainer that has nothing for them.
+    </p>
+
+    <div class="note caution">
+      <span class="tag">Honest cost</span>
+      <p>
+        Position generator, state predicate, input surface, feedback and hint UI, a persistence model
+        that is <em>not</em> FSRS cards, and tests for all of it. This is a new product surface, not a
+        lesson edit. <strong>It deserves its own PR and its own design pass</strong> — and it should
+        probably debut on the 4×4 centre step, which is the simplest instance (no middle slice) and
+        the one with the most learners.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <section id="files">
+    <div class="rule"><span class="num">10</span><h2>File by file</h2></div>
+
+    <p class="col">
+      Compiled by grepping the whole repo for <code>555</code>, <code>l2e</code> and <code>L2E</code>
+      and reading every hit, so nothing dangles.
+    </p>
+
+    <p class="phase">Phase 1 · Verification and data — everything downstream is generated</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>File</th><th>Change</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="path">app/scripts/verify-l2e.mjs</span></td>
+            <td>Reorder l2e-6 so the jperm string is <code>algs[0]</code>. <strong>Add</strong> an
+              edge-flip pin (outer-turn tokens only; centres home; the FR group turns over; every other
+              group intact; legal on the 4×4 kpuzzle), the wing-parity checks, and the pinned
+              slice-flip-slice solutions — so "two algorithms finish every case" is a regression test,
+              not a comment. Re-run it.</td>
+          </tr>
+          <tr>
+            <td><span class="path">app/src/data/extracted/l2e-raw.json</span></td>
+            <td><span class="pill gen">generated</span> Regenerated by the verifier. Never hand-edit.</td>
+          </tr>
+          <tr>
+            <td><span class="path">app/scripts/gen-cases.mjs</span></td>
+            <td>The 555 branch hardcodes its recognition string and bypasses the
+              <code>recognition[id] ?? fallback</code> lookup the OLL/PLL branches use. Use the lookup.</td>
+          </tr>
+          <tr>
+            <td><span class="path">app/src/data/recognition.json</span></td>
+            <td>Add a real <code>555.l2e-6</code> string naming the UF hold.</td>
+          </tr>
+          <tr>
+            <td><span class="path">app/src/data/fullsets{,.rich}.gen.ts</span></td>
+            <td><span class="pill gen">generated</span> By <code>gen-cases.mjs</code>.</td>
+          </tr>
+          <tr>
+            <td><span class="path">app/src/data/extracted/case-states.json</span></td>
+            <td><span class="pill gen">generated</span> <strong>Check</strong> that
+              <code>parityAlgs["5x5-edge-parity"].source</code> updates from
+              <code>algs[1]</code> to <code>algs[0]</code> rather than going stale — if the generator
+              locates it by index rather than by signature, that reference rots silently.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="phase">Phase 2 · App logic</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>File</th><th>Change</th></tr></thead>
+        <tbody>
+          <tr><td><span class="path">app/src/lib/unlocks.ts</span></td><td>Add the <code>555-l2e-onelook</code> key and <code>TAUGHT_555_CASES</code> per §05.</td></tr>
+          <tr><td><span class="path">app/src/lib/trainer.ts</span></td><td>Relabel the <code>555-l2e</code> set to "5×5 edge parity".</td></tr>
+          <tr><td><span class="path">app/src/pages/case/[...id].astro</span></td><td>Same relabel.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="phase">Phase 3 · Content</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>File</th><th>Change</th></tr></thead>
+        <tbody>
+          <tr><td><span class="path">app/src/content/lessons/555-centers-edges.mdx</span></td><td>Per §06.</td></tr>
+          <tr><td><span class="path">app/src/content/lessons/555-l2e-parity.mdx</span></td><td>Per §06.</td></tr>
+          <tr><td><span class="path">app/src/content/lessons/444-edge-pairing.mdx</span></td><td><span class="pill bug">confirmed gap</span> The objectives promise the flip trick and the body never gives a string. Add <code>R U R' F R' F' R</code> — verified, and the same seven moves as the 5×5. Do not add it without the verifier pin.</td></tr>
+          <tr><td><span class="path">app/src/content/lessons/444-centers.mdx</span></td><td>Add the two verified last-two-centres shortcuts as <strong>optional</strong>, with the measured warning that they move corners and wings and so are centres-step-only. Keep <code>algorithms: []</code> — they are shortcuts, not cases.</td></tr>
+          <tr><td><span class="path">app/src/content/lessons/444-yau-intro.mdx</span></td><td>One line noting Yau is what J Perm teaches <em>first</em>, so a reader arriving from that video is not confused by our ordering.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="phase">Phase 4 · Tests</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>File</th><th>Change</th></tr></thead>
+        <tbody>
+          <tr><td><span class="path">app/tests/algs.spec.ts</span></td><td><span class="pill bug">dangling</span> The case-row ladder-mask test pins <code>555.l2e-1</code>, which becomes locked. Move it to <code>555.l2e-6</code> and regenerate the expected mask.</td></tr>
+          <tr><td><span class="path">app/tests/algs.spec.ts</span></td><td>The new players need <code>555-centers</code> and <code>555-pairing</code> contexts. Both stages already exist in <code>stages.json</code>, so no notation-demo allowance is needed; the existing <code>3Rw</code> allowance stays.</td></tr>
+          <tr><td><span class="path">app/tests/unlocks.spec.ts</span></td><td>The flag-flip harness is hardcoded to one key and asserts "exactly 47 more cases appear". Generalise for two keys and add the twelve-case assertions.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="phase">Phase 5 · Python and the cheat card</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>File</th><th>Change</th></tr></thead>
+        <tbody>
+          <tr><td><span class="path">tools/cubepath/src/cubepath/notation.py</span></td><td><code>bigcube_algs()["l2e-flip"]</code> currently reads l2e-1's string. Point it at the pinned flip instead — sourced from verified data, never retyped — and rechunk <code>BIGCUBE_CHUNKS</code>.</td></tr>
+          <tr><td><span class="path">tools/cubepath/tests/test_notation.py</span></td><td>Extend the "card string appears verbatim in the verifier" assertion to cover the flip.</td></tr>
+          <tr><td><span class="path">tools/cubepath/tests/test_case_states.py</span></td><td><span class="pill ok">no change</span> Its KNOWN LIMIT pin stays true.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note caution">
+      <span class="tag">A stated invariant breaks — decide it deliberately, not in a diff</span>
+      <p>
+        <code>notation.py</code> asserts that the big-cube chunk blocks are never compacted because
+        "every one of them carries a layer-count prefix somewhere in the block". All four current
+        strings satisfy that. <strong><code>R U R' F R' F' R</code> has no layer-count prefix
+        anywhere</strong> — it is the first big-cube string that would fall through to the compacted
+        path, changing how it renders and silently invalidating the comment that explains why the
+        block is safe.
+      </p>
+      <p>
+        Either opt the line out explicitly and amend the comment to say the rule is now a per-block
+        choice, or let it compact and look at the rendered card. Either way the comment must change.
+        Rebuild the card and inspect it — this is one of the few things a test cannot judge.
+      </p>
+      <p>
+        The second-order win: the card's cue "slice out, run it, slice back — both cubes" is currently
+        attached to an algorithm whose <code>Rw</code> means different things on the two puzzles.
+        Swapping in the outer-turn-only string <strong>makes that claim true for the first time</strong>.
+      </p>
+    </div>
+
+    <p class="phase">Phase 6 · Docs</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>File</th><th>Change</th></tr></thead>
+        <tbody>
+          <tr><td><span class="path">docs/DECISIONS.md</span></td><td>Extend the 5×5 L2E entry: two algorithms plus one technique; jperm.net/5x5 is the written source and <strong>the video itself was not retrieved</strong>; the wing-parity invariant; twelve cases locked rather than deleted; the two widen positions are provably the same transformation.</td></tr>
+          <tr><td><span class="path">docs/README.md</span></td><td>Check for any "13 L2E cases" course claim.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="col">
+      <strong>Checked and needing no change:</strong> <code>phases.ts</code>,
+      <code>index.astro</code> (the 555 art is <code>move_m.svg</code> — still apt, the middle slice is
+      now taught), <code>ladders.ts</code>, <code>stages.json</code> (the 555 ladder already has both
+      stages), <code>reference/index.astro</code>, <code>practice/index.astro</code>,
+      <code>CLAUDE.md</code>.
+    </p>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <section id="unverified">
+    <div class="rule"><span class="num">11</span><h2>What is not verified</h2></div>
+
+    <p class="col">
+      The repo's value proposition is that its algorithm data is verified. The matching discipline for
+      its <em>sources</em> is to record exactly which links were read and which were not. Items 1 and 2
+      belong in <code>DECISIONS.md</code> in these words, as part of the record rather than a footnote.
+    </p>
+
+    <ol class="unver">
+      <li><s>The video was not retrieved.</s> <b>RESOLVED</b> — the transcript and description were
+        supplied. Both algorithms are confirmed byte-identical, and the lesson may now quote the source
+        directly. This was the largest open item in the plan and it closed in our favour: every claim it
+        touched was confirmed, none overturned.</li>
+      <li><s>jperm.net/5x5 was second-hand.</s> <b>NO LONGER LOAD-BEARING</b> — the video itself now
+        carries the two strings and the "not necessarily one algorithm" framing. The written page
+        remains unverified as to its exact wording, so <strong>quote the video, not the page.</strong></li>
+      <li><s>The hard last-two-centres cases exist only in the video.</s> <b>RESOLVED, and there are
+        none</b> — the 3:03 demonstration is the conjugate trick itself, not a set of cases with
+        algorithms. The plan already described it correctly.</li>
+      <li><b>The completeness search was bounded</b> — 1275 macros, depth ≤ 3, at most one parity
+        application. All 13 cases solved, so no absence is being reported as a result; but minimality
+        was not proved and the space was not exhausted. <strong>The necessity half is a proof and does
+        not depend on the search.</strong></li>
+      <li><b>Solvability was verified in the move group, not at the table.</b> "At most three rounds"
+        is a claim about existence, not about how hard the setup is to spot.</li>
+      <li><b>No repo gates were run.</b> No <code>make check</code>, no verifier, no vitest, no
+        Playwright — this was a read-only pass with three waves live in the tree. Every regeneration and
+        test change above is unrun.</li>
+      <li><b>The 4×4 lesson's "flip trick" prose was not checked</b> against the seven moves; only the
+        string's legality on the 4×4 kpuzzle was.</li>
+      <li><b>jperm.net/4x4 was fetched and read</b> — unlike the 5×5 video. Its five algorithm strings
+        and its Yau framing are first-hand. But the page embeds a video too, and
+        <strong>anything demonstrated only in that video is still unretrieved</strong> — including,
+        by their own cross-reference, the harder last-two-centres cases.</li>
+      <li><b>The drill is a design, not a spike.</b> No prototype was built. The three claims that
+        carry it — grade-the-state, generate-backwards, and <code>experimentalDragInput</code> existing
+        — are each checked, but they have never been run together.</li>
+    </ol>
+
+    <div class="note src">
+      <span class="tag">Reproducing the measurements</span>
+      <p>
+        Every number quoted in this document comes from scratch scripts under
+        <code class="m">scratchpad/5x5/</code> — <code>label.mjs</code> (piece labeller and effect
+        reporter), <code>l2e-core.mjs</code> (the reduction model ported from the verifier),
+        <code>search.mjs</code> and <code>search3.mjs</code> (the completeness search),
+        <code>parity-hold.mjs</code>, <code>family.mjs</code>, <code>centers.mjs</code>. None of them
+        are in the repo; nothing in the tree was modified.
+      </p>
+    </div>
+  </section>
+
+  <footer>
+    Cubepath · 5×5 course plan · nothing in this document has been implemented ·
+    lands after PR #3 merges and PR #4 rebases
+  </footer>
+
+</div>
