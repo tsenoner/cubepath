@@ -176,14 +176,27 @@ for (const [setName, prefix, phase, diagramDir] of BIG_SETS) {
       id,
       group: `${setName}-${slug(c.group)}`,
       name: `${c.name} (4×4 ${setName.includes("oll") ? "OLL" : "PLL"})`,
-      recognition: `${c.group}`,
+      // The extraction's group label ("Edges Only", "0 Corners") describes the
+      // case, not the representative this repo draws for it — the case state is
+      // a bare alg-inverse with no AUF normalisation, so a picture can carry a
+      // free U-turn of the corners on top of the thing the label names. Let a
+      // hand-written cue win where one exists, exactly as the OLL/PLL branches
+      // already do; the group label stays the fallback.
+      recognition: recognition[id] ?? `${c.group}`,
       algs: c.algs,
       stickering: "full",
       puzzle: "4x4x4",
       phase,
       icon: diagramIcon(diagramDir, id),
     });
-    scrambles[id] = c.scrambles.slice(0, MAX_SCRAMBLES);
+    // NO trainer scrambles for the big-cube sets, deliberately. The extraction
+    // ships scrambles for these cases, but every one of them is outer-layer
+    // moves only — and outer turns carry both wings of an edge together, so
+    // from a reduced cube they can never produce either parity. All 196 of them
+    // set up an ordinary 3x3-legal state instead of the case they name, which
+    // means a learner drilling 4x4 parity never met the case. `setupScramble`
+    // falls back to inverse-of-alg with a random AUF, which is correct here.
+    // `algs.spec.ts` pins that no big-cube scramble ships.
   }
 }
 

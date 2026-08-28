@@ -1239,7 +1239,7 @@ export const RICH: Record<string, { recognition: string; alternates: AlgVariant[
     "alternates": []
   },
   "444.pll.pure-e": {
-    "recognition": "Edges Only",
+    "recognition": "Two edge pairs swapped, opposite each other — the corners in the picture are a free U2",
     "alternates": []
   },
   "444.pll.adj-e": {

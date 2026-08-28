@@ -28,18 +28,22 @@ export const UNLOCKED: Record<UnlockKey, boolean> = {
 };
 
 /**
- * The three 4×4 cases the course actually teaches, and the only 4×4 cases the
- * UI shows while `444-parity-embedded` is locked.
+ * The two 4×4 cases the course actually teaches, and the only 4×4 cases the UI
+ * shows while `444-parity-embedded` is locked.
  *
- * `444.pll.pure-e`'s algorithm *is* the bare PLL-parity algorithm, and the 4×4
- * lesson teaches `444.pll.adj-e` as parity's second face, so both belong to the
- * course even though they were generated alongside the locked set.
+ * These are exactly the two big-cube algorithms J Perm's 4×4 tutorial teaches:
+ * `444.oll-parity` is transformation-identical to his OLL parity, and
+ * `444.pll.pure-e`'s algorithm *is* the bare PLL-parity string
+ * `2R2 U2 2R2 Uw2 2R2 Uw2`, byte for byte.
+ *
+ * `444.pll.adj-e` used to sit here as "parity's second face". It is the parity
+ * algorithm with a U-perm fused around it, and it was verified redundant rather
+ * than assumed: running the bare parity algorithm on the Adj-E case leaves a
+ * plain Ua, so parity-then-PLL finishes it with algorithms the reader already
+ * owns. It bought one look and cost a fourth algorithm — the same trade the 48
+ * cases below are locked for, so it is locked on the same rule.
  */
-export const TAUGHT_444_CASES: ReadonlySet<string> = new Set([
-  "444.oll-parity",
-  "444.pll.pure-e",
-  "444.pll.adj-e",
-]);
+export const TAUGHT_444_CASES: ReadonlySet<string> = new Set(["444.oll-parity", "444.pll.pure-e"]);
 
 interface Unlockable {
   key: UnlockKey;
@@ -68,7 +72,7 @@ const UNLOCKABLES: readonly Unlockable[] = [
      * it, a one-look optimisation for solvers who already have full OLL/PLL.
      *
      * The course teaches 2-look OLL + PLL plus the parity fixes, which finishes
-     * any 4×4, so shipping 47 more cases only offered a beginner a wall of
+     * any 4×4, so shipping 48 more cases only offered a beginner a wall of
      * near-duplicates. Locked rather than deleted: the data stays verified and
      * diagrammed, ready to be offered later as a speed refinement.
      * See docs/DECISIONS.md § "4×4 parity-embedded cases".
@@ -86,8 +90,8 @@ const UNLOCKABLES: readonly Unlockable[] = [
 ];
 
 /**
- * The one predicate. Pass a case (locked by id, so the three taught 4×4 cases
- * stay visible even though two of them sit inside a locked group) or a group
+ * The one predicate. Pass a case (locked by id, so the two taught 4×4 cases
+ * stay visible even though one of them sits inside a locked group) or a group
  * key (a `CaseDef.group`, or a trainer/reference set key).
  */
 export function isLocked(subject: CaseDef | string): boolean {

@@ -166,8 +166,8 @@ holds one boolean per set that ships verified but is deliberately not surfaced,
 and exports the single predicate `isLocked(caseOrGroupKey)` that the trainer,
 `/reference` and `/case/[...id]` all ask — locked cases are dropped from the
 trainer's set list, pool and counts, get no reference row and get no page built
-at all. Today one set is locked: the 47 parity-embedded 4×4 last-layer cases
-(`444.oll.*` / `444.pll.*` minus the three the course teaches). Do not "fix"
+at all. Today one set is locked: the 48 parity-embedded 4×4 last-layer cases
+(`444.oll.*` / `444.pll.*` minus the two the course teaches). Do not "fix"
 the gap by regenerating anything — the data, the 49 diagrams and the algorithm
 tests all still cover them; flipping `UNLOCKED["444-parity-embedded"]` to
 `true` restores every surface at once. `tests/unlocks.spec.ts` gates both

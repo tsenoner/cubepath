@@ -62,25 +62,38 @@ usual.
 
 ## PLL parity: two pieces swapped
 
-The second parity surfaces at the very end: exactly **two edge pairs
-swapped** — a straight 2-swap that's impossible on a 3×3, which is why no
-PLL you know matches it. Its two faces, by where the swapped pair sits:
+The second parity surfaces at the very end: **two edge pairs swapped** — a
+2-swap that's impossible on a 3×3, which is why no PLL you know matches it.
+One algorithm handles it:
 
 <div class="case-list">
   <CaseRow id="444.pll.pure-e" />
-  <CaseRow id="444.pll.adj-e" />
 </div>
 
-Any other unmatchable ending reduces to these: a lone corner swap, for
-instance, is one T- or Y-perm from an edge swap. Permute what you can with
-your normal PLLs, and one of the two cases above remains.
+<Callout type="info">
+  The picture shows the swapped pairs **opposite** each other, and the four
+  corners displaced along with them. That corner movement is exactly a `U2` —
+  a free turn of the top layer — so it is not extra damage and not extra
+  recognition. Turn the top until the corners sit right and what remains is
+  the straight edge-pair swap the algorithm is named for.
+</Callout>
+
+You do not need a second version for the case where the swapped pairs are
+**adjacent** rather than opposite. Run this algorithm anyway: it fixes the
+parity, and what it leaves behind is an ordinary PLL — a U-perm — that you
+already know. That is the whole rule, and it is why one algorithm is enough:
+**when no PLL matches, run parity once, then finish with a normal PLL.**
+
+Any other unmatchable ending reduces to the same thing: a lone corner swap,
+for instance, is one T- or Y-perm from an edge swap. Permute what you can
+with your normal PLLs, and parity is what remains.
 
 ## Two looks is enough
 
-2-Look OLL and PLL plus the three algorithms above finish **any** 4×4.
+2-Look OLL and PLL plus the two algorithms above finish **any** 4×4.
 Faster solvers later replace them with parity-embedded cases — a single
 algorithm that orients or permutes *and* fixes the parity in one go. Each one
 is a last-layer algorithm you already know with the parity fix spliced into
 it, so they cost recognition, not understanding. That is a speed refinement,
 not a gap in the method — and Cubepath does not teach them yet, so the
-reference ships only the three cases above.
+reference ships only the two cases above.

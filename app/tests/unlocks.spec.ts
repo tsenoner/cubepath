@@ -3,9 +3,9 @@
  *
  * Two halves, and the second is the important one:
  *  - with the flag OFF, no locked case is reachable from the trainer's set
- *    list, its pool, its counts or a `?group=` deep link, while the three
+ *    list, its pool, its counts or a `?group=` deep link, while the two
  *    cases the 4×4 course teaches stay reachable;
- *  - with the flag ON, exactly 47 more cases appear and nothing else moves.
+ *  - with the flag ON, exactly 48 more cases appear and nothing else moves.
  *
  * The flag is flipped for real here — `UNLOCKED` is the shipped object and
  * every trainer path re-reads it — rather than mocked, because a mocked
@@ -69,10 +69,10 @@ describe("444-parity-embedded, locked", () => {
     expect(lockReason("444-parity-embedded")).toMatch(/parity-embedded/);
   });
 
-  test("exactly 47 cases are locked, and they are the parity-embedded ones", () => {
+  test("exactly 48 cases are locked, and they are the parity-embedded ones", () => {
     locked(() => {
       const locked = lockedCases();
-      expect(locked.length).toBe(47);
+      expect(locked.length).toBe(48);
       for (const k of locked) {
         expect(k.puzzle).toBe("4x4x4");
         expect(k.id).toMatch(/^444\.(oll|pll)\./);
@@ -81,14 +81,14 @@ describe("444-parity-embedded, locked", () => {
     });
   });
 
-  test("the three taught 4×4 cases are not locked", () => {
+  test("the two taught 4×4 cases are not locked", () => {
     locked(() => {
       for (const id of TAUGHT_444_CASES) {
         const def = ALL_CASES.find((k) => k.id === id);
         expect(def, id).toBeDefined();
         expect(isLocked(def!), id).toBe(false);
       }
-      // …even though two of them sit inside a group that *is* locked, which is
+      // …even though one of them sits inside a group that *is* locked, which is
       // the whole reason isLocked(case) is keyed on the id and not the group.
       expect(isLocked("4x4pll-edges-only")).toBe(true);
     });
@@ -108,7 +108,7 @@ describe("444-parity-embedded, locked", () => {
 
   test("group counts do not count locked cases", () => {
     locked(() => {
-      expect(groupSize("444-parity")).toBe(3);
+      expect(groupSize("444-parity")).toBe(2);
       for (const key of LOCKED_SET_KEYS) expect(groupSize(key), key).toBe(0);
       // The 3×3 sets are untouched by any of this.
       expect(groupSize("full-oll")).toBe(57);
@@ -158,10 +158,10 @@ describe("444-parity-embedded, locked", () => {
 });
 
 describe("444-parity-embedded, the unlock path", () => {
-  test("surfaces exactly 47 more cases", () => {
+  test("surfaces exactly 48 more cases", () => {
     const before = locked(() => poolFor(ALL_SET_KEYS).length);
     const after = unlocked(() => poolFor(ALL_SET_KEYS).length);
-    expect(after - before).toBe(47);
+    expect(after - before).toBe(48);
     expect(unlocked(() => lockedCases().length)).toBe(0);
   });
 
@@ -171,16 +171,16 @@ describe("444-parity-embedded, the unlock path", () => {
       expect(visibleKeys()).toContain("444-pll");
       expect(groupSize("444-oll")).toBe(27);
       expect(groupSize("444-pll")).toBe(22);
-      // The visible parity set is unchanged by the unlock — the three cases
+      // The visible parity set is unchanged by the unlock — the two cases
       // the course teaches stay their own set rather than dissolving into 49.
-      expect(groupSize("444-parity")).toBe(3);
+      expect(groupSize("444-parity")).toBe(2);
       expect(parseGroupParam("444-oll,444-pll")).toEqual(["444-oll", "444-pll"]);
       expect(poolFor(["444-oll"]).length).toBe(27);
       expect(poolFor(["444-pll"]).length).toBe(22);
     });
   });
 
-  test("the 47 restored cases carry a verified primary algorithm", () => {
+  test("the 48 restored cases carry a verified primary algorithm", () => {
     // Guards the failure mode that makes "unlock later" not work: the data
     // going stale behind the flag. Every restored case must still resolve.
     unlocked(() => {
@@ -218,6 +218,6 @@ describe("444-parity-embedded, the unlock path", () => {
 
   test("the wrappers restore the flag afterwards", () => {
     expect(UNLOCKED["444-parity-embedded"]).toBe(SHIPPED);
-    expect(locked(() => lockedCases().length)).toBe(47);
+    expect(locked(() => lockedCases().length)).toBe(48);
   });
 });

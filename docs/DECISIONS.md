@@ -490,6 +490,9 @@ parity's second face. The lesson's own closing section already said 2-look plus
 these three finishes any 4×4; the other 47 contradicted it by sitting in the
 reference as if they were course material.
 
+> **Superseded 2026-08-28** — it is two, not three. `444.pll.adj-e` was locked
+> alongside the other 47; see "§ The 4×4 taught set is two algorithms" below.
+
 **Locked, not deleted**, because the work is correct and finished: the 49 cases
 stay in `jperm-raw.json` and the generated fullsets, all 220 diagrams stay
 generated and gated, and `tests/algs.spec.ts` keeps machine-verifying every
@@ -533,7 +536,7 @@ yet). The cost accepted in exchange is that those 47 URLs 404 while locked;
 they were linked from nowhere on the site, so no internal link breaks, and the
 same predicate restores them unchanged when the flag flips. Verified after the
 change: the sitemap lists 171 URLs, of which the only `/case/444.*` entries are
-the three taught cases.
+the taught cases (three at the time; two since 2026-08-28).
 
 ## The three-tier colour model, and the audit that found it unwired
 
@@ -625,3 +628,62 @@ algorithm backwards including its net rotation, so the case state is shown
 rotated. Twenty more cases spin about `y` only, which is benign — the pair still
 reads at the front-right. Fixing the five means folding the net rotation into
 `experimental-setup-alg`, which is a camera decision, not a stickering one.
+
+## The 4×4 taught set is two algorithms, not three (2026-08-28)
+
+The user asked why the course needs `444.pll.pure-e` when J Perm's 4×4 tutorial
+teaches an edge flip, an OLL parity and a PLL parity — guessing that our
+`444.pll.adj-e` was that PLL parity. It is the other way round, and the
+measurement is unambiguous: **`444.pll.pure-e`'s primary IS J Perm's PLL parity**,
+`2R2 U2 2R2 Uw2 2R2 Uw2`, byte-identical to the string in his video description,
+`isIdentical()` true on the cubing.js 4×4×4 kpuzzle. `444.pll.adj-e` is a
+different transformation — the same algorithm with a U-perm fused around it.
+
+**Adj-E is locked**, verified redundant rather than assumed. Taking its case
+state and searching `[AUF] parity [AUF] <one of the 21 verified PLL primaries>
+[AUF]` found four exact solutions to a solved cube (e.g. `parity, U', Ub, U'`),
+and Pure-E is solved by the bare parity algorithm with no AUF at all. So J
+Perm's rule holds as stated in his transcript at 9:01 — run parity once and an
+ordinary PLL is what remains. Adj-E bought one look and cost a fourth
+algorithm: the same trade the other 47 are locked for, so it is locked on the
+same rule. The taught set is now exactly the two algorithms the video teaches.
+
+**The parity algorithm's corner action is exactly `U2`.** Measured on solved it
+displaces four corners and four wings; `T("U2")·T(pure-e)` displaces zero
+corners and four wings. So it is a pure opposite-dedge swap once the free AUF is
+folded in — which is what lets J Perm describe it as swapping "this front piece
+with this back piece".
+
+**Consequence worth recording:** the case state is derived as a bare
+alg-inverse with no AUF normalisation, so `444_pll_pure_e.svg` draws that `U2`
+corner displacement on top of the edge swap, while the extraction's group label
+called it "Edges Only". The state is a legitimate representative and the
+algorithm does solve it as drawn, so the derivation is left alone — rotating the
+stored state would desync the SVG from the `<twisty-player>`, which derives its
+own state from the algorithm and would still show the unrotated one. Fixed
+instead where it was actually wrong: `gen-cases.mjs`'s big-cube branch now
+honours `recognition.json` (it hardcoded the group label and bypassed the lookup
+the OLL/PLL branches use), and the lesson names the `U2` outright.
+
+## 4×4 trainer scrambles never produced their case (2026-08-28)
+
+Found while deciding the above, unrelated to it, and shipped broken: **all 196
+trainer scrambles under `444.*` were outer-layer moves only** — zero slice or
+wide moves in any of them. Outer turns carry both wings of an edge together, so
+from a reduced cube they cannot produce either parity. Every one set up an
+ordinary 3×3-legal state rather than the case it named, which means a learner
+drilling `444-parity` never met the parity case.
+
+It survived because the gate that would have caught it —
+`algs.spec.ts`'s "one verified scramble per 3x3 case is solved by its primary
+alg" — skips anything that is not `3x3x3`, while `gen-cases.mjs` wrote the
+comment "Verified per-case trainer scrambles (each produces its case)" that
+nothing checked. The extraction's scrambles were authored for a 3×3 renderer and
+were never valid for these cases.
+
+**Fix:** `gen-cases.mjs` no longer emits big-cube scrambles, so
+`setupScramble()` falls back to inverse-of-alg with a random AUF, which is
+correct for any puzzle. Two new assertions pin it: no big-cube case ships a
+scramble, and every scramble that does ship belongs to a case the 3×3 gate
+actually checks — so a scramble can no longer ship unverified by being a puzzle
+that block skips.

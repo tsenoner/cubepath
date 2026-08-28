@@ -15,6 +15,9 @@
  */
 import { expect, test } from "@playwright/test";
 
+import { ALL_CASES } from "../src/data/algs";
+import { isLocked } from "../src/lib/unlocks";
+
 const ATTR = "experimental-stickering-mask-orbits";
 
 /** The mask attribute on the player inside `container`, or null if it has none. */
@@ -53,11 +56,15 @@ test("EVERY built case page carries a three-tier mask", async ({ page, baseURL }
   // defect being gated here was a renderer that called a correct function with
   // one argument fewer, which no amount of unit testing could see. The page
   // list comes from the SITEMAP, so it is every case route this build actually
-  // publishes — 138 of the 185 cases, the other 47 being locked — and not
-  // whatever a listing page happens to have rendered eagerly.
+  // publishes — and not whatever a listing page happens to have rendered
+  // eagerly. The expected count is DERIVED from the same unlock predicate the
+  // build uses, so locking or unlocking a set moves this number on its own;
+  // it was hardcoded to 138 and went stale the first time a case was locked.
+  const expected = ALL_CASES.filter((c) => !isLocked(c)).length;
   const sitemap = await (await page.request.get(`${baseURL}/sitemap-0.xml`)).text();
   const urls = [...sitemap.matchAll(/<loc>([^<]*\/case\/[^<]*)<\/loc>/g)].map((m) => m[1]!);
-  expect(urls.length).toBe(138);
+  expect(urls.length, `sitemap case pages != unlocked cases`).toBe(expected);
+  expect(expected).toBeLessThan(ALL_CASES.length);
 
   const bad: string[] = [];
   for (const url of urls) {

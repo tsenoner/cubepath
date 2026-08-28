@@ -237,6 +237,36 @@ describe("dataset invariants", () => {
     }
   });
 
+  test("no big-cube case ships a trainer scramble", () => {
+    // The extraction ships scrambles for all 49 generated 4x4 cases, and every
+    // one of them is outer-layer moves only. Outer turns carry both wings of an
+    // edge together, so from a reduced cube they cannot produce either parity:
+    // all 196 set up an ordinary 3x3-legal state rather than the case they
+    // name, and a learner drilling 4x4 parity never met the case. The gate that
+    // should have caught it — "one verified scramble per 3x3 case" above —
+    // skips anything that is not 3x3x3, which is exactly how it survived.
+    //
+    // gen-cases.mjs now drops them and `setupScramble` falls back to
+    // inverse-of-alg, which is correct for any puzzle. If big-cube scrambles
+    // are ever reinstated they must be verified to produce their case first,
+    // and this assertion is what forces that conversation.
+    const bigCube = Object.keys(CASE_SCRAMBLES).filter((id) => {
+      const def = ALL_CASES.find((k) => k.id === id);
+      return def !== undefined && def.puzzle !== "3x3x3";
+    });
+    expect(bigCube, "big-cube scrambles are unverified — see the comment").toEqual([]);
+  });
+
+  test("every shipped scramble belongs to a case the 3x3 gate actually checks", () => {
+    // Pairs with the test above: together they say every scramble in the file
+    // is covered by the "solved by its primary alg" describe block, so no
+    // scramble can ship unverified by being a puzzle that block skips.
+    for (const id of Object.keys(CASE_SCRAMBLES)) {
+      const def = ALL_CASES.find((k) => k.id === id);
+      expect(def?.puzzle, id).toBe("3x3x3");
+    }
+  });
+
   test("scrambles parse and reference existing cases", async () => {
     const ids = new Set(ALL_CASES.map((k) => k.id));
     for (const [id, list] of Object.entries(CASE_SCRAMBLES)) {
