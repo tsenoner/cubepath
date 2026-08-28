@@ -197,13 +197,29 @@ def test_no_cube_can_be_built_at_any_other_size(size):
         Cube(faces={}, size=size)
 
 
+def _needs_layers(alg: str) -> bool:
+    """True when a string uses notation a 3x3 cannot express — a layer-count
+    prefix or a wide turn."""
+    return any(t.rstrip("2'")[0].isdigit() or "w" in t.rstrip("2'") for t in alg.split())
+
+
 @pytest.mark.parametrize("name", sorted(bigcube_algs()))
 def test_every_big_cube_string_the_repo_stores_is_refused(name):
-    """The four big-cube algorithms this repo actually keeps — read from the
-    modules that pin them for CI, never retyped — must all bounce, even with
-    no size declared, because every one of them is written in notation a 3x3
-    cannot express."""
+    """The big-cube algorithms this repo keeps — read from the modules that pin
+    them for CI, never retyped — must bounce off the 3x3 simulator, even with no
+    size declared, because they are written in notation a 3x3 cannot express.
+
+    With one deliberate exception. `l2e-flip` is `R U R' F R' F' R`: outer turns
+    only, no layer count anywhere. That is not an oversight in the data, it is
+    the property that makes it the same algorithm on a 4x4 and a 5x5, and it is
+    why the lessons can promise exactly that. So a 3x3 parses it happily, and
+    what this test pins for that one string is the opposite: that it is legal.
+    """
     alg = bigcube_algs()[name]
+    if not _needs_layers(alg):
+        assert name == "l2e-flip", f"a new big-cube string parses on a 3x3: {name}"
+        Cube.solved().apply(alg)  # must not raise
+        return
     with pytest.raises(UnsupportedNotationError) as exc:
         Cube.solved().apply(alg)
     offender = next(t for t in alg.split() if t.rstrip("2'")[0].isdigit() or "w" in t.rstrip("2'"))

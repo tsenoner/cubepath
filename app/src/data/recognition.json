@@ -77,5 +77,6 @@
   "pll.v": "No headlights; solved blocks wrap the front-left corner; back-left and front-right swap.",
   "pll.y": "No headlights; solved 2-blocks at front-left and back-right; the other two corners swap.",
   "pll.z": "Headlights on every side with an adjacent color between them—H shows the opposite instead.",
-  "444.pll.pure-e": "Two edge pairs swapped, opposite each other — the corners in the picture are a free U2"
+  "444.pll.pure-e": "Two edge pairs swapped, opposite each other — the corners in the picture are a free U2",
+  "555.l2e-6": "One edge group flipped, nothing else unsolved — hold it at UF"
 }

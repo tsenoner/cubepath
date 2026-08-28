@@ -5,7 +5,8 @@
  *  - with the flag OFF, no locked case is reachable from the trainer's set
  *    list, its pool, its counts or a `?group=` deep link, while the two
  *    cases the 4×4 course teaches stay reachable;
- *  - with the flag ON, exactly 48 more cases appear and nothing else moves.
+ *  - with the flags ON, exactly 60 more cases appear and nothing else moves
+ *    (48 parity-embedded 4×4 + 12 one-look 5×5 last-two-edges).
  *
  * The flag is flipped for real here — `UNLOCKED` is the shipped object and
  * every trainer path re-reads it — rather than mocked, because a mocked
@@ -14,7 +15,15 @@
 import { afterEach, describe, expect, test } from "vitest";
 
 import { ALL_CASES } from "../src/data/algs";
-import { TAUGHT_444_CASES, UNLOCKED, isLocked, lockReason } from "../src/lib/unlocks";
+import { RICH } from "../src/data/fullsets.rich.gen";
+import type { UnlockKey } from "../src/lib/unlocks";
+import {
+  TAUGHT_444_CASES,
+  TAUGHT_555_CASES,
+  UNLOCKED,
+  isLocked,
+  lockReason,
+} from "../src/lib/unlocks";
 import {
   groupSize,
   parseGroupParam,
@@ -43,35 +52,44 @@ const ALL_SET_KEYS = [
 const lockedCases = () => ALL_CASES.filter((k) => isLocked(k));
 const visibleKeys = () => trainerGroups().map((g) => g.key);
 
-const SHIPPED = UNLOCKED["444-parity-embedded"];
+/** Every key, and what each ships as — asserted below, not assumed. */
+const KEYS: UnlockKey[] = ["444-parity-embedded", "555-l2e-onelook"];
+const SHIPPED: Record<UnlockKey, boolean> = {
+  "444-parity-embedded": UNLOCKED["444-parity-embedded"],
+  "555-l2e-onelook": UNLOCKED["555-l2e-onelook"],
+};
+const restore = () => {
+  for (const k of KEYS) UNLOCKED[k] = SHIPPED[k];
+};
 
-/** Run `fn` with `444-parity-embedded` forced to `on`, then put it back. */
-function withFlag<T>(on: boolean, fn: () => T): T {
-  UNLOCKED["444-parity-embedded"] = on;
+/** Run `fn` with every unlock key forced to `on`, then put them all back. */
+function withFlags<T>(on: boolean, fn: () => T): T {
+  for (const k of KEYS) UNLOCKED[k] = on;
   try {
     return fn();
   } finally {
-    UNLOCKED["444-parity-embedded"] = SHIPPED;
+    restore();
   }
 }
-const locked = <T>(fn: () => T): T => withFlag(false, fn);
-const unlocked = <T>(fn: () => T): T => withFlag(true, fn);
+const locked = <T>(fn: () => T): T => withFlags(false, fn);
+const unlocked = <T>(fn: () => T): T => withFlags(true, fn);
 
 afterEach(() => {
-  // A failed assertion inside a wrapper must not leave the flag flipped for
+  // A failed assertion inside a wrapper must not leave a flag flipped for
   // the next test.
-  UNLOCKED["444-parity-embedded"] = SHIPPED;
+  restore();
 });
 
 describe("444-parity-embedded, locked", () => {
-  test("ships off — the tripwire; when you unlock the set, flip this too", () => {
-    expect(SHIPPED).toBe(false);
+  test("ships off — the tripwire; when you unlock a set, flip this too", () => {
+    for (const k of KEYS) expect(SHIPPED[k], k).toBe(false);
     expect(lockReason("444-parity-embedded")).toMatch(/parity-embedded/);
+    expect(lockReason("555-l2e-onelook")).toMatch(/one-look/);
   });
 
   test("exactly 48 cases are locked, and they are the parity-embedded ones", () => {
     locked(() => {
-      const locked = lockedCases();
+      const locked = lockedCases().filter((k) => k.puzzle === "4x4x4");
       expect(locked.length).toBe(48);
       for (const k of locked) {
         expect(k.puzzle).toBe("4x4x4");
@@ -157,11 +175,70 @@ describe("444-parity-embedded, locked", () => {
   });
 });
 
+describe("555-l2e-onelook, locked", () => {
+  test("exactly 12 of the 13 L2E cases are locked, and parity is the survivor", () => {
+    locked(() => {
+      const l2e = ALL_CASES.filter((k) => k.id.startsWith("555.l2e-"));
+      expect(l2e.length).toBe(13);
+      const hidden = l2e.filter((k) => isLocked(k));
+      expect(hidden.length).toBe(12);
+      for (const k of hidden) expect(TAUGHT_555_CASES.has(k.id), k.id).toBe(false);
+      for (const id of TAUGHT_555_CASES) {
+        const def = ALL_CASES.find((k) => k.id === id);
+        expect(def, id).toBeDefined();
+        expect(isLocked(def!), id).toBe(false);
+      }
+    });
+  });
+
+  test("the group stays visible with one case — the only question a 5×5 asks", () => {
+    locked(() => {
+      // Deliberately NOT hidden: a one-case set still drills "is this parity?".
+      expect(visibleKeys()).toContain("555-l2e");
+      expect(groupSize("555-l2e")).toBe(1);
+      expect(poolFor(["555-l2e"]).map((c) => c.id)).toEqual([...TAUGHT_555_CASES]);
+      const set = trainerSets().find((s) => s.key === "555-l2e")!;
+      expect(set.name).toBe("5×5 edge parity");
+    });
+  });
+
+  test("the surviving case carries the parity algorithm and a real cue", () => {
+    const def = ALL_CASES.find((k) => k.id === "555.l2e-6")!;
+    expect(def.algs.find((a) => a.primary)!.moves).toBe(
+      "Rw U2 x Rw U2 Rw U2 3Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'",
+    );
+    // Recognition lives in the build-time rich file, not the lean shipped one.
+    // It used to read "Last two edges (5×5)" — the same string on all thirteen,
+    // which is why /reference showed thirteen tiles nobody could tell apart.
+    expect(RICH["555.l2e-6"]!.recognition).toMatch(/UF/);
+    const cues = new Set(
+      Object.entries(RICH)
+        .filter(([id]) => id.startsWith("555.l2e-"))
+        .map(([, v]) => v.recognition),
+    );
+    expect(cues.size, "the other twelve still share one placeholder cue").toBeGreaterThan(1);
+  });
+
+  test("unlocking restores all 13", () => {
+    unlocked(() => {
+      expect(groupSize("555-l2e")).toBe(13);
+      expect(poolFor(["555-l2e"]).length).toBe(13);
+      for (const c of poolFor(["555-l2e"])) {
+        expect(c.puzzle, c.id).toBe("5x5x5");
+        expect(
+          c.algs.some((a) => a.primary),
+          c.id,
+        ).toBe(true);
+      }
+    });
+  });
+});
+
 describe("444-parity-embedded, the unlock path", () => {
-  test("surfaces exactly 48 more cases", () => {
+  test("surfaces exactly 60 more cases", () => {
     const before = locked(() => poolFor(ALL_SET_KEYS).length);
     const after = unlocked(() => poolFor(ALL_SET_KEYS).length);
-    expect(after - before).toBe(48);
+    expect(after - before).toBe(60);
     expect(unlocked(() => lockedCases().length)).toBe(0);
   });
 
@@ -196,13 +273,12 @@ describe("444-parity-embedded, the unlock path", () => {
     });
   });
 
-  test("nothing outside the 4×4 sets moves", () => {
+  test("nothing outside the locked sets moves", () => {
     const before = locked(() => ({
       keys: visibleKeys().filter((k) => !k.startsWith("444-")),
       oll: groupSize("full-oll"),
       pll: groupSize("full-pll"),
       f2l: groupSize("full-f2l"),
-      l2e: groupSize("555-l2e"),
       twoLook: poolFor(["2look-oll-corners", "2look-pll-corners", "2look-pll-edges"]).length,
     }));
     const after = unlocked(() => ({
@@ -210,14 +286,13 @@ describe("444-parity-embedded, the unlock path", () => {
       oll: groupSize("full-oll"),
       pll: groupSize("full-pll"),
       f2l: groupSize("full-f2l"),
-      l2e: groupSize("555-l2e"),
       twoLook: poolFor(["2look-oll-corners", "2look-pll-corners", "2look-pll-edges"]).length,
     }));
     expect(after).toEqual(before);
   });
 
-  test("the wrappers restore the flag afterwards", () => {
-    expect(UNLOCKED["444-parity-embedded"]).toBe(SHIPPED);
-    expect(locked(() => lockedCases().length)).toBe(48);
+  test("the wrappers restore every flag afterwards", () => {
+    for (const k of KEYS) expect(UNLOCKED[k], k).toBe(SHIPPED[k]);
+    expect(locked(() => lockedCases().length)).toBe(60);
   });
 });

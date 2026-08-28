@@ -17,7 +17,7 @@
  */
 import type { CaseDef } from "../data/algs";
 
-export type UnlockKey = "444-parity-embedded";
+export type UnlockKey = "444-parity-embedded" | "555-l2e-onelook";
 
 /**
  * The one line to flip per set. Keep this a plain literal — it is meant to be
@@ -25,6 +25,7 @@ export type UnlockKey = "444-parity-embedded";
  */
 export const UNLOCKED: Record<UnlockKey, boolean> = {
   "444-parity-embedded": false,
+  "555-l2e-onelook": false,
 };
 
 /**
@@ -44,6 +45,20 @@ export const UNLOCKED: Record<UnlockKey, boolean> = {
  * cases below are locked for, so it is locked on the same rule.
  */
 export const TAUGHT_444_CASES: ReadonlySet<string> = new Set(["444.oll-parity", "444.pll.pure-e"]);
+
+/**
+ * The one 5×5 case the course teaches: edge parity.
+ *
+ * The other twelve last-two-edges cases are a one-look optimisation. The
+ * course finishes L2E the way J Perm's beginner tutorial does — slice, flip,
+ * slice back, repeated — and that is provably enough: every outer-turn
+ * algorithm (the flip included) is EVEN on the 24 wings and conjugating by a
+ * slice cannot change parity, so no amount of pairing reaches an odd state.
+ * The parity algorithm is the one ODD generator, which makes it the second
+ * thing a solver must own and the twelve merely faster.
+ * `scripts/verify-l2e.mjs` asserts that parity argument; it is not a comment.
+ */
+export const TAUGHT_555_CASES: ReadonlySet<string> = new Set(["555.l2e-6"]);
 
 interface Unlockable {
   key: UnlockKey;
@@ -86,6 +101,30 @@ const UNLOCKABLES: readonly Unlockable[] = [
       key.startsWith("4x4pll-") ||
       key === "444-oll" ||
       key === "444-pll",
+  },
+  {
+    key: "555-l2e-onelook",
+    /*
+     * Twelve of the thirteen 5x5 last-two-edges cases, locked for the same
+     * reason as the 4x4 set: they are a speed refinement, not the method.
+     *
+     * Two independent reasons, both true regardless of what is taught. The
+     * course needs two algorithms plus one technique to finish any 5x5, and
+     * the twelve are none of them. And they were never usable as shipped:
+     * gen-cases.mjs gave all thirteen the same hardcoded recognition string
+     * and all thirteen are named "L2E 1".."L2E 13", so with no 5x5 diagrams
+     * /reference rendered thirteen identically-labelled text tiles that no
+     * learner could tell apart, let alone drill.
+     *
+     * The GROUP stays visible: a one-case trainer set is genuinely useful
+     * here, because it drills the only recognition question a 5x5 asks — is
+     * this parity, or not?
+     */
+    reason:
+      "one-look last-two-edges cases — a speed refinement; the course finishes L2E with " +
+      "slice-flip-slice plus the parity algorithm",
+    hidesCase: (def) => def.id.startsWith("555.l2e-") && !TAUGHT_555_CASES.has(def.id),
+    hidesGroup: () => false,
   },
 ];
 

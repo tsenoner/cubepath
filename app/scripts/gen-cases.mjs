@@ -144,7 +144,10 @@ for (const c of l2e) {
     id: `555.${c.slug}`,
     group: "555-l2e",
     name: c.name,
-    recognition: "Last two edges (5×5)",
+    // Every one of the 13 shared this hardcoded string and bypassed the
+    // recognition.json lookup the other branches use, so /reference rendered
+    // thirteen identically-labelled tiles that no learner could tell apart.
+    recognition: recognition[`555.${c.slug}`] ?? "Last two edges (5×5)",
     algs: c.algs,
     stickering: "full",
     puzzle: "5x5x5",

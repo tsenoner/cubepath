@@ -1947,7 +1947,7 @@ export const GENERATED_CASES: CaseDef[] = [
     "phase": "555",
     "algs": [
       {
-        "moves": "Rw' U2 3Rw U2 3Rw' F2 Rw2 U2 Rw U2 Rw' U2 F2 Rw2 F2",
+        "moves": "Rw U2 x Rw U2 Rw U2 3Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'",
         "primary": true
       }
     ]

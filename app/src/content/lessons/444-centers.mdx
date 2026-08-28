@@ -18,6 +18,7 @@ practice:
   note: "Set the trainer to 4×4 and build all six centers, then scramble and do it again — centers are the slowest part of a big-cube solve and the one that repays deliberate practice most."
 ---
 
+import AlgText from "../../components/AlgText.astro";
 import Callout from "../../components/Callout.astro";
 import Figure from "../../components/Figure.astro";
 import TwistyPlayer from "../../components/TwistyPlayer.astro";
@@ -73,6 +74,26 @@ gets checked against them.
   One reading is enough: with white down, the side colors always run
   **red → green → orange → blue** clockwise around the white face. Learn
   that ring once and any single white corner orients the whole cube.
+</Callout>
+
+## Two shortcuts for the last two centres
+
+The build order above finishes every case on its own — these two only make the
+two most annoying last-two-centres positions fast. They are optional, and they
+are not course algorithms.
+
+<AlgText moves="Rw' F2 Rw2 U2 Rw'" /> swaps pieces between the **U and F**
+centres, leaving R, L, D and B untouched.
+
+<AlgText moves="Rw2 U2 D2 Rw2" /> swaps pieces between the **U and D** centres,
+leaving F, B, L and R untouched.
+
+<Callout type="caution">
+  Both wreck the corners and edges — measured, four to eight corners and twelve
+  to sixteen wings move. That is fine here and only here: centres come first,
+  so nothing else is placed yet. Never reach for them later in a solve. They
+  also do **not** carry across to a 5×5: there they reach only half of each
+  centre, so they finish nothing.
 </Callout>
 
 ## The last two centers

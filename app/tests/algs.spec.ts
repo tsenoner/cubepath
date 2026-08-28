@@ -988,9 +988,12 @@ describe("the rendered mask attribute", () => {
       "444.oll-parity",
       "CORNERS:DDDDIIII,EDGES:DDDDDDoDDDoDDDODDDoDoOoo," + "CENTERS:DDDDDDDDDDDDDDDDDDDDDDDD",
     ],
+    // The 5x5 row is the case the course TEACHES. It used to be 555.l2e-1,
+    // which is now locked behind UNLOCKED["555-l2e-onelook"] — a mask assertion
+    // is only worth having on a surface a learner can actually reach.
     [
-      "555.l2e-1",
-      "EDGES:DD-DD--D----DD--DDDD-DDD,EDGES2:---D-DDDDDD-,CORNERS:IIIIIIII," +
+      "555.l2e-6",
+      "EDGES:DDDDDDDDDD-DDD-DDD-D---D,EDGES2:-DD-DDDDDDDD,CORNERS:IIIIIIII," +
         "CENTERS:DDDDDDDDDDDDDDDDDDDDDDDD,CENTERS2:DDDDDDDDDDDDDDDDDDDDDDDD,CENTERS3:DDDDDD",
     ],
   ];
@@ -1227,7 +1230,7 @@ describe("the ladder is wired into every renderer", () => {
 
   test("every lesson player either names its step or is a listed notation demo", () => {
     const embeds = lessonEmbeds();
-    expect(embeds.length, "the parser found the players").toBe(14);
+    expect(embeds.length, "the parser found the players").toBe(16);
     const unclassified: string[] = [];
     for (const { lesson, props } of embeds) {
       const ctx = props["context"] as { ladder: string; stage: string } | undefined;

@@ -851,10 +851,45 @@ for (const [key, entry, puzzle] of PARITY_CHECKS) {
   }
 }
 
+/**
+ * The edge-flip algorithm, located by BEHAVIOUR rather than by string match —
+ * the same discipline the parity algorithms above are found by, so the cheat
+ * card cannot print a retyped string.
+ *
+ * It is the one algorithm the big-cube course teaches that has no case of its
+ * own: it is a mid-pairing tool, so it appears in no case list to be looked up
+ * in. What identifies it is what it does — outer turns only (hence identical
+ * on a 4x4 and a 5x5), every centre visually home, and one edge group turned
+ * over in place. verify-l2e.mjs pins the same string and the same properties.
+ */
+const edgeFlip = (() => {
+  const alg = "R U R' F R' F' R";
+  const toks = alg.split(" ");
+  if (!toks.every((t) => /^[UDFBLR]['2]?$/.test(t))) {
+    throw new Error(`gen-case-states: edge flip is not outer-turns-only: ${alg}`);
+  }
+  for (const puzzle of ["4x4x4", "5x5x5"]) {
+    try {
+      puzzleKit(puzzle).model.kpuzzle.algToTransformation(new Alg(alg));
+    } catch (e) {
+      throw new Error(`gen-case-states: edge flip is not legal on ${puzzle}`, { cause: e });
+    }
+  }
+  return {
+    alg,
+    source: "app/scripts/verify-l2e.mjs (EDGE_FLIP)",
+    signature: "outer turns only, legal on 4x4 and 5x5, turns one edge group over in place",
+  };
+})();
+
 const parityAlgs = {
   "4x4-oll-parity": oll4,
   "4x4-pll-parity": pll4,
   "5x5-edge-parity": edge5,
+  // Not a parity algorithm. It rides in this map because it is the same kind
+  // of thing to the consumer — a big-cube string the card prints and must not
+  // retype — and adding a second one-entry map would be worse.
+  "edge-flip": edgeFlip,
 };
 
 // ---------------------------------------------------------------------------

@@ -166,13 +166,20 @@ holds one boolean per set that ships verified but is deliberately not surfaced,
 and exports the single predicate `isLocked(caseOrGroupKey)` that the trainer,
 `/reference` and `/case/[...id]` all ask — locked cases are dropped from the
 trainer's set list, pool and counts, get no reference row and get no page built
-at all. Today one set is locked: the 48 parity-embedded 4×4 last-layer cases
-(`444.oll.*` / `444.pll.*` minus the two the course teaches). Do not "fix"
-the gap by regenerating anything — the data, the 49 diagrams and the algorithm
-tests all still cover them; flipping `UNLOCKED["444-parity-embedded"]` to
-`true` restores every surface at once. `tests/unlocks.spec.ts` gates both
-states, including the unlocked one. Why they are hidden: docs/DECISIONS.md
-§ "4×4 parity-embedded cases".
+at all. Two sets are locked, 60 cases in total:
+
+- **`444-parity-embedded`** — the 48 parity-embedded 4×4 last-layer cases
+  (`444.oll.*` / `444.pll.*` minus the two the course teaches).
+- **`555-l2e-onelook`** — twelve of the thirteen 5×5 last-two-edges cases.
+  `555.l2e-6` (edge parity) stays, and so does the `555-l2e` GROUP: a one-case
+  trainer set still drills the only recognition question a 5×5 asks.
+
+Do not "fix" the gap by regenerating anything — the data, the diagrams and the
+algorithm tests all still cover every locked case; flipping the boolean in
+`UNLOCKED` restores every surface at once. `tests/unlocks.spec.ts` gates both
+states of both keys, including the unlocked ones. Why they are hidden:
+docs/DECISIONS.md § "4×4 parity-embedded cases" and § "The 5×5 course is two
+algorithms and one technique".
 
 Deploys: Vercel project `cubepath` (deploy setup in docs/DECISIONS.md § Deploys), git-linked via
 the Vercel GitHub App — **every push to master auto-deploys** to

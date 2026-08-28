@@ -798,3 +798,74 @@ The byte-identity test had nothing left to compare and was replaced by the gate
 that matters now — the guide's figure paths all resolve, `figures/generated`
 appears nowhere, neither the second tree nor `sync-diagrams.sh` has come back,
 and `pdf.yaml` still passes `--root ..`. Tracked files drop by 221.
+
+## The 5×5 course is two algorithms and one technique (2026-08-28)
+
+The user asked to orient the 5×5 on J Perm's beginner tutorial, naming three
+things to learn: switching a centre piece, switching the edges, and the edge
+parity algorithm — then corrected the first: *"the 3rd alg to switch Centers
+isn't a proper alg. It is more a learned approach."*
+
+**That correction is the source's own framing.** The transcript, at 3:15:
+*"make sure you remember this whole pattern — it's not necessarily one
+algorithm, but this pattern will apply no matter which pieces you're trying to
+move into here."* There is no centre algorithm anywhere in the video. So the
+honest count is **two algorithms plus one technique**, and the lessons now say
+so in those words.
+
+**The two algorithms**, both verified on the cubing.js 5×5×5 kpuzzle and both
+byte-identical to the strings in the video's description:
+
+- edge flip `R U R' F R' F' R` — turns one edge group over in place. Outer
+  turns only, so it cannot break a finished pair, and it means literally the
+  same thing on a 4×4. J Perm says as much at 4:15.
+- edge parity `Rw U2 x Rw U2 Rw U2 3Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'` —
+  already shipped. Works at exactly one hold, UF: tested against the same state
+  at UB, UR, FR and DF, where it does not solve.
+
+**The cut is safe, and it is proved rather than deferred to.** Every outer-turn
+algorithm — the flip included — induces an EVEN permutation of the 24 wings,
+and conjugating by a slice preserves parity, so no amount of slice-flip-slice
+can ever reach an odd state. The parity algorithm is the one ODD generator.
+That makes the two not merely sufficient by convention but exactly the two
+generators the puzzle requires. `verify-l2e.mjs` now asserts that argument —
+outer turns and the flip EVEN, the flip conjugated by Uw/Rw/3Rw/Lw'/Uw2 EVEN,
+the parity algorithm ODD — so it is a regression test, not a paragraph.
+
+What is lost is speed at last-two-edges: the 13-case set is a one-look
+optimisation, replaced by an iterative loop of at most three slice-flip-slices.
+A time cost, never a can't-finish cost. Twelve cases are **locked, not
+deleted**, on the same mechanism and for the same reason as the 4×4 set.
+
+**Three defects fell out of the work, all shipped:**
+
+1. `555.l2e-6` printed the SCDB primary, so the lesson's "open 444.oll-parity
+   and 555.l2e-6 side by side, they are near-twins" instruction compared two
+   different algorithms of different lengths. `verify-l2e.mjs` now pins J
+   Perm's string as `algs[0]`; all four solve the same case and the EXPECT
+   profile is identical across them, so the reorder is inert to every check.
+2. All thirteen carried the same hardcoded recognition string, because the 555
+   branch of `gen-cases.mjs` bypassed the `recognition.json` lookup the other
+   branches use. With no 5×5 diagrams, `/reference` rendered thirteen
+   identically-labelled tiles nobody could tell apart — which is an independent
+   reason the twelve could never have been drilled.
+3. The cheat card's `l2e-flip` read `l2e-1` out of `l2e-raw.json`, a different
+   algorithm doing a similar job — a finisher with the slice baked in at a
+   fixed width. The card's cue "slice out, run it, slice back -- both cubes"
+   was therefore false of the string printed beside it. It now reads the
+   verified flip, and the cue is true for the first time.
+
+**A stated invariant broke, deliberately.** `notation.py` asserted that no
+big-cube chunk block is compacted *because* every big-cube string carries a
+layer-count prefix. The flip is the first that does not — which is exactly the
+property that makes it identical on both cubes. The table stays uncompacted by
+choice now, and the comment says so rather than claiming a property of the data.
+
+`test_cube.py` gained the matching exception: every big-cube string must bounce
+off the 3×3 simulator, except the flip, which must be legal. A new outer-turn
+string appearing in that table fails the test until someone decides.
+
+**No 5×5 SVG path was built, and none is needed.** With twelve cases locked the
+remaining pictures are the centre insert, the flip and the parity case — all
+player material. The KNOWN LIMIT in `gen-case-states.mjs` and its Python pin
+stay exactly as they were: both remain true, and they still guard the twelve.

@@ -243,15 +243,26 @@ def test_parity_algs_are_exported_and_consistent() -> None:
     from cubepath.notation import bigcube_algs, tokenize
 
     parity = _states()["parityAlgs"]
-    assert set(parity) == {"4x4-oll-parity", "4x4-pll-parity", "5x5-edge-parity"}
+    # "edge-flip" is not a parity algorithm; it rides in the same map because
+    # it is the same kind of thing to Python — a big-cube string the card must
+    # print without retyping. Its source is a script path, not a JSON index.
+    assert set(parity) == {
+        "4x4-oll-parity",
+        "4x4-pll-parity",
+        "5x5-edge-parity",
+        "edge-flip",
+    }
     for key, entry in parity.items():
         assert entry["alg"].strip(), key
-        assert entry["source"].endswith("]"), key
+        assert entry["source"].endswith("]") or key == "edge-flip", key
         assert entry["signature"], key
     # notation.py must now be reading these, not scraping JavaScript source.
     printed = bigcube_algs()
+    # The card's table keys the flip by its role in the deck ("l2e-flip");
+    # case-states keys it by what it is ("edge-flip"). One rename, written down.
+    CARD_KEY = {"edge-flip": "l2e-flip"}
     for key, entry in parity.items():
-        assert printed[key] == entry["alg"], key
+        assert printed[CARD_KEY.get(key, key)] == entry["alg"], key
     t4 = tokenize(parity["4x4-oll-parity"]["alg"])
     t5 = tokenize(parity["5x5-edge-parity"]["alg"])
     assert len(t4) == len(t5)

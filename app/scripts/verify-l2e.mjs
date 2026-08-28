@@ -68,6 +68,7 @@
  * Usage: node scripts/verify-l2e.mjs
  */
 import { mkdir, writeFile } from "node:fs/promises";
+import { Alg } from "cubing/alg";
 import { KPattern } from "cubing/kpuzzle";
 import { puzzles } from "cubing/puzzles";
 
@@ -112,9 +113,17 @@ const L2E_CASES = [
   {
     slug: "l2e-6",
     name: "L2E 6",
+    // J Perm's string first, deliberately. gen-cases.mjs sends algs[0] to the
+    // shipped dataset and demotes the rest to the build-time-only rich file, so
+    // whichever sits here is the one the case page, the trainer and the lesson
+    // print. It used to be the SCDB primary, which meant the lesson's "open
+    // 444.oll-parity and 555.l2e-6 side by side, they are near-twins"
+    // instruction compared two different algorithms of different lengths.
+    // All four solve the same case (EXPECT below is "sp" four times, so the
+    // reorder is inert there) and the first two are visually identical.
     algs: [
-      "Rw' U2 3Rw U2 3Rw' F2 Rw2 U2 Rw U2 Rw' U2 F2 Rw2 F2",
       "Rw U2 x Rw U2 Rw U2 3Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'",
+      "Rw' U2 3Rw U2 3Rw' F2 Rw2 U2 Rw U2 Rw' U2 F2 Rw2 F2",
       "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 3Rw' U2 Rw U2 Rw' U2 Rw'",
       "Rw2 B2 U2 Lw U2 Rw' U2 Rw U2 F2 Rw F2 Lw' B2 Rw2",
     ],
@@ -166,6 +175,12 @@ const L2E_CASES = [
 // Parity algs pinned by docs/research/tech-brief.md §8 (jperm.net verbatim).
 const EDGE_PARITY_5X5 = "Rw U2 x Rw U2 Rw U2 3Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'";
 const OLL_PARITY_4X4 = "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'";
+// The pairing algorithm the course teaches, from J Perm's 5x5 video
+// description. Outer turns only, so it means literally the same thing on a 4x4
+// and a 5x5 — unlike anything containing Rw. It has no L2E case of its own (it
+// is a mid-pairing tool, not a finisher), so it is pinned by behaviour below
+// rather than by appearing in L2E_CASES.
+const EDGE_FLIP = "R U R' F R' F' R";
 const PARITY_CASE = "l2e-6";
 const PARITY_DIFF_TOKEN = 7; // 0-based; "Rw'" (4x4) vs "3Rw'" (5x5)
 
@@ -590,6 +605,100 @@ if (classToSlug.size !== 13) {
   }
 }
 
+// --- the edge-flip algorithm the course teaches -------------------------------
+// Two algorithms plus one technique finish a 5x5. The parity alg is pinned
+// above; this is the other one, and because it never appears as an L2E case it
+// would otherwise ship in a lesson with nothing verifying it at all.
+{
+  const toks = EDGE_FLIP.split(" ");
+  if (!toks.every((t) => /^[UDFBLR]['2]?$/.test(t))) {
+    fail(`edge flip is not outer-turns-only: ${EDGE_FLIP}`);
+  }
+  // Same seven moves on a 4x4. This is the claim the lessons make on both
+  // cubes, and it holds only because there is no layer-count prefix anywhere.
+  try {
+    const kp4 = await puzzles["4x4x4"].kpuzzle();
+    kp4.algToTransformation(new Alg(EDGE_FLIP));
+  } catch (e) {
+    fail(`edge flip is not legal on a 4x4: ${e instanceof Error ? e.message : e}`);
+  }
+
+  const t = T(EDGE_FLIP);
+  const p = solved.applyTransformation(t);
+  // Centres must come back visually untouched — the whole point of a pairing
+  // tool is that it is safe to fire mid-reduction.
+  if (!centersSolved(p)) fail("edge flip disturbs the centres");
+
+  // It turns the FR group over in place: its two wings swap AND its midge
+  // flips. Anything less is a different algorithm wearing the same name.
+  const fr = SLOTS["FR"] ?? SLOTS["RF"];
+  if (!fr) {
+    fail("no FR slot in the derived slot table");
+  } else {
+    const wings = p.patternData.EDGES;
+    const midges = p.patternData.EDGES2;
+    const [w0, w1] = fr.wings;
+    const swapped =
+      wings.pieces[w0] === solved.patternData.EDGES.pieces[w1] &&
+      wings.pieces[w1] === solved.patternData.EDGES.pieces[w0];
+    const flipped =
+      midges.orientation[fr.midge] !== solved.patternData.EDGES2.orientation[fr.midge];
+    if (!swapped) fail("edge flip does not exchange the two FR wings");
+    if (!flipped) fail("edge flip does not flip the FR midge");
+  }
+}
+
+// --- the wing-parity invariant ------------------------------------------------
+// Why the course needs exactly two algorithms and not one or three. Every
+// outer-turn algorithm is EVEN on the 24 wings, and conjugation cannot change
+// permutation parity, so no amount of slice-flip-slice can ever reach an
+// odd state. The parity algorithm is the one ODD generator. That is the whole
+// of 5x5 parity, and it is asserted here rather than explained in a comment.
+{
+  /** @param {string} algStr */
+  const wingParity = (algStr) => {
+    const perm = solved
+      .applyTransformation(T(algStr))
+      .patternData.EDGES.pieces.map((v, i) => [v, i]);
+    const seen = new Array(perm.length).fill(false);
+    const src = solved.patternData.EDGES.pieces;
+    // Map slot -> slot by matching piece identity; wings are distinguishable
+    // enough here because `src` is the solved (identity) arrangement.
+    const to = new Array(perm.length);
+    for (let i = 0; i < perm.length; i++) to[i] = src.indexOf(perm[i][0]);
+    let transpositions = 0;
+    for (let i = 0; i < to.length; i++) {
+      if (seen[i]) continue;
+      let j = i;
+      let len = 0;
+      while (!seen[j]) {
+        seen[j] = true;
+        j = to[j];
+        len++;
+      }
+      transpositions += len - 1;
+    }
+    return transpositions % 2;
+  };
+
+  if (wingParity(EDGE_FLIP) !== 0) fail("edge flip is odd on wings — the invariant is wrong");
+  for (const outer of ["U", "R", "F", "D", "L", "B"]) {
+    if (wingParity(outer) !== 0) fail(`outer turn ${outer} is odd on wings`);
+  }
+  // Conjugating by a slice cannot change it, which is what makes the claim
+  // hold for every slice-flip-slice a learner will ever improvise.
+  /** @param {string} m */
+  const inv = (m) => (m.endsWith("'") ? m.slice(0, -1) : m.endsWith("2") ? m : `${m}'`);
+  for (const setup of ["Uw", "Rw", "3Rw", "Lw'", "Uw2"]) {
+    if (wingParity(`${setup} ${EDGE_FLIP} ${inv(setup)}`) !== 0) {
+      fail(`the flip conjugated by ${setup} is odd on wings`);
+    }
+  }
+  if (wingParity(EDGE_PARITY_5X5) !== 1) {
+    fail("the parity algorithm is EVEN on wings — it cannot then fix parity");
+  }
+}
+
 // --- cross-source: Sarah ------------------------------------------------------
 {
   const covered = new Set();
@@ -677,6 +786,17 @@ if (failures === 0) {
       `4x4 form); all 12 Sarah algs match pinned outcomes (${SARAH_COVERAGE}/13 cases covered; ` +
       `her #5 is l2e-6 held y2; her #8/#9 drop SCDB's trailing F2 and only verify with it ` +
       `restored; she has no l2e-5/l2e-13)`,
+  );
+  report.push(
+    `✓ edge flip ${EDGE_FLIP}: outer turns only, legal on the 4x4 too, centres ` +
+      `untouched, turns the FR group over in place — the course's other algorithm, ` +
+      `pinned by behaviour because it has no L2E case of its own`,
+  );
+  report.push(
+    `✓ wing parity: every outer turn and the flip (and the flip conjugated by ` +
+      `Uw/Rw/3Rw/Lw'/Uw2) are EVEN; the parity alg is ODD — so slice-flip-slice can ` +
+      `never reach an odd state and the parity alg is the second generator the ` +
+      `puzzle requires, not a convenience`,
   );
   report.push(`✓ ${NEGATIVE.length} negative controls fail as required`);
 }

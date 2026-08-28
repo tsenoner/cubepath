@@ -7,7 +7,7 @@ minutes: 16
 objectives:
   - "See what Uw does to the wings and to the top row of every side centre."
   - "Run the pairing loop: line up, slice out, store, repeat, slice back."
-  - "Finish the last two edges with the flip trick, when storing no longer works."
+  - "Finish the last two edges with the flip algorithm, when storing no longer works."
 prerequisites: ["444-centers"]
 algorithms: []
 practice:
@@ -18,6 +18,7 @@ practice:
   note: "Set the trainer to 4×4, build the centers and pair all twelve edges — if a centre ends up broken, one Uw did not meet its Uw', and that is the only bug this step has."
 ---
 
+import AlgText from "../../components/AlgText.astro";
 import Callout from "../../components/Callout.astro";
 import Figure from "../../components/Figure.astro";
 import TwistyPlayer from "../../components/TwistyPlayer.astro";
@@ -93,7 +94,15 @@ storing stops working. New exit:
 3. **Flip that edge in place** — lift it out of the band, roll it over the
    top, and reinsert it into the same slot, side faces back where they
    started. Flipping swaps its wings between the two inner layers — each now
-   sits in its partner's path.
+   sits in its partner's path. There is an algorithm for exactly this, and it
+   is worth learning as a string rather than improvising it every time:
+
+   <AlgText moves="R U R' F R' F' R" />
+
+   It turns the front-right edge over in place and moves the four top edges
+   round by one, intact. Seven outer turns, nothing wide — so it cannot break
+   a pair you have already made, and it means **literally the same thing on a
+   5×5**, where you will meet it again.
 4. **Slice back** — `Uw'` completes *both* edges at once and snaps the
    centers home.
 

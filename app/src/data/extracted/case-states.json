@@ -35,8 +35,13 @@
     },
     "5x5-edge-parity": {
       "alg": "Rw U2 x Rw U2 Rw U2 3Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'",
-      "source": "l2e-raw.json#[5].algs[1]",
+      "source": "l2e-raw.json#[5].algs[0]",
       "signature": "the 4x4 OLL-parity form with token 7 widened (Rw' -> 3Rw')"
+    },
+    "edge-flip": {
+      "alg": "R U R' F R' F' R",
+      "source": "app/scripts/verify-l2e.mjs (EDGE_FLIP)",
+      "signature": "outer turns only, legal on 4x4 and 5x5, turns one edge group over in place"
     }
   },
   "layouts": {
@@ -4963,7 +4968,7 @@
       "set": "555l2e",
       "name": "L2E 6",
       "group": "555-l2e",
-      "alg": "Rw' U2 3Rw U2 3Rw' F2 Rw2 U2 Rw U2 Rw' U2 F2 Rw2 F2",
+      "alg": "Rw U2 x Rw U2 Rw U2 3Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'",
       "derivation": "inverse",
       "preRotation": "",
       "state": {
