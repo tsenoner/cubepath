@@ -1752,37 +1752,47 @@ def _ov_pins(
     dwg: svgwrite.Drawing, bounds: _Bounds, recolor: dict[str, str], opacity: float
 ) -> None:
     """The pins layout. Draw order is the depth order: the hidden faces' pins
-    and rings first so the cube occludes them, then the cube, then each
-    visible face's ring back half, the pin through it, its front half and
-    head, then every dot and letter on top."""
+    and rings first so the cube occludes them, then the cube, then the
+    visible faces'. Within one pin: the ring's back half, the pin through it,
+    the front half and the head — and the dot at the tip, which sits
+    `_OV_PIN_RING_IN` beyond the ring's plane along the normal, so it goes
+    UNDER the ring when the pin points away from the camera (D, B, L) and
+    over it when the pin points toward (U, F, R). Letters last."""
     proj = {face: tuple(_n_proj(*p) for p in overview_pin(face)) for face in _FACE_NORMAL}
     rings = {}
     for face, n in _FACE_NORMAL.items():
         centre, start = _pin_ring_frame(face)
         rings[face] = _ribbon_arc(dwg, bounds, centre, n, start)
 
-    for face in "DBL":
-        c, tip = proj[face]
-        back, front, head = rings[face]
-        dwg.add(back)
-        _ov_pin_line(dwg, bounds, c, tip)
-        dwg.add(front)
-        dwg.add(head)
-    _ov_cube(dwg, bounds, recolor, opacity)
-    for face in _OV_ON_FACE:
-        c, tip = proj[face]
-        back, front, head = rings[face]
-        dwg.add(back)
-        _ov_pin_line(dwg, bounds, c, tip)
-        dwg.add(front)
-        dwg.add(head)
-    for face in "UDFBRL":
-        c, tip = proj[face]
-        dot = dwg.circle(
+    def dot(face: str) -> None:
+        tip = proj[face][1]
+        circle = dwg.circle(
             center=(round(tip[0], 1), round(tip[1], 1)), r=_OV_PIN_DOT, fill=ARROW_COLOR
         )
-        dwg.add(_ink(dot))
+        dwg.add(_ink(circle))
         bounds.add(*tip, _OV_PIN_DOT)
+
+    def pin(face: str) -> None:
+        c, tip = proj[face]
+        back, front, head = rings[face]
+        n = _FACE_NORMAL[face]
+        away = sum(n[i] * _VIEW_DIR[i] for i in range(3)) < 0
+        if away:
+            dot(face)
+        dwg.add(back)
+        _ov_pin_line(dwg, bounds, c, tip)
+        dwg.add(front)
+        dwg.add(head)
+        if not away:
+            dot(face)
+
+    for face in "DBL":
+        pin(face)
+    _ov_cube(dwg, bounds, recolor, opacity)
+    for face in _OV_ON_FACE:
+        pin(face)
+    for face in "UDFBRL":
+        c, tip = proj[face]
         dx, dy = tip[0] - c[0], tip[1] - c[1]
         ln = math.hypot(dx, dy)
         at = (

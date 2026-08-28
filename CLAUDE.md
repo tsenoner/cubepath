@@ -203,7 +203,9 @@ OLL cases have no arrows; PLL cases use `swaps` (bidirectional), `cycles` (direc
 of two layouts. `OVERVIEW_PINS` is the shipped `overview.svg`: a pin out of every face
 centre, a dot at its tip, the letter beyond it, and a 3D ribbon ring around each pin
 showing which way that face turns, clockwise as seen from outside it; the hidden faces'
-pins and rings run behind the cube, which occludes their inner half. The ribbon is the
+pins and rings run behind the cube, which occludes their inner half, and their dots go
+under their rings (the tip is beyond the ring's plane, away from the camera) where the
+visible faces' dots go over. The ribbon is the
 original figure's geometry (`_ribbon_arc`: a band around the axis split into back and
 front halves around the pin, arrowhead in the band's own plane) at a radius and sweep that
 survive 272 px; pin lengths are solved from two screen radii (`_OV_PIN_TIP`) and the

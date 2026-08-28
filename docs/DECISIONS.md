@@ -459,7 +459,9 @@ one turn of that face carries a sticker (simulator-checked for the visible
 faces; the ring basis is proven clockwise-from-outside for all six); pins
 start at the face centre, run along the normal and land at the layout's
 screen radius; every arrowhead's tip in the SVG is the projected end of its
-ring; every letter is present once and sits on the plate so it flips with the
+ring; a dot is painted under every ribbon vertex it meets on screen that is
+nearer the camera and over every one that is farther (B's dot used to sit
+on top of its own ring); every letter is present once and sits on the plate so it flips with the
 theme; the computed frame holds every coordinate and label; the committed
 SVGs match the generator byte for byte. The hub keeps its own gates (derived
 strip directions re-derived independently, reverse reading false, letters

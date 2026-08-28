@@ -20,10 +20,14 @@ from cubepath.diagrams import (
     _LAYER_OF,
     _OV_HOST,
     _OV_LABEL_AT,
+    _OV_PIN_BAND,
+    _OV_PIN_DOT,
+    _OV_PIN_STROKE,
     _OV_PIN_TIP,
     _OV_STRIP_REACH,
     _SECOND_LAYER,
     _THEME_CSS,
+    _VIEW_DIR,
     _YELLOW_CROSS,
     ARROW_COLOR,
     BLUE,
@@ -541,6 +545,62 @@ def test_pins_layout_labels_and_heads(tmp_path):
     x0, y0, w, h = map(float, view_box.group(1).split())
     for px, py in _coords(svg):
         assert x0 <= px <= x0 + w and y0 <= py <= y0 + h, (px, py)
+
+
+def test_pin_dots_sit_in_depth_order(tmp_path):
+    """The dot at a pin's tip is `_OV_PIN_RING_IN` beyond the ring's plane
+    along the face normal, so a pin that points away from the camera has
+    its dot BEHIND the ring and one that points toward has it in FRONT.
+    Where a ribbon vertex lands within the dot on screen, the SVG must
+    paint the dot before that path when the ribbon is nearer the camera
+    and after it when it is farther — and all such vertices of one pin
+    must be on one side, or the dot would need splitting. B's dot used to
+    be painted last and covered its own ring."""
+    svg = render_overview(tmp_path, layout=OVERVIEW_PINS).read_text()
+    reach = _OV_PIN_DOT + _OV_PIN_STROKE
+    elems = list(re.finditer(r"<(circle|path)\b[^>]*>", svg))
+
+    def depth(p: tuple[float, ...]) -> float:
+        return sum(p[i] * _VIEW_DIR[i] for i in range(3))
+
+    covered = set()
+    for face, n in _FACE_NORMAL.items():
+        _c, tip = overview_pin(face)
+        tx, ty = _n_proj(*tip)
+        nearer = farther = 0
+        for p in overview_pin_ring(face) + [overview_pin_head(face)]:
+            for side in (+1, -1):
+                q = tuple(p[i] + side * _OV_PIN_BAND * n[i] for i in range(3))
+                if math.dist(_n_proj(*q), (tx, ty)) < reach:
+                    if depth(q) > depth(tip):
+                        nearer += 1
+                    else:
+                        farther += 1
+        assert not (nearer and farther), (face, nearer, farther)
+        away = sum(n[i] * _VIEW_DIR[i] for i in range(3)) < 0
+        if nearer or farther:
+            assert (nearer > 0) == away, face
+
+        dot_at = f'cx="{tx:.1f}" cy="{ty:.1f}"'
+        (dot_idx,) = [i for i, m in enumerate(elems) if m.group(1) == "circle" and dot_at in m[0]]
+        near_paths = []
+        for i, m in enumerate(elems):
+            if m.group(1) != "path":
+                continue
+            d_attr = re.search(r'\bd="([^"]*)"', m[0])
+            assert d_attr is not None
+            nums = re.findall(r"-?\d+(?:\.\d+)?", d_attr.group(1))
+            pts = [(float(a), float(b)) for a, b in zip(nums[::2], nums[1::2], strict=False)]
+            if any(math.dist(pt, (tx, ty)) < reach for pt in pts):
+                near_paths.append(i)
+        if not near_paths:
+            continue
+        covered.add(face)
+        if away:
+            assert dot_idx < min(near_paths), (face, "dot painted over a nearer ribbon")
+        else:
+            assert dot_idx > max(near_paths), (face, "dot painted under a farther ribbon")
+    assert "B" in covered, "B's dot meets its ring on screen — the check has teeth"
 
 
 def test_overview_card_arrows_get_a_halo_when_the_face_is_too_dark(tmp_path):
