@@ -69,9 +69,12 @@ your own method finishes. Nothing is broken — do not undo it and start again.
 
 <Callout type="caution">
   This algorithm is a **near-twin** of the 4×4 OLL parity algorithm — one token
-  apart, `Rw'` on the 4×4 where the 5×5 needs `3Rw'`. Running the 4×4 form on a
-  5×5 does not shuffle your edges: it **breaks your centres**, and no whole-cube
-  rotation brings them back. Keep them separate from day one — open
+  apart, `Rw'` on the 4×4 where the 5×5 needs `3Rw'`. Muscle memory will happily
+  fire the wrong one, and it does real damage: measured on a 5×5, the 4×4 form
+  **breaks four edge groups apart** (UB, UF, DF, DB) **and wrecks the centres**,
+  with no whole-cube rotation that brings them back. That one token is a
+  conjugated inner-slice turn, and an inner slice moves midges away from their
+  wings. Keep them separate from day one — open
   [4×4 OLL parity](/case/444.oll-parity/) and
   [5×5 edge parity](/case/555.l2e-6/) side by side until the difference is
   burned in.

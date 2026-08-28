@@ -68,8 +68,10 @@ const ALL_TRAINER_GROUPS: TrainerGroup[] = [
   { key: "full-oll", name: "Full OLL (57)", member: isFullOll },
   { key: "full-pll", name: "Full PLL (all 21)", member: isFullPll },
   {
-    // What the 4×4 course actually teaches: OLL parity and the two faces of
-    // PLL parity. The old "4×4 OLL + parity" / "4×4 PLL + parity" pair read as
+    // What the 4×4 course actually teaches: OLL parity and PLL parity — the
+    // two algorithms J Perm's 4x4 tutorial teaches. `444.pll.adj-e` was a third
+    // here until it was verified redundant; see unlocks.ts for why it is
+    // locked. The old "4×4 OLL + parity" / "4×4 PLL + parity" pair read as
     // "the OLL set, plus a parity case"; the contents were the opposite —
     // last-layer cases with the parity fix baked in.
     key: "444-parity",

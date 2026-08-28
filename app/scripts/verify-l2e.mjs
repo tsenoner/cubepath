@@ -699,6 +699,25 @@ if (classToSlug.size !== 13) {
   }
 }
 
+// --- what the WRONG algorithm does, because a lesson promises it --------------
+// 555-l2e-parity.mdx warns that firing the 4x4 OLL-parity form on a 5x5 breaks
+// four edge groups AND the centres. That sentence briefly said the opposite
+// about the edges, so it is measured here rather than asserted in prose.
+{
+  const after = solved.applyTransformation(T(OLL_PARITY_4X4));
+  const broken = SLOT_NAMES.filter((s) => !VALID[s].has(arrKey(after, s)));
+  if (broken.length !== 4) {
+    fail(`the 4x4 parity form breaks ${broken.length} edge groups on a 5x5, expected 4`);
+  }
+  if (broken.sort().join(" ") !== "BD BU DF FU") {
+    fail(`the 4x4 form breaks ${broken.join(" ")}, expected BD BU DF FU`);
+  }
+  if (centersSolved(after)) fail("the 4x4 parity form leaves 5x5 centres solved — lesson is wrong");
+  if (ROTATION_T.some((r) => centersSolved(after.applyTransformation(r)))) {
+    fail("a whole-cube rotation DOES restore the centres — the lesson says none does");
+  }
+}
+
 // --- parity is the only obstruction, per case ---------------------------------
 // The wing-parity block above proves the flip can never change parity and the
 // parity algorithm always does. This turns that into a statement about the 13
@@ -850,6 +869,10 @@ if (failures === 0) {
     `✓ per-case parity: 8 of the 13 are ODD on wings (l2e-5,6,7,8,9,10,11,12) and 5 are ` +
       `EVEN; every alternate alg agrees with its case; one parity application clears every ` +
       `odd case — so parity is the only obstruction the flip cannot pass`,
+  );
+  report.push(
+    `✓ the 4x4 parity form fired on a 5x5 breaks exactly the four edge groups the lesson ` +
+      `names (UB, UF, DF, DB) and wrecks the centres past any rotation`,
   );
   report.push(`✓ ${NEGATIVE.length} negative controls fail as required`);
 }
