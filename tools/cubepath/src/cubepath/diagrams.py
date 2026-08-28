@@ -1627,7 +1627,7 @@ class SlotDiagram:
 
     name: str  # filename stem
     label: str  # human-readable label
-    subdir: str  # output subdirectory under guide/figures/generated/
+    subdir: str  # output subdirectory under app/public/diagrams/
     colors: dict[tuple[str, int, int], str]
     slot: frozenset[tuple[str, int, int]]
 
@@ -2381,8 +2381,14 @@ def all_steps() -> list[StepDiagram]:
 
 
 def main() -> None:
-    # tools/cubepath/src/cubepath/diagrams.py -> repo root is 4 levels up
-    output_dir = Path(__file__).resolve().parents[4] / "guide" / "figures" / "generated"
+    # tools/cubepath/src/cubepath/diagrams.py -> repo root is 4 levels up.
+    # ONE tree. These SVGs used to be written to guide/figures/generated/ and
+    # then copied to app/public/diagrams/, so every diagram was committed twice
+    # and a byte-identity test existed solely to prove the copy had happened.
+    # The app is the only thing that must serve them from a fixed URL, so the
+    # app's tree is the home and the guide reaches up into it — see
+    # guide/cubepath.md's figure paths and the `--root ..` in defaults/pdf.yaml.
+    output_dir = Path(__file__).resolve().parents[4] / "app" / "public" / "diagrams"
     output_dir.mkdir(parents=True, exist_ok=True)
     total = 0
 

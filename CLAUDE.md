@@ -83,7 +83,7 @@ of these is therefore pinned by a test:
 | artifact | produced by | pinned by |
 | --- | --- | --- |
 | `app/public/cubepath.pdf` | `make build-guide` | `tests/test_guide.py` (input digest in `guide/pdf.stamp.json`) |
-| `app/public/diagrams/**` (221 SVGs) | `make diagrams` | `tests/test_diagrams.py` — generator match + byte-identity with `guide/figures/generated/` |
+| `app/public/diagrams/**` (221 SVGs) | `make diagrams` | `tests/test_diagrams.py` — generator match, and the guide's figure paths resolve |
 | `app/public/cards/*.pdf`, `app/src/data/cards.json` | `make cards` | `tests/test_cards.py` |
 | `app/public/favicon.svg`, `app/public/icons/*.png` | `make logo` | `tests/test_logo.py` |
 | `app/src/data/fullsets*.gen.ts` | `node scripts/gen-cases.mjs` | `app/tests/algs.spec.ts` (kpuzzle) |
@@ -205,7 +205,7 @@ named for the package now (`parents[N]` depths are unchanged, so no code moved).
 
 ### Diagram Pipeline
 
-`tools/cubepath/src/cubepath/diagrams.py` defines the guide's 17 core cube diagrams as `CubeDiagram` dataclasses rendered to SVG using `svgwrite`. Case sticker data is **derived from algorithms** via `_derived_cross_case` / `_derived_oll_corner_case` / `_derived_pll_case` (OLL: yellow/grey masks; PLL: true colors). The entry point `cubepath-diagrams` writes to `guide/figures/generated/`.
+`tools/cubepath/src/cubepath/diagrams.py` defines the guide's 17 core cube diagrams as `CubeDiagram` dataclasses rendered to SVG using `svgwrite`. Case sticker data is **derived from algorithms** via `_derived_cross_case` / `_derived_oll_corner_case` / `_derived_pll_case` (OLL: yellow/grey masks; PLL: true colors). The entry point `cubepath-diagrams` writes to `app/public/diagrams/` — the one committed tree.
 
 Four case groups: `_oll_cross_cases()` (3), `_oll_corner_cases()` (8), `_pll_corner_cases()` (2), `_pll_edge_cases()` (4) — the 17 `all_cases()` returns. `fullsets.py` builds the rest from the app's extraction: 78 plan views (57 OLL + 21 PLL) into `oll-full/` and `pll-full/`, 41 isometric `SlotDiagram` pictures into `f2l/`, and 49 big-cube plan views (27 + 22) into `444-oll/` and `444-pll/` — those from the kpuzzle states in `case-states.json`, because `cube.py` cannot model a 4×4 and must not be taught to. 220 SVGs in all, and `tests/test_diagrams.py` pins that number: `EXPECTED_DIAGRAMS` is asserted against a full render, so a group added to `main()` and forgotten in the test (or the reverse) fails the build.
 
@@ -411,8 +411,11 @@ if they stop matching, rather than silently passing.
 
 ### Diagram output structure
 
-Generated SVGs are organized in subdirectories under `guide/figures/generated/`,
-mirrored byte-for-byte into `app/public/diagrams/` by `make diagrams`:
+Generated SVGs are organized in subdirectories under `app/public/diagrams/`,
+which is the ONE committed tree. `guide/cubepath.md` reaches up into it with
+`../app/public/diagrams/…` paths, which is why `guide/defaults/pdf.yaml` passes
+`--root ..` to typst — without it typst rejects every figure for escaping its
+project root. There is no copy step and no second tree:
 
 | directory | n | what |
 | --- | --- | --- |

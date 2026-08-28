@@ -32,9 +32,8 @@ dev: ## Run the app dev server (http://localhost:4321)
 preview: ## Serve the built app locally
 	cd $(APP) && npm run preview
 
-diagrams: ## Regenerate SVG diagrams and sync them into the app
+diagrams: ## Regenerate the SVG diagrams into app/public/diagrams/
 	cd $(PY) && uv run cubepath-diagrams
-	bash scripts/sync-diagrams.sh
 
 cheatcards: cards ## Deprecated alias for `cards`
 

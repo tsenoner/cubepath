@@ -769,3 +769,32 @@ correct for any puzzle. Two new assertions pin it: no big-cube case ships a
 scramble, and every scramble that does ship belongs to a case the 3×3 gate
 actually checks — so a scramble can no longer ship unverified by being a puzzle
 that block skips.
+
+## One diagram tree, not two (2026-08-28)
+
+The 221 SVGs were committed **twice** — `guide/figures/generated/` for the PDF
+and `app/public/diagrams/` for the site — kept in step by
+`scripts/sync-diagrams.sh` and a byte-identity test whose only job was to prove
+the copy had run. `docs/TODO.md` carried this as open work; an earlier attempt
+prototyped a git-tracked symlink, a top-level `diagrams/`, and a `build.sh`
+rework, and was abandoned uncommitted.
+
+**`app/public/diagrams/` is now the only tree.** The app is the one consumer
+that must serve these from a fixed URL, so it owns them; `cubepath-diagrams`
+writes there directly, and `guide/cubepath.md` reaches up with
+`../app/public/diagrams/…`.
+
+**`--root ..` in `guide/defaults/pdf.yaml` is load-bearing**, which is why it
+carries a comment: typst sandboxes file reads to its project root and rejects
+every `../` path without it. Pandoc cannot rewrite the paths for us, because
+`filters/callouts.lua` emits raw `#image()` markup for rotated figures that
+pandoc never sees as images.
+
+**Verified, not assumed:** all 9 pages of the rebuilt PDF rasterise
+sha256-identical at 60 dpi to the pre-change build. The change is invisible in
+the output, which is the only acceptable result for a pure de-duplication.
+
+The byte-identity test had nothing left to compare and was replaced by the gate
+that matters now — the guide's figure paths all resolve, `figures/generated`
+appears nowhere, neither the second tree nor `sync-diagrams.sh` has come back,
+and `pdf.yaml` still passes `--root ..`. Tracked files drop by 221.

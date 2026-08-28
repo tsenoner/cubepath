@@ -1,6 +1,5 @@
 """Tests for cubepath diagram generation."""
 
-import filecmp
 import itertools
 import math
 import re
@@ -776,11 +775,10 @@ def test_card_bands_grow_outward_only(tmp_path) -> None:
 # block is emitted, the print style is exempt, and the two shipped trees agree.
 
 _REPO = Path(__file__).resolve().parents[3]
-_GUIDE_SVG = _REPO / "guide" / "figures" / "generated"
 _APP_SVG = _REPO / "app" / "public" / "diagrams"
 # Derived, never listed: a hardcoded tuple silently skipped `f2l/` when it
 # landed, which is the same failure scripts/sync-diagrams.sh guards against.
-_SVG_DIRS = tuple(sorted(p.name for p in _GUIDE_SVG.iterdir() if p.is_dir()))
+_SVG_DIRS = tuple(sorted(p.name for p in _APP_SVG.iterdir() if p.is_dir()))
 
 
 # The count is PINNED, not measured off the tree it is checking. Deriving it
@@ -963,7 +961,7 @@ def test_committed_diagrams_match_the_generator(tmp_path) -> None:
     fresh = tmp_path / "gen"
     _render_everything(fresh)
 
-    committed = {str(p.relative_to(_GUIDE_SVG)) for p in _GUIDE_SVG.rglob("*.svg")}
+    committed = {str(p.relative_to(_APP_SVG)) for p in _APP_SVG.rglob("*.svg")}
     generated = {str(p.relative_to(fresh)) for p in fresh.rglob("*.svg")}
     assert generated == committed, (
         f"tree membership differs — orphaned: {sorted(committed - generated)}, "
@@ -972,22 +970,43 @@ def test_committed_diagrams_match_the_generator(tmp_path) -> None:
     stale = [
         name
         for name in sorted(generated)
-        if (_GUIDE_SVG / name).read_bytes() != (fresh / name).read_bytes()
+        if (_APP_SVG / name).read_bytes() != (fresh / name).read_bytes()
     ]
     assert not stale, f"committed SVGs differ from the generator: {stale}"
 
 
-def test_the_two_diagram_trees_are_byte_identical() -> None:
-    """app/public/diagrams is a literal copy of guide/figures/generated made by
-    scripts/sync-diagrams.sh. Nothing else gated that, so the app could ship a
-    stale diagram indefinitely."""
-    for sub in _SVG_DIRS:
-        guide_dir, app_dir = _GUIDE_SVG / sub, _APP_SVG / sub
-        assert app_dir.is_dir(), f"{sub}/ never synced into the app"
-        names = sorted(p.name for p in guide_dir.glob("*.svg"))
-        assert names == sorted(p.name for p in app_dir.glob("*.svg")), f"{sub}/ file sets differ"
-        match, mismatch, errors = filecmp.cmpfiles(guide_dir, app_dir, names, shallow=False)
-        assert not mismatch and not errors, f"{sub}/ drifted: {mismatch + errors}"
+def test_the_guide_references_the_one_diagram_tree() -> None:
+    """There is ONE committed tree, app/public/diagrams/, and the guide reaches
+    up into it. This replaces a byte-identity check between two trees that
+    existed only to prove scripts/sync-diagrams.sh had run; the duplication it
+    guarded is gone, so what needs guarding instead is the wiring — that every
+    figure the guide names resolves, and that nothing has quietly recreated the
+    second tree or gone back to the old relative paths.
+
+    `guide/defaults/pdf.yaml` must keep `--root ..` or typst refuses every one
+    of these paths for escaping its project root; scripts/guide_stamp.py
+    resolves the same references and would fail first if they broke.
+    """
+    guide_md = _REPO / "guide" / "cubepath.md"
+    text = guide_md.read_text()
+
+    refs = re.findall(r"\]\((\.\./app/public/diagrams/[^)\s]+)", text)
+    assert refs, "the guide names no diagrams — did the figure paths change?"
+    missing = sorted({r for r in refs if not (guide_md.parent / r).is_file()})
+    assert not missing, f"guide references figures that do not exist: {missing}"
+
+    assert "figures/generated" not in text, (
+        "the guide still points at the deleted guide/figures/generated tree"
+    )
+    assert not (_REPO / "guide" / "figures").exists(), "the second diagram tree is back"
+    assert not (_REPO / "scripts" / "sync-diagrams.sh").exists(), (
+        "sync-diagrams.sh is back — there is only one tree to sync to now"
+    )
+
+    pdf_yaml = (_REPO / "guide" / "defaults" / "pdf.yaml").read_text()
+    assert "--root" in pdf_yaml and '".."' in pdf_yaml, (
+        "pdf.yaml lost `--root ..`; typst will reject every ../ figure path"
+    )
 
 
 def test_every_shipped_diagram_is_themed() -> None:

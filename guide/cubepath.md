@@ -32,16 +32,16 @@ Each letter = one 90° CW turn, looking at that face — so from your seat L, D 
 
 |                                                                                   |
 | :-------------------------------------------------------------------------------: |
-| ![The six faces and how each turns](figures/generated/notation/overview.svg){ width=34% } |
+| ![The six faces and how each turns](../app/public/diagrams/notation/overview.svg){ width=34% } |
 
 |                                                           |                                                           |                                                           |                                                           |                                                           |                                                           |
 | :-------------------------------------------------------: | :-------------------------------------------------------: | :-------------------------------------------------------: | :-------------------------------------------------------: | :-------------------------------------------------------: | :-------------------------------------------------------: |
-| ![R](figures/generated/notation/move_r.svg){ width=100% } | ![L](figures/generated/notation/move_l.svg){ width=100% } | ![U](figures/generated/notation/move_u.svg){ width=100% } | ![D](figures/generated/notation/move_d.svg){ width=100% } | ![F](figures/generated/notation/move_f.svg){ width=100% } | ![B](figures/generated/notation/move_b.svg){ width=100% } |
+| ![R](../app/public/diagrams/notation/move_r.svg){ width=100% } | ![L](../app/public/diagrams/notation/move_l.svg){ width=100% } | ![U](../app/public/diagrams/notation/move_u.svg){ width=100% } | ![D](../app/public/diagrams/notation/move_d.svg){ width=100% } | ![F](../app/public/diagrams/notation/move_f.svg){ width=100% } | ![B](../app/public/diagrams/notation/move_b.svg){ width=100% } |
 |                         **R**ight                         |                         **L**eft                          |                          **U**p                           |                         **D**own                          |                         **F**ront                         |                         **B**ack                          |
 
 |                                                                  |                          Modifiers                          |                                                                 |                                                           |                          Slices                           |                                                           |                                                           |                         Rotations                         |                                                           |
 | :--------------------------------------------------------------: | :---------------------------------------------------------: | :-------------------------------------------------------------: | :-------------------------------------------------------: | :-------------------------------------------------------: | :-------------------------------------------------------: | :-------------------------------------------------------: | :-------------------------------------------------------: | :-------------------------------------------------------: |
-| ![R'](figures/generated/notation/move_r_prime.svg){ width=100% } | ![R2](figures/generated/notation/move_r2.svg){ width=100% } | ![r (Rw)](figures/generated/notation/move_rw.svg){ width=100% } | ![M](figures/generated/notation/move_m.svg){ width=100% } | ![S](figures/generated/notation/move_s.svg){ width=100% } | ![E](figures/generated/notation/move_e.svg){ width=100% } | ![x](figures/generated/notation/move_x.svg){ width=100% } | ![y](figures/generated/notation/move_y.svg){ width=100% } | ![z](figures/generated/notation/move_z.svg){ width=100% } |
+| ![R'](../app/public/diagrams/notation/move_r_prime.svg){ width=100% } | ![R2](../app/public/diagrams/notation/move_r2.svg){ width=100% } | ![r (Rw)](../app/public/diagrams/notation/move_rw.svg){ width=100% } | ![M](../app/public/diagrams/notation/move_m.svg){ width=100% } | ![S](../app/public/diagrams/notation/move_s.svg){ width=100% } | ![E](../app/public/diagrams/notation/move_e.svg){ width=100% } | ![x](../app/public/diagrams/notation/move_x.svg){ width=100% } | ![y](../app/public/diagrams/notation/move_y.svg){ width=100% } | ![z](../app/public/diagrams/notation/move_z.svg){ width=100% } |
 |                               CCW                                |                            180°                             |                            **w**ide                             |                        **M**id (L)                        |                       **S**tand (F)                       |                       **E**quat (D)                       |                        rotate (R)                         |                        rotate (U)                         |                        rotate (F)                         |
 
 :::
@@ -58,79 +58,79 @@ Each letter = one 90° CW turn, looking at that face — so from your seat L, D 
 
 |                                                               |                                                                                                  |
 | :-----------------------------------------------------------: | :----------------------------------------------------------------------------------------------- |
-|  ![](figures/generated/steps/step_1_cross.svg){ width=55px }  | **1. Cross** — Create a white cross with each edge above its matching center. Solve intuitively. |
-|   ![](figures/generated/steps/step_flip.svg){ width=55px }    | **↻ Flip** — Turn cube upside down (`x2`). White on bottom, yellow on top from now on.           |
-| ![](figures/generated/steps/step_2_corners.svg){ width=55px } | **2. White Corners** — Move corner above slot:                                                   |
+|  ![](../app/public/diagrams/steps/step_1_cross.svg){ width=55px }  | **1. Cross** — Create a white cross with each edge above its matching center. Solve intuitively. |
+|   ![](../app/public/diagrams/steps/step_flip.svg){ width=55px }    | **↻ Flip** — Turn cube upside down (`x2`). White on bottom, yellow on top from now on.           |
+| ![](../app/public/diagrams/steps/step_2_corners.svg){ width=55px } | **2. White Corners** — Move corner above slot:                                                   |
 
 ::: {.borderless}
 
 |                                                             |                                                             |                                                          |
 | :---------------------------------------------------------: | :---------------------------------------------------------: | :------------------------------------------------------: |
-| ![](figures/generated/steps/corner_right.svg){ width=50px } | ![](figures/generated/steps/corner_front.svg){ width=50px } | ![](figures/generated/steps/corner_up.svg){ width=50px } |
+| ![](../app/public/diagrams/steps/corner_right.svg){ width=50px } | ![](../app/public/diagrams/steps/corner_front.svg){ width=50px } | ![](../app/public/diagrams/steps/corner_up.svg){ width=50px } |
 |                    [righty]{.trig-r} ×1                     |                          `y` lefty                          |                   [righty]{.trig-r} ×3                   |
 
 :::
 
 |                                                             |                                                      |
 | :---------------------------------------------------------: | :--------------------------------------------------- |
-| ![](figures/generated/steps/step_3_edges.svg){ width=55px } | **3. Edges** — Edge w/o yellow — match side, insert: |
+| ![](../app/public/diagrams/steps/step_3_edges.svg){ width=55px } | **3. Edges** — Edge w/o yellow — match side, insert: |
 
 ::: {.borderless}
 
 |                                                           |                                                          |
 | :-------------------------------------------------------: | :------------------------------------------------------: |
-| ![](figures/generated/steps/edge_right.svg){ width=50px } | ![](figures/generated/steps/edge_left.svg){ width=50px } |
+| ![](../app/public/diagrams/steps/edge_right.svg){ width=50px } | ![](../app/public/diagrams/steps/edge_left.svg){ width=50px } |
 |              `U` [righty]{.trig-r} `y` lefty              |            `U'` lefty `y'` [righty]{.trig-r}             |
 
 :::
 
 |                                                              |                                                   |
 | :----------------------------------------------------------: | :------------------------------------------------ |
-| ![](figures/generated/steps/step_4_ycross.svg){ width=55px } | **4. Yellow Cross** — `F` [righty]{.trig-r} `F'`: |
+| ![](../app/public/diagrams/steps/step_4_ycross.svg){ width=55px } | **4. Yellow Cross** — `F` [righty]{.trig-r} `F'`: |
 
 ::: {.borderless}
 
 |                                                      |     |                                                       |     |                                                       |
 | :--------------------------------------------------: | :-: | :---------------------------------------------------: | :-: | :---------------------------------------------------: |
-| ![](figures/generated/oll/oll_dot.svg){ width=60px } |  →  | ![](figures/generated/oll/oll_hook.svg){ width=60px } |  →  | ![](figures/generated/oll/oll_line.svg){ width=60px } |
+| ![](../app/public/diagrams/oll/oll_dot.svg){ width=60px } |  →  | ![](../app/public/diagrams/oll/oll_hook.svg){ width=60px } |  →  | ![](../app/public/diagrams/oll/oll_line.svg){ width=60px } |
 |                      **Dot** ×3                      |     |                      **Hook** ×2                      |     |                      **Line** ×1                      |
 
 :::
 
 |                                                              |                                                        |
 | :----------------------------------------------------------: | :----------------------------------------------------- |
-| ![](figures/generated/steps/step_5_yedges.svg){ width=55px } | **5. Align Edges** — (`R U R' U R U2 R')+U` = `Sune+U` |
+| ![](../app/public/diagrams/steps/step_5_yedges.svg){ width=55px } | **5. Align Edges** — (`R U R' U R U2 R')+U` = `Sune+U` |
 
 ::: {.borderless}
 
 |                                                               |                                                               |
 | :-----------------------------------------------------------: | :-----------------------------------------------------------: |
-| ![](figures/generated/steps/align_adjacent.svg){ width=50px } | ![](figures/generated/steps/align_diagonal.svg){ width=50px } |
+| ![](../app/public/diagrams/steps/align_adjacent.svg){ width=50px } | ![](../app/public/diagrams/steps/align_diagonal.svg){ width=50px } |
 |                   **adj. edges** back+right                   |                     **opp. edges** repeat                     |
 
 :::
 
 |                                                                    |                                                      |
 | :----------------------------------------------------------------: | :--------------------------------------------------- |
-| ![](figures/generated/steps/step_6_ycorners_pos.svg){ width=55px } | **6. Pos. Corners** — `R U' L' U R' U' L` = `Niklas` |
+| ![](../app/public/diagrams/steps/step_6_ycorners_pos.svg){ width=55px } | **6. Pos. Corners** — `R U' L' U R' U' L` = `Niklas` |
 
 ::: {.borderless}
 
 |                                                             |                                                                     |
 | :---------------------------------------------------------: | :------------------------------------------------------------------ |
-| ![](figures/generated/steps/corner_cycle.svg){ width=50px } | Place corners correctly. `\`{=typst} Keeps front-left, cycles rest. |
+| ![](../app/public/diagrams/steps/corner_cycle.svg){ width=50px } | Place corners correctly. `\`{=typst} Keeps front-left, cycles rest. |
 
 :::
 
 |                                                              |                                           |
 | :----------------------------------------------------------: | :---------------------------------------- |
-| ![](figures/generated/steps/step_7_solved.svg){ width=55px } | **7. Orient Corners** — Flip cube (`x2`). |
+| ![](../app/public/diagrams/steps/step_7_solved.svg){ width=55px } | **7. Orient Corners** — Flip cube (`x2`). |
 
 ::: {.borderless}
 
 |                                                              |                                                                                                                                 |
 | :----------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------------------------ |
-| ![](figures/generated/steps/orient_corner.svg){ width=50px } | Unsolved corner front-right. `\`{=typst} [Righty]{.trig-r} ×2-4 until yellow faces down. `\`{=typst} **Only D** to next corner. |
+| ![](../app/public/diagrams/steps/orient_corner.svg){ width=50px } | Unsolved corner front-right. `\`{=typst} [Righty]{.trig-r} ×2-4 until yellow faces down. `\`{=typst} **Only D** to next corner. |
 
 :::
 
@@ -156,9 +156,9 @@ Build the white cross directly on the **bottom** face instead of on top + flip. 
 
 The Hook case gets its own efficient algorithm using wide `f`:
 
-![Dot](figures/generated/oll/oll_dot.svg){ width=28% }
-![Hook](figures/generated/oll/oll_hook.svg){ width=15% rotate=180 }
-![Line](figures/generated/oll/oll_line.svg){ width=28% }
+![Dot](../app/public/diagrams/oll/oll_dot.svg){ width=28% }
+![Hook](../app/public/diagrams/oll/oll_hook.svg){ width=15% rotate=180 }
+![Line](../app/public/diagrams/oll/oll_line.svg){ width=28% }
 
 | You see | Algorithm                                                           |
 | ------- | ------------------------------------------------------------------- |
@@ -174,7 +174,7 @@ Keep yellow on top — no flip needed. Move unsolved corner to **front-right**, 
 
 |                                                             |                                                             |
 | :---------------------------------------------------------: | :---------------------------------------------------------: |
-| ![](figures/generated/steps/orient_right.svg){ width=50px } | ![](figures/generated/steps/orient_front.svg){ width=50px } |
+| ![](../app/public/diagrams/steps/orient_right.svg){ width=50px } | ![](../app/public/diagrams/steps/orient_front.svg){ width=50px } |
 |          Yellow faces **right** → `(R' D' R D) ×2`          |          Yellow faces **front** → `(D' R' D R) ×2`          |
 
 :::
@@ -198,7 +198,7 @@ After the cross, look at the four corners. **Learn Sune — apply it repeatedly 
 ::: algorithm
 | | Case | Algorithm |
 |---|------|-----------|
-| ![](figures/generated/oll/oll_sune.svg){ width=60px } | **Sune** — 1 yellow corner, others CW | [`R U R' U`]{.trig-g} `R U2 R'` |
+| ![](../app/public/diagrams/oll/oll_sune.svg){ width=60px } | **Sune** — 1 yellow corner, others CW | [`R U R' U`]{.trig-g} `R U2 R'` |
 :::
 
 For any unrecognized corner pattern, apply Sune until you reach a solved or Sune state. Anti-Sune + the remaining 5 corner cases are in Phase 3.
@@ -210,7 +210,7 @@ Yellow face complete. Check side colors for **headlights** (two matching corners
 ::: algorithm
 | | Case | Algorithm |
 |---|------|-----------|
-| ![](figures/generated/pll/pll_tperm.svg){ width=60px } | **T-Perm** — headlights on one face, hold at **left** | [R U R' U']{.trig-r} [R' F]{.trig-b} `R2 U' R'` `U'` [R U R' F']{.trig-r} |
+| ![](../app/public/diagrams/pll/pll_tperm.svg){ width=60px } | **T-Perm** — headlights on one face, hold at **left** | [R U R' U']{.trig-r} [R' F]{.trig-b} `R2 U' R'` `U'` [R U R' F']{.trig-r} |
 :::
 
 - **No headlights (diagonal swap)?** Apply T-Perm → creates headlights → T-Perm again.
@@ -229,7 +229,7 @@ Corners done. Turn U — find the solved edge, hold it at **back**.
 ::: algorithm
 | | Case | Algorithm |
 |---|------|-----------|
-| ![](figures/generated/pll/pll_ub.svg){ width=60px } | **Ub** — front edge → left | `R2 U` [R U R' U']{.trig-r} `R' U'` `R' U R'` |
+| ![](../app/public/diagrams/pll/pll_ub.svg){ width=60px } | **Ub** — front edge → left | `R2 U` [R U R' U']{.trig-r} `R' U'` `R' U R'` |
 :::
 
 - **No single solved edge?** Apply Ub → creates a solved edge → identify direction, apply again.
@@ -247,12 +247,12 @@ Anti-Sune completes the Sune pair. The remaining 5 cases each have a dedicated a
 ::: algorithm
 | | Case | Algorithm |
 |---|------|-----------|
-| ![](figures/generated/oll/oll_antisune.svg){ width=60px } | **Anti-Sune** — 1 yellow corner, others CCW | `R U2 R' U' R U' R'` |
-| ![](figures/generated/oll/oll_pi.svg){ width=60px } | **Pi** — 0 yellow, headlights **left only** | `f` [R U R' U']{.trig-r} `f' F` [R U R' U']{.trig-r} `F'` |
-| ![](figures/generated/oll/oll_headlights.svg){ width=60px } | **Headlights** — 2 yellow at back, headlights facing you | `R2 D R' U2 R D' R' U2 R'` |
-| ![](figures/generated/oll/oll_double_headlights.svg){ width=60px } | **Double Headlights** — 0 yellow, headlights L+R | [R U R' U]{.trig-g} `R U' R' U R U2 R'` |
-| ![](figures/generated/oll/oll_chameleon.svg){ width=60px } | **Chameleon** — 2 adjacent yellow (right) | `r U R' U' r'` [F R F']{.trig-b} |
-| ![](figures/generated/oll/oll_bowtie.svg){ width=60px } | **Bowtie** — 2 diagonal yellow | `F' r U R' U' r'` `F R` |
+| ![](../app/public/diagrams/oll/oll_antisune.svg){ width=60px } | **Anti-Sune** — 1 yellow corner, others CCW | `R U2 R' U' R U' R'` |
+| ![](../app/public/diagrams/oll/oll_pi.svg){ width=60px } | **Pi** — 0 yellow, headlights **left only** | `f` [R U R' U']{.trig-r} `f' F` [R U R' U']{.trig-r} `F'` |
+| ![](../app/public/diagrams/oll/oll_headlights.svg){ width=60px } | **Headlights** — 2 yellow at back, headlights facing you | `R2 D R' U2 R D' R' U2 R'` |
+| ![](../app/public/diagrams/oll/oll_double_headlights.svg){ width=60px } | **Double Headlights** — 0 yellow, headlights L+R | [R U R' U]{.trig-g} `R U' R' U R U2 R'` |
+| ![](../app/public/diagrams/oll/oll_chameleon.svg){ width=60px } | **Chameleon** — 2 adjacent yellow (right) | `r U R' U' r'` [F R F']{.trig-b} |
+| ![](../app/public/diagrams/oll/oll_bowtie.svg){ width=60px } | **Bowtie** — 2 diagonal yellow | `F' r U R' U' r'` `F R` |
 :::
 
 ## Permute Corners: Y-Perm
@@ -262,7 +262,7 @@ Completes the T-Perm pair. Solves diagonal corner swaps directly (no double T-Pe
 ::: algorithm
 | | Case | Algorithm |
 |---|------|-----------|
-| ![](figures/generated/pll/pll_yperm.svg){ width=60px } | **Y-Perm** — no headlights, any angle | `F R U' R' U'` [R U R' F']{.trig-r} [R U R' U']{.trig-r} [R' F R F']{.trig-b} |
+| ![](../app/public/diagrams/pll/pll_yperm.svg){ width=60px } | **Y-Perm** — no headlights, any angle | `F R U' R' U'` [R U R' F']{.trig-r} [R U R' U']{.trig-r} [R' F R F']{.trig-b} |
 :::
 
 ## Permute Edges: Ua + H-Perm + Z-Perm
@@ -272,9 +272,9 @@ Completes the T-Perm pair. Solves diagonal corner swaps directly (no double T-Pe
 ::: algorithm
 | | Case | Algorithm |
 |---|------|-----------|
-| ![](figures/generated/pll/pll_ua.svg){ width=60px } | **Ua** — front edge → right | `M2 U M U2 M' U M2` |
-| ![](figures/generated/pll/pll_hperm.svg){ width=60px } | **H-Perm** — opposite swap | `M2 U' M2 U2 M2 U' M2` |
-| ![](figures/generated/pll/pll_zperm.svg){ width=60px } | **Z-Perm** — adjacent swap | `M' U' M2 U' M2 U' M' U2 M2 U` |
+| ![](../app/public/diagrams/pll/pll_ua.svg){ width=60px } | **Ua** — front edge → right | `M2 U M U2 M' U M2` |
+| ![](../app/public/diagrams/pll/pll_hperm.svg){ width=60px } | **H-Perm** — opposite swap | `M2 U' M2 U2 M2 U' M2` |
+| ![](../app/public/diagrams/pll/pll_zperm.svg){ width=60px } | **Z-Perm** — adjacent swap | `M' U' M2 U' M2 U' M' U2 M2 U` |
 :::
 
 **H vs Z:** No edges match after any U turn. Opposite colors facing each other = H. Adjacent colors = Z.
