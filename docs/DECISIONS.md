@@ -417,3 +417,211 @@ lamination guidance is in `docs/printing.md`.
 Deliberately *not* a copy of the prior art: the Z-Cube set is organised by
 algorithm family (F2L / OLL / PLL), this one by learner stage, so finishing any
 card still leaves you able to solve the whole cube.
+
+## Python vs JS/TS — no migration; JS becomes the cube's source of truth (2026-08-27)
+
+The question was asked plainly: where do we need Python, could most of it be
+JS/TS, and would that be better? Answered by a structured decision — two survey
+agents establishing facts, three advocates arguing keep / move / hybrid, and a
+judge instructed to discount any advocate who concealed a weakness.
+
+**Nothing in this repo requires Python.** 4,897 lines across 12 modules with
+exactly one third-party runtime dependency (`svgwrite`, imported by
+`diagrams.py` alone); pandoc, typst and poppler are external binaries invoked
+by subprocess, so the PDF path is indifferent to what calls it. Feasibility was
+never the question.
+
+**Python stays anyway, for two things.** 1,255 lines of hand-written SVG
+geometry — the isometric cube views and the logo — have no replacement in the
+JS cubing stack: `twisty-player`'s strategies all route to three.js/WebGL,
+`SVGRenderer` appears nowhere in cubing's dist, and
+`PuzzleGeometry.generatesvg(threed:true)` rasterises to a degenerate collapsed
+net. And 1,781 lines of Typst/card generation is string templating and
+imposition algebra that would be translated for zero gain. A full port was
+measured at ~7,429 lines retyped to delete ~730, with 241 of 287 assertions
+having nowhere to go.
+
+Worth recording because it was the strongest argument on the other side, and it
+was *true*: the judge independently reproduced 68/68 arrow-free plan-view SVGs
+byte-identically from a 40-line zero-dependency JS emitter in 14 ms. Portable is
+not the same as worth porting.
+
+**But the boundary moves.** `cube.py` was silently mis-simulating big-cube
+algorithms — the standard 4×4 OLL-parity alg parsed, raised nothing, and
+returned a meaningless 3×3 state. Root cause was structural rather than a
+missing branch: `parse_algorithm` was `_TOKEN_RE.findall(alg)`, which by
+construction discards every character it cannot match. 62 of the 104 approved
+new diagrams are big-cube, so the failure mode was a plausible-looking wrong
+picture — unacceptable in a repo whose value is the correctness of algorithm
+data.
+
+So: **JavaScript is the single source of cube truth; Python reads JSON and
+draws.** cubing.js already ships 4×4×4 and 5×5×5 kpuzzles and this repo already
+consumes them. This generalises the existing `jperm-raw.json` pattern rather
+than inventing a new seam. `cube.py` is demoted to a gated 3×3 mirror: its
+parser now consumes the whole string and raises on any token a 3×3 cannot model,
+and `tests/test_conventions.py` machine-checks that its docstring still says so.
+
+**Do not write a 4×4 or 5×5 simulator in Python.** That is the duplicated
+cube-model mistake made a second time and larger. This is the rule the next
+contributor is most likely to break, which is why it is written here.
+
+## 4×4 parity-embedded cases: locked, not deleted (2026-08-28)
+
+The app shipped 49 generated 4×4 cases in two sets (`4x4oll-*`, 27;
+`4x4pll-*`, 22), presented in the trainer as "4×4 OLL + parity" and "4×4 PLL +
+parity" and in `/reference` as two grids. Both names were wrong, and the sets
+did not belong in a course that teaches 2-look OLL/PLL.
+
+**The measurement.** Reproducible from `app/src/data/extracted/jperm-raw.json`:
+**27 of 27** `4x4oll` algorithms contain the OLL-parity algorithm
+(`Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'`) verbatim, and
+**22 of 22** `4x4pll` algorithms contain the PLL-parity algorithm
+(`2R2 U2 2R2 Uw2 2R2 Uw2`) verbatim. `gen-case-states.mjs` had already recorded
+the same fact in `case-states.json` (`parityAlgs[*].signature`). They are not a
+separate 4×4 OLL/PLL system: each one is a 3×3 last-layer algorithm with the
+parity fix spliced into it — a one-look optimisation for solvers who already
+know full OLL and PLL. The name "OLL + parity" read as "the OLL set, plus a
+parity case"; the contents were the opposite.
+
+**Three stay.** `444.oll-parity` (curated), `444.pll.pure-e` — whose algorithm
+*is* the bare PLL parity — and `444.pll.adj-e`, which the 4×4 lesson teaches as
+parity's second face. The lesson's own closing section already said 2-look plus
+these three finishes any 4×4; the other 47 contradicted it by sitting in the
+reference as if they were course material.
+
+**Locked, not deleted**, because the work is correct and finished: the 49 cases
+stay in `jperm-raw.json` and the generated fullsets, all 220 diagrams stay
+generated and gated, and `tests/algs.spec.ts` keeps machine-verifying every
+hidden algorithm. Deleting them would throw away verified data to solve a
+presentation problem, and the user asked for exactly this: hide now, "we could
+make them unlock later".
+
+**The one line to flip** is in `app/src/lib/unlocks.ts`:
+
+```ts
+export const UNLOCKED: Record<UnlockKey, boolean> = {
+  "444-parity-embedded": false,   // -> true
+};
+```
+
+Everything else asks the single predicate `isLocked(caseOrGroupKey)` exported
+beside it — the trainer's set list, pool and counts (`lib/trainer.ts`), the
+`/reference` sections, and `getStaticPaths` in `pages/case/[...id].astro`.
+Nothing re-derives the rule, so unlocking cannot half-happen.
+`app/tests/unlocks.spec.ts` gates both directions: with the flag off no locked
+case is reachable from any pool, set list, count or `?group=` deep link; with it
+on, exactly 47 more cases appear and nothing outside the 4×4 sets moves.
+
+**The trainer sets** are now one honest visible set, `444-parity` ("4×4
+parity", 3 cases), with `444-oll` / `444-pll` kept defined but filtered out and
+renamed "4×4 OLL (parity-embedded)" / "4×4 PLL (parity-embedded)" for the day
+they come back. The 4×4 lesson's `practice.groups` points at `444-parity`, and
+its closing paragraph keeps the explanation of what parity-embedded cases are
+but no longer sends the reader to `/reference/` to find "the full
+parity-embedded case sets", which are not there any more. (It never carried
+`#444-oll` / `#444-pll` anchors — the old copy linked to `/reference/` plain —
+so the change broke no anchor; a whole-site crawl of the built output finds
+zero dead links and zero dead fragments in both flag states.)
+
+**Locked cases get no `/case/` page.** 138 case pages build instead of 185.
+Building the 47 would have recreated the defect this repo was already pulled up
+on — case pages reachable from nowhere — and here they would also have been
+listed in the sitemap and precached into every visitor's service worker
+(~23 KiB each, ~1.0 MiB of pages for a set the lesson tells you not to learn
+yet). The cost accepted in exchange is that those 47 URLs 404 while locked;
+they were linked from nowhere on the site, so no internal link breaks, and the
+same predicate restores them unchanged when the flag flips. Verified after the
+change: the sitemap lists 171 URLs, of which the only `/case/444.*` entries are
+the three taught cases.
+
+## The three-tier colour model, and the audit that found it unwired
+
+**The model.** Every diagram on the site — 3D player or static SVG — puts each
+facelet in one of three tiers: **full colour** for what this step solves, **dim**
+for what an earlier step already solved and must be preserved, **grey** for what
+the method has not reached. The alternative was cubing.js's stock two tiers
+(highlight / dim), which cannot say the third thing at all. On the white-corners
+lesson that difference is the whole lesson: the learner has to see the white
+cross held DIM while the corner in hand is lit, and everything above it dark.
+
+The ordering lives in `app/src/data/extracted/stages.json`
+(`cubepath/stages@2`), generated by `app/scripts/gen-stickering.mjs` out of
+cubing.js by layer-move algebra — no slot index is ever typed — and read by
+`app/src/lib/ladders.ts`. Three properties are load-bearing: there are TWO 3×3
+ladders (beginner permutes the last-layer edges before orienting the corners,
+CFOP orients first), so a tier cannot live on `CaseDef`; "done" is not a boolean
+for a last-layer piece, so every stage carries an aspect and the mask narrows on
+that aspect alone; and a centre is never grey, because it is the frame every
+recognition cue on the site is written against.
+
+**What the four-agent adversarial audit found (Aug 2026).** The ladder was
+CORRECT — every stage's piece set re-derived from the kpuzzle matched
+byte-for-byte — and NOT WIRED TO ANY RENDERER. `TwistyPlayer.astro` called
+`maskFor(puzzle, stickering, alg)` with three arguments; there was no `context`
+prop, and `contextForCase` had zero non-test callers. **0 of 185 cases rendered a
+ladder mask.** Every test passed, because every test called the functions
+directly and never looked at the rendered output.
+
+That is the finding worth keeping. A test that exercises a function while the
+renderer calls something else gates nothing. Everything asserted about tiering
+now reads either the rendered `experimental-stickering-mask-orbits` attribute
+(`tests/algs.spec.ts`, via the Astro container) or the shipped HTML in a browser
+(`e2e/stickering.spec.ts`, page list taken from the sitemap so it is every route
+the build publishes). `e2e/stickering.spec.ts` checks all 138 built case pages.
+
+**The same class of bug, one level down.** A case state is a PRE-state
+(`solved · alg⁻¹`), so a net whole-cube rotation the algorithm carries sits on
+its LEFT — `scripts/lib/kpuzzle-utils.mjs` says exactly that in its own doc
+comment ("Using the wrong side conjugates the state onto the wrong faces") and
+exports `leftRotNormalize` for it. `stickering.ts` cancelled the rotation on the
+RIGHT instead. Both orders bring the centres home, so the search succeeds and
+nothing looks broken; they simply answer about different cubes. 27 of the 185
+cases carry a net rotation (18 F2L, 5 PLL — Aa, Ab, E, Ja, V — 2 5×5 L2E, 2
+locked 4×4 PLL), and all 25 of them with a page shipped a mask on the wrong
+pieces: `pll.aa`, a pure three-cycle of U corners, lit ONE corner, two of the
+three it should have lit having been reported in the BOTTOM layer; the 18 F2L
+cases lit a different slot from the other 23, though all 41 are the FR slot.
+
+It survived review because the test shared the implementation's mistake —
+`tests/algs.spec.ts` normalized the same pre-state with `normalizePattern`,
+which is the right-composing one. Fixed on both sides; `caseStateOf` in the test
+file now left-composes, and 51 tests fail if the implementation regresses.
+
+**Two greys, deliberately different tones.** A grey sticker meant two
+incompatible things across the shipped SVG set. On an OLL plan view it means
+"this facelet is a real sticker that is not yellow" — read its ORIENTATION. On a
+step or F2L diagram it means "the method has not REACHED here". They meet on one
+page (`yellow-cross.mdx` prints `step_4_ycross` above the three OLL cross
+cases). The orientation mask keeps `#C0C0C0` to the byte — 95 shipped plan views
+are built on it and it is what every OLL reference draws — so the tier that
+moved is the other one: `UNREACHED = #C0D4E6`, 13.1 ΔE away. No single SVG may
+contain both, and `tests/test_diagrams.py` measures it.
+
+**Contrast, and which metric.** Only the SVG palette is ours: cubing 0.63.3 has
+no cube-palette API. `ladders.ts` tabulates the player's failures in WCAG
+contrast, which is a luminance-only metric built for text; on that measure seven
+3×3 tier pairs fall under 2:1, worst orange D:grey at 1.09. Ranked by CIE ΔE —
+the metric that decides whether two adjacent PATCHES read as different — the
+order changes completely: orange D:grey is 51.8 ΔE, plainly two different hues.
+The one genuinely marginal pair is **white highlight vs white dim, 11.9 ΔE**,
+the only pair with no hue to separate it. It does not in fact reach the screen:
+`SETUP_ALG` points the white face down, and a piece in the dim tier is a solved
+first-layer piece whose white facelet is therefore on D. Both metrics are worth
+quoting; quoting one as if it were the other is not.
+
+The SVG side was tuned against ΔE for that reason. `diagrams.dim()` is a Lab
+transform — same hue, chroma × 0.32, an L\* step away from a pivot so light
+faces darken and dark faces lighten — sized so the minimum ΔE(full, dim) is
+**30.0** across both the screen and card palettes (the linear mix it replaced
+managed 15.1, on white, which has no chroma to spend). The shared artifact
+between the two renderers is stages.json's TIER ASSIGNMENT, never the colours.
+
+**Still open.** Five case pages display with the U face tipped off the top —
+`pll.aa`, `pll.ab`, `pll.e`, `pll.ja` (an `x`/`x'` in the algorithm) and
+`555.l2e-12`. That is not a mask fault: the mask binds to the cubie and is
+correct on all five. It is that `experimental-setup-anchor="end"` plays the
+algorithm backwards including its net rotation, so the case state is shown
+rotated. Twenty more cases spin about `y` only, which is benign — the pair still
+reads at the front-right. Fixing the five means folding the net rotation into
+`experimental-setup-alg`, which is a camera decision, not a stickering one.

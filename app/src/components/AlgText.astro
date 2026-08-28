@@ -2,6 +2,16 @@
 /**
  * Renders an algorithm with the guide's trigger coloring:
  * sexy move (red), Sune trigger (green), F R F' family (blue).
+ *
+ * FAMILY mirrors `palette.FAMILY` in tools/cubepath/src/cubepath/palette.py —
+ * the same table the guide PDF and the printed cards colour from — and
+ * tools/cubepath/tests/test_notation.py reads this file and asserts the two
+ * are equal. It used to hold four of these ten, so the six mirrors and grips
+ * below (lefty sexy, wide sexy, the two D-slot righties) rendered plain here
+ * and coloured on paper: the same algorithm, taught two ways. A family is a
+ * recognition device — the point is that the learner sees `L' U' L U` and
+ * reads "sexy, other hand" — so the app gains them rather than the paper
+ * losing them.
  */
 interface Props {
   moves: string;
@@ -9,12 +19,24 @@ interface Props {
 }
 const { moves, class: className } = Astro.props;
 
-const TRIGGERS: [string, string][] = [
-  ["R U R' U'", "tr"],
-  ["R U R' U", "tg"],
-  ["R' F R F'", "tb"],
-  ["F R F'", "tb"],
-];
+const FAMILY: Record<string, "r" | "g" | "b"> = {
+  "R U R' U'": "r",
+  "r U R' U'": "r",
+  "L' U' L U": "r",
+  "R U R' F'": "r",
+  "R' D' R D": "r",
+  "D' R' D R": "r",
+  "R U R' U": "g",
+  "R' F R F'": "b",
+  "F R F'": "b",
+  "R' F": "b",
+};
+
+// Longest pattern first, so `R U R' U'` is never read as `R U R' U` + a
+// stray `U'`, and `R' F R F'` never as `R' F` + `R F'`.
+const TRIGGERS: [string, string][] = Object.entries(FAMILY)
+  .map(([pat, fam]): [string, string] => [pat, `t${fam}`])
+  .sort((a, b) => b[0].length - a[0].length);
 
 type Part = { text: string; cls?: string };
 const parts: Part[] = [];
