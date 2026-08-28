@@ -1,0 +1,161 @@
+---
+/**
+ * Figure — the only way a diagram, photo or 3D player enters a page.
+ *
+ *   <Figure src="/diagrams/steps/step_flip.svg" alt="…" caption="Flip it: x2" />
+ *   <Figure size="side" src="…" alt="…" caption="Dot" />
+ *   <Figure size="card"><TwistyPlayer alg="R U R' U'" /></Figure>
+ *
+ * Why it exists: a lesson diagram used to be a bare `<img width="60">` with
+ * `display: inline; margin: 0` and no height attribute, stranded at the left
+ * edge of an 820px column with no frame and no caption — 60 pixels of picture
+ * beside a hundred characters of grey text. That is the "the image feels
+ * disconnected and not integrated in the text" complaint, exactly.
+ *
+ * Three things fix it, and this component is where they live:
+ *   1. a framed surface (`--card` + `--line`), which the now-transparent SVGs
+ *      sit *on* rather than punch a white plate into;
+ *   2. a real size — 104-320px, never 60 — and a caption that names what you
+ *      are looking at;
+ *   3. a reserved box, so nothing reflows as the SVG loads.
+ *
+ * Sizes:
+ *   inline (default)  shrink-to-fit, 104px, sits in the text flow. Several in
+ *                     a row line themselves up — this replaces the six
+ *                     hand-styled flex figures in notation.mdx.
+ *   side              128px, floats to the inline-end so the paragraph wraps
+ *                     beside it; unfloats below 560px. Use it next to a
+ *                     paragraph of three lines or more, or the float outlives
+ *                     its text and hangs into whatever follows.
+ *   card              176px, full column, centred. The default for a diagram
+ *                     that *is* the point of the paragraph, and for a player.
+ *   wide              320px, full column, centred, roomier frame. A feature
+ *                     figure. It fills the measure rather than breaking it —
+ *                     a page that needs more room should be `measure="app"`.
+ *
+ * The media box is square unless you pass `height`. Diagrams are not all
+ * square (192×192, 155×137, 92×101), so the image is `object-fit: contain`
+ * inside the box: centred, never distorted, and the reserved space is correct
+ * before the file arrives.
+ *
+ * `alt` describes the *pattern*, not the object — "Dot case: only the yellow
+ * centre faces up", not "case diagram". Pass `alt=""` when the caption already
+ * says everything the image does.
+ */
+interface Props {
+  /** Image URL. Omit and pass a default slot instead to frame a player. */
+  src?: string;
+  alt?: string;
+  caption?: string;
+  size?: "inline" | "side" | "card" | "wide";
+  /** Media box width in px. Overrides the size default. */
+  width?: number;
+  /** Media box height in px. Defaults to `width` — i.e. a square box. */
+  height?: number;
+  class?: string;
+}
+
+const MEDIA_PX = { inline: 104, side: 128, card: 176, wide: 320 } as const;
+
+const { src, alt = "", caption, size = "inline", width, height, class: className } = Astro.props;
+
+const w = width ?? MEDIA_PX[size];
+const h = height ?? w;
+---
+
+<figure
+  class:list={["figure", `figure--${size}`, { "figure--slot": !src }, className]}
+  style={`--fig-w:${w}px;--fig-h:${h}px`}
+>
+  <div class="frame">
+    {
+      src ? (
+        <img src={src} alt={alt} width={w} height={h} loading="lazy" decoding="async" />
+      ) : (
+        <slot />
+      )
+    }
+  </div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<style>
+  .figure {
+    margin: var(--space-5) 0;
+  }
+
+  .frame {
+    display: grid;
+    place-items: center;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: var(--space-3);
+  }
+
+  /* The image carries its own aspect-ratio, so the box is reserved before the
+     SVG loads and nothing shifts. `contain` keeps a non-square diagram from
+     stretching to fill a square box. */
+  .frame img {
+    display: block;
+    inline-size: var(--fig-w);
+    max-inline-size: 100%;
+    block-size: auto;
+    aspect-ratio: var(--fig-w) / var(--fig-h);
+    object-fit: contain;
+  }
+
+  /* Slotted content sizes itself; the frame only guarantees it a floor, so a
+     player that loads late does not collapse the layout to nothing first. */
+  .figure--slot .frame {
+    min-block-size: var(--fig-h);
+  }
+
+  figcaption {
+    margin-block-start: var(--space-2);
+    font-size: var(--text-sm);
+    line-height: 1.45;
+    color: var(--soft);
+    text-align: center;
+    text-wrap: balance;
+  }
+
+  /* inline — shrink to the media, stay in the flow. Consecutive inline
+     figures pack into a row on their own, no wrapper needed. */
+  .figure--inline {
+    display: inline-block;
+    vertical-align: top;
+    margin: var(--space-4) var(--space-3) var(--space-4) 0;
+  }
+  .figure--inline figcaption {
+    max-inline-size: calc(var(--fig-w) + 2 * var(--space-3));
+  }
+
+  /* side — the paragraph wraps around it. `clear` so two of them stack. */
+  .figure--side {
+    float: inline-end;
+    clear: inline-end;
+    margin: var(--space-1) 0 var(--space-4) var(--space-5);
+  }
+  .figure--side figcaption {
+    max-inline-size: calc(var(--fig-w) + 2 * var(--space-3));
+  }
+  @media (max-width: 560px) {
+    .figure--side {
+      float: none;
+      clear: both;
+      margin: var(--space-5) 0;
+    }
+  }
+
+  /* card / wide — full column, centred. */
+  .figure--card,
+  .figure--wide {
+    display: block;
+    margin-inline: auto;
+    max-inline-size: 100%;
+  }
+  .figure--wide .frame {
+    padding: var(--space-5);
+  }
+</style>

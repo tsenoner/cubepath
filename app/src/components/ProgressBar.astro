@@ -1,0 +1,102 @@
+---
+/**
+ * ProgressBar — an n-of-m bar with a label. Pure presentation.
+ *
+ *   <ProgressBar label="Phase 1 · First steps" value={3} max={8} />
+ *   <ProgressBar value={0} max={25} id="course-progress" />
+ *
+ * Server-rendered from whatever the page already knows; a client script may
+ * update it afterwards without re-rendering, because every mutable part has a
+ * hook:
+ *
+ *   const el = document.querySelector("[data-progress]");
+ *   el.style.setProperty("--pct", `${(done / total) * 100}%`);
+ *   el.querySelector("[data-progress-count]").textContent = `${done}/${total}`;
+ *   el.querySelector("[role=progressbar]").setAttribute("aria-valuenow", done);
+ *
+ * The bar is never the only signal: the count is always rendered as text, so
+ * the state survives a failed paint, a colour-blind reader and a screenshot.
+ * A zero-length fill still shows its track, because "0 of 25" is information
+ * and an invisible bar is not.
+ *
+ * It carries no outer margin — stacked bars need separating by the parent
+ * (`display: grid; gap: var(--space-4)`), or the next label lands on the
+ * previous track.
+ */
+interface Props {
+  value: number;
+  max: number;
+  /** Rendered beside the count, and used as the bar's accessible name. */
+  label?: string;
+  /** Set false to hide the "3/8" text (the label then carries the meaning). */
+  count?: boolean;
+  id?: string;
+  class?: string;
+}
+const { value, max, label, count = true, id, class: className } = Astro.props;
+
+const total = Math.max(0, Math.round(max));
+const done = Math.min(Math.max(0, Math.round(value)), total);
+const pct = total === 0 ? 0 : (done / total) * 100;
+---
+
+<div class:list={["progress", className]} id={id} data-progress style={`--pct:${pct}%`}>
+  {
+    (label || count) && (
+      <div class="head">
+        {label && <span class="name">{label}</span>}
+        {count && (
+          <span class="count hint" data-progress-count>
+            {done}/{total}
+          </span>
+        )}
+      </div>
+    )
+  }
+  <div
+    class="track"
+    role="progressbar"
+    aria-valuenow={done}
+    aria-valuemin={0}
+    aria-valuemax={total}
+    aria-label={label ?? `${done} of ${total} complete`}
+  >
+    <span class="fill"></span>
+  </div>
+</div>
+
+<style>
+  .progress {
+    display: grid;
+    gap: var(--space-1);
+  }
+  .head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+  .name {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--soft);
+  }
+  .count {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .track {
+    block-size: 6px;
+    border-radius: var(--r-pill);
+    background: color-mix(in srgb, var(--ink) 10%, transparent);
+    overflow: hidden;
+  }
+  .fill {
+    display: block;
+    block-size: 100%;
+    inline-size: var(--pct, 0%);
+    border-radius: inherit;
+    background: var(--accent);
+    transition: inline-size 240ms ease;
+  }
+</style>
