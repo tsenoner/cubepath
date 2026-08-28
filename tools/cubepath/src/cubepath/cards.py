@@ -556,16 +556,17 @@ def annex_front() -> list[Section]:
         "#grid(columns: (15.5mm, 1fr), column-gutter: 0.8mm, align: (top, top),\n"
         f"  {diagram('notation/overview.svg', '15.5mm')},\n"
         "  ["
-        + _key(
-            "Each letter turns that face clockwise, seen from outside the cube — "
-            "so from your seat L, D and B look counter-clockwise. "
-            "' = counter-clockwise. 2 = half turn."
-        )
-        + "\n\n"
-        + _key(
-            "M = middle slice, turning the way L turns. x y z = the whole cube, "
-            "turning the way R, U and F turn. Lowercase r f = that face plus the "
-            "layer behind it, turning together."
+        + _stack(
+            _key(
+                "Each letter turns that face clockwise, seen from outside the cube — "
+                "so from your seat L, D and B look counter-clockwise. "
+                "' = counter-clockwise. 2 = half turn."
+            ),
+            _key(
+                "M = middle slice, turning the way L turns. x y z = the whole cube, "
+                "turning the way R, U and F turn. Lowercase r f = that face plus the "
+                "layer behind it, turning together."
+            ),
         )
         + "],\n)",
     )

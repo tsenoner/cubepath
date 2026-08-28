@@ -20,6 +20,7 @@ from cubepath.diagrams import (
     _LAYER_OF,
     _OV_HOST,
     _OV_LABEL_AT,
+    _OV_ON_FACE,
     _OV_PIN_BAND,
     _OV_PIN_DOT,
     _OV_PIN_STROKE,
@@ -27,7 +28,6 @@ from cubepath.diagrams import (
     _OV_STRIP_REACH,
     _SECOND_LAYER,
     _THEME_CSS,
-    _VIEW_DIR,
     _YELLOW_CROSS,
     ARROW_COLOR,
     BLUE,
@@ -48,6 +48,7 @@ from cubepath.diagrams import (
     _arrow_pos,
     _corner_case_steps,
     _corner_pos_case,
+    _depth,
     _edge_case_steps,
     _mark,
     _n_proj,
@@ -63,6 +64,7 @@ from cubepath.diagrams import (
     _step_cases,
     all_cases,
     all_steps,
+    exit_face,
     overview_pin,
     overview_pin_head,
     overview_pin_ring,
@@ -75,7 +77,6 @@ from cubepath.diagrams import (
     slab_of,
     sticker_centre,
     sticker_of,
-    strip_stickers,
 )
 from cubepath.palette import contrast
 
@@ -261,103 +262,78 @@ def test_render_overview(tmp_path):
 
 
 # ── Notation overview ───────────────────────────────────────────────
-# The six face turns on one cube: F as a ring, the other five as a strip
-# arrow along the edge of a visible face. The strip directions are derived
-# (mark the strip, apply the move, point at the face it left for), so the
-# gates here re-derive independently from the SVG and the tables, and check
-# the layer table itself against the simulator.
+# The six face turns on one cube, in two layouts. The shipped pins: a pin out
+# of every face centre with a ribbon ring around it. The hub (the backup): F
+# as a ring, the other five as a strip arrow along the edge of a visible face,
+# the strip directions derived (mark the strip, apply the move, point at the
+# face it left for). The gates below check the geometry against the
+# simulator and the SVG against the geometry.
 
-_VISIBLE = ("U", "F", "R")
+_HIDDEN = tuple(face for face in _FACE_NORMAL if face not in _OV_ON_FACE)
+_ALL_FACES = "".join(_FACE_NORMAL)
 
 
-def _all_marked(cube: Cube) -> set[tuple[str, int]]:
-    return {
-        (f, i) for f, stickers in cube.faces.items() for i, s in enumerate(stickers) if s == "X"
-    }
+def test_visible_faces_are_the_ones_facing_the_camera():
+    """`_OV_ON_FACE` is a draw order; its set is decided by the view direction."""
+    assert set(_OV_ON_FACE) == {f for f, n in _FACE_NORMAL.items() if _depth(n) > 0}
 
 
 def test_layer_table_matches_simulator():
-    """`_LAYER_OF` names the slab each letter turns: marking every visible
+    """`_LAYER_OF` names the slab each face turns: marking every visible
     sticker distinctly and applying the letter must move exactly that slab
     (centres excepted — they spin in place)."""
+    stickers = [(f, a, b) for f in _OV_ON_FACE for a in range(3) for b in range(3)]
     for token, (axis, slab) in _LAYER_OF.items():
         cube = Cube.solved()
-        for face in _VISIBLE:
-            for a in range(3):
-                for b in range(3):
-                    sim_face, row, col = diagram_to_sim(face, a, b)
-                    cube.faces[sim_face][row * 3 + col] = f"{face}{a}{b}"
-        before = {f: list(s) for f, s in cube.faces.items()}
+        for face, a, b in stickers:
+            sim_face, row, col = diagram_to_sim(face, a, b)
+            cube.faces[sim_face][row * 3 + col] = f"{face}{a}{b}"
         cube.apply(token)
-        moved = {
-            (face, a, b)
-            for face in _VISIBLE
-            for a in range(3)
-            for b in range(3)
-            if cube.visible_sticker(face, a, b)
-            != before[diagram_to_sim(face, a, b)[0]][
-                diagram_to_sim(face, a, b)[1] * 3 + diagram_to_sim(face, a, b)[2]
-            ]
-        }
+        moved = {(f, a, b) for f, a, b in stickers if cube.visible_sticker(f, a, b) != f"{f}{a}{b}"}
         in_slab = {
-            (face, a, b)
-            for face in _VISIBLE
-            for a in range(3)
-            for b in range(3)
-            if slab_of(sticker_centre(face, a, b)[axis]) == slab
+            (f, a, b) for f, a, b in stickers if slab_of(sticker_centre(f, a, b)[axis]) == slab
         }
         assert moved <= in_slab, (token, moved - in_slab)
-        centres = {(f, 1, 1) for f in _VISIBLE}
+        centres = {(f, 1, 1) for f in _OV_ON_FACE}
         assert in_slab - centres <= moved, (token, in_slab - centres - moved)
 
 
 def test_overview_strips_point_where_the_layer_goes():
-    """Independently of the renderer: mark the host strip, apply the letter,
-    and the face that received the marks must be the one the arrow points
-    at — and only that one. The reverse direction points at a face that got
-    nothing."""
-    toward: dict[tuple[int, ...], str] = {
-        (1, 0, 0): "R",
-        (-1, 0, 0): "L",
-        (0, 1, 0): "U",
-        (0, -1, 0): "D",
-        (0, 0, 1): "F",
-        (0, 0, -1): "B",
-    }
+    """Read off the arrow, not the table: each strip's direction is the normal
+    of the face `exit_face` finds by marking the strip and turning, and the
+    arrow lies in the strip it names."""
     strips = overview_strips()
     assert set(strips) == set(_OV_HOST)
     for token, (tail, tip) in strips.items():
         host = _OV_HOST[token]
         assert sticker_of(tail)[0] == host == sticker_of(tip)[0], token
         d = tuple(round((tip[i] - tail[i]) / (2 * _OV_STRIP_REACH)) for i in range(3))
-        cube = Cube.solved()
-        for sticker in strip_stickers(host, token):
-            _mark(cube, *sticker)
-        cube.apply(token)
-        landed = {f for f, s in cube.faces.items() if "X" in s} - {host}
-        assert landed == {toward[d]}, (token, landed, toward[d])
-        back = tuple(-c for c in d)
-        assert toward[back] not in landed, (token, "reads both ways")
-        # the arrow lies in the strip it names
+        assert d == _FACE_NORMAL[exit_face(token, host)], (token, d)
         axis, slab = _LAYER_OF[token]
         for p in (tail, tip):
             assert slab_of(p[axis]) == slab, (token, p)
 
 
-def test_overview_ring_turns_clockwise():
-    """The ring passes F's four edge-middle stickers in the order one F turn
-    carries a sticker: mark each, turn, it must be at the next one."""
+def _assert_ring_follows_turn(points: list[tuple[float, float, float]], face: str) -> None:
+    """`points` lie on `face`. The edge-middle stickers they pass must come in
+    the order one turn of `face` carries a sticker: mark one, turn, and it is
+    at the next."""
     order: list[tuple[str, int, int]] = []
-    for p in overview_ring():
-        s = sticker_of((p[0], p[1], 3.0))
+    for p in points:
+        s = sticker_of(p)
         if s[1:] in ((1, 2), (2, 1), (1, 0), (0, 1)) and (not order or order[-1] != s):
             order.append(s)
-    assert len(order) >= 3, order
+    assert len(order) >= 3, (face, order)
     for here, there in zip(order, order[1:], strict=False):
         cube = Cube.solved()
         _mark(cube, *here)
-        cube.apply("F")
-        assert cube.visible_sticker(*there) == "X", (here, there)
+        cube.apply(face)
+        assert cube.visible_sticker(*there) == "X", (face, here, there)
+
+
+def test_overview_ring_turns_clockwise():
+    """The hub's F ring passes F's four edge-middle stickers in turn order."""
+    _assert_ring_follows_turn([(p[0], p[1], 3.0) for p in overview_ring()], "F")
 
 
 def _texts(svg: str) -> list[str]:
@@ -366,10 +342,10 @@ def _texts(svg: str) -> list[str]:
 
 def test_overview_labels_each_face_once(tmp_path):
     svg = render_overview(tmp_path, layout=OVERVIEW_HUB).read_text()
-    assert sorted(_texts(svg)) == sorted("UDFBRL")
-    for face in "UFR":
+    assert sorted(_texts(svg)) == sorted(_ALL_FACES)
+    for face in _OV_ON_FACE:
         assert re.search(rf'<text(?![^>]*class="ink")[^>]*>{face}</text>', svg), face
-    for face in "LDB":
+    for face in _HIDDEN:
         assert re.search(rf'<text[^>]*class="ink"[^>]*>{face}</text>', svg), face
 
 
@@ -408,15 +384,22 @@ def _coords(svg: str) -> list[tuple[float, float]]:
     return pairs
 
 
-def test_overview_frame_holds_everything_it_draws(tmp_path):
-    """The viewBox is computed from what was drawn, so nothing may poke out —
-    paths, heads, and labels with a generous glyph box."""
-    svg = render_overview(tmp_path, layout=OVERVIEW_HUB).read_text()
+def _assert_frame_holds_coords(svg: str) -> tuple[float, float, float, float]:
+    """Every path and polygon coordinate lies inside the viewBox, which is
+    returned as (x, y, w, h)."""
     view_box = re.search(r'viewBox="([^"]*)"', svg)
     assert view_box is not None
     x, y, w, h = map(float, view_box.group(1).split())
     for px, py in _coords(svg):
         assert x <= px <= x + w and y <= py <= y + h, (px, py)
+    return x, y, w, h
+
+
+def test_overview_frame_holds_everything_it_draws(tmp_path):
+    """The viewBox is computed from what was drawn, so nothing may poke out —
+    paths, heads, and labels with a generous glyph box."""
+    svg = render_overview(tmp_path, layout=OVERVIEW_HUB).read_text()
+    x, y, w, h = _assert_frame_holds_coords(svg)
     for match in re.finditer(r"<text([^>]*)>([^<]*)</text>", svg):
         attrs, text = match.groups()
         size = float(re.search(r'font-size="([\d.]+)px"', attrs).group(1))  # type: ignore[union-attr]
@@ -454,23 +437,15 @@ def test_pin_rings_turn_clockwise_seen_from_outside():
     for face, n in _FACE_NORMAL.items():
         u, v = _ring_basis(n)
         assert _cross(u, v) == tuple(-c for c in n), face
-    for face in "UFR":
+    for face in _OV_ON_FACE:
         n = _FACE_NORMAL[face]
         axis = n.index(max(n, key=abs))
-        order: list[tuple[str, int, int]] = []
+        on_face = []
         for p in overview_pin_ring(face):
             q = list(p)
             q[axis] = 3.0  # drop the ring onto the face
-            # slide the ring's centre to the face centre first
-            s = sticker_of((q[0], q[1], q[2]))
-            if s[1:] in ((1, 2), (2, 1), (1, 0), (0, 1)) and (not order or order[-1] != s):
-                order.append(s)
-        assert len(order) >= 3, (face, order)
-        for here, there in zip(order, order[1:], strict=False):
-            cube = Cube.solved()
-            _mark(cube, *here)
-            cube.apply(face)
-            assert cube.visible_sticker(*there) == "X", (face, here, there)
+            on_face.append((q[0], q[1], q[2]))
+        _assert_ring_follows_turn(on_face, face)
 
 
 def test_pins_leave_the_face_centre_along_its_normal():
@@ -484,7 +459,8 @@ def test_pins_leave_the_face_centre_along_its_normal():
         assert sum(d[i] * n[i] for i in range(3)) > 1.0, (face, "pin too short to clear the cube")
         reach = math.dist(_n_proj(*tip), _n_proj(1.5, 1.5, 1.5))
         # `_n_proj` rounds to a tenth, so the tip lands within a few tenths
-        assert abs(reach - _OV_PIN_TIP["front" if face in "UFR" else "back"]) < 0.3, (face, reach)
+        expected = _OV_PIN_TIP["front" if face in _OV_ON_FACE else "back"]
+        assert abs(reach - expected) < 0.3, (face, reach)
 
 
 def test_hidden_rings_clear_the_cube():
@@ -524,27 +500,23 @@ def test_hidden_rings_clear_the_cube():
                 return False
         return True
 
-    for face in "DBL":
+    for face in _HIDDEN:
         for p in overview_pin_ring(face):
             assert not inside(_n_proj(*p)), (face, p)
 
 
 def test_pins_layout_labels_and_heads(tmp_path):
+    """Six letters, six dots, and every arrowhead's tip in the drawing exactly
+    where the ring says; the frame holds every coordinate. (That the letters
+    are ink-tagged is `test_plate_labels_are_ink_tagged`.)"""
     svg = render_overview(tmp_path, layout=OVERVIEW_PINS).read_text()
-    assert sorted(_texts(svg)) == sorted("UDFBRL")
-    assert len(re.findall(r'<text[^>]*class="ink"', svg)) == 6, "all six letters sit on the plate"
+    assert sorted(_texts(svg)) == sorted(_ALL_FACES)
     assert len(re.findall(r'<circle[^>]*class="ink"', svg)) == 6, "a dot on every pin"
-    # every arrowhead's tip is in the drawing, exactly where the ring says
     coords = set(_coords(svg))
-    for face in "UDFBRL":
+    for face in _FACE_NORMAL:
         x, y = _n_proj(*overview_pin_head(face))
         assert (x, y) in coords, (face, x, y)
-    # frame holds every coordinate
-    view_box = re.search(r'viewBox="([^"]*)"', svg)
-    assert view_box is not None
-    x0, y0, w, h = map(float, view_box.group(1).split())
-    for px, py in _coords(svg):
-        assert x0 <= px <= x0 + w and y0 <= py <= y0 + h, (px, py)
+    _assert_frame_holds_coords(svg)
 
 
 def test_pin_dots_sit_in_depth_order(tmp_path):
@@ -560,9 +532,6 @@ def test_pin_dots_sit_in_depth_order(tmp_path):
     reach = _OV_PIN_DOT + _OV_PIN_STROKE
     elems = list(re.finditer(r"<(circle|path)\b[^>]*>", svg))
 
-    def depth(p: tuple[float, ...]) -> float:
-        return sum(p[i] * _VIEW_DIR[i] for i in range(3))
-
     covered = set()
     for face, n in _FACE_NORMAL.items():
         _c, tip = overview_pin(face)
@@ -570,14 +539,18 @@ def test_pin_dots_sit_in_depth_order(tmp_path):
         nearer = farther = 0
         for p in overview_pin_ring(face) + [overview_pin_head(face)]:
             for side in (+1, -1):
-                q = tuple(p[i] + side * _OV_PIN_BAND * n[i] for i in range(3))
+                q = (
+                    p[0] + side * _OV_PIN_BAND * n[0],
+                    p[1] + side * _OV_PIN_BAND * n[1],
+                    p[2] + side * _OV_PIN_BAND * n[2],
+                )
                 if math.dist(_n_proj(*q), (tx, ty)) < reach:
-                    if depth(q) > depth(tip):
+                    if _depth(q) > _depth(tip):
                         nearer += 1
                     else:
                         farther += 1
         assert not (nearer and farther), (face, nearer, farther)
-        away = sum(n[i] * _VIEW_DIR[i] for i in range(3)) < 0
+        away = _depth(n) < 0
         if nearer or farther:
             assert (nearer > 0) == away, face
 
@@ -778,8 +751,9 @@ def test_card_diagrams_are_not_themed(tmp_path) -> None:
 
 def test_overview_paints_nothing_white_but_the_plate(tmp_path) -> None:
     """The old ribbon rings carried ~30 opaque white occluders that punched
-    holes through the cube in dark mode. The redesign has one white fill: the
-    plate, which the theme can turn off."""
+    holes through the cube in dark mode. The hub has one white fill: the
+    plate, which the theme can turn off. (The pins' ribbons keep their paper
+    fill on purpose; `test_pin_dots_sit_in_depth_order` gates their order.)"""
     overview = render_overview(tmp_path / "o", layout=OVERVIEW_HUB).read_text()
     assert overview.count(f'fill="{WHITE}"') == 1
 
@@ -796,8 +770,8 @@ def test_committed_diagrams_match_the_generator(tmp_path) -> None:
         render_step(step, fresh)
     for move in _notation_moves():
         render_notation(move, fresh)
-    render_overview(fresh)
-    render_overview(fresh, layout=OVERVIEW_PINS)
+    for layout in (OVERVIEW_HUB, OVERVIEW_PINS):
+        render_overview(fresh, layout=layout)
 
     stale = [
         str(p.relative_to(fresh))

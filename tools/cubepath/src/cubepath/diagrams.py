@@ -712,6 +712,28 @@ def _bezier_2d(
     return pts
 
 
+def _arrowhead(tip: Point, prev: Point, sz: float, spread: float) -> tuple[Point, list[Point]]:
+    """A triangular arrowhead at `tip` pointing away from `prev` (which must
+    differ from it): its base point `sz` back along the arrow, and the
+    triangle, whose wings sit `sz * spread` either side of the base."""
+    dx, dy = tip[0] - prev[0], tip[1] - prev[1]
+    ln = math.hypot(dx, dy)
+    ux, uy = dx / ln, dy / ln
+    nx, ny = -uy, ux
+    base = (tip[0] - sz * ux, tip[1] - sz * uy)
+    wings = [
+        (base[0] + sz * spread * nx, base[1] + sz * spread * ny),
+        (base[0] - sz * spread * nx, base[1] - sz * spread * ny),
+    ]
+    return base, [tip, *wings]
+
+
+def _polyline(pts: list[Point], closed: bool = False) -> str:
+    """SVG path data through `pts`, coordinates to a tenth."""
+    d = "M " + " L ".join(f"{x:.1f},{y:.1f}" for x, y in pts)
+    return d + " Z" if closed else d
+
+
 def _draw_arrowhead(
     dwg: svgwrite.Drawing,
     tip: tuple[float, float],
@@ -719,19 +741,11 @@ def _draw_arrowhead(
     sz: float,
 ) -> None:
     """Draw a triangular arrowhead at tip pointing away from prev."""
-    dx, dy = tip[0] - prev[0], tip[1] - prev[1]
-    ln = math.hypot(dx, dy)
-    if ln > 0:
-        ux, uy = dx / ln, dy / ln
-        nx, ny = -uy, ux
-        base = (tip[0] - sz * ux, tip[1] - sz * uy)
+    if tip != prev:
+        _base, triangle = _arrowhead(tip, prev, sz, 0.4)
         dwg.add(
             dwg.polygon(
-                [
-                    tip,
-                    (base[0] + sz * 0.4 * nx, base[1] + sz * 0.4 * ny),
-                    (base[0] - sz * 0.4 * nx, base[1] - sz * 0.4 * ny),
-                ],
+                triangle,
                 fill=ARROW_COLOR,
             )
         )
@@ -1014,13 +1028,13 @@ def _n_sticker_pts(face: str, a: int, b: int) -> list[tuple[float, float]]:
 Vec3 = tuple[float, float, float]
 Arrow3 = tuple[Vec3, Vec3, Vec3]  # src, dst, bezier control
 # The move diagrams' one visual distinction: a dashed stroke means the whole
-# cube turns. The overview reuses it rather than inventing a third style.
+# cube turns.
 _WHOLE_CUBE_DASH = "6,3"
 
 # Arrow configs: (cw_src_3d, cw_dst_3d, control_3d)
 # src/dst = center of affected stickers on each face for CW direction.
 # control = edge point pushed outward (Bezier control for the bulge).
-# When CCW, src and dst swap. Shared by the move diagrams and the overview.
+# When CCW, src and dst swap.
 _N_BULGE = 0.5  # bulge offset from edge
 _N_ARROW_CFGS: dict[str, Arrow3] = {
     # R CW: F col a=2 → U col a=2.  Edge: F-U at x=2.5
@@ -1073,18 +1087,14 @@ def _n_draw_arrow(dwg: svgwrite.Drawing, layer: str, clockwise: bool) -> None:
     # Compute tip direction for arrowhead
     tip = pts[-1]
     prev = pts[-4]
-    dx, dy = tip[0] - prev[0], tip[1] - prev[1]
-    ln = math.hypot(dx, dy)
     sz = 16
 
     # Shorten arc at tip to make room for arrowhead
-    if ln > 0:
-        dx, dy = dx / ln, dy / ln
-        nx, ny = -dy, dx
-        arc_end = (tip[0] - sz * dx, tip[1] - sz * dy)
+    head: list[Point] | None = None
+    shortened = pts
+    if tip != prev:
+        arc_end, head = _arrowhead(tip, prev, sz, 0.5)
         shortened = pts[:-2] + [arc_end]
-    else:
-        shortened = pts
 
     d = "M " + " L ".join(f"{x},{y}" for x, y in shortened)
     stroke_extra = {"stroke_dasharray": _WHOLE_CUBE_DASH} if is_whole else {}
@@ -1098,11 +1108,8 @@ def _n_draw_arrow(dwg: svgwrite.Drawing, layer: str, clockwise: bool) -> None:
         )
     )
 
-    # Tip arrowhead
-    if ln > 0:
-        base1 = (tip[0] - sz * dx + sz * 0.5 * nx, tip[1] - sz * dy + sz * 0.5 * ny)
-        base2 = (tip[0] - sz * dx - sz * 0.5 * nx, tip[1] - sz * dy - sz * 0.5 * ny)
-        dwg.add(dwg.polygon([tip, base1, base2], fill=ARROW_COLOR))
+    if head is not None:
+        dwg.add(dwg.polygon(head, fill=ARROW_COLOR))
 
 
 def _draw_iso_stickers(dwg: svgwrite.Drawing, color_fn: Callable[[str, int, int], str]) -> None:
@@ -1242,21 +1249,19 @@ def render_step(step: StepDiagram, output_dir: Path, style: DiagramStyle = SCREE
 
 @dataclass(frozen=True)
 class OverviewLayout:
-    """Which of the two overview drawings to render."""
+    """Which of the two overview drawings to render: its filename and its
+    painter. The two instances sit just above `render_overview`."""
 
     filename: str
-    pins: bool  # True: six pins with ribbon rings; False: the F hub
+    draw: Callable[[svgwrite.Drawing, _Bounds, DiagramStyle], None]
 
 
-OVERVIEW_PINS = OverviewLayout("overview", pins=True)
-OVERVIEW_HUB = OverviewLayout("overview_hub", pins=False)
-
-# Which coordinate a letter's layer is sliced along, and which slab it is.
+# Which coordinate a face's layer is sliced along, and which slab it is.
 # `tests/test_diagrams.py` checks each row against the simulator.
 _LAYER_OF: dict[str, tuple[int, int]] = {
-    "L": (0, 0), "M": (0, 1), "R": (0, 2),
-    "D": (1, 0), "E": (1, 1), "U": (1, 2),
-    "B": (2, 0), "S": (2, 1), "F": (2, 2),
+    "L": (0, 0), "R": (0, 2),
+    "D": (1, 0), "U": (1, 2),
+    "B": (2, 0), "F": (2, 2),
 }  # fmt: skip
 _FACE_NORMAL: dict[str, Vec3] = {
     "U": (0, 1, 0), "D": (0, -1, 0), "F": (0, 0, 1),
@@ -1267,6 +1272,8 @@ _OV_FACES: dict[str, list[Vec3]] = {
     "F": [(0, 3, 3), (3, 3, 3), (3, 0, 3), (0, 0, 3)],
     "R": [(3, 3, 3), (3, 3, 0), (3, 0, 0), (3, 0, 3)],
 }
+# The visible faces, in the order their pins are drawn. The set is what the
+# view direction says it is (`_depth(normal) > 0`); the tests check that.
 _OV_ON_FACE = ("F", "U", "R")
 _CUBE_CENTRE: Vec3 = (1.5, 1.5, 1.5)
 # The direction toward the camera for `_n_proj`: screen-right x screen-down.
@@ -1396,23 +1403,35 @@ def _ring_basis(n: Vec3) -> tuple[Vec3, Vec3]:
     return u, v
 
 
+def _depth(p: Vec3) -> float:
+    """How far toward the camera `p` is: its component along `_VIEW_DIR`."""
+    return sum(p[i] * _VIEW_DIR[i] for i in range(3))
+
+
+def _view_coeffs(n: Vec3) -> tuple[float, float]:
+    """(a, b) with depth(θ) = a cos θ + b sin θ for a ring around `n`: how
+    much nearer the camera a ring point at angle θ is than the ring's centre."""
+    u, v = _ring_basis(n)
+    return _depth(u), _depth(v)
+
+
+def _ring_pt(centre: Vec3, n: Vec3, radius: float, angle: float) -> Vec3:
+    """The point at `angle` (radians) on the ring around `n` through `centre`,
+    clockwise seen from +n."""
+    u, v = _ring_basis(n)
+    c, s = radius * math.cos(angle), radius * math.sin(angle)
+    return (
+        centre[0] + u[0] * c + v[0] * s,
+        centre[1] + u[1] * c + v[1] * s,
+        centre[2] + u[2] * c + v[2] * s,
+    )
+
+
 def _ring(
     centre: Vec3, n: Vec3, radius: float, start: float, sweep: float, samples: int = 40
 ) -> list[Vec3]:
     """A ring around `n` through `centre`, clockwise seen from +n. Angles in radians."""
-    u, v = _ring_basis(n)
-    pts = []
-    for i in range(samples + 1):
-        t = start + sweep * i / samples
-        c, s = radius * math.cos(t), radius * math.sin(t)
-        pts.append(
-            (
-                centre[0] + u[0] * c + v[0] * s,
-                centre[1] + u[1] * c + v[1] * s,
-                centre[2] + u[2] * c + v[2] * s,
-            )
-        )
-    return pts
+    return [_ring_pt(centre, n, radius, start + sweep * i / samples) for i in range(samples + 1)]
 
 
 def overview_ring() -> list[Vec3]:
@@ -1429,7 +1448,11 @@ def overview_ring() -> list[Vec3]:
 
 def _face_centre(face: str) -> Vec3:
     n = _FACE_NORMAL[face]
-    return (1.5 + 1.5 * n[0], 1.5 + 1.5 * n[1], 1.5 + 1.5 * n[2])
+    return (
+        _CUBE_CENTRE[0] + 1.5 * n[0],
+        _CUBE_CENTRE[1] + 1.5 * n[1],
+        _CUBE_CENTRE[2] + 1.5 * n[2],
+    )
 
 
 def overview_pin(face: str) -> tuple[Vec3, Vec3]:
@@ -1453,9 +1476,7 @@ def _pin_ring_frame(face: str) -> tuple[Vec3, float]:
     _c, tip = overview_pin(face)
     k = _OV_PIN_RING_IN
     centre = (tip[0] - n[0] * k, tip[1] - n[1] * k, tip[2] - n[2] * k)
-    u, v = _ring_basis(n)
-    a = sum(u[i] * _VIEW_DIR[i] for i in range(3))
-    b = sum(v[i] * _VIEW_DIR[i] for i in range(3))
+    a, b = _view_coeffs(n)
     nearest = math.atan2(b, a)
     return centre, nearest - _OV_PIN_SWEEP - _OV_PIN_HEAD
 
@@ -1469,9 +1490,9 @@ def overview_pin_ring(face: str) -> list[Vec3]:
 def overview_pin_head(face: str) -> Vec3:
     """The 3D point of the arrowhead's tip: a little past the sweep end."""
     centre, start = _pin_ring_frame(face)
-    return _ring(
-        centre, _FACE_NORMAL[face], _OV_PIN_RING_R, start + _OV_PIN_SWEEP, _OV_PIN_HEAD, 1
-    )[-1]
+    return _ring_pt(
+        centre, _FACE_NORMAL[face], _OV_PIN_RING_R, start + _OV_PIN_SWEEP + _OV_PIN_HEAD
+    )
 
 
 class _Bounds:
@@ -1507,19 +1528,11 @@ def _ov_arrow(dwg: svgwrite.Drawing, bounds: _Bounds, pts3: list[Vec3], *, halo:
     """A projected polyline with a filled head at its last point (the hub)."""
     pts = [_n_proj(*p) for p in pts3]
     tip, prev = pts[-1], pts[-3] if len(pts) > 2 else pts[0]
-    dx, dy = tip[0] - prev[0], tip[1] - prev[1]
-    ln = math.hypot(dx, dy)
-    ux, uy = dx / ln, dy / ln
-    nx, ny = -uy, ux
-    head, stroke = _OV_HEAD, _OV_STROKE
-    base = (tip[0] - head * ux, tip[1] - head * uy)
+    stroke = _OV_STROKE
+    base, triangle = _arrowhead(tip, prev, _OV_HEAD, 0.45)
     body = (pts[:-2] if len(pts) > 2 else pts[:-1]) + [base]
-    d = "M " + " L ".join(f"{x:.1f},{y:.1f}" for x, y in body)
-    head_pts = [
-        (round(tip[0], 1), round(tip[1], 1)),
-        (round(base[0] + head * 0.45 * nx, 1), round(base[1] + head * 0.45 * ny, 1)),
-        (round(base[0] - head * 0.45 * nx, 1), round(base[1] - head * 0.45 * ny, 1)),
-    ]
+    d = _polyline(body)
+    head_pts = [(round(x, 1), round(y, 1)) for x, y in triangle]
     if halo:
         rim = 0.7 * stroke
         dwg.add(dwg.path(d=d, fill="none", stroke=WHITE, stroke_width=stroke + 2 * rim))
@@ -1549,20 +1562,13 @@ def _ribbon_arc(
 
     Returns (back_group, front_group, arrow_group).
     """
-    v1, v2 = _ring_basis(n)
     radius, sweep, band = _OV_PIN_RING_R, _OV_PIN_SWEEP, _OV_PIN_BAND
     n_pts = 48
-    # depth(θ) = A cos θ + B sin θ: positive means nearer the camera than the centre
-    a_coeff = sum(v1[i] * _VIEW_DIR[i] for i in range(3))
-    b_coeff = sum(v2[i] * _VIEW_DIR[i] for i in range(3))
+    # depth(θ) > 0 means nearer the camera than the centre
+    a_coeff, b_coeff = _view_coeffs(n)
 
     def ring_pt(angle: float) -> Vec3:
-        co, si = math.cos(angle), math.sin(angle)
-        return (
-            centre[0] + radius * (v1[0] * co + v2[0] * si),
-            centre[1] + radius * (v1[1] * co + v2[1] * si),
-            centre[2] + radius * (v1[2] * co + v2[2] * si),
-        )
+        return _ring_pt(centre, n, radius, angle)
 
     def band_pt(angle: float, side: float) -> Point:
         p = ring_pt(angle)
@@ -1584,14 +1590,10 @@ def _ribbon_arc(
 
     back, front = dwg.g(), dwg.g()
 
-    def poly(pts: list[Point], closed: bool = False) -> str:
-        d = "M " + " L ".join(f"{x:.1f},{y:.1f}" for x, y in pts)
-        return d + " Z" if closed else d
-
     def edge(group: Any, pts: list[Point]) -> None:
         group.add(
             dwg.path(
-                d=poly(pts),
+                d=_polyline(pts),
                 fill="none",
                 stroke=ARROW_COLOR,
                 stroke_width=_OV_PIN_STROKE,
@@ -1615,7 +1617,7 @@ def _ribbon_arc(
     # fills first, then continuous edges per depth zone, so no joints show
     for is_front, top, bot in segments:
         (front if is_front else back).add(
-            dwg.path(d=poly(top + bot[::-1], closed=True), fill=WHITE, stroke="none")
+            dwg.path(d=_polyline(top + bot[::-1], closed=True), fill=WHITE, stroke="none")
         )
     i = 0
     while i < len(segments):
@@ -1651,7 +1653,7 @@ def _ribbon_arc(
     back_in = end - sweep / n_pts
     arrow.add(
         dwg.path(
-            d=poly(
+            d=_polyline(
                 [band_pt(back_in, +1), top_end, outer, tip, inner, bot_end, band_pt(back_in, -1)],
                 closed=True,
             ),
@@ -1661,23 +1663,13 @@ def _ribbon_arc(
     )
     edge(arrow, [band_pt(back_in, +1), top_end])
     edge(arrow, [band_pt(back_in, -1), bot_end])
-    arrow.add(
-        dwg.path(
-            d=poly([top_end, outer, tip, inner, bot_end]),
-            fill="none",
-            stroke=ARROW_COLOR,
-            stroke_width=_OV_PIN_STROKE,
-            stroke_linejoin="round",
-            stroke_linecap="round",
-        )
-    )
+    edge(arrow, [top_end, outer, tip, inner, bot_end])
     return back, front, arrow
 
 
-def _ov_cube(
-    dwg: svgwrite.Drawing, bounds: _Bounds, recolor: dict[str, str], opacity: float
-) -> None:
+def _ov_cube(dwg: svgwrite.Drawing, bounds: _Bounds, style: DiagramStyle) -> None:
     """Solid U / F / R faces with the two layer lines per face."""
+    recolor = _restyle(style)
     for face, corners in _OV_FACES.items():
         color = _CUBE_FACE_COLORS[face]
         pts = [_n_proj(*c) for c in corners]
@@ -1699,7 +1691,7 @@ def _ov_cube(
         lines += [((3, 0, i), (3, 3, i)), ((3, i, 0), (3, i, 3))]  # R
     for a, b in lines:
         line = dwg.line(_n_proj(*a), _n_proj(*b), stroke=STICKER_STROKE, stroke_width=1)
-        line["stroke-opacity"] = f"{opacity:g}"
+        line["stroke-opacity"] = f"{style.layer_lines:g}"
         dwg.add(line)
 
 
@@ -1748,9 +1740,7 @@ def _ov_pin_line(dwg: svgwrite.Drawing, bounds: _Bounds, a: Point, b: Point) -> 
     bounds.add(*b, 2)
 
 
-def _ov_pins(
-    dwg: svgwrite.Drawing, bounds: _Bounds, recolor: dict[str, str], opacity: float
-) -> None:
+def _ov_pins(dwg: svgwrite.Drawing, bounds: _Bounds, style: DiagramStyle) -> None:
     """The pins layout. Draw order is the depth order: the hidden faces' pins
     and rings first so the cube occludes them, then the cube, then the
     visible faces'. Within one pin: the ring's back half, the pin through it,
@@ -1775,8 +1765,7 @@ def _ov_pins(
     def pin(face: str) -> None:
         c, tip = proj[face]
         back, front, head = rings[face]
-        n = _FACE_NORMAL[face]
-        away = sum(n[i] * _VIEW_DIR[i] for i in range(3)) < 0
+        away = _depth(_FACE_NORMAL[face]) < 0
         if away:
             dot(face)
         dwg.add(back)
@@ -1786,12 +1775,13 @@ def _ov_pins(
         if not away:
             dot(face)
 
-    for face in "DBL":
-        pin(face)
-    _ov_cube(dwg, bounds, recolor, opacity)
+    for face in _FACE_NORMAL:
+        if face not in _OV_ON_FACE:
+            pin(face)
+    _ov_cube(dwg, bounds, style)
     for face in _OV_ON_FACE:
         pin(face)
-    for face in "UDFBRL":
+    for face in _FACE_NORMAL:
         c, tip = proj[face]
         dx, dy = tip[0] - c[0], tip[1] - c[1]
         ln = math.hypot(dx, dy)
@@ -1804,11 +1794,9 @@ def _ov_pins(
         )
 
 
-def _ov_hub(
-    dwg: svgwrite.Drawing, bounds: _Bounds, recolor: dict[str, str], opacity: float
-) -> None:
-    halo = _ov_needs_halo(recolor)
-    _ov_cube(dwg, bounds, recolor, opacity)
+def _ov_hub(dwg: svgwrite.Drawing, bounds: _Bounds, style: DiagramStyle) -> None:
+    halo = _ov_needs_halo(_restyle(style))
+    _ov_cube(dwg, bounds, style)
     _ov_arrow(dwg, bounds, overview_ring(), halo=halo)
     for tail, tip in overview_strips().values():
         _ov_arrow(dwg, bounds, [tail, tip], halo=halo)
@@ -1826,11 +1814,14 @@ def _ov_hub(
         )
 
 
+OVERVIEW_PINS = OverviewLayout("overview", _ov_pins)
+OVERVIEW_HUB = OverviewLayout("overview_hub", _ov_hub)
+
+
 def render_overview(
     output_dir: Path, style: DiagramStyle = SCREEN, layout: OverviewLayout = OVERVIEW_PINS
 ) -> Path:
     """Render the notation overview: the six face turns on one cube."""
-    recolor = _restyle(style)
     subdir = output_dir / "notation"
     subdir.mkdir(parents=True, exist_ok=True)
     filepath = subdir / f"{layout.filename}.svg"
@@ -1841,11 +1832,7 @@ def render_overview(
     plate = _bg(dwg, (0, 0), (0, 0), 6)  # sized once the bounds are known
     dwg.add(plate)
     bounds = _Bounds()
-
-    if layout.pins:
-        _ov_pins(dwg, bounds, recolor, style.layer_lines)
-    else:
-        _ov_hub(dwg, bounds, recolor, style.layer_lines)
+    layout.draw(dwg, bounds, style)
 
     vb_x, vb_y = bounds.x0 - _OV_PAD, bounds.y0 - _OV_PAD
     vb_w, vb_h = bounds.x1 - bounds.x0 + 2 * _OV_PAD, bounds.y1 - bounds.y0 + 2 * _OV_PAD
