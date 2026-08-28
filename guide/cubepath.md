@@ -26,9 +26,13 @@ Interactive version — every case playable in 3D, plus trainer and full CFOP: *
 
 # Notation
 
-Each letter = one 90° CW turn (looking at that face). **'** = CCW, **2** = 180°, lowercase (e.g. **r**) = wide (two layers).
+Each letter = one 90° CW turn, looking at that face — so from your seat L, D and B look CCW. **'** = CCW, **2** = 180°, lowercase (e.g. **r**) = wide (two layers).
 
 ::: {.borderless}
+
+|                                                                                   |
+| :-------------------------------------------------------------------------------: |
+| ![The six faces and how each turns](figures/generated/notation/overview.svg){ width=34% } |
 
 |                                                           |                                                           |                                                           |                                                           |                                                           |                                                           |
 | :-------------------------------------------------------: | :-------------------------------------------------------: | :-------------------------------------------------------: | :-------------------------------------------------------: | :-------------------------------------------------------: | :-------------------------------------------------------: |
@@ -319,5 +323,3 @@ Completes the T-Perm pair. Solves diagonal corner swaps directly (no double T-Pe
 - **F2L:** Replace beginner corner+edge insertion with intuitive pairs — the biggest single speed improvement, and not a memorisation problem. Drill it, don't look it up.
 - **Full OLL** (57 algorithms) — last, because 22 of the 57 differ only by a sliver on a side face. Drill it with randomised setups rather than a table.
 - **Cross planning** and **look-ahead** — skills, not case lists.
-
-![Overview of cube faces and rotation axes](figures/generated/notation/overview.svg){ width=40% }

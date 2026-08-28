@@ -14,6 +14,7 @@ from typing import Any
 
 import svgwrite
 
+from cubepath import palette
 from cubepath.algs import ALGORITHMS, DOT_SEQUENCE
 from cubepath.cube import Cube, state_before
 
@@ -50,15 +51,21 @@ ARROW_COLOR = "#222222"
 # figures sit inside a tinted `.algorithm` callout. Verified with a real
 # `typst compile`, not assumed.
 #
-# Only the plate and the label ink flip. Sticker strokes are read between two
-# coloured fills and the rotation-ribbon occluders carry their own surface, so
-# both stay as they are.
+# Three things flip: `.ink` (a filled label or dot on the plate), `.ink-stroke`
+# (a stroked line on the plate — a rule on `fill` does nothing to a <line>, and
+# a rule on `stroke` would outline every label, so the two are separate
+# classes) and `.paper` (an occluder that stands in for the page, which must
+# follow the page's colour or it glares on a dark screen). Sticker strokes and
+# arrows are read against coloured faces, so they stay as they are.
 DARK_INK = "#ECE8E1"  # tokens.css --ink, dark
+DARK_PAPER = "#161412"  # tokens.css --paper, dark
 
 _THEME_CSS = (
-    f".bg{{fill:{WHITE}}}.ink{{fill:{ARROW_COLOR}}}"
+    f".bg{{fill:{WHITE}}}.paper{{fill:{WHITE}}}"
+    f".ink{{fill:{ARROW_COLOR}}}.ink-stroke{{stroke:{ARROW_COLOR}}}"
     "@media (prefers-color-scheme:light){.bg{fill:none}}"
-    f"@media (prefers-color-scheme:dark){{.bg{{fill:none}}.ink{{fill:{DARK_INK}}}}}"
+    f"@media (prefers-color-scheme:dark){{.bg{{fill:none}}.paper{{fill:{DARK_PAPER}}}"
+    f".ink{{fill:{DARK_INK}}}.ink-stroke{{stroke:{DARK_INK}}}}}"
 )
 
 
@@ -69,8 +76,6 @@ def _add_theme(dwg: svgwrite.Drawing) -> None:
 
 # svgwrite ships no type information, so every element it hands back is Any.
 Point = tuple[float, float]
-# (x, y, z) -> projected (x, y); every 3D diagram takes one.
-Projector = Callable[[float, float, float], Point]
 
 
 def _bg(dwg: svgwrite.Drawing, insert: Point, size: Point, radius: int) -> Any:
@@ -81,8 +86,20 @@ def _bg(dwg: svgwrite.Drawing, insert: Point, size: Point, radius: int) -> Any:
 
 
 def _ink(elem: Any) -> Any:
-    """Tag a label or dot drawn on the plate rather than on a sticker."""
+    """Tag a filled label or dot drawn on the plate rather than on a sticker."""
     elem["class"] = "ink"
+    return elem
+
+
+def _ink_stroke(elem: Any) -> Any:
+    """Tag a stroked line drawn on the plate rather than on a sticker."""
+    elem["class"] = "ink-stroke"
+    return elem
+
+
+def _paper(elem: Any) -> Any:
+    """Tag a fill that stands in for the page: an occluder painted in paper."""
+    elem["class"] = "paper"
     return elem
 
 
@@ -104,6 +121,7 @@ class DiagramStyle:
     stroke_main: float  # U-face sticker outline
     stroke_side: float  # side-band sticker outline
     stroke_arrow: float  # PLL permutation arrows
+    layer_lines: float  # opacity of the overview's layer lines on a solid face
     themed: bool = True  # emit the light/dark <style> block (screen only)
 
 
@@ -145,6 +163,7 @@ SCREEN = DiagramStyle(
     # rewrite every committed screen SVG for no visual change.
     stroke_side=1,
     stroke_arrow=2,
+    layer_lines=0.5,
 )
 CARD = DiagramStyle(
     faces=CARD_FACES,
@@ -155,6 +174,8 @@ CARD = DiagramStyle(
     stroke_main=3.2,
     stroke_side=2.4,
     stroke_arrow=4.5,
+    # On a mono laser the lines are the only structure on a solid face.
+    layer_lines=0.9,
 )
 
 
@@ -594,7 +615,7 @@ _N_CX, _N_CY = _N_W / 2, 84
 _CUBE_FACE_COLORS = {"U": YELLOW, "F": RED, "R": GREEN}
 # Hidden faces: B=Orange, L=Blue, D=White
 
-# 3D isometric cube outline edges (shared by notation and overview diagrams)
+# 3D isometric cube outline edges (the notation and step diagrams)
 _CUBE_OUTLINE_EDGES = [
     ((0, 3, 0), (3, 3, 0)),
     ((3, 3, 0), (3, 0, 0)),
@@ -710,6 +731,30 @@ def _bezier_2d(
     return pts
 
 
+def _arrowhead(tip: Point, prev: Point, sz: float, spread: float) -> tuple[Point, list[Point]]:
+    """A triangular arrowhead at `tip` pointing away from `prev` (which must
+    differ from it): its base point `sz` back along the arrow, and the
+    triangle, whose wings sit `sz * spread` either side of the base."""
+    dx, dy = tip[0] - prev[0], tip[1] - prev[1]
+    ln = math.hypot(dx, dy)
+    if ln == 0:
+        raise ValueError(f"arrowhead at {tip} has no direction: prev == tip")
+    ux, uy = dx / ln, dy / ln
+    nx, ny = -uy, ux
+    base = (tip[0] - sz * ux, tip[1] - sz * uy)
+    wings = [
+        (base[0] + sz * spread * nx, base[1] + sz * spread * ny),
+        (base[0] - sz * spread * nx, base[1] - sz * spread * ny),
+    ]
+    return base, [tip, *wings]
+
+
+def _polyline(pts: list[Point], closed: bool = False) -> str:
+    """SVG path data through `pts`, coordinates to a tenth."""
+    d = "M " + " L ".join(f"{x:.1f},{y:.1f}" for x, y in pts)
+    return d + " Z" if closed else d
+
+
 def _draw_arrowhead(
     dwg: svgwrite.Drawing,
     tip: tuple[float, float],
@@ -717,19 +762,11 @@ def _draw_arrowhead(
     sz: float,
 ) -> None:
     """Draw a triangular arrowhead at tip pointing away from prev."""
-    dx, dy = tip[0] - prev[0], tip[1] - prev[1]
-    ln = math.hypot(dx, dy)
-    if ln > 0:
-        ux, uy = dx / ln, dy / ln
-        nx, ny = -uy, ux
-        base = (tip[0] - sz * ux, tip[1] - sz * uy)
+    if tip != prev:
+        _base, triangle = _arrowhead(tip, prev, sz, 0.4)
         dwg.add(
             dwg.polygon(
-                [
-                    tip,
-                    (base[0] + sz * 0.4 * nx, base[1] + sz * 0.4 * ny),
-                    (base[0] - sz * 0.4 * nx, base[1] - sz * 0.4 * ny),
-                ],
+                triangle,
                 fill=ARROW_COLOR,
             )
         )
@@ -757,7 +794,7 @@ def _render_bezier_arrow(
     end = -2 if bidirectional else -1
     shortened = pts[start:end]
     if len(shortened) >= 2:
-        d = "M " + " L ".join(f"{x:.1f},{y:.1f}" for x, y in shortened)
+        d = _polyline(shortened)
         dwg.add(dwg.path(d=d, fill="none", stroke=ARROW_COLOR, stroke_width=stroke_width))
 
 
@@ -927,12 +964,25 @@ def _edge_case_steps() -> list[StepDiagram]:
 
 
 def _n_proj(x: float, y: float, z: float) -> tuple[float, float]:
-    """Tilted 3D→2D projection for notation diagrams (matches overview)."""
+    """Tilted 3D→2D projection for every isometric diagram, the overview included."""
     return (
         round((x * _N_COS_H - z * _N_SIN_H) * _N_SCALE + _N_CX, 1),
         round(((x * _N_SIN_H + z * _N_COS_H) * _N_ELEV - y) * _N_SCALE + _N_CY, 1),
     )
 
+
+def _cube_box() -> tuple[float, float, float, float]:
+    """Projected bounding box of the cube: x0, y0, x1, y1."""
+    pts = [_n_proj(x, y, z) for x in (0, 3) for y in (0, 3) for z in (0, 3)]
+    return (
+        min(p[0] for p in pts),
+        min(p[1] for p in pts),
+        max(p[0] for p in pts),
+        max(p[1] for p in pts),
+    )
+
+
+_N_CUBE_BOX = _cube_box()
 
 # Condition types for _STICKER_COLOR_RULES
 _EQ_A, _EQ_B, _GE_A, _ANY = "a", "b", "A", "*"
@@ -983,17 +1033,70 @@ def _n_sticker_color(face: str, a: int, b: int, layer: str, cw: bool) -> str:
     return base
 
 
+Vec3 = tuple[float, float, float]
+
+
+def _n_sticker_corners(face: str, a: int, b: int, size: int = 1) -> list[Vec3]:
+    """3D corners of the `size`-wide square at (a, b) on a visible face — a
+    sticker at 1, the whole face at 3. The one place the (a, b) convention of
+    the three visible faces is written down; `sticker_centre` and the
+    overview's face quads derive from it."""
+    s = size
+    if face == "U":
+        return [(a, 3, b), (a + s, 3, b), (a + s, 3, b + s), (a, 3, b + s)]
+    if face == "F":
+        return [(a, b + s, 3), (a + s, b + s, 3), (a + s, b, 3), (a, b, 3)]
+    if face == "R":
+        return [(3, b + s, a), (3, b + s, a + s), (3, b, a + s), (3, b, a)]
+    raise ValueError(f"not a visible face: {face!r}")
+
+
 def _n_sticker_pts(face: str, a: int, b: int) -> list[tuple[float, float]]:
     """Get projected 2D corners of sticker (a,b) on a visible face."""
-    if face == "U":
-        corners = [(a, 3, b), (a + 1, 3, b), (a + 1, 3, b + 1), (a, 3, b + 1)]
-    elif face == "F":
-        corners = [(a, b + 1, 3), (a + 1, b + 1, 3), (a + 1, b, 3), (a, b, 3)]
-    elif face == "R":
-        corners = [(3, b + 1, a), (3, b + 1, a + 1), (3, b, a + 1), (3, b, a)]
-    else:
+    if face not in ("U", "F", "R"):
         return []
-    return [_n_proj(*c) for c in corners]
+    return [_n_proj(*c) for c in _n_sticker_corners(face, a, b)]
+
+
+Arrow3 = tuple[Vec3, Vec3, Vec3]  # src, dst, bezier control
+# The move diagrams' one visual distinction: a dashed stroke means the whole
+# cube turns.
+_WHOLE_CUBE_DASH = "6,3"
+
+# Arrow configs: (cw_src_3d, cw_dst_3d, control_3d)
+# src/dst = center of affected stickers on each face for CW direction.
+# control = edge point pushed outward (Bezier control for the bulge).
+# When CCW, src and dst swap.
+_N_BULGE = 0.5  # bulge offset from edge
+_N_ARROW_CFGS: dict[str, Arrow3] = {
+    # R CW: F col a=2 → U col a=2.  Edge: F-U at x=2.5
+    "R": ((2.5, 1.5, 3), (2.5, 3, 1.5), (2.5, 3 + _N_BULGE, 3 + _N_BULGE)),
+    "R2": ((2.5, 1.5, 3), (2.5, 3, 1.5), (2.5, 3 + _N_BULGE, 3 + _N_BULGE)),
+    # L CW: U col a=0 → F col a=0.  Edge: F-U at x=0.5
+    "L": ((0.5, 3, 1.5), (0.5, 1.5, 3), (0.5, 3 + _N_BULGE, 3 + _N_BULGE)),
+    # U CW: R row b=2 → F row b=2.  Edge: F-R at y=2.5
+    "U": ((3, 2.5, 1.5), (1.5, 2.5, 3), (3 + _N_BULGE, 2.5, 3 + _N_BULGE)),
+    # D CW: F row b=0 → R row b=0.  Edge: F-R at y=0.5
+    "D": ((1.5, 0.5, 3), (3, 0.5, 1.5), (3 + _N_BULGE, 0.5, 3 + _N_BULGE)),
+    # F CW: U row b=2 → R col a=2.  Edge: U-R at z=2.5
+    "F": ((1.5, 3, 2.5), (3, 1.5, 2.5), (3 + _N_BULGE, 3 + _N_BULGE, 2.5)),
+    # B CW: R col a=0 → U row b=0.  Edge: U-R at z=0.5
+    "B": ((3, 1.5, 0.5), (1.5, 3, 0.5), (3 + _N_BULGE, 3 + _N_BULGE, 0.5)),
+    # M CW (follows L): U col a=1 → F col a=1.  Edge: F-U at x=1.5
+    "M": ((1.5, 3, 1.5), (1.5, 1.5, 3), (1.5, 3 + _N_BULGE, 3 + _N_BULGE)),
+    # S CW (follows F): U row b=1 → R col a=1.  Edge: U-R at z=1.5
+    "S": ((1.5, 3, 1.5), (3, 1.5, 1.5), (3 + _N_BULGE, 3 + _N_BULGE, 1.5)),
+    # E CW (follows D): F row b=1 → R row b=1.  Edge: F-R at y=1.5
+    "E": ((1.5, 1.5, 3), (3, 1.5, 1.5), (3 + _N_BULGE, 1.5, 3 + _N_BULGE)),
+    # r CW (wide R): F cols a=1,2 → U cols a=1,2.  Edge: F-U at x=2
+    "r": ((2, 1.5, 3), (2, 3, 1.5), (2, 3 + _N_BULGE, 3 + _N_BULGE)),
+    # x CW (whole cube, like R): F center → U center.  Edge: F-U at x=1.5
+    "x": ((1.5, 1.5, 3), (1.5, 3, 1.5), (1.5, 3 + _N_BULGE, 3 + _N_BULGE)),
+    # y CW (whole cube, like U): R center → F center.  Edge: F-R at y=1.5
+    "y": ((3, 1.5, 1.5), (1.5, 1.5, 3), (3 + _N_BULGE, 1.5, 3 + _N_BULGE)),
+    # z CW (whole cube, like F): U center → R center.  Edge: U-R at z=1.5
+    "z": ((1.5, 3, 1.5), (3, 1.5, 1.5), (3 + _N_BULGE, 3 + _N_BULGE, 1.5)),
+}
 
 
 def _n_draw_arrow(dwg: svgwrite.Drawing, layer: str, clockwise: bool) -> None:
@@ -1005,42 +1108,7 @@ def _n_draw_arrow(dwg: svgwrite.Drawing, layer: str, clockwise: bool) -> None:
     """
     is_whole = layer in ("x", "y", "z")
 
-    # Arrow configs: (cw_src_3d, cw_dst_3d, control_3d)
-    # src/dst = center of affected stickers on each face for CW direction.
-    # control = edge point pushed outward (Bezier control for the bulge).
-    # When CCW, src and dst swap.
-    _b = 0.5  # bulge offset from edge
-    _cfgs: dict[str, tuple[tuple[float, ...], tuple[float, ...], tuple[float, ...]]] = {
-        # R CW: F col a=2 → U col a=2.  Edge: F-U at x=2.5
-        "R": ((2.5, 1.5, 3), (2.5, 3, 1.5), (2.5, 3 + _b, 3 + _b)),
-        "R2": ((2.5, 1.5, 3), (2.5, 3, 1.5), (2.5, 3 + _b, 3 + _b)),
-        # L CW: U col a=0 → F col a=0.  Edge: F-U at x=0.5
-        "L": ((0.5, 3, 1.5), (0.5, 1.5, 3), (0.5, 3 + _b, 3 + _b)),
-        # U CW: R row b=2 → F row b=2.  Edge: F-R at y=2.5
-        "U": ((3, 2.5, 1.5), (1.5, 2.5, 3), (3 + _b, 2.5, 3 + _b)),
-        # D CW: F row b=0 → R row b=0.  Edge: F-R at y=0.5
-        "D": ((1.5, 0.5, 3), (3, 0.5, 1.5), (3 + _b, 0.5, 3 + _b)),
-        # F CW: U row b=2 → R col a=2.  Edge: U-R at z=2.5
-        "F": ((1.5, 3, 2.5), (3, 1.5, 2.5), (3 + _b, 3 + _b, 2.5)),
-        # B CW: R col a=0 → U row b=0.  Edge: U-R at z=0.5
-        "B": ((3, 1.5, 0.5), (1.5, 3, 0.5), (3 + _b, 3 + _b, 0.5)),
-        # M CW (follows L): U col a=1 → F col a=1.  Edge: F-U at x=1.5
-        "M": ((1.5, 3, 1.5), (1.5, 1.5, 3), (1.5, 3 + _b, 3 + _b)),
-        # S CW (follows F): U row b=1 → R col a=1.  Edge: U-R at z=1.5
-        "S": ((1.5, 3, 1.5), (3, 1.5, 1.5), (3 + _b, 3 + _b, 1.5)),
-        # E CW (follows D): F row b=1 → R row b=1.  Edge: F-R at y=1.5
-        "E": ((1.5, 1.5, 3), (3, 1.5, 1.5), (3 + _b, 1.5, 3 + _b)),
-        # r CW (wide R): F cols a=1,2 → U cols a=1,2.  Edge: F-U at x=2
-        "r": ((2, 1.5, 3), (2, 3, 1.5), (2, 3 + _b, 3 + _b)),
-        # x CW (whole cube, like R): F center → U center.  Edge: F-U at x=1.5
-        "x": ((1.5, 1.5, 3), (1.5, 3, 1.5), (1.5, 3 + _b, 3 + _b)),
-        # y CW (whole cube, like U): R center → F center.  Edge: F-R at y=1.5
-        "y": ((3, 1.5, 1.5), (1.5, 1.5, 3), (3 + _b, 1.5, 3 + _b)),
-        # z CW (whole cube, like F): U center → R center.  Edge: U-R at z=1.5
-        "z": ((1.5, 3, 1.5), (3, 1.5, 1.5), (3 + _b, 3 + _b, 1.5)),
-    }
-
-    cw_src, cw_dst, ctrl = _cfgs[layer]
+    cw_src, cw_dst, ctrl = _N_ARROW_CFGS[layer]
     if clockwise:
         src, dst = cw_src, cw_dst
     else:
@@ -1051,21 +1119,17 @@ def _n_draw_arrow(dwg: svgwrite.Drawing, layer: str, clockwise: bool) -> None:
     # Compute tip direction for arrowhead
     tip = pts[-1]
     prev = pts[-4]
-    dx, dy = tip[0] - prev[0], tip[1] - prev[1]
-    ln = math.hypot(dx, dy)
     sz = 16
 
     # Shorten arc at tip to make room for arrowhead
-    if ln > 0:
-        dx, dy = dx / ln, dy / ln
-        nx, ny = -dy, dx
-        arc_end = (tip[0] - sz * dx, tip[1] - sz * dy)
+    head: list[Point] | None = None
+    shortened = pts
+    if tip != prev:
+        arc_end, head = _arrowhead(tip, prev, sz, 0.5)
         shortened = pts[:-2] + [arc_end]
-    else:
-        shortened = pts
 
     d = "M " + " L ".join(f"{x},{y}" for x, y in shortened)
-    stroke_extra = {"stroke_dasharray": "6,3"} if is_whole else {}
+    stroke_extra = {"stroke_dasharray": _WHOLE_CUBE_DASH} if is_whole else {}
     dwg.add(
         dwg.path(
             d=d,
@@ -1076,11 +1140,8 @@ def _n_draw_arrow(dwg: svgwrite.Drawing, layer: str, clockwise: bool) -> None:
         )
     )
 
-    # Tip arrowhead
-    if ln > 0:
-        base1 = (tip[0] - sz * dx + sz * 0.5 * nx, tip[1] - sz * dy + sz * 0.5 * ny)
-        base2 = (tip[0] - sz * dx - sz * 0.5 * nx, tip[1] - sz * dy - sz * 0.5 * ny)
-        dwg.add(dwg.polygon([tip, base1, base2], fill=ARROW_COLOR))
+    if head is not None:
+        dwg.add(dwg.polygon(head, fill=ARROW_COLOR))
 
 
 def _draw_iso_stickers(dwg: svgwrite.Drawing, color_fn: Callable[[str, int, int], str]) -> None:
@@ -1107,8 +1168,7 @@ def render_notation(move: NotationMove, output_dir: Path) -> Path:
     filepath = subdir / f"{move.filename}.svg"
 
     # Compute layout from cube bounding box
-    cube_top_y = min(_n_proj(x, y, z)[1] for x in (0, 3) for y in (0, 3) for z in (0, 3))
-    cube_bot_y = max(_n_proj(x, y, z)[1] for x in (0, 3) for y in (0, 3) for z in (0, 3))
+    _, cube_top_y, _, cube_bot_y = _N_CUBE_BOX
     label_font = 30
     label_y = cube_top_y - 8
     vb_top = label_y - label_font
@@ -1157,12 +1217,7 @@ def render_step(step: StepDiagram, output_dir: Path, style: DiagramStyle = SCREE
     filepath = subdir / f"{step.filename}.svg"
 
     # Tight canvas from cube bounding box
-    all_corners = [(x, y, z) for x in (0, 3) for y in (0, 3) for z in (0, 3)]
-    proj_pts = [_n_proj(*c) for c in all_corners]
-    min_x = min(p[0] for p in proj_pts)
-    max_x = max(p[0] for p in proj_pts)
-    min_y = min(p[1] for p in proj_pts)
-    max_y = max(p[1] for p in proj_pts)
+    min_x, min_y, max_x, max_y = _N_CUBE_BOX
     pad = 6 if step.arrow or step.swap_arrows or step.dir_arrows else 4
     vb_x = min_x - pad
     vb_y = min_y - pad
@@ -1201,374 +1256,675 @@ def render_step(step: StepDiagram, output_dir: Path, style: DiagramStyle = SCREE
     return filepath
 
 
-def _draw_rotation_arc(
-    dwg: svgwrite.Drawing,
-    proj_fn: Projector,
-    center: tuple[float, ...],
-    v1: tuple[float, ...],
-    v2: tuple[float, ...],
-    radius: float = 0.5,
-    start_angle: float = 0.0,
-    view_dir: tuple[float, float, float] = (0, -1, 0),
-) -> tuple[svgwrite.container.Group, svgwrite.container.Group, svgwrite.container.Group]:
-    """Draw a 3D ribbon-style CW rotation arc, split into back/front/arrow groups.
+# ── Notation overview ───────────────────────────────────────────────────────
+# The six face turns on one cube. Two layouts come out of `render_overview`.
+#
+# `OVERVIEW_PINS` (the shipped `overview.svg`) is the original figure's idea,
+# drawn to read: a pin out of every face centre, a dot at its tip, the letter
+# beyond the dot, and a 3D ribbon ring around the pin showing which way that
+# face turns — clockwise as seen from outside it. The hidden faces' pins and
+# rings run behind the cube, which occludes their inner half: that is what
+# says "behind". The ribbon is the original geometry (a band around the axis,
+# split into a back and a front half around the pin, an arrowhead in the
+# band's own plane) at a radius and sweep that survive 272 px.
+#
+# `OVERVIEW_HUB` (`overview_hub.svg`, the backup) shows the turns as the
+# reader sees them from their seat: F — the face they are looking at — spins,
+# a clockwise ring in the middle of the front face with the letter inside;
+# every other letter slides its layer along the edge of a face they can see.
+# Which way each strip slides is derived: `_strip_arrow` marks the strip on a
+# solved cube, applies the move, and points at the face the marks left for.
+#
+# The slices, rotations and modifiers did not fit on the same cube without
+# giving it a second idiom, so they stay in the fifteen move diagrams.
 
-    Returns (back_group, front_group, arrow_group) so the caller can control
-    z-ordering of the ring, axis line, and arrowhead independently.
+
+@dataclass(frozen=True)
+class OverviewLayout:
+    """Which of the two overview drawings to render: its filename and its
+    painter. The two instances sit just above `render_overview`."""
+
+    filename: str
+    draw: Callable[[svgwrite.Drawing, _Bounds, DiagramStyle], None]
+
+
+# Which coordinate a face's layer is sliced along, and which slab it is.
+# `tests/test_diagrams.py` checks each row against the simulator.
+_LAYER_OF: dict[str, tuple[int, int]] = {
+    "L": (0, 0), "R": (0, 2),
+    "D": (1, 0), "U": (1, 2),
+    "B": (2, 0), "F": (2, 2),
+}  # fmt: skip
+_FACE_NORMAL: dict[str, Vec3] = {
+    "U": (0, 1, 0), "D": (0, -1, 0), "F": (0, 0, 1),
+    "B": (0, 0, -1), "R": (1, 0, 0), "L": (-1, 0, 0),
+}  # fmt: skip
+# The visible faces, in the order their pins are drawn. The set is what the
+# view direction says it is (`_depth(normal) > 0`); the tests check that.
+_OV_ON_FACE = ("F", "U", "R")
+# Each visible face as one quad: the 3-wide "sticker" at its origin.
+_OV_FACES: dict[str, list[Vec3]] = {f: _n_sticker_corners(f, 0, 0, 3) for f in _OV_ON_FACE}
+_CUBE_CENTRE: Vec3 = (1.5, 1.5, 1.5)
+# The direction toward the camera for `_n_proj`: screen-right x screen-down.
+_VIEW_DIR: Vec3 = (_N_SIN_H, _N_ELEV, _N_COS_H)
+
+# ── pins layout ──
+# Screen distance from the cube centre to each tip, in viewBox units. The
+# hidden faces' pins run behind the cube and need the extra reach for their
+# ring to clear the silhouette.
+_OV_PIN_TIP = {"front": 56.0, "back": 75.0}
+_OV_PIN_RING_R = 0.72  # ring radius, in stickers
+_OV_PIN_RING_IN = 0.7  # ring centre, this far back from the tip along the pin
+_OV_PIN_SWEEP = math.radians(250)
+_OV_PIN_HEAD = math.radians(34)  # the arrowhead's reach past the sweep end
+_OV_PIN_BAND = 0.19  # ribbon half-width along the axis, in stickers
+_OV_PIN_STROKE = 1.6
+_OV_PIN_DOT = 4.2
+_OV_PIN_LABEL_OUT = 13.0  # letter, this far beyond the dot on screen
+_OV_PIN_LABEL = 15
+
+# ── hub layout ──
+_OV_HOST: dict[str, str] = {"U": "F", "L": "F", "D": "F", "R": "F", "B": "U"}
+_OV_STRIP_REACH = 0.85  # half-length of a strip arrow, in stickers from the strip centre
+_OV_RING_R = 0.62  # F ring radius, in stickers
+_OV_RING_START = 135.0  # degrees; the gap sits top-left, away from the letter
+_OV_RING_SWEEP = 270.0
+_OV_LABEL = 16
+_OV_LABEL_AT: dict[str, tuple[Vec3, str]] = {
+    "F": ((1.5, 1.22, 3), "middle"),
+    "U": ((1.5, 3, 2.35), "middle"),
+    "R": ((3, 1.25, 2.35), "middle"),
+    "L": ((-0.3, 1.25, 3), "end"),
+    "D": ((1.5, -0.62, 3), "middle"),
+    "B": ((3.3, 3.05, 0.35), "start"),
+}
+_OV_CHAR_W = 0.68  # bold sans-serif advance per glyph, as a fraction of size
+_OV_STROKE = 3.4
+_OV_HEAD = 10.0
+_OV_PAD = 6
+_OV_HALO_MIN_CONTRAST = 3.0
+_OV_HALO_RIM = 0.7  # a halo's rim either side of its ink, as a fraction of the stroke
+
+
+def sticker_centre(face: str, a: int, b: int) -> Vec3:
+    """3D centre of a visible-face sticker: the mean of its corners."""
+    corners = _n_sticker_corners(face, a, b)
+    return (
+        sum(c[0] for c in corners) / 4,
+        sum(c[1] for c in corners) / 4,
+        sum(c[2] for c in corners) / 4,
+    )
+
+
+def sticker_of(p: Vec3) -> tuple[str, int, int]:
+    """The visible-face sticker a 3D point on the cube surface lies in."""
+    x, y, z = p
+    if y == 3:
+        return ("U", math.floor(x), math.floor(z))
+    if z == 3:
+        return ("F", math.floor(x), math.floor(y))
+    if x == 3:
+        return ("R", math.floor(z), math.floor(y))
+    raise ValueError(f"{p} is not on a visible face")
+
+
+def slab_of(coord: float) -> int:
+    """Which of the three layers a coordinate falls in. The face plane itself
+    (x, y or z == 3) belongs to the outer layer; a point off the cube is an
+    error, not a layer."""
+    if not 0 <= coord <= 3:
+        raise ValueError(f"{coord} is not within the cube")
+    return min(int(coord), 2)
+
+
+def strip_stickers(face: str, token: str) -> list[tuple[str, int, int]]:
+    """The stickers of `face` that lie in the layer `token` turns."""
+    axis, slab = _LAYER_OF[token]
+    return [
+        (face, a, b)
+        for a in range(3)
+        for b in range(3)
+        if slab_of(sticker_centre(face, a, b)[axis]) == slab
+    ]
+
+
+def _mark(cube: Cube, face: str, a: int, b: int) -> None:
+    cube.set_visible_sticker(face, a, b, "X")
+
+
+def exit_face(token: str, host: str) -> str:
+    """Where `host`'s strip goes under `token`: mark it, turn, look."""
+    cube = Cube.solved()
+    for sticker in strip_stickers(host, token):
+        _mark(cube, *sticker)
+    cube.apply(token)
+    landed = {face for face, stickers in cube.faces.items() if "X" in stickers}
+    landed.discard(host)
+    if len(landed) != 1:
+        raise ValueError(f"{token} moves {host}'s strip to {sorted(landed)}, expected one face")
+    return landed.pop()
+
+
+def _strip_arrow(token: str, host: str) -> tuple[Vec3, Vec3]:
+    """A straight arrow along `host`'s strip, pointing at the face it leaves for."""
+    centres = [sticker_centre(*s) for s in strip_stickers(host, token)]
+    mid = tuple(sum(c[i] for c in centres) / len(centres) for i in range(3))
+    d = _FACE_NORMAL[exit_face(token, host)]
+    r = _OV_STRIP_REACH
+    return (
+        (mid[0] - d[0] * r, mid[1] - d[1] * r, mid[2] - d[2] * r),
+        (mid[0] + d[0] * r, mid[1] + d[1] * r, mid[2] + d[2] * r),
+    )
+
+
+def overview_strips() -> dict[str, tuple[Vec3, Vec3]]:
+    """token -> (tail, tip) of the hub's five strip arrows. Public for the tests."""
+    return {token: _strip_arrow(token, host) for token, host in _OV_HOST.items()}
+
+
+def _ring_basis(n: Vec3) -> tuple[Vec3, Vec3]:
+    """(u, v) in the face plane with u x v = -n: increasing angle is clockwise
+    as seen from outside the face."""
+    u: Vec3 = (0, 1, 0) if n[1] == 0 else (1, 0, 0)
+    v: Vec3 = (
+        u[1] * n[2] - u[2] * n[1],
+        u[2] * n[0] - u[0] * n[2],
+        u[0] * n[1] - u[1] * n[0],
+    )
+    return u, v
+
+
+def _depth(p: Vec3) -> float:
+    """How far toward the camera `p` is: its component along `_VIEW_DIR`."""
+    return sum(p[i] * _VIEW_DIR[i] for i in range(3))
+
+
+def _view_coeffs(n: Vec3) -> tuple[float, float]:
+    """(a, b) with depth(θ) = a cos θ + b sin θ for a ring around `n`: how
+    much nearer the camera a ring point at angle θ is than the ring's centre."""
+    u, v = _ring_basis(n)
+    return _depth(u), _depth(v)
+
+
+def _ring_pt(centre: Vec3, n: Vec3, radius: float, angle: float) -> Vec3:
+    """The point at `angle` (radians) on the ring around `n` through `centre`,
+    clockwise seen from +n."""
+    u, v = _ring_basis(n)
+    c, s = radius * math.cos(angle), radius * math.sin(angle)
+    return (
+        centre[0] + u[0] * c + v[0] * s,
+        centre[1] + u[1] * c + v[1] * s,
+        centre[2] + u[2] * c + v[2] * s,
+    )
+
+
+def _ring(
+    centre: Vec3, n: Vec3, radius: float, start: float, sweep: float, samples: int = 40
+) -> list[Vec3]:
+    """A ring around `n` through `centre`, clockwise seen from +n. Angles in radians."""
+    return [_ring_pt(centre, n, radius, start + sweep * i / samples) for i in range(samples + 1)]
+
+
+def overview_ring() -> list[Vec3]:
+    """The hub's F ring as 3D points, clockwise as seen from the front. Public
+    for the tests, which check the order it passes the edge-middle stickers in."""
+    return _ring(
+        sticker_centre("F", 1, 1),
+        _FACE_NORMAL["F"],
+        _OV_RING_R,
+        math.radians(_OV_RING_START),
+        math.radians(_OV_RING_SWEEP),
+    )
+
+
+def _face_centre(face: str) -> Vec3:
+    n = _FACE_NORMAL[face]
+    return (
+        _CUBE_CENTRE[0] + 1.5 * n[0],
+        _CUBE_CENTRE[1] + 1.5 * n[1],
+        _CUBE_CENTRE[2] + 1.5 * n[2],
+    )
+
+
+def overview_pin(face: str) -> tuple[Vec3, Vec3]:
+    """(face centre, tip) of a pin. Its 3D length is whatever puts the tip at
+    the layout's screen radius, so the six tips sit on two circles."""
+    n = _FACE_NORMAL[face]
+    c = _face_centre(face)
+    o = _n_proj(*_CUBE_CENTRE)
+    per_unit = math.dist(_n_proj(*c), _n_proj(c[0] + n[0], c[1] + n[1], c[2] + n[2]))
+    reach = _OV_PIN_TIP["front" if face in _OV_ON_FACE else "back"]
+    # projection is affine, so |proj(c + t n) - o| = reach is linear in t
+    t = (reach - math.dist(_n_proj(*c), o)) / per_unit
+    return c, (c[0] + n[0] * t, c[1] + n[1] * t, c[2] + n[2] * t)
+
+
+def _pin_ring_frame(face: str) -> tuple[Vec3, float]:
+    """The ring's centre and start angle. The start is chosen so the
+    arrowhead lands at the point of the ring nearest the camera — derived
+    from the view direction, never hand-set."""
+    n = _FACE_NORMAL[face]
+    _c, tip = overview_pin(face)
+    k = _OV_PIN_RING_IN
+    centre = (tip[0] - n[0] * k, tip[1] - n[1] * k, tip[2] - n[2] * k)
+    a, b = _view_coeffs(n)
+    nearest = math.atan2(b, a)
+    return centre, nearest - _OV_PIN_SWEEP - _OV_PIN_HEAD
+
+
+def overview_pin_ring(face: str) -> list[Vec3]:
+    """The ring's centre-line around a pin, as 3D points. Public for the tests."""
+    centre, start = _pin_ring_frame(face)
+    return _ring(centre, _FACE_NORMAL[face], _OV_PIN_RING_R, start, _OV_PIN_SWEEP)
+
+
+def overview_pin_head(face: str) -> Vec3:
+    """The 3D point of the arrowhead's tip: a little past the sweep end."""
+    centre, start = _pin_ring_frame(face)
+    return _ring_pt(
+        centre, _FACE_NORMAL[face], _OV_PIN_RING_R, start + _OV_PIN_SWEEP + _OV_PIN_HEAD
+    )
+
+
+class _Bounds:
+    """Running bounding box of everything drawn, for the computed viewBox."""
+
+    def __init__(self) -> None:
+        self.x0 = self.y0 = math.inf
+        self.x1 = self.y1 = -math.inf
+
+    def add(self, x: float, y: float, r: float = 0.0) -> None:
+        self.x0, self.x1 = min(self.x0, x - r), max(self.x1, x + r)
+        self.y0, self.y1 = min(self.y0, y - r), max(self.y1, y + r)
+
+    def text(self, x: float, y: float, s: str, size: float, anchor: str) -> None:
+        w = _OV_CHAR_W * size * len(s)
+        left = {"middle": x - w / 2, "start": x, "end": x - w}[anchor]
+        self.add(left, y - 0.74 * size)
+        self.add(left + w, y + 0.22 * size)
+
+
+def _ov_needs_halo(recolor: dict[str, str]) -> bool:
+    """Whether the ink separates from every visible face in this palette.
+
+    Screen faces all clear 3:1 against the arrow ink; the card's darkened red
+    does not, so ink drawn across a face — the hub's arrows, a pin's run from
+    its face centre to the face edge — gets a paper-coloured halo. Measured,
+    not chosen. The ribbons carry their own paper fill and need none.
     """
+    faces = (recolor.get(c, c) for c in _CUBE_FACE_COLORS.values())
+    return any(palette.contrast(ARROW_COLOR, f) < _OV_HALO_MIN_CONTRAST for f in faces)
+
+
+def _ov_arrow(dwg: svgwrite.Drawing, bounds: _Bounds, pts3: list[Vec3], *, halo: bool) -> None:
+    """A projected polyline with a filled head at its last point (the hub)."""
+    pts = [_n_proj(*p) for p in pts3]
+    tip, prev = pts[-1], pts[-3] if len(pts) > 2 else pts[0]
+    stroke = _OV_STROKE
+    base, triangle = _arrowhead(tip, prev, _OV_HEAD, 0.45)
+    # The body stops at the head's base: every sample within the head's reach
+    # of the tip goes, or the stroke would double back beside the head.
+    body = [p for p in pts[:-1] if math.dist(p, tip) > _OV_HEAD] + [base]
+    d = _polyline(body)
+    head_pts = [(round(x, 1), round(y, 1)) for x, y in triangle]
+    rim = _OV_HALO_RIM * stroke if halo else 0.0
+    if halo:
+        dwg.add(dwg.path(d=d, fill="none", stroke=WHITE, stroke_width=stroke + 2 * rim))
+        dwg.add(dwg.polygon(head_pts, fill=WHITE, stroke=WHITE, stroke_width=2 * rim))
+    dwg.add(
+        dwg.path(d=d, fill="none", stroke=ARROW_COLOR, stroke_width=stroke, stroke_linecap="round")
+    )
+    dwg.add(dwg.polygon(head_pts, fill=ARROW_COLOR))
+    for p in body:
+        bounds.add(*p, stroke / 2 + rim)
+    for p in head_pts:
+        bounds.add(*p, rim)
+
+
+def _ribbon_arc(
+    dwg: svgwrite.Drawing,
+    bounds: _Bounds,
+    centre: Vec3,
+    n: Vec3,
+    start: float,
+) -> tuple[Any, Any, Any]:
+    """A 3D ribbon ring around the axis `n` — a band of half-width
+    `_OV_PIN_BAND` along the axis, clockwise seen from +n — split into a back
+    group, a front group and the arrowhead so the caller can thread the pin
+    through it. The original overview's geometry, kept because it reads as a
+    solid object; the radius, sweep and head are what changed.
+
+    Returns (back_group, front_group, arrow_group).
+    """
+    radius, sweep, band = _OV_PIN_RING_R, _OV_PIN_SWEEP, _OV_PIN_BAND
     n_pts = 48
-    sweep = math.radians(280)
-    band_w = 0.17
+    # depth(θ) > 0 means nearer the camera than the centre
+    a_coeff, b_coeff = _view_coeffs(n)
 
-    normal = (
-        v1[1] * v2[2] - v1[2] * v2[1],
-        v1[2] * v2[0] - v1[0] * v2[2],
-        v1[0] * v2[1] - v1[1] * v2[0],
-    )
+    def ring_pt(angle: float) -> Vec3:
+        return _ring_pt(centre, n, radius, angle)
 
-    # Depth coefficients: depth(θ) = A*cos(θ) + B*sin(θ)
-    A = v1[0] * view_dir[0] + v1[1] * view_dir[1] + v1[2] * view_dir[2]
-    B = v2[0] * view_dir[0] + v2[1] * view_dir[1] + v2[2] * view_dir[2]
-    depth_amplitude = math.hypot(A, B)
+    def band_pt(angle: float, side: float) -> Point:
+        p = ring_pt(angle)
+        q = _n_proj(p[0] + side * band * n[0], p[1] + side * band * n[1], p[2] + side * band * n[2])
+        bounds.add(*q, _OV_PIN_STROKE)
+        return q
 
-    def _pt_3d(angle: float, offset_sign: float) -> tuple[float, float]:
-        co, si = math.cos(angle), math.sin(angle)
-        return proj_fn(
-            center[0] + radius * (v1[0] * co + v2[0] * si) + offset_sign * band_w * normal[0],
-            center[1] + radius * (v1[1] * co + v2[1] * si) + offset_sign * band_w * normal[1],
-            center[2] + radius * (v1[2] * co + v2[2] * si) + offset_sign * band_w * normal[2],
-        )
+    def depth(angle: float) -> float:
+        return a_coeff * math.cos(angle) + b_coeff * math.sin(angle)
 
-    def _depth(angle: float) -> float:
-        return A * math.cos(angle) + B * math.sin(angle)
-
-    # Generate arc sample points with depths
-    angles = [start_angle + sweep * i / n_pts for i in range(n_pts + 1)]
-    depths = [_depth(a) for a in angles]
-
-    # Find zero-crossing indices and interpolate boundary angles
-    crossings: list[float] = []
-    for i in range(len(depths) - 1):
+    angles = [start + sweep * i / n_pts for i in range(n_pts + 1)]
+    depths = [depth(t) for t in angles]
+    crossings = []
+    for i in range(n_pts):
         if depths[i] * depths[i + 1] < 0:
-            t = depths[i] / (depths[i] - depths[i + 1])
-            crossings.append(angles[i] + t * (angles[i + 1] - angles[i]))
+            k = depths[i] / (depths[i] - depths[i + 1])
+            crossings.append(angles[i] + k * (angles[i + 1] - angles[i]))
+    boundaries = [angles[0], *sorted(crossings), angles[-1]]
 
-    # Build segment boundaries
-    boundaries = [angles[0]] + sorted(crossings) + [angles[-1]]
+    back, front = dwg.g(), dwg.g()
 
-    # Classify segments and build ribbon pieces.
-    # Separate fill from stroke: draw polygon fills first (no stroke), then
-    # draw top/bottom edges as continuous polylines per depth zone so there
-    # are no visible joints between adjacent segments.
-    back_group = dwg.g()
-    front_group = dwg.g()
-
-    def _svg_polyline(pts: list[tuple[float, float]], closed: bool = False) -> str:
-        d = "M " + " L ".join(f"{x},{y}" for x, y in pts)
-        return d + " Z" if closed else d
-
-    stroke_kw = dict(
-        fill="none",
-        stroke=ARROW_COLOR,
-        stroke_width=1.5,
-        stroke_linejoin="round",
-        stroke_linecap="round",
-    )
-
-    def _add_cap(group: Any, pt_a: Point, pt_b: Point) -> None:
-        cap = dwg.line(pt_a, pt_b, stroke=ARROW_COLOR, stroke_width=1.5)
-        cap["stroke-linecap"] = "round"
-        group.add(cap)
-
-    # Collect per-segment data for two-pass rendering
-    seg_data: list[tuple[bool, list[Point], list[Point]]] = []
-    for seg_i in range(len(boundaries) - 1):
-        a0, a1 = boundaries[seg_i], boundaries[seg_i + 1]
-        span = a1 - a0
-        n_seg = max(2, round(n_pts * span / sweep))
-        seg_angles = [a0 + span * j / n_seg for j in range(n_seg + 1)]
-
-        is_front = _depth((a0 + a1) / 2) > 0 or depth_amplitude < 0.01
-        seg_data.append(
-            (
-                is_front,
-                [_pt_3d(a, +1) for a in seg_angles],
-                [_pt_3d(a, -1) for a in seg_angles],
-            )
-        )
-
-    # Pass 1: white polygon fills (no stroke)
-    for is_front, top_pts, bot_pts in seg_data:
-        group = front_group if is_front else back_group
+    # The ribbon is paper with ink edges, and both flip with the theme: on a
+    # dark page a white band glares and a dark edge vanishes.
+    def edge(group: Any, pts: list[Point]) -> None:
         group.add(
-            dwg.path(
-                d=_svg_polyline(top_pts + list(reversed(bot_pts)), closed=True),
-                fill=WHITE,
-                stroke="none",
+            _ink_stroke(
+                dwg.path(
+                    d=_polyline(pts),
+                    fill="none",
+                    stroke=ARROW_COLOR,
+                    stroke_width=_OV_PIN_STROKE,
+                    stroke_linejoin="round",
+                    stroke_linecap="round",
+                )
             )
         )
 
-    # Pass 2: merge consecutive same-zone segments into continuous polylines
+    def cap(group: Any, p: Point, q: Point) -> None:
+        line = dwg.line(p, q, stroke=ARROW_COLOR, stroke_width=_OV_PIN_STROKE)
+        line["stroke-linecap"] = "round"
+        group.add(_ink_stroke(line))
+
+    def fill(group: Any, pts: list[Point]) -> None:
+        group.add(_paper(dwg.path(d=_polyline(pts, closed=True), fill=WHITE, stroke="none")))
+
+    segments: list[tuple[bool, list[Point], list[Point]]] = []
+    for a0, a1 in zip(boundaries, boundaries[1:], strict=False):
+        m = max(2, round(n_pts * (a1 - a0) / sweep))
+        seg = [a0 + (a1 - a0) * j / m for j in range(m + 1)]
+        is_front = depth((a0 + a1) / 2) > 0 or math.hypot(a_coeff, b_coeff) < 0.01
+        segments.append((is_front, [band_pt(t, +1) for t in seg], [band_pt(t, -1) for t in seg]))
+
+    # fills first, then continuous edges per depth zone, so no joints show
+    for is_front, top, bot in segments:
+        fill(front if is_front else back, top + bot[::-1])
     i = 0
-    while i < len(seg_data):
-        is_front = seg_data[i][0]
-        group = front_group if is_front else back_group
-        merged_top = list(seg_data[i][1])
-        merged_bot = list(seg_data[i][2])
+    while i < len(segments):
+        is_front, top, bot = segments[i]
+        top, bot = list(top), list(bot)
         j = i + 1
-        while j < len(seg_data) and seg_data[j][0] == is_front:
-            merged_top.extend(seg_data[j][1][1:])  # skip shared boundary point
-            merged_bot.extend(seg_data[j][2][1:])
+        while j < len(segments) and segments[j][0] == is_front:
+            top += segments[j][1][1:]
+            bot += segments[j][2][1:]
             j += 1
-        group.add(dwg.path(d=_svg_polyline(merged_top), **stroke_kw))
-        group.add(dwg.path(d=_svg_polyline(merged_bot), **stroke_kw))
-        _add_cap(group, merged_top[0], merged_bot[0])
-        _add_cap(group, merged_top[-1], merged_bot[-1])
+        group = front if is_front else back
+        edge(group, top)
+        edge(group, bot)
+        # A zone starts at the ribbon's open end or at a depth boundary. The
+        # boundaries sit 90° from the pin, where the band is seen edge-on and
+        # folds over itself, so the fold is a silhouette edge with the two
+        # fills overlapping behind it: it is drawn on top of both — unless
+        # the zone before it is the sliver at the open end, whose start cap
+        # is already within a stroke of the fold. No cap at the sweep end,
+        # where the band flows into the arrowhead.
+        if i == 0:
+            cap(group, top[0], bot[0])
+        elif math.dist(top[0], segments[i - 1][1][0]) > 2 * _OV_PIN_STROKE:
+            cap(front, top[0], bot[0])
         i = j
 
-    # Arrowhead — always at sweep end
-    end_angle = start_angle + sweep
-
-    def _ring_pt(angle: float) -> tuple[float, float, float]:
-        """3D point on the ring center-line at the given angle."""
-        co, si = math.cos(angle), math.sin(angle)
-        return (
-            center[0] + radius * (v1[0] * co + v2[0] * si),
-            center[1] + radius * (v1[1] * co + v2[1] * si),
-            center[2] + radius * (v1[2] * co + v2[2] * si),
-        )
-
-    tip = proj_fn(*_ring_pt(end_angle + math.radians(42)))
-
-    arrow_w = band_w * 2.5
-    base_center_3d = _ring_pt(end_angle)
-    base_inner = proj_fn(*(base_center_3d[j] - arrow_w * normal[j] for j in range(3)))
-    base_outer = proj_fn(*(base_center_3d[j] + arrow_w * normal[j] for j in range(3)))
-
-    # Combined background covering last ribbon segment + arrowhead (no gap)
-    last_seg_a0 = boundaries[-2]
-    n_last = max(2, round(n_pts * (end_angle - last_seg_a0) / sweep))
-    last_span = end_angle - last_seg_a0
-    last_top = [_pt_3d(last_seg_a0 + last_span * j / n_last, +1) for j in range(n_last + 1)]
-    last_bot = [_pt_3d(last_seg_a0 + last_span * j / n_last, -1) for j in range(n_last + 1)]
-
-    # Arrowhead in a separate group so callers can control its z-order.
-    bg_pts = last_top + [base_outer, tip, base_inner] + list(reversed(last_bot))
-    arrow_g = dwg.g()
-    arrow_g.add(dwg.path(d=_svg_polyline(bg_pts, closed=True), fill=WHITE, stroke="none"))
-    # Re-stroke the last ribbon segment edges (covered by the white background)
-    arrow_g.add(dwg.path(d=_svg_polyline(last_top), **stroke_kw))
-    arrow_g.add(dwg.path(d=_svg_polyline(last_bot), **stroke_kw))
-    # Re-stroke the end-cap at the front/back boundary (also covered by background)
-    if last_seg_a0 not in (angles[0], angles[-1]):
-        _add_cap(arrow_g, _pt_3d(last_seg_a0, +1), _pt_3d(last_seg_a0, -1))
-    # Arrowhead: stroke sides + partial base (skip the segment between ribbon edges)
-    ribbon_top_end = _pt_3d(end_angle, +1)
-    ribbon_bot_end = _pt_3d(end_angle, -1)
-    arrow_g.add(
-        dwg.path(
-            d=_svg_polyline([ribbon_top_end, base_outer, tip, base_inner, ribbon_bot_end]),
-            fill=WHITE,
-            **{k: v for k, v in stroke_kw.items() if k != "fill"},
-        )
-    )
-
-    return back_group, front_group, arrow_g
+    # the arrowhead: a triangle in the band's own plane, past the sweep end
+    end = start + sweep
+    tip = _n_proj(*ring_pt(end + _OV_PIN_HEAD))
+    base = ring_pt(end)
+    wing = band * 2.4
+    outer = _n_proj(base[0] + wing * n[0], base[1] + wing * n[1], base[2] + wing * n[2])
+    inner = _n_proj(base[0] - wing * n[0], base[1] - wing * n[1], base[2] - wing * n[2])
+    for p in (tip, outer, inner):
+        bounds.add(*p, _OV_PIN_STROKE)
+    arrow = dwg.g()
+    top_end, bot_end = band_pt(end, +1), band_pt(end, -1)
+    # The fill reaches a little back into the band so no hairline shows where
+    # the ribbon's fill polygon and the head's meet.
+    back_in = end - sweep / n_pts
+    fill(arrow, [band_pt(back_in, +1), top_end, outer, tip, inner, bot_end, band_pt(back_in, -1)])
+    edge(arrow, [band_pt(back_in, +1), top_end])
+    edge(arrow, [band_pt(back_in, -1), bot_end])
+    edge(arrow, [top_end, outer, tip, inner, bot_end])
+    return back, front, arrow
 
 
-def render_overview(output_dir: Path) -> Path:
-    """Render a summary overview diagram: one isometric cube with 6 labeled axis arrows."""
-    subdir = output_dir / "notation"
-    subdir.mkdir(parents=True, exist_ok=True)
-    filepath = subdir / "overview.svg"
-
-    # Projection origin (arbitrary; viewBox is computed from content bounds).
-    # Tilted view: higher viewpoint + rotated left so D/B/L axes go behind the cube.
-    ov_cx, ov_cy = 155.0, 110.0
-    scale = 22
-    # Horizontal rotation ~40° (instead of 45°): F face wider, R face narrower
-    h_angle = math.radians(40)
-    cos_h, sin_h = math.cos(h_angle), math.sin(h_angle)
-    elev = 0.40  # elevation factor (0.5 = standard iso, lower = more top visible)
-
-    def proj(x: float, y: float, z: float) -> tuple[float, float]:
-        return (
-            round((x * cos_h - z * sin_h) * scale + ov_cx, 1),
-            round(((x * sin_h + z * cos_h) * elev - y) * scale + ov_cy, 1),
-        )
-
-    # Axis definitions: (label, face_center, tip, arc_v1, arc_v2)
-    c = 1.5  # cube center coordinate
-    axes = [
-        ("U", (c, 3, c), (c, c + 3.0, c), (1, 0, 0), (0, 0, 1)),
-        ("D", (c, 0, c), (c, c - 3.5, c), (1, 0, 0), (0, 0, -1)),
-        ("F", (c, c, 3), (c, c, c + 4.2), (1, 0, 0), (0, -1, 0)),
-        ("B", (c, c, 0), (c, c, c - 4.8), (-1, 0, 0), (0, -1, 0)),
-        ("R", (3, c, c), (c + 3.8, c, c), (0, 0, 1), (0, 1, 0)),
-        ("L", (0, c, c), (c - 4.3, c, c), (0, 0, -1), (0, 1, 0)),
-    ]
-    front = {"U", "F", "R"}
-
-    # Pre-compute label positions to determine tight viewBox
-    label_dist = 18
-    label_positions: list[tuple[float, float]] = []
-    for _, face_center, tip, _, _ in axes:
-        e = proj(*tip)
-        fc = proj(*face_center)
-        pdx, pdy = e[0] - fc[0], e[1] - fc[1]
-        pln = math.hypot(pdx, pdy)
-        if pln > 0:
-            label_positions.append((e[0] + pdx / pln * label_dist, e[1] + pdy / pln * label_dist))
-        else:
-            label_positions.append(e)
-
-    # Compute tight viewBox with uniform padding
-    pad = 16
-    text_half = 10  # approximate half-extent of 18px label text
-    all_x = [lx for lx, _ in label_positions]
-    all_y = [ly for _, ly in label_positions]
-    vb_x = min(all_x) - text_half - pad
-    vb_y = min(all_y) - text_half - pad
-    vb_w = max(all_x) - min(all_x) + 2 * (text_half + pad)
-    vb_h = max(all_y) - min(all_y) + 2 * (text_half + pad)
-
-    dwg = svgwrite.Drawing(
-        str(filepath),
-        size=(f"{vb_w:.0f}px", f"{vb_h:.0f}px"),
-        viewBox=f"{vb_x:.1f} {vb_y:.1f} {vb_w:.1f} {vb_h:.1f}",
-    )
-    _add_theme(dwg)
-    dwg.add(_bg(dwg, (vb_x, vb_y), (vb_w, vb_h), 8))
-
-    # Cube face definitions (needed before step 1 for clip path)
-    face_colors = [
-        ([(0, 3, 0), (3, 3, 0), (3, 3, 3), (0, 3, 3)], YELLOW),
-        ([(0, 0, 3), (3, 0, 3), (3, 3, 3), (0, 3, 3)], RED),
-        ([(3, 0, 0), (3, 0, 3), (3, 3, 3), (3, 3, 0)], GREEN),
-    ]
-
-    # Clip path: viewport minus cube face polygons (evenodd punches holes).
-    # Behind-axis lines use this so they're only visible outside the cube silhouette.
-    clip = dwg.defs.add(dwg.clipPath(id="behind-clip"))
-    m = 5  # margin
-    outer = f"M{vb_x - m},{vb_y - m} h{vb_w + 2 * m} v{vb_h + 2 * m} h-{vb_w + 2 * m} Z"
-    inner = ""
-    for corners, _ in face_colors:
-        pts = [proj(*p) for p in corners]
-        inner += " M " + " L ".join(f"{x},{y}" for x, y in pts) + " Z"
-    clip_elem = dwg.path(d=outer + inner)
-    clip_elem["clip-rule"] = "evenodd"
-    clip.add(clip_elem)
-
-    # Pre-compute all rotation arcs so we can control z-ordering precisely.
-    view_dir = (sin_h, elev, cos_h)
-    arc_radius = 0.6
-    arc_sweep = math.radians(280)
-    arc_data = {}
-    for label, face_center, tip, v1, v2 in axes:
-        d = tuple(tip[j] - face_center[j] for j in range(3))
-        ln = math.hypot(*d)
-        d_norm = tuple(x / ln for x in d) if ln > 0 else (0, 0, 0)
-
-        arc_center = tuple(tip[j] - d_norm[j] * 0.7 for j in range(3))
-
-        a_coeff = sum(v1[j] * view_dir[j] for j in range(3))
-        b_coeff = sum(v2[j] * view_dir[j] for j in range(3))
-        theta_max = math.atan2(b_coeff, a_coeff)
-        start_angle = theta_max - arc_sweep - math.radians(42)
-
-        back_g, front_g, arrow_g = _draw_rotation_arc(
-            dwg,
-            proj,
-            arc_center,
-            v1,
-            v2,
-            radius=arc_radius,
-            start_angle=start_angle,
-            view_dir=view_dir,
-        )
-        arc_data[label] = (back_g, front_g, arrow_g, d_norm, arc_center)
-
-    # B's back ring drawn behind the cube for correct 3D occlusion
-    dwg.add(arc_data["B"][0])
-
-    def _add_line(start: Point, end: Point, color: str = STICKER_STROKE, **extra: str) -> None:
-        line = dwg.line(start, end, stroke=color, stroke_width=1.5)
-        line["stroke-linecap"] = "round"
-        for k, v in extra.items():
-            line[k] = v
-        dwg.add(line)
-
-    # 2b. Visible cube faces (solid, colored)
-    for corners, color in face_colors:
-        pts = [proj(*p) for p in corners]
+def _ov_cube(dwg: svgwrite.Drawing, bounds: _Bounds, style: DiagramStyle) -> None:
+    """Solid U / F / R faces with the two layer lines per face."""
+    recolor = _restyle(style)
+    for face, corners in _OV_FACES.items():
+        color = _CUBE_FACE_COLORS[face]
+        pts = [_n_proj(*c) for c in corners]
         dwg.add(
             dwg.polygon(
                 pts,
-                fill=color,
+                fill=recolor.get(color, color),
                 stroke=STICKER_STROKE,
                 stroke_width=1.5,
                 stroke_linejoin="round",
             )
         )
+        for p in pts:
+            bounds.add(*p, 1)
+    lines: list[tuple[Vec3, Vec3]] = []
+    for i in (1, 2):
+        lines += [((i, 3, 0), (i, 3, 3)), ((0, 3, i), (3, 3, i))]  # U
+        lines += [((i, 0, 3), (i, 3, 3)), ((0, i, 3), (3, i, 3))]  # F
+        lines += [((3, 0, i), (3, 3, i)), ((3, i, 0), (3, i, 3))]  # R
+    for a, b in lines:
+        line = dwg.line(_n_proj(*a), _n_proj(*b), stroke=STICKER_STROKE, stroke_width=1)
+        line["stroke-opacity"] = f"{style.layer_lines:g}"
+        dwg.add(line)
 
-    # 3. Cube outline
-    for ea, eb in _CUBE_OUTLINE_EDGES:
-        _add_line(proj(*ea), proj(*eb))
 
-    # 4. Redraw "front" axis lines (U, F, R) on top of cube faces
-    for label, face_center, tip, _, _ in axes:
-        if label in front:
-            _add_line(proj(*face_center), proj(*tip), color=ARROW_COLOR)
+def _ov_label(
+    dwg: svgwrite.Drawing,
+    bounds: _Bounds,
+    text: str,
+    at: Point,
+    *,
+    size: float,
+    anchor: str,
+    on_plate: bool,
+    halo: bool,
+) -> None:
+    """A letter. On the plate it is ink-tagged and flips with the theme; on a
+    face it stays dark against the sticker colour, with a paper rim when the
+    palette needs one."""
 
-    # 5. Draw rotation arcs with front/back splitting around axis lines
-    for label, face_center, tip, _, _ in axes:
-        back_g, front_g, arrow_g, d_norm, arc_center = arc_data[label]
-
-        # B's back_g already drawn before the cube
-        if label != "B":
-            dwg.add(back_g)
-
-        if label in front:
-            seg_len = 1.2 * arc_radius
-            seg_out = proj(*tuple(arc_center[j] + seg_len * d_norm[j] for j in range(3)))
-            seg_in = proj(*tuple(arc_center[j] - seg_len * d_norm[j] for j in range(3)))
-            _add_line(seg_in, seg_out, color=ARROW_COLOR)
-            dwg.add(front_g)
-            dwg.add(arrow_g)
-        else:
-            dwg.add(front_g)
-            _add_line(
-                proj(*face_center),
-                proj(*tip),
-                color=ARROW_COLOR,
-                **{"clip-path": "url(#behind-clip)"},
-            )
-            if label in ("B", "L"):
-                dwg.add(_ink(dwg.circle(center=proj(*tip), r=5, fill=ARROW_COLOR)))
-            dwg.add(arrow_g)
-
-    # 6. Dots and labels at each tip
-    for i, (label, face_center, tip, _, _) in enumerate(axes):
-        e = proj(*tip)
-        if label not in ("B", "L"):
-            dwg.add(_ink(dwg.circle(center=e, r=5, fill=ARROW_COLOR)))
-
-        lx, ly = label_positions[i]
-        dwg.add(
-            _ink(
-                dwg.text(
-                    label,
-                    insert=(lx, ly),
-                    text_anchor="middle",
-                    dominant_baseline="central",
-                    font_size="18px",
-                    font_family="sans-serif",
-                    font_weight="bold",
-                    fill=ARROW_COLOR,
-                )
-            )
+    def text_elem() -> Any:
+        return dwg.text(
+            text,
+            insert=(round(at[0], 1), round(at[1], 1)),
+            text_anchor=anchor,
+            font_size=f"{size:g}px",
+            font_family="sans-serif",
+            font_weight="bold",
+            fill=ARROW_COLOR,
         )
+
+    if halo and not on_plate:
+        rim = text_elem()
+        rim["fill"] = WHITE
+        rim["stroke"] = WHITE
+        rim["stroke-width"] = 3
+        rim["stroke-linejoin"] = "round"
+        dwg.add(rim)
+    elem = text_elem()
+    dwg.add(_ink(elem) if on_plate else elem)
+    bounds.text(at[0], at[1], text, size, anchor)
+
+
+def _pin_exit(face: str, c: Point, tip: Point) -> Point:
+    """Where a visible face's pin leaves its face on screen: the first point
+    at which the projected pin, out from the projected face centre, crosses
+    an edge of the projected face quad."""
+    quad = [_n_proj(*p) for p in _OV_FACES[face]]
+    dx, dy = tip[0] - c[0], tip[1] - c[1]
+    best: float | None = None
+    for p, q in zip(quad, quad[1:] + quad[:1], strict=True):
+        ex, ey = q[0] - p[0], q[1] - p[1]
+        denom = dx * ey - dy * ex
+        if abs(denom) < 1e-9:
+            continue  # the pin runs along this edge
+        wx, wy = p[0] - c[0], p[1] - c[1]
+        t = (wx * ey - wy * ex) / denom  # along the pin, in pin lengths
+        s = (wx * dy - wy * dx) / denom  # along the edge, 0..1
+        if t > 0 and 0 <= s <= 1 and (best is None or t < best):
+            best = t
+    if best is None:
+        raise ValueError(f"{face}'s pin never leaves its face")
+    return (round(c[0] + best * dx, 1), round(c[1] + best * dy, 1))
+
+
+def _ov_pin_line(
+    dwg: svgwrite.Drawing, bounds: _Bounds, a: Point, b: Point, *, on_plate: bool, halo: bool
+) -> None:
+    """One run of a pin. On the plate it flips with the theme; across a face
+    it stays dark against the sticker colour, with a paper rim when the
+    palette needs one — the same rule as `_ov_label`."""
+    width = _OV_PIN_STROKE + 0.4
+    rim = _OV_HALO_RIM * width if halo else 0.0
+    if halo:
+        # The rim stops one rim short of `b` (the face edge), so its round
+        # cap ends exactly there instead of biting into the face outline.
+        ln = math.dist(a, b)
+        short = (b[0] - (b[0] - a[0]) / ln * rim, b[1] - (b[1] - a[1]) / ln * rim)
+        under = dwg.line(a, short, stroke=WHITE, stroke_width=width + 2 * rim)
+        under["stroke-linecap"] = "round"
+        dwg.add(under)
+    line = dwg.line(a, b, stroke=ARROW_COLOR, stroke_width=width)
+    line["stroke-linecap"] = "round"
+    dwg.add(_ink_stroke(line) if on_plate else line)
+    for p in (a, b):
+        bounds.add(*p, width / 2 + rim)
+
+
+def _ov_pins(dwg: svgwrite.Drawing, bounds: _Bounds, style: DiagramStyle) -> None:
+    """The pins layout. Draw order is the depth order: the hidden faces' pins
+    and rings first so the cube occludes them, then the cube, then the
+    visible faces'. Within one pin: the ring's back half, the pin through it,
+    the front half and the head — and the dot at the tip, which sits
+    `_OV_PIN_RING_IN` beyond the ring's plane along the normal, so it goes
+    UNDER the ring when the pin points away from the camera (D, B, L) and
+    over it when the pin points toward (U, F, R). A visible face's pin is
+    split where it leaves the face: the run across the sticker stays dark
+    (haloed when the palette needs it), the run across the plate flips with
+    the theme. A hidden face's pin is all plate — the cube covers the rest.
+    Letters last."""
+    halo = _ov_needs_halo(_restyle(style))
+    proj = {face: tuple(_n_proj(*p) for p in overview_pin(face)) for face in _FACE_NORMAL}
+    rings = {}
+    for face, n in _FACE_NORMAL.items():
+        centre, start = _pin_ring_frame(face)
+        rings[face] = _ribbon_arc(dwg, bounds, centre, n, start)
+
+    def dot(face: str) -> None:
+        tip = proj[face][1]
+        circle = dwg.circle(
+            center=(round(tip[0], 1), round(tip[1], 1)), r=_OV_PIN_DOT, fill=ARROW_COLOR
+        )
+        dwg.add(_ink(circle))
+        bounds.add(*tip, _OV_PIN_DOT)
+
+    def pin(face: str) -> None:
+        c, tip = proj[face]
+        back, front, head = rings[face]
+        away = _depth(_FACE_NORMAL[face]) < 0
+        if away:
+            dot(face)
+        dwg.add(back)
+        if face in _OV_ON_FACE:
+            leave = _pin_exit(face, c, tip)
+            _ov_pin_line(dwg, bounds, c, leave, on_plate=False, halo=halo)
+            _ov_pin_line(dwg, bounds, leave, tip, on_plate=True, halo=False)
+        else:
+            _ov_pin_line(dwg, bounds, c, tip, on_plate=True, halo=False)
+        dwg.add(front)
+        dwg.add(head)
+        if not away:
+            dot(face)
+
+    for face in _FACE_NORMAL:
+        if face not in _OV_ON_FACE:
+            pin(face)
+    _ov_cube(dwg, bounds, style)
+    for face in _OV_ON_FACE:
+        pin(face)
+    for face in _FACE_NORMAL:
+        c, tip = proj[face]
+        dx, dy = tip[0] - c[0], tip[1] - c[1]
+        ln = math.hypot(dx, dy)
+        at = (
+            tip[0] + dx / ln * _OV_PIN_LABEL_OUT,
+            tip[1] + dy / ln * _OV_PIN_LABEL_OUT + 0.36 * _OV_PIN_LABEL,
+        )
+        _ov_label(
+            dwg, bounds, face, at, size=_OV_PIN_LABEL, anchor="middle", on_plate=True, halo=False
+        )
+
+
+def _ov_hub(dwg: svgwrite.Drawing, bounds: _Bounds, style: DiagramStyle) -> None:
+    halo = _ov_needs_halo(_restyle(style))
+    _ov_cube(dwg, bounds, style)
+    _ov_arrow(dwg, bounds, overview_ring(), halo=halo)
+    for tail, tip in overview_strips().values():
+        _ov_arrow(dwg, bounds, [tail, tip], halo=halo)
+    for token, (at, anchor) in _OV_LABEL_AT.items():
+        on_face = token in _OV_ON_FACE
+        _ov_label(
+            dwg,
+            bounds,
+            token,
+            _n_proj(*at),
+            size=_OV_LABEL,
+            anchor=anchor,
+            on_plate=not on_face,
+            halo=halo,
+        )
+
+
+OVERVIEW_PINS = OverviewLayout("overview", _ov_pins)
+OVERVIEW_HUB = OverviewLayout("overview_hub", _ov_hub)
+
+
+def render_overview(
+    output_dir: Path, style: DiagramStyle = SCREEN, layout: OverviewLayout = OVERVIEW_PINS
+) -> Path:
+    """Render the notation overview: the six face turns on one cube."""
+    subdir = output_dir / "notation"
+    subdir.mkdir(parents=True, exist_ok=True)
+    filepath = subdir / f"{layout.filename}.svg"
+
+    dwg = svgwrite.Drawing(str(filepath))
+    if style.themed:
+        _add_theme(dwg)
+    plate = _bg(dwg, (0, 0), (0, 0), 6)  # sized once the bounds are known
+    dwg.add(plate)
+    bounds = _Bounds()
+    layout.draw(dwg, bounds, style)
+
+    vb_x, vb_y = bounds.x0 - _OV_PAD, bounds.y0 - _OV_PAD
+    vb_w, vb_h = bounds.x1 - bounds.x0 + 2 * _OV_PAD, bounds.y1 - bounds.y0 + 2 * _OV_PAD
+    dwg["viewBox"] = f"{vb_x:.1f} {vb_y:.1f} {vb_w:.1f} {vb_h:.1f}"
+    dwg["width"], dwg["height"] = f"{vb_w:.0f}px", f"{vb_h:.0f}px"
+    plate["x"], plate["y"] = round(vb_x, 1), round(vb_y, 1)
+    plate["width"], plate["height"] = round(vb_w, 1), round(vb_h, 1)
 
     dwg.save(pretty=True)
     return filepath
@@ -1612,8 +1968,9 @@ def main() -> None:
         print(f"  {path.relative_to(output_dir)}")
         total += 1
 
-    print(f"  {render_overview(output_dir).relative_to(output_dir)}")
-    total += 1
+    for layout in (OVERVIEW_HUB, OVERVIEW_PINS):
+        print(f"  {render_overview(output_dir, layout=layout).relative_to(output_dir)}")
+        total += 1
 
     for step in all_steps():
         path = render_step(step, output_dir)
