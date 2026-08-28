@@ -380,6 +380,104 @@ def test_progression_table_totals_match_the_algorithm_set() -> None:
     )
 
 
+def test_the_reference_table_phases_match_the_progression_deltas() -> None:
+    """The guide states each algorithm's phase twice — as a column in the
+    Algorithm Reference table and as a delta in the Progression table — and
+    nothing made them agree. They did not: the reference table put both Orient
+    Corners finishers in Phase 1.5 while the progression's "Phase 1 = 9" could
+    only be reached by counting them in Phase 1, which has 7 named algorithms.
+    Count first appearances per phase and hold the two tables to each other."""
+    from cubepath.algs import ALGORITHMS
+
+    text = GUIDE.read_text()
+    seen: set[str] = set()
+    new_per_phase: dict[str, int] = {}
+    for line in text.splitlines():
+        if not line.strip().startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) != 4 or cells[0] not in {"1", "1.5", "2", "3"}:
+            continue
+        name = cells[2]
+        # The em-dash row is Phase 1's "repeat the sexy move and flip" — a
+        # technique with no name, deliberately not one of the counted set.
+        if name not in ALGORITHMS or name in seen:
+            continue
+        seen.add(name)
+        new_per_phase[cells[0]] = new_per_phase.get(cells[0], 0) + 1
+
+    assert seen == set(ALGORITHMS), (
+        f"reference table and algs.py disagree: {seen ^ set(ALGORITHMS)}"
+    )
+    rows = re.findall(r"^\| (\d[\d.]*): [^|]+\|\s*\+?(\d+)\s*\|", text, re.M)
+    deltas = {phase: int(new) for phase, new in rows}
+    assert deltas == new_per_phase, (
+        f"progression deltas {deltas} != first appearances in the reference table {new_per_phase}"
+    )
+
+
+def test_the_lessons_and_the_guide_agree_on_how_many_algorithms_are_in_use() -> None:
+    """The guide counts algorithms LEARNED (22); the lessons quote the number in
+    DAILY USE. Both numbers are true and they are not the same, which is exactly
+    how they drifted — the progression table was corrected to 22 and the lesson
+    prose went on saying "about 18" for a set that has never been 18. Derive the
+    in-use count from `algs.py` and pin every place that states it, so the next
+    edit to either surface has to touch the source of truth."""
+    from pathlib import Path
+
+    from cubepath.algs import ALGORITHMS, RETIRED_AT_CFOP_SWITCH, in_daily_use
+
+    assert RETIRED_AT_CFOP_SWITCH <= set(ALGORITHMS), (
+        f"retired names not in ALGORITHMS: {RETIRED_AT_CFOP_SWITCH - set(ALGORITHMS)}"
+    )
+    in_use = len(in_daily_use())
+    assert in_use == len(ALGORITHMS) - len(RETIRED_AT_CFOP_SWITCH)
+
+    # Independent cross-check: the same total by step, so a name added to
+    # ALGORITHMS without a step assignment cannot slip through.
+    last_layer = {
+        "F-sexy-F'",
+        "f-sexy-f'",  # OE
+        "Sune",
+        "Anti-Sune",
+        "Pi",
+        "Headlights",
+        "Double Headlights",
+        "Chameleon",
+        "Bowtie",  # OC
+        "T-Perm",
+        "Y-Perm",  # PC
+        "Ua",
+        "Ub",
+        "H-Perm",
+        "Z-Perm",  # PE
+    }
+    below = {"Sexy Move", "Lefty", "Edge Insert Right", "Edge Insert Left"}
+    assert last_layer | below == set(in_daily_use()), (
+        "the step breakdown and the retired set disagree about what is in use"
+    )
+    assert len(last_layer) == 15 and len(below) == 4 and in_use == 19
+
+    lessons = Path(__file__).resolve().parents[3] / "app" / "src" / "content" / "lessons"
+    words = {19: ("19", "nineteen")}[in_use]
+
+    for name in ("course-complete.mdx", "cfop-switch.mdx"):
+        text = (lessons / name).read_text()
+        assert any(w in text for w in words), f"{name} never states the in-use count {in_use}"
+        # The stale claim, in either spelling, must be gone from both.
+        assert "about 18" not in text and "eighteen" not in text, (
+            f"{name} still carries the pre-derivation algorithm count"
+        )
+
+    guide = GUIDE.read_text()
+    assert f"**{in_use}**" in guide, "the guide's progression note lost the in-use count"
+    for retired in RETIRED_AT_CFOP_SWITCH:
+        stem = retired.replace("Orient Corners ", "Orient Corners")
+        assert retired in guide or stem.split()[0] in guide, (
+            f"the guide never names the retired algorithm {retired}"
+        )
+
+
 # ── F2L (41 slot-and-pair cases) ─────────────────────────────────────
 # The F2L set is the largest single group in the app and the only one drawn as
 # a 3D isometric case rather than a plan view, so these tests hold the whole

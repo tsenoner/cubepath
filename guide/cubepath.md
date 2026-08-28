@@ -308,16 +308,25 @@ Completes the T-Perm pair. Solves diagonal corner swaps directly (no double T-Pe
 
 | Phase             | New | Total | LL Order          |
 | ----------------- | --- | ----- | ----------------- |
-| 1: Beginner       | 9   | 9     | OE → PE → PC → OC |
-| 1.5: Speed Tricks | +1  | 10    | OE → PE → PC → OC |
+| 1: Beginner       | 7   | 7     | OE → PE → PC → OC |
+| 1.5: Speed Tricks | +3  | 10    | OE → PE → PC → OC |
 | 2: CFOP Switch    | +2  | 12    | OE → OC → PC → PE |
 | 3: Full 2-Look    | +10 | 22    | OE → OC → PC → PE |
 
+**Total** counts algorithms *learned*. Phase 2 retires three beginner-order tools — Niklas, and both Orient Corners finishers — because orienting corners first leaves them no job. The finished method therefore runs on **19**: fifteen last-layer algorithms (2 OE, 7 OC, 2 PC, 4 PE) plus the four you use below the last layer.
+
 # What's Next
 
-- **Full PLL** (21 algorithms) — do this one first. It is a closed set of 21 states you tell apart by sight, and it takes the permute step from two algorithms to one. Printed in full on card 3 of the [card set](https://cubepath-six.vercel.app/print).
-- **F2L:** Replace beginner corner+edge insertion with intuitive pairs — the biggest single speed improvement, and not a memorisation problem. Drill it, don't look it up.
-- **Full OLL** (57 algorithms) — last, because 22 of the 57 differ only by a sliver on a side face. Drill it with randomised setups rather than a table.
-- **Cross planning** and **look-ahead** — skills, not case lists.
+Everything here assumes Phase 3 above: the full two-look last layer, 2-look OLL
+then 2-look PLL. That four-look finish comes first and is a prerequisite for
+what follows, not an alternative to it.
+
+Then take these three in order — the ordering is the advice:
+
+1. **F2L** — replace beginner corner+edge insertion with intuitive pairs. The biggest single speed improvement, and not a memorisation problem: drill it, don't look it up. This is what takes you under 30 seconds, and no last-layer algorithm buys that back.
+2. **Full PLL** (21 algorithms) — a closed set of 21 states you tell apart by sight, taking the permute step from two algorithms to one. Printed in full on card 3 of the [card set](https://cubepath-six.vercel.app/print).
+3. **Full OLL** (57 algorithms) — last, because 22 of the 57 differ only by a sliver on a side face. Drill it with randomised setups rather than a table.
+
+After those, **cross planning** and **look-ahead** — skills, not case lists.
 
 ![Overview of cube faces and rotation axes](figures/generated/notation/overview.svg){ width=40% }
