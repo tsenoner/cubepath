@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from cubepath.cube import Cube, diagram_to_sim
+from cubepath.cube import Cube
 from cubepath.diagrams import (
     _CENTERS,
     _CORNERS_POSITIONED,
@@ -34,6 +34,7 @@ from cubepath.diagrams import (
     CARD,
     CARD_FACES,
     DARK_INK,
+    DARK_PAPER,
     GREEN,
     GREY,
     ORANGE,
@@ -57,6 +58,7 @@ from cubepath.diagrams import (
     _orient_corner_case,
     _orient_corner_cases_15,
     _ov_needs_halo,
+    _pin_exit,
     _pll_corner_cases,
     _pll_edge_cases,
     _restyle,
@@ -286,8 +288,7 @@ def test_layer_table_matches_simulator():
     for token, (axis, slab) in _LAYER_OF.items():
         cube = Cube.solved()
         for face, a, b in stickers:
-            sim_face, row, col = diagram_to_sim(face, a, b)
-            cube.faces[sim_face][row * 3 + col] = f"{face}{a}{b}"
+            cube.set_visible_sticker(face, a, b, f"{face}{a}{b}")
         cube.apply(token)
         moved = {(f, a, b) for f, a, b in stickers if cube.visible_sticker(f, a, b) != f"{f}{a}{b}"}
         in_slab = {
@@ -299,16 +300,27 @@ def test_layer_table_matches_simulator():
 
 
 def test_overview_strips_point_where_the_layer_goes():
-    """Read off the arrow, not the table: each strip's direction is the normal
-    of the face `exit_face` finds by marking the strip and turning, and the
-    arrow lies in the strip it names."""
+    """Independently of the renderer (no `exit_face`, no `strip_stickers`,
+    no `_LAYER_OF`): mark the whole host face, apply the letter, and the one
+    face that received marks must be the face the arrow points at — while
+    the face behind the arrow's tail got nothing, so the arrow cannot be
+    read the other way. The arrow also lies in the strip it names."""
+    face_of: dict[tuple[float, ...], str] = {tuple(n): f for f, n in _FACE_NORMAL.items()}
     strips = overview_strips()
     assert set(strips) == set(_OV_HOST)
     for token, (tail, tip) in strips.items():
         host = _OV_HOST[token]
         assert sticker_of(tail)[0] == host == sticker_of(tip)[0], token
         d = tuple(round((tip[i] - tail[i]) / (2 * _OV_STRIP_REACH)) for i in range(3))
-        assert d == _FACE_NORMAL[exit_face(token, host)], (token, d)
+        cube = Cube.solved()
+        for a in range(3):
+            for b in range(3):
+                _mark(cube, host, a, b)
+        cube.apply(token)
+        landed = {f for f, s in cube.faces.items() if "X" in s} - {host}
+        assert landed == {face_of[d]}, (token, landed, d)
+        assert face_of[tuple(-c for c in d)] not in landed, (token, "reads both ways")
+        assert exit_face(token, host) == face_of[d], token
         axis, slab = _LAYER_OF[token]
         for p in (tail, tip):
             assert slab_of(p[axis]) == slab, (token, p)
@@ -376,12 +388,34 @@ def test_overview_letters_sit_beside_their_arrow():
                 assert dist(other, at) > own, (token, "closer to", other)
 
 
+def _points(attr: str) -> list[tuple[float, float]]:
+    """The (x, y) pairs of a `d=` or `points=` value. Every path here is an
+    M/L polyline of `x,y` pairs, so an odd count means the format changed
+    and the pairing would be garbage."""
+    nums = re.findall(r"-?\d+(?:\.\d+)?", attr)
+    assert len(nums) % 2 == 0, attr
+    return [(float(a), float(b)) for a, b in zip(nums[::2], nums[1::2], strict=True)]
+
+
 def _coords(svg: str) -> list[tuple[float, float]]:
-    pairs = []
+    """Every coordinate the SVG paints: path and polygon vertices, line
+    ends, and the four extremes of each circle."""
+    pairs: list[tuple[float, float]] = []
     for attr in re.findall(r'(?:\bd|\bpoints)="([^"]*)"', svg):
-        nums = re.findall(r"-?\d+(?:\.\d+)?", attr)
-        pairs += [(float(a), float(b)) for a, b in zip(nums[::2], nums[1::2], strict=False)]
+        pairs += _points(attr)
+    for elem in re.findall(r"<line\b[^>]*>", svg):
+        x1, y1, x2, y2 = (float(_attr(elem, k)) for k in ("x1", "y1", "x2", "y2"))
+        pairs += [(x1, y1), (x2, y2)]
+    for elem in re.findall(r"<circle\b[^>]*>", svg):
+        cx, cy, r = (float(_attr(elem, k)) for k in ("cx", "cy", "r"))
+        pairs += [(cx - r, cy), (cx + r, cy), (cx, cy - r), (cx, cy + r)]
     return pairs
+
+
+def _attr(attrs: str, name: str) -> str:
+    match = re.search(rf'(?<![\w-]){name}="([^"]*)"', attrs)
+    assert match is not None, (name, attrs)
+    return match.group(1)
 
 
 def _assert_frame_holds_coords(svg: str) -> tuple[float, float, float, float]:
@@ -395,21 +429,28 @@ def _assert_frame_holds_coords(svg: str) -> tuple[float, float, float, float]:
     return x, y, w, h
 
 
-def test_overview_frame_holds_everything_it_draws(tmp_path):
-    """The viewBox is computed from what was drawn, so nothing may poke out —
-    paths, heads, and labels with a generous glyph box."""
-    svg = render_overview(tmp_path, layout=OVERVIEW_HUB).read_text()
-    x, y, w, h = _assert_frame_holds_coords(svg)
+def _assert_frame_holds_text(svg: str, frame: tuple[float, float, float, float]) -> None:
+    """Every label fits the viewBox with a generous glyph box — wider than
+    the one `_Bounds.text` reserves, so the pad has to absorb the difference."""
+    x, y, w, h = frame
     for match in re.finditer(r"<text([^>]*)>([^<]*)</text>", svg):
         attrs, text = match.groups()
-        size = float(re.search(r'font-size="([\d.]+)px"', attrs).group(1))  # type: ignore[union-attr]
-        anchor = re.search(r'text-anchor="(\w+)"', attrs).group(1)  # type: ignore[union-attr]
-        tx = float(re.search(r' x="([\d.-]+)"', attrs).group(1))  # type: ignore[union-attr]
-        ty = float(re.search(r' y="([\d.-]+)"', attrs).group(1))  # type: ignore[union-attr]
+        size = float(_attr(attrs, "font-size").removesuffix("px"))
+        anchor = _attr(attrs, "text-anchor")
+        tx, ty = float(_attr(attrs, "x")), float(_attr(attrs, "y"))
         width = 0.95 * size * len(text)
         left = {"middle": tx - width / 2, "start": tx, "end": tx - width}[anchor]
         assert x <= left and left + width <= x + w, (text, left)
         assert y <= ty - 0.75 * size and ty + 0.25 * size <= y + h, (text, ty)
+
+
+@pytest.mark.parametrize("layout", [OVERVIEW_PINS, OVERVIEW_HUB], ids=lambda lo: lo.filename)
+@pytest.mark.parametrize("style", [SCREEN, CARD], ids=["screen", "card"])
+def test_overview_frame_holds_everything_it_draws(tmp_path, layout, style):
+    """The viewBox is computed from what was drawn, so nothing may poke out —
+    paths, heads, halos and labels — in either layout and either palette."""
+    svg = render_overview(tmp_path, style=style, layout=layout).read_text()
+    _assert_frame_holds_text(svg, _assert_frame_holds_coords(svg))
 
 
 def test_overview_heads_land_on_their_destination(tmp_path):
@@ -465,8 +506,11 @@ def test_pins_leave_the_face_centre_along_its_normal():
 
 def test_hidden_rings_clear_the_cube():
     """D, B and L's rings sit behind the cube; their pins are long enough that
-    no part of the ring projects onto the cube's silhouette, so the ring is
-    never sliced by the cube and reads as one object around its pin."""
+    no part of the ring — either edge of the band, the head's tip and wings,
+    and half the stroke beyond them — projects onto the cube's silhouette,
+    so the ring is never sliced by the cube and reads as one object around
+    its pin. (The centre line alone once passed while B's inner edge was a
+    tenth inside the hull.)"""
     corners = [_n_proj(x, y, z) for x in (0, 3) for y in (0, 3) for z in (0, 3)]
     # the silhouette is the convex hull of the projected corners
     pts = sorted(set(corners))
@@ -487,22 +531,37 @@ def test_hidden_rings_clear_the_cube():
         return hull
 
     hull = half(pts)[:-1] + half(pts[::-1])[:-1]
+    edges = list(zip(hull, hull[1:] + hull[:1], strict=True))
+    cx = sum(p[0] for p in hull) / len(hull)
+    cy = sum(p[1] for p in hull) / len(hull)
 
-    def inside(p) -> bool:
-        sign = None
-        for a, b in zip(hull, hull[1:] + hull[:1], strict=True):
-            cross = (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0])
-            if cross == 0:
-                continue
-            if sign is None:
-                sign = cross > 0
-            elif (cross > 0) != sign:
-                return False
-        return True
+    def outward(a: tuple[float, float], b: tuple[float, float], p: tuple[float, float]) -> float:
+        cross = (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0])
+        return cross / math.dist(a, b)
+
+    # the hull is convex, so its orientation is whatever puts the centroid inside
+    orient = -1.0 if outward(*edges[0], (cx, cy)) > 0 else 1.0
+
+    def clearance(p) -> float:
+        """Distance outside the hull (negative inside), by the nearest edge line."""
+        return max(orient * outward(a, b, p) for a, b in edges)
 
     for face in _HIDDEN:
-        for p in overview_pin_ring(face):
-            assert not inside(_n_proj(*p)), (face, p)
+        n = _FACE_NORMAL[face]
+        head = overview_pin_head(face)
+        drawn = [
+            (p[0] + k * n[0], p[1] + k * n[1], p[2] + k * n[2])
+            for p in overview_pin_ring(face)
+            for k in (+_OV_PIN_BAND, -_OV_PIN_BAND)
+        ]
+        # the head's tip, and its wings at the sweep end
+        end = overview_pin_ring(face)[-1]
+        drawn += [head] + [
+            (end[0] + k * n[0], end[1] + k * n[1], end[2] + k * n[2])
+            for k in (+2.4 * _OV_PIN_BAND, -2.4 * _OV_PIN_BAND)
+        ]
+        worst = min(clearance(_n_proj(*p)) for p in drawn)
+        assert worst >= _OV_PIN_STROKE / 2, (face, worst)
 
 
 def test_pins_layout_labels_and_heads(tmp_path):
@@ -512,6 +571,12 @@ def test_pins_layout_labels_and_heads(tmp_path):
     svg = render_overview(tmp_path, layout=OVERVIEW_PINS).read_text()
     assert sorted(_texts(svg)) == sorted(_ALL_FACES)
     assert len(re.findall(r'<circle[^>]*class="ink"', svg)) == 6, "a dot on every pin"
+    # six pins reach the plate (2.0 wide; the ribbons' caps are 1.6), and the
+    # three visible faces' pins start with an untagged run across their face
+    pin = 'stroke-linecap="round" stroke-width="2.0"'
+    assert len(re.findall(rf'<line class="ink-stroke" stroke="{ARROW_COLOR}" {pin}', svg)) == 6
+    on_face = re.findall(rf'<line stroke="{ARROW_COLOR}" {pin}', svg)
+    assert len(on_face) == len(_OV_ON_FACE), on_face
     coords = set(_coords(svg))
     for face in _FACE_NORMAL:
         x, y = _n_proj(*overview_pin_head(face))
@@ -560,10 +625,7 @@ def test_pin_dots_sit_in_depth_order(tmp_path):
         for i, m in enumerate(elems):
             if m.group(1) != "path":
                 continue
-            d_attr = re.search(r'\bd="([^"]*)"', m[0])
-            assert d_attr is not None
-            nums = re.findall(r"-?\d+(?:\.\d+)?", d_attr.group(1))
-            pts = [(float(a), float(b)) for a, b in zip(nums[::2], nums[1::2], strict=False)]
+            pts = _points(_attr(m[0], "d"))
             if any(math.dist(pt, (tx, ty)) < reach for pt in pts):
                 near_paths.append(i)
         if not near_paths:
@@ -576,9 +638,12 @@ def test_pin_dots_sit_in_depth_order(tmp_path):
     assert "B" in covered, "B's dot meets its ring on screen — the check has teeth"
 
 
-def test_overview_card_arrows_get_a_halo_when_the_face_is_too_dark(tmp_path):
+def test_overview_card_ink_gets_a_halo_when_the_face_is_too_dark(tmp_path):
     """`_ov_needs_halo` measures the palette; the card's darkened red fails
-    3:1 against the ink, the screen palette passes."""
+    3:1 against the ink, the screen palette passes. On the card every run of
+    ink across a face gets a paper rim: the hub's arrows and face letters,
+    and — in the layout the annex actually prints — each visible face's pin
+    from its centre to the face edge."""
     assert _ov_needs_halo(_restyle(CARD)) is True
     assert _ov_needs_halo(_restyle(SCREEN)) is False
     card = render_overview(tmp_path / "c", style=CARD, layout=OVERVIEW_HUB).read_text()
@@ -587,6 +652,22 @@ def test_overview_card_arrows_get_a_halo_when_the_face_is_too_dark(tmp_path):
     assert card.count(f'stroke="{WHITE}"') == 2 * 6 + 3
     assert f'stroke="{WHITE}"' not in screen
     assert "<style" not in card and CARD_FACES["R"] in card
+
+    card = render_overview(tmp_path / "pc", style=CARD, layout=OVERVIEW_PINS).read_text()
+    screen = render_overview(tmp_path / "ps", layout=OVERVIEW_PINS).read_text()
+    rims = re.findall(rf'<line stroke="{WHITE}"[^>]*>', card)
+    assert len(rims) == len(_OV_ON_FACE), "one rim per on-face pin run"
+    assert f'stroke="{WHITE}"' not in screen
+    for face in _OV_ON_FACE:
+        c, tip = (_n_proj(*p) for p in overview_pin(face))
+        leave = _pin_exit(face, c, tip)
+        (rim,) = [r for r in rims if (_attr(r, "x1"), _attr(r, "y1")) == (str(c[0]), str(c[1]))]
+        end = (float(_attr(rim, "x2")), float(_attr(rim, "y2")))
+        # the rim stops one rim short of the face edge, so its round cap ends
+        # exactly there instead of biting into the face outline
+        half_rim = (float(_attr(rim, "stroke-width")) - (_OV_PIN_STROKE + 0.4)) / 2
+        assert abs(math.dist(end, leave) - half_rim) < 0.05, (face, end, leave)
+        assert math.dist(end, c) < math.dist(leave, c), (face, "rim overshoots the face edge")
 
 
 def test_sub_case_counts():
@@ -721,6 +802,32 @@ def test_theme_css_uses_the_module_constants() -> None:
     assert WHITE in _THEME_CSS
     assert ARROW_COLOR in _THEME_CSS
     assert DARK_INK in _THEME_CSS
+    assert DARK_PAPER in _THEME_CSS
+
+
+def test_theme_flips_strokes_and_paper_too() -> None:
+    """A `fill` rule does nothing to a <line>, and a `stroke` rule on `.ink`
+    would outline every label — so plate strokes and paper occluders have
+    their own classes, each defined in the default and flipped in the dark
+    block (the pins used to be tagged `.ink` and stayed dark on a dark page)."""
+    default, _, dark = _THEME_CSS.partition("@media (prefers-color-scheme:dark){")
+    assert f".ink-stroke{{stroke:{ARROW_COLOR}}}" in default
+    assert f".paper{{fill:{WHITE}}}" in default
+    assert f".ink-stroke{{stroke:{DARK_INK}}}" in dark
+    assert f".paper{{fill:{DARK_PAPER}}}" in dark
+    assert ".ink{stroke" not in _THEME_CSS, "a stroke on .ink would outline the labels"
+
+
+def test_dark_theme_colours_are_the_app_tokens() -> None:
+    """`DARK_INK` and `DARK_PAPER` are copies of tokens.css. `.paper` only
+    occludes if it IS the page: a retuned `--paper` that this did not follow
+    would leave six ring-shaped patches on every dark screen."""
+    css = (_REPO / "app" / "src" / "styles" / "tokens.css").read_text()
+    dark = css.partition('[data-theme="dark"]')[2]
+    tokens: dict[str, str] = {}
+    for name, value in re.findall(r"--(paper|ink):\s*(#[0-9a-fA-F]{6})", dark):
+        tokens.setdefault(name, value.lower())
+    assert tokens == {"paper": DARK_PAPER.lower(), "ink": DARK_INK.lower()}
 
 
 def test_plate_labels_are_ink_tagged(tmp_path) -> None:
@@ -733,6 +840,26 @@ def test_plate_labels_are_ink_tagged(tmp_path) -> None:
     # the pins' six letters all sit on the plate and flip with it
     assert len(re.findall(r'<text[^>]*class="ink"', overview)) == 6
     assert 'fill="#222"' not in overview and 'fill="#222"' not in notation
+
+
+def test_pins_paint_nothing_unthemed_on_the_plate(tmp_path) -> None:
+    """Every element the pins layout draws on the plate flips with the theme:
+    the plate itself (`.bg`), the ribbons' paper fill and ink edges, the
+    pins' plate runs, the dots and the letters. The only untagged ink is
+    what sits on a sticker: the cube, its layer lines, and a visible face's
+    pin from its centre to the face edge."""
+    overview = render_overview(tmp_path / "o").read_text()
+    untagged_ink_lines = []
+    for elem in re.findall(r"<(?:path|polygon|line|circle|rect|text)\b[^>]*>", overview):
+        if f'fill="{WHITE}"' in elem:
+            assert 'class="bg"' in elem or 'class="paper"' in elem, elem
+        if elem.startswith("<line") and f'stroke="{ARROW_COLOR}"' in elem and "class=" not in elem:
+            untagged_ink_lines.append(elem)
+    # the only untagged ink lines are the visible faces' on-face pin runs
+    assert len(untagged_ink_lines) == len(_OV_ON_FACE), untagged_ink_lines
+    assert all('stroke-width="2.0"' in e for e in untagged_ink_lines), untagged_ink_lines
+    assert overview.count('class="paper"') >= 6 * 3, "band fills and head per ring"
+    assert overview.count('class="ink-stroke"') > 6, "ribbon edges, caps and plate pins"
 
 
 def test_card_diagrams_are_not_themed(tmp_path) -> None:

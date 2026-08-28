@@ -220,9 +220,15 @@ edge-middle stickers in the order one turn carries a sticker, the layer table
 end of an arrow, and the computed frame holds every coordinate and label. Slices,
 rotations and modifiers stay in the fifteen move diagrams: they did not fit on the same
 cube without a second idiom, and a nine-arrow version was judged less clear than the pins.
-The same function renders the annex card's copy in `CARD` style; the hub's arrows get a
-paper-coloured halo there when `_ov_needs_halo` finds the palette fails 3:1 against the
-ink (the ribbons carry their own paper fill).
+The same function renders the annex card's copy (the pins) in `CARD` style; when
+`_ov_needs_halo` finds the palette fails 3:1 against the ink, the pins' on-face segments
+and the hub's arrows get a paper-coloured halo (the ribbons carry their own paper fill).
+On screen the figure flips with the theme through three classes in `_THEME_CSS`: `.ink`
+(filled labels and dots), `.ink-stroke` (a pin's run across the plate) and `.paper` (the
+ribbons' occluding fill: white by default, `DARK_PAPER` in the dark scheme — pinned to
+`tokens.css` by a test, because an occluder only works if it is the page); a pin is split
+where it leaves its face, because its on-face run has to stay dark against the sticker
+colour.
 
 `StepDiagram` dataclasses produce 3D isometric progress/case diagrams: `_step_cases()` (8 steps), `_corner_case_steps()` (3), `_edge_case_steps()` (2), `_orient_corner_case()` (1), `_orient_corner_cases_15()` (2), `_corner_pos_case()` (1), `_align_edge_cases()` (2) — 19 in all, composed by the public
 `all_steps()`, which both the guide build and the card generator render, so a new step group
@@ -330,7 +336,7 @@ Generated SVGs are organized in subdirectories under `guide/figures/generated/`:
 - `pll/` — PLL case diagrams (plan-view with arrows)
 - `oll-full/` — the full 57-OLL set (from `fullsets.py`)
 - `pll-full/` — the full 21-PLL set (from `fullsets.py`)
-- `notation/` — 3D isometric move notation diagrams, plus `overview.svg` (the six face turns on one cube)
+- `notation/` — 3D isometric move notation diagrams, plus `overview.svg` (the six face turns on one cube) and its unreferenced backup `overview_hub.svg`
 - `steps/` — 3D isometric step progress + case diagrams
 
 ## Writing Philosophy

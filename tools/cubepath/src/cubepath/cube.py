@@ -241,6 +241,13 @@ class Cube:
         sim_face, row, col = diagram_to_sim(face, a, b)
         return self.sticker_at(sim_face, row, col)
 
+    def set_visible_sticker(self, face: str, a: int, b: int, value: str) -> None:
+        """Write a sticker using diagram (a,b) coordinates — the inverse of
+        `visible_sticker`, for marking a sticker and watching where a move
+        carries it. `value` need not be a colour letter."""
+        sim_face, row, col = diagram_to_sim(face, a, b)
+        self.faces[sim_face][row * 3 + col] = value
+
 
 def _invert_token(token: str) -> str:
     """Invert a single move token: R→R', R'→R, R2→R2."""
