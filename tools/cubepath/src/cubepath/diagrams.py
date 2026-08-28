@@ -19,13 +19,36 @@ from cubepath.cube import Cube, state_before
 
 # Colors — standard Western Rubik's cube (Yellow top, Red front)
 YELLOW = "#FFD500"
-GREY = "#C0C0C0"
 WHITE = "#FFFFFF"
 RED = "#E00000"
 ORANGE = "#FF8C00"
 BLUE = "#0051BA"
 GREEN = "#009E60"
 STICKER_STROKE = "#333333"
+
+# ── The two greys, and why there are two ──────────────────────────────
+# A grey sticker used to mean two incompatible things across the shipped set,
+# and nothing said which. On an OLL plan view it means "this facelet is a real
+# sticker that is not yellow" — the piece is in frame, in the layer you are
+# working on, and the diagram is asking you to read its ORIENTATION. On a step
+# or F2L diagram it means "nothing is claimed here yet" — the region has not
+# been REACHED by the method, and the picture says nothing about what is in it.
+#
+# Those are different claims and they meet on the page: `yellow-cross.mdx`
+# prints `steps/step_4_ycross.svg` above `oll/oll_{dot,hook,line}.svg`, and the
+# guide's Phase-1 table does the same. One token doing both jobs silently is
+# what this split ends.
+#
+# The orientation mask keeps #C0C0C0 to the byte: it is correct, it is what
+# every OLL reference draws, and 95 shipped plan views are built on it. The
+# not-reached tier is the one that moves, to a cooler and slightly lighter
+# neutral — 13.1 ΔE from the mask (the just-noticeable difference is ~2.3), far
+# enough that the two read as different tones on one page, and light enough
+# that "not reached" stays the quietest thing in the picture rather than
+# becoming the heaviest. `tests/test_diagrams.py` measures both claims against
+# the emitted SVGs, including that no single file ever contains both tones.
+UNORIENTED = "#C0C0C0"  # OLL/PLL plan views: a real sticker, not yellow
+UNREACHED = "#C0D4E6"  # step + F2L diagrams: the method has not got here yet
 
 # Layout constants (plan-view diagrams)
 CELL = 40  # sticker size in px
@@ -99,7 +122,8 @@ class DiagramStyle:
     """Everything that differs between a screen diagram and a printed one."""
 
     faces: dict[str, str]  # simulator colour letter -> hex
-    masked: str  # the "not solved yet" fill on OLL diagrams
+    masked: str  # OLL plan views: a real sticker that is not yellow
+    unreached: str  # step/F2L diagrams: the method has not got here yet
     band_u: int  # side-band thickness in viewBox units
     stroke_main: float  # U-face sticker outline
     stroke_side: float  # side-band sticker outline
@@ -138,7 +162,8 @@ CARD_FACES: dict[str, str] = {
 
 SCREEN = DiagramStyle(
     faces=SCREEN_FACES,
-    masked=GREY,
+    masked=UNORIENTED,
+    unreached=UNREACHED,
     band_u=SIDE_H,
     stroke_main=1.5,
     # ints, not floats: svgwrite writes the value verbatim, so 1.0 would
@@ -151,6 +176,14 @@ CARD = DiagramStyle(
     # A printed card is ink on paper: no page behind it to show through.
     themed=False,
     masked="#5F5F5F",
+    # Print inverts the not-reached tier, and the reason is the medium, not
+    # taste. On screen "nothing here yet" is the lightest thing in the picture
+    # because the page shows through behind it. A card is ink on paper with no
+    # page behind it, and the tone has to clear three light neighbours at once
+    # — the white face, its own dim tone (#ABABAB) and the mask — so the only
+    # room left is below all three. 13.7 ΔE from the mask, and every card face
+    # and dim tone at least 15 ΔE clear of it; both gated.
+    unreached="#3F3F3F",
     band_u=20,
     stroke_main=3.2,
     stroke_side=2.4,
@@ -158,37 +191,195 @@ CARD = DiagramStyle(
 )
 
 
+# ── The dim tier ──────────────────────────────────────────────────────
+# Two tiers (face colour / mask) are enough for a last-layer plan view, where
+# everything below the top layer is off-screen anyway. They are not enough for
+# a picture that has to say three things at once: *this* is what the step
+# solves, *that* was solved earlier and must survive, and the rest has not been
+# reached yet. An F2L case needs all three. So does every step diagram whose
+# lesson builds on a finished layer — 16 of the 19, which is why the white
+# cross used to be drawn exactly as loudly as the white corners it sits under.
+#
+# THE TRANSFORM, and why it is not a mix toward the grey. It used to be
+# a straight sRGB blend two thirds of the way to the grey, tuned by eye on
+# F2L's colour mix. Measured across
+# the six faces that number gives 15.1 ΔE at worst — white, which has no chroma
+# to spend, moved almost nowhere (1.48:1 against itself, against the player's
+# own 1.36:1 that this pipeline exists to beat) — and dim yellow landed 7.2 ΔE
+# from the not-reached grey, close enough to read as a second grey. Both
+# failures come from the same cause: one linear target moves every face by a
+# different amount, and it moves an achromatic face hardly at all.
+#
+# So the tier is stated as what it means instead. A dim sticker is the SAME
+# HUE, a THIRD OF THE CHROMA, and a LIGHTNESS STEP away from its face colour:
+#
+#   * chroma × DIM_CHROMA — the loss of saturation is the "quiet" signal, and
+#     keeping a third of it is what still lets a learner see that the cross is
+#     intact rather than merely that something is there.
+#   * L* moved DIM_TARGET_DE away in total, with the chroma drop paying for as
+#     much of that distance as it can and the lightness step paying the rest.
+#     A saturated face has already covered it, so it pays only the DIM_MIN_DL
+#     floor that a mono laser needs; white pays the whole 30, which is exactly
+#     the per-face retune the old single mix could not express.
+#   * the step goes AWAY from DIM_PIVOT: light faces darken, dark faces lighten.
+#     Every face therefore gets a real greyscale move (>= 1.59:1 in both
+#     palettes) instead of one direction that flattens half of them in print.
+#
+# Because it is a function of the colour alone, `_restyle` can map a screen dim
+# tone onto the card's own dim tone without either palette listing one, and the
+# card gets the same guarantees measured against ITS faces. Every number above
+# is asserted in `tests/test_diagrams.py` against both palettes, and against
+# the fills of the emitted SVGs — not against this comment.
+DIM_CHROMA = 0.32  # fraction of the face's chroma a dim sticker keeps
+DIM_TARGET_DE = 30.0  # total CIE76 distance a dim sticker must travel
+DIM_MIN_DL = 16.0  # ... of which at least this much is lightness
+DIM_PIVOT = 62.0  # L* the step moves away from, so no face flattens
+
+
+def _srgb_to_linear(channel: float) -> float:
+    c = channel / 255
+    return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+
+
+def _linear_to_srgb(value: float) -> int:
+    v = min(1.0, max(0.0, value))
+    out = 12.92 * v if v <= 0.0031308 else 1.055 * v ** (1 / 2.4) - 0.055
+    return round(out * 255)
+
+
+# D65, 2°. The same white point `palette.relative_luminance` implies.
+_WHITE_POINT = (0.95047, 1.0, 1.08883)
+
+
+def to_lab(hex_color: str) -> tuple[float, float, float]:
+    """sRGB hex -> CIE L*a*b*.
+
+    Lab is the space the tier arithmetic has to happen in: it is the only one
+    in this repo where "a third of the chroma" and "16 points of lightness" are
+    the same kind of quantity, and where the distance between two tones matches
+    what a reader sees. `palette.contrast` stays the right tool for text and
+    for a mono printer; it is the wrong one for two swatches that differ mostly
+    in saturation, which is why dim yellow measured 1.20:1 against yellow and
+    still reads as a different tone.
+    """
+    h = hex_color.lstrip("#")
+    r, g, b = (_srgb_to_linear(int(h[i : i + 2], 16)) for i in (0, 2, 4))
+    xyz = (
+        0.4124 * r + 0.3576 * g + 0.1805 * b,
+        0.2126 * r + 0.7152 * g + 0.0722 * b,
+        0.0193 * r + 0.1192 * g + 0.9505 * b,
+    )
+
+    def f(t: float) -> float:
+        return t ** (1 / 3) if t > 216 / 24389 else (841 / 108) * t + 4 / 29
+
+    fx, fy, fz = (f(v / w) for v, w in zip(xyz, _WHITE_POINT, strict=True))
+    return (116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz))
+
+
+def from_lab(lightness: float, a: float, b: float) -> str:
+    """CIE L*a*b* -> sRGB hex, clamped into gamut."""
+    fy = (lightness + 16) / 116
+    fx, fz = fy + a / 500, fy - b / 200
+
+    def g(t: float) -> float:
+        return t**3 if t**3 > 216 / 24389 else (108 / 841) * (t - 4 / 29)
+
+    x, y, z = (g(v) * w for v, w in zip((fx, fy, fz), _WHITE_POINT, strict=True))
+    rgb = (
+        3.2406 * x - 1.5372 * y - 0.4986 * z,
+        -0.9689 * x + 1.8758 * y + 0.0415 * z,
+        0.0557 * x - 0.2040 * y + 1.0570 * z,
+    )
+    return "#" + "".join(f"{_linear_to_srgb(c):02X}" for c in rgb)
+
+
+def delta_e(a: str, b: str) -> float:
+    """CIE76 distance between two hex colours. ~2.3 is one just-noticeable
+    difference, which is the unit every tier separation in this module is
+    quoted in."""
+    return math.dist(to_lab(a), to_lab(b))
+
+
+def dim(face_color: str) -> str:
+    """The "solved earlier, keep it" tone of a face colour.
+
+    A pure function of the colour, so the card's dim tone is derived from the
+    card's face colour rather than carrying a screen tone onto paper, and
+    neither palette has to list one.
+    """
+    lightness, a, b = to_lab(face_color)
+    chroma = math.hypot(a, b)
+    spent = chroma * (1 - DIM_CHROMA)
+    step = max(DIM_MIN_DL, math.sqrt(max(0.0, DIM_TARGET_DE**2 - spent**2)))
+    moved = lightness - step if lightness >= DIM_PIVOT else lightness + step
+    return from_lab(moved, a * DIM_CHROMA, b * DIM_CHROMA)
+
+
 def _restyle(style: DiagramStyle) -> dict[str, str]:
     """SCREEN hex -> this style's hex. Derived from the two palettes, so a
-    face colour can never be remapped by a hand-written substitution."""
+    face colour can never be remapped by a hand-written substitution — the dim
+    tier included, which is computed from each palette rather than listed."""
     remap = {SCREEN_FACES[k]: style.faces[k] for k in SCREEN_FACES}
-    remap[GREY] = style.masked
+    remap |= {dim(SCREEN_FACES[k]): dim(style.faces[k]) for k in SCREEN_FACES}
+    remap[UNORIENTED] = style.masked
+    remap[UNREACHED] = style.unreached
     return remap
 
 
 @dataclass
 class CubeDiagram:
-    """A single cube diagram case."""
+    """A single last-layer plan-view case, on a cube of any order.
+
+    `n` is the cube's order, and it is the only thing that differs between a
+    3x3 diagram and a 4x4 one: the U grid is n x n, each side band is n cells,
+    and the eight arrow anchors are computed from n rather than listed. There
+    is no second renderer, because a 4x4 last layer is not new geometry — it
+    is the same picture with different grid arithmetic.
+    """
 
     name: str  # filename (no extension)
     label: str  # human-readable label
-    category: str  # "oll_cross", "oll_corners", "pll_corners", "pll_edges"
-    # U-face colors: 9 cells, row-major (0=TL, 1=TC, 2=TR, 3=ML, 4=C, 5=MR, 6=BL, 7=BC, 8=BR)
+    category: str  # "oll_cross", "oll_corners", "pll_corners", "444_oll", ...
+    # U-face colors: n*n cells, row-major (row 0 = back of the cube).
     u_face: list[str]
-    # Side stickers: top[3], right[3], bottom[3], left[3] — each from left-to-right as viewed
-    top_side: list[str] = field(default_factory=lambda: [GREY, GREY, GREY])
-    right_side: list[str] = field(default_factory=lambda: [GREY, GREY, GREY])
-    bottom_side: list[str] = field(default_factory=lambda: [GREY, GREY, GREY])
-    left_side: list[str] = field(default_factory=lambda: [GREY, GREY, GREY])
+    # Side stickers: n each, left-to-right (top/bottom) or back-to-front
+    # (left/right) as seen from above. Empty means "nothing solved here yet".
+    top_side: list[str] = field(default_factory=list)
+    right_side: list[str] = field(default_factory=list)
+    bottom_side: list[str] = field(default_factory=list)
+    left_side: list[str] = field(default_factory=list)
     # Arrows for PLL: bidirectional swaps and directional cycles
     swaps: list[tuple[str, str]] = field(default_factory=list)
     cycles: list[list[str]] = field(default_factory=list)
     # Secondary arrows (dashed) for edge movement in corner PLLs
     dashed_swaps: list[tuple[str, str]] = field(default_factory=list)
+    # Cube order. 3 keeps every existing call site untouched.
+    n: int = 3
+
+    def __post_init__(self) -> None:
+        """Fill the unstated side bands and check every strip against `n`.
+
+        A length that disagrees with `n` used to be undrawable-but-silent: the
+        renderer indexed whatever it was handed and produced a plausible
+        picture of the wrong cube. It is cheap to make it impossible.
+        """
+        if len(self.u_face) != self.n * self.n:
+            raise ValueError(
+                f"{self.name}: {len(self.u_face)} U facelets on a {self.n}x{self.n} cube"
+            )
+        for side in ("top_side", "right_side", "bottom_side", "left_side"):
+            strip: list[str] = getattr(self, side)
+            if not strip:
+                setattr(self, side, [UNORIENTED] * self.n)
+            elif len(strip) != self.n:
+                raise ValueError(
+                    f"{self.name}: {side} has {len(strip)} cells on a {self.n}x{self.n} cube"
+                )
 
 
 Y = YELLOW
-G = GREY
+G = UNORIENTED
 
 # Simulator color letter → diagram hex color
 _SIM_COLOR = {"Y": YELLOW, "R": RED, "G": GREEN, "O": ORANGE, "B": BLUE, "W": WHITE}
@@ -199,30 +390,44 @@ def _colorize(strip: list[str]) -> list[str]:
     return [_SIM_COLOR[s] for s in strip]
 
 
-def _u_layer_views(cube: Cube) -> tuple[list[str], dict[str, list[str]]]:
-    """Plan-view of the U layer: u_face (row 0 = back) + side strips.
+def plan_view(faces: dict[str, Any], n: int = 3) -> tuple[list[str], dict[str, list[str]]]:
+    """Plan-view of the U layer of an n x n x n cube: u_face + side strips.
 
-    Side strips are read left-to-right (top/bottom) and top-to-bottom
-    (left/right) as viewed from above with the front face at the bottom.
+    `faces` is any mapping face letter -> that face's n*n stickers, row-major,
+    read from outside the cube — `Cube.faces` and the face strings in
+    case-states.json are both exactly that, which is why one function serves
+    both and the convention cannot drift between them.
+
+    Only the top row of each side face is on the last layer. Which end of that
+    row is which follows from how the faces meet, not from a choice: looking at
+    R from outside, F is on your left, so R's row runs front-to-back and the
+    plan view (front at the bottom) reads it reversed. B is the same, seen from
+    behind. F and L already run the way the plan view reads them.
     """
+    row = {f: list(faces[f])[:n] for f in "BRFL"}
     sides = {
-        "top": [cube.faces["B"][2], cube.faces["B"][1], cube.faces["B"][0]],
-        "right": [cube.faces["R"][2], cube.faces["R"][1], cube.faces["R"][0]],
-        "bottom": [cube.faces["F"][0], cube.faces["F"][1], cube.faces["F"][2]],
-        "left": [cube.faces["L"][0], cube.faces["L"][1], cube.faces["L"][2]],
+        "top": row["B"][::-1],
+        "right": row["R"][::-1],
+        "bottom": row["F"],
+        "left": row["L"],
     }
-    return list(cube.faces["U"]), sides
+    return list(faces["U"]), sides
+
+
+def _u_layer_views(cube: Cube) -> tuple[list[str], dict[str, list[str]]]:
+    """The 3x3 plan view, straight off the simulator."""
+    return plan_view(cube.faces, 3)
 
 
 def _yellow_mask(stickers: list[str]) -> list[str]:
-    return [YELLOW if s == "Y" else GREY for s in stickers]
+    return [YELLOW if s == "Y" else UNORIENTED for s in stickers]
 
 
 def _derived_cross_case(name: str, label: str, alg: str, *, view_turn: str = "") -> CubeDiagram:
     """OLL cross case derived from its algorithm's pre-state.
 
-    Shows the U-face edge/center pattern; corners are GREY (don't-care at
-    the cross stage). `view_turn` reorients the derived state so the diagram
+    Shows the U-face edge/center pattern; corners carry the orientation mask
+    (don't-care at the cross stage). `view_turn` reorients the derived state so the diagram
     matches how the guide tells the learner to hold the cube.
     """
     cube = state_before(alg)
@@ -231,7 +436,7 @@ def _derived_cross_case(name: str, label: str, alg: str, *, view_turn: str = "")
     u, _ = _u_layer_views(cube)
     u_face = _yellow_mask(u)
     for corner in (0, 2, 6, 8):
-        u_face[corner] = GREY
+        u_face[corner] = UNORIENTED
     return CubeDiagram(name=name, label=label, category="oll_cross", u_face=u_face)
 
 
@@ -266,6 +471,13 @@ def _derived_pll_case(
 
     Arrows stay hand-declared for layout, but tests verify them against the
     piece permutation implied by the same pre-state.
+
+    The U face is drawn `dim(YELLOW)`, not yellow. PLL runs AFTER OLL, so every
+    one of those nine stickers is a finished result the step must preserve —
+    the textbook dim tier, and the reason a PLL plan view is a three-tier
+    picture where an OLL plan view is a two-tier one. Full saturation there put
+    nine loud cells in the middle of a diagram whose entire content is the
+    twelve side stickers around them.
     """
     cube = state_before(alg)
     u, sides = _u_layer_views(cube)
@@ -274,7 +486,7 @@ def _derived_pll_case(
         name=name,
         label=label,
         category=category,
-        u_face=[YELLOW] * 9,
+        u_face=[dim(YELLOW)] * 9,
         top_side=_colorize(sides["top"]),
         right_side=_colorize(sides["right"]),
         bottom_side=_colorize(sides["bottom"]),
@@ -285,23 +497,37 @@ def _derived_pll_case(
     )
 
 
-def _arrow_pos(name: str) -> tuple[float, float]:
+# The eight arrow anchors, in grid coordinates on an n x n U face. A corner
+# anchor is a cell; an edge anchor is the CENTRE OF THE EDGE — one cell on a
+# 3x3, the midpoint of the dedge's two wings on a 4x4 — which is why the
+# coordinate is (n - 1) / 2 rather than an index. The eight literal pixel
+# anchors this replaces could only ever describe a 3x3.
+ARROW_ANCHORS = ("top", "right", "bottom", "left", "tl", "tr", "bl", "br")
+
+
+def _anchor_cell(name: str, n: int) -> tuple[float, float]:
+    """(col, row) of a named anchor on an n x n U-face grid."""
+    mid = (n - 1) / 2
+    last = n - 1
+    cells = {
+        "top": (mid, 0.0),
+        "bottom": (mid, float(last)),
+        "left": (0.0, mid),
+        "right": (float(last), mid),
+        "tl": (0.0, 0.0),
+        "tr": (float(last), 0.0),
+        "bl": (0.0, float(last)),
+        "br": (float(last), float(last)),
+    }
+    return cells[name]
+
+
+def _arrow_pos(name: str, n: int = 3) -> tuple[float, float]:
     """Return pixel center for a named arrow anchor on the U-face grid."""
     ox = MARGIN + SIDE_H + GAP  # 34
     oy = MARGIN + SIDE_H + GAP  # 34
-    positions = {
-        # Edge midpoints (center of U-face edge stickers)
-        "top": (ox + (CELL + GAP) + CELL / 2, oy + CELL / 2),
-        "bottom": (ox + (CELL + GAP) + CELL / 2, oy + 2 * (CELL + GAP) + CELL / 2),
-        "left": (ox + CELL / 2, oy + (CELL + GAP) + CELL / 2),
-        "right": (ox + 2 * (CELL + GAP) + CELL / 2, oy + (CELL + GAP) + CELL / 2),
-        # Corner midpoints (center of U-face corner stickers)
-        "tl": (ox + CELL / 2, oy + CELL / 2),
-        "tr": (ox + 2 * (CELL + GAP) + CELL / 2, oy + CELL / 2),
-        "bl": (ox + CELL / 2, oy + 2 * (CELL + GAP) + CELL / 2),
-        "br": (ox + 2 * (CELL + GAP) + CELL / 2, oy + 2 * (CELL + GAP) + CELL / 2),
-    }
-    return positions[name]
+    col, row = _anchor_cell(name, n)
+    return (ox + col * (CELL + GAP) + CELL / 2, oy + row * (CELL + GAP) + CELL / 2)
 
 
 def _oll_cross_cases() -> list[CubeDiagram]:
@@ -443,10 +669,11 @@ def _arrow_path(
     pos_a: str,
     pos_b: str,
     width: float,
+    n: int = 3,
 ) -> svgwrite.path.Path:
     """Create a straight arrow path between two named positions."""
-    start = _arrow_pos(pos_a)
-    end = _arrow_pos(pos_b)
+    start = _arrow_pos(pos_a, n)
+    end = _arrow_pos(pos_b, n)
     return dwg.path(
         d=f"M {start[0]},{start[1]} L {end[0]},{end[1]}",
         fill="none",
@@ -460,11 +687,12 @@ def _draw_swap(
     pos_a: str,
     pos_b: str,
     width: float,
+    n: int = 3,
     *,
     dashed: bool = False,
 ) -> None:
     """Draw a single bidirectional arrow (swap) between two named positions."""
-    path = _arrow_path(dwg, pos_a, pos_b, width)
+    path = _arrow_path(dwg, pos_a, pos_b, width, n)
     path["marker-start"] = "url(#arrowhead-rev)"
     path["marker-end"] = "url(#arrowhead)"
     if dashed:
@@ -476,34 +704,50 @@ def _draw_cycle(
     dwg: svgwrite.Drawing,
     positions: list[str],
     width: float,
+    n: int = 3,
 ) -> None:
     """Draw directional arrows forming a cycle through named positions."""
     for i in range(len(positions)):
         a = positions[i]
         b = positions[(i + 1) % len(positions)]
-        path = _arrow_path(dwg, a, b, width)
+        path = _arrow_path(dwg, a, b, width, n)
         path["marker-end"] = "url(#arrowhead)"
         dwg.add(path)
 
 
+# category -> output subdirectory. A table rather than an if-chain with a
+# fallthrough: the chain returned "" for anything it did not recognise, which
+# wrote a new group into the root of the tree, where `scripts/sync-diagrams.sh`
+# (which copies subdirectories) would never have shipped it.
+_CASE_SUBDIRS = {
+    "oll_cross": "oll",
+    "oll_corners": "oll",
+    "oll_full": "oll-full",
+    "pll_corners": "pll",
+    "pll_edges": "pll",
+    "pll_full": "pll-full",
+    "444_oll": "444-oll",
+    "444_pll": "444-pll",
+}
+
+
 def _case_subdir(category: str) -> str:
     """Return subdirectory name for a diagram category."""
-    if category == "oll_full":
-        return "oll-full"
-    if category == "pll_full":
-        return "pll-full"
-    if category.startswith("oll"):
-        return "oll"
-    if category.startswith("pll"):
-        return "pll"
-    return ""
+    try:
+        return _CASE_SUBDIRS[category]
+    except KeyError:
+        raise ValueError(
+            f"unknown diagram category {category!r} — add it to _CASE_SUBDIRS, or it "
+            f"lands in the tree root and never ships"
+        ) from None
 
 
 def render(case: CubeDiagram, output_dir: Path, style: DiagramStyle = SCREEN) -> Path:
     """Render a CubeDiagram to an SVG file in the given style."""
     recolor = _restyle(style)
-    grid_w = 3 * CELL + 2 * GAP
-    grid_h = 3 * CELL + 2 * GAP
+    n = case.n
+    grid_w = n * CELL + (n - 1) * GAP
+    grid_h = n * CELL + (n - 1) * GAP
     total_w = 2 * MARGIN + 2 * (SIDE_H + GAP) + grid_w
     total_h = 2 * MARGIN + 2 * (SIDE_H + GAP) + grid_h
 
@@ -521,9 +765,9 @@ def render(case: CubeDiagram, output_dir: Path, style: DiagramStyle = SCREEN) ->
         _add_theme(dwg)
     dwg.add(_bg(dwg, (0, 0), (total_w, total_h), 8))
 
-    # Draw U face (3x3 grid)
+    # Draw U face (n x n grid)
     for idx, color in enumerate(case.u_face):
-        r, c = idx // 3, idx % 3
+        r, c = idx // n, idx % n
         x, y = _grid_to_px(c, r)
         dwg.add(
             dwg.rect(
@@ -571,11 +815,11 @@ def render(case: CubeDiagram, output_dir: Path, style: DiagramStyle = SCREEN) ->
     if has_arrows:
         _add_arrow_defs(dwg)
         for pos_a, pos_b in case.swaps:
-            _draw_swap(dwg, pos_a, pos_b, style.stroke_arrow)
+            _draw_swap(dwg, pos_a, pos_b, style.stroke_arrow, n)
         for cycle in case.cycles:
-            _draw_cycle(dwg, cycle, style.stroke_arrow)
+            _draw_cycle(dwg, cycle, style.stroke_arrow, n)
         for pos_a, pos_b in case.dashed_swaps:
-            _draw_swap(dwg, pos_a, pos_b, style.stroke_arrow, dashed=True)
+            _draw_swap(dwg, pos_a, pos_b, style.stroke_arrow, n, dashed=True)
 
     dwg.save(pretty=True)
     return filepath
@@ -621,11 +865,30 @@ class NotationMove:
 
 @dataclass
 class StepDiagram:
-    """A single step progress diagram."""
+    """A single step progress diagram, in three tiers.
+
+    `solved` is every sticker the cube has right at this point in the method.
+    `subject` is the part of it THIS picture is about — what its lesson
+    teaches — and everything in `solved` that is not in `subject` is what an
+    earlier step already finished and this one must not wreck, so it renders
+    through `dim()`. Anything outside `solved` has not been reached and renders
+    in `UNREACHED`.
+
+    `subject is None` says the picture has no earlier-solved tier at all, which
+    is a claim about the method rather than a default: it holds for exactly the
+    three diagrams where nothing was solved before (`step_1_cross`), where
+    nothing is solved at all (`step_flip`, a rotation, not a step), and where
+    everything is the subject (`step_7_solved`). `tests/test_derivation.py`
+    pins that list, so a new diagram cannot quietly join it.
+
+    `overrides` are always subject: they exist to paint the piece the lesson is
+    pointing at, in the wrong place or the wrong twist.
+    """
 
     name: str
     filename: str
     solved: set[tuple[str, int, int]]
+    subject: set[tuple[str, int, int]] | None = None
     face_colors: dict[str, str] | None = None  # override face colors (e.g. white on top)
     arrow: str | None = None  # rotation arrow layer (e.g. "x" for flip)
     overrides: dict[tuple[str, int, int], str] = field(default_factory=dict)
@@ -659,19 +922,20 @@ def _notation_moves() -> list[NotationMove]:
 
 _CENTERS = {("U", 1, 1), ("F", 1, 1), ("R", 1, 1)}
 
-# Shared solved-sticker-set progression (cumulative, each builds on the previous)
-_FIRST_LAYER = _CENTERS | {
-    ("F", 0, 0),
-    ("F", 1, 0),
-    ("F", 2, 0),
-    ("R", 0, 0),
-    ("R", 1, 0),
-    ("R", 2, 0),
-}
+# Shared solved-sticker-set progression, cumulative: each milestone is the one
+# before it plus exactly what its step adds. Written that way on purpose — a
+# step diagram's SUBJECT is then `milestone - previous`, derived rather than
+# declared, so the highlighted region cannot drift from what the method says
+# that step does. `_CROSS_DONE` is the cube after step 1 and the `x2` flip:
+# white is on the bottom and out of the isometric view, and all that remains of
+# it in frame are the two cross edges' side stickers.
+_CROSS_DONE = _CENTERS | {("F", 1, 0), ("R", 1, 0)}
+_FIRST_LAYER = _CROSS_DONE | {("F", 0, 0), ("F", 2, 0), ("R", 0, 0), ("R", 2, 0)}
 _SECOND_LAYER = _FIRST_LAYER | {("F", 0, 1), ("F", 2, 1), ("R", 0, 1), ("R", 2, 1)}
 _YELLOW_CROSS = _SECOND_LAYER | {("U", 1, 0), ("U", 0, 1), ("U", 2, 1), ("U", 1, 2)}
 _EDGES_ALIGNED = _YELLOW_CROSS | {("F", 1, 2), ("R", 1, 2)}
 _CORNERS_POSITIONED = _EDGES_ALIGNED | {("F", 0, 2), ("F", 2, 2), ("R", 0, 2), ("R", 2, 2)}
+_SOLVED = _CORNERS_POSITIONED | {("U", 0, 0), ("U", 2, 0), ("U", 0, 2), ("U", 2, 2)}
 
 
 def _step_sticker_color(
@@ -681,12 +945,22 @@ def _step_sticker_color(
     solved: set[tuple[str, int, int]],
     face_colors: dict[str, str] | None = None,
     overrides: dict[tuple[str, int, int], str] | None = None,
+    subject: set[tuple[str, int, int]] | None = None,
 ) -> str:
-    """Return face color if sticker is solved, GREY otherwise. Overrides take priority."""
+    """One sticker, in whichever of the three tiers it belongs to.
+
+    Overrides come first: they are the piece the lesson is pointing at, so they
+    are always full colour. Then solved-and-subject in full colour, solved-but-
+    earlier through `dim()`, and everything else `UNREACHED`.
+    """
     if overrides and (face, a, b) in overrides:
         return overrides[(face, a, b)]
     colors = face_colors or _CUBE_FACE_COLORS
-    return colors[face] if (face, a, b) in solved else GREY
+    if (face, a, b) not in solved:
+        return UNREACHED
+    if subject is None or (face, a, b) in subject:
+        return colors[face]
+    return dim(colors[face])
 
 
 def _bezier_2d(
@@ -762,10 +1036,20 @@ def _render_bezier_arrow(
 
 
 def _step_cases() -> list[StepDiagram]:
-    """Define step progress diagrams: white-on-top → flip → yellow-on-top."""
+    """The eight goal-state figures: white-on-top → flip → yellow-on-top.
+
+    Each one's subject is the difference between its milestone and the one
+    before, which is the same sentence its lesson opens with. Three carry no
+    dim tier and each has its own reason: `step_1_cross` is the first step, so
+    nothing was solved before it; `step_flip` is an `x2` and solves nothing, so
+    dimming the cross it carries would claim a step happened; `step_7_solved`
+    is captioned "Solved", and a solved cube with three quarters of it dimmed
+    would say the opposite.
+    """
     white_top = {"U": WHITE, "F": GREEN, "R": RED}
 
-    # Step 1: White Cross on top
+    # Step 1: White Cross on top — the same six stickers `_CROSS_DONE` keeps,
+    # seen from the other end of the cube before the flip puts them underneath.
     cross = set(_CENTERS) | {
         ("U", 1, 0),
         ("U", 0, 1),
@@ -774,16 +1058,28 @@ def _step_cases() -> list[StepDiagram]:
         ("F", 1, 2),
         ("R", 1, 2),
     }
-    solved = _CORNERS_POSITIONED | {("U", 0, 0), ("U", 2, 0), ("U", 0, 2), ("U", 2, 2)}
     return [
-        StepDiagram("White Cross", "step_1_cross", cross, white_top),
-        StepDiagram("Flip", "step_flip", set(cross), white_top, arrow="x"),
-        StepDiagram("White Corners", "step_2_corners", set(_FIRST_LAYER)),
-        StepDiagram("Middle Edges", "step_3_edges", set(_SECOND_LAYER)),
-        StepDiagram("Yellow Cross", "step_4_ycross", set(_YELLOW_CROSS)),
-        StepDiagram("Align Edges", "step_5_yedges", set(_EDGES_ALIGNED)),
-        StepDiagram("Position Corners", "step_6_ycorners_pos", set(_CORNERS_POSITIONED)),
-        StepDiagram("Solved", "step_7_solved", set(solved)),
+        StepDiagram("White Cross", "step_1_cross", cross, face_colors=white_top),
+        StepDiagram("Flip", "step_flip", set(cross), face_colors=white_top, arrow="x"),
+        StepDiagram(
+            "White Corners", "step_2_corners", set(_FIRST_LAYER), _FIRST_LAYER - _CROSS_DONE
+        ),
+        StepDiagram(
+            "Middle Edges", "step_3_edges", set(_SECOND_LAYER), _SECOND_LAYER - _FIRST_LAYER
+        ),
+        StepDiagram(
+            "Yellow Cross", "step_4_ycross", set(_YELLOW_CROSS), _YELLOW_CROSS - _SECOND_LAYER
+        ),
+        StepDiagram(
+            "Align Edges", "step_5_yedges", set(_EDGES_ALIGNED), _EDGES_ALIGNED - _YELLOW_CROSS
+        ),
+        StepDiagram(
+            "Position Corners",
+            "step_6_ycorners_pos",
+            set(_CORNERS_POSITIONED),
+            _CORNERS_POSITIONED - _EDGES_ALIGNED,
+        ),
+        StepDiagram("Solved", "step_7_solved", set(_SOLVED)),
     ]
 
 
@@ -795,25 +1091,30 @@ def _corner_case_steps() -> list[StepDiagram]:
     physically impossible) are, as (U, F, R) sticker triples:
     white right = (G, R, W); white front = (R, W, G); white up = (W, G, R).
     """
-    # Cross done on bottom: centers + bottom edge stickers visible on F and R
-    cross_done = set(_CENTERS) | {("F", 1, 0), ("R", 1, 0)}
+    # Everything solved here is the cross, which step 1 finished; the subject
+    # is the corner, and the corner is entirely in `overrides`. So `subject` is
+    # empty rather than None — "all of this was done earlier", not "no earlier
+    # tier exists".
     return [
         StepDiagram(
             "White Right",
             "corner_right",
-            cross_done,
+            set(_CROSS_DONE),
+            set(),
             overrides={("U", 2, 2): GREEN, ("F", 2, 2): RED, ("R", 2, 2): WHITE},
         ),
         StepDiagram(
             "White Front",
             "corner_front",
-            cross_done,
+            set(_CROSS_DONE),
+            set(),
             overrides={("U", 2, 2): RED, ("F", 2, 2): WHITE, ("R", 2, 2): GREEN},
         ),
         StepDiagram(
             "White Up",
             "corner_up",
-            cross_done,
+            set(_CROSS_DONE),
+            set(),
             overrides={("U", 2, 2): WHITE, ("F", 2, 2): GREEN, ("R", 2, 2): RED},
         ),
     ]
@@ -826,6 +1127,10 @@ def _align_edge_cases() -> list[StepDiagram]:
             "Adjacent Edges",
             "align_adjacent",
             _YELLOW_CROSS | {("R", 1, 2)},  # R+B correct
+            # Step 5 is read on the edges' SIDE stickers: the one already over
+            # its centre and the one that is not. The yellow cross above them
+            # is step 4's and must survive, which is what dim says.
+            {("R", 1, 2)},
             overrides={("F", 1, 2): BLUE},  # F has L's color
             swap_arrows=[  # front ↔ left, arc to the left
                 ((1.5, 2.5, 3), (0.5, 3, 1.5), (-0.5, 4.5, 3.5)),
@@ -835,6 +1140,7 @@ def _align_edge_cases() -> list[StepDiagram]:
             "Opposite Edges",
             "align_diagonal",
             _YELLOW_CROSS | {("R", 1, 2)},  # R+L correct
+            {("R", 1, 2)},
             overrides={("F", 1, 2): ORANGE},  # F has B's color
             swap_arrows=[  # front ↔ back, arc upward
                 ((1.5, 2.5, 3), (1.5, 3, 0.5), (-0.4, 4.5, 1.5)),
@@ -856,6 +1162,10 @@ def _orient_corner_case() -> StepDiagram:
         "Orient Corner",
         "orient_corner",
         solved,
+        # Every piece is already in its slot — the lesson says so in its first
+        # line. The only thing this step changes is the twist of the four
+        # bottom corners, and those are the overrides.
+        set(),
         face_colors=flipped,
         overrides={
             ("R", 2, 0): YELLOW,  # DFR: yellow on R face (CW twist)
@@ -874,6 +1184,7 @@ def _orient_corner_cases_15() -> list[StepDiagram]:
             "Orient Right",
             "orient_right",
             step6,
+            set(),
             overrides={
                 ("U", 2, 2): RED,  # UFR: red on top
                 ("R", 2, 2): YELLOW,  # UFR: yellow on R face
@@ -884,6 +1195,7 @@ def _orient_corner_cases_15() -> list[StepDiagram]:
             "Orient Front",
             "orient_front",
             step6,
+            set(),
             overrides={
                 ("U", 2, 2): GREEN,  # UFR: green on top
                 ("F", 2, 2): YELLOW,  # UFR: yellow on F face
@@ -899,6 +1211,9 @@ def _corner_pos_case() -> StepDiagram:
         "Corner Cycle",
         "corner_cycle",
         _EDGES_ALIGNED | {("F", 0, 2)},  # FL corner F-sticker correct
+        # The picture is the held corner and the three that cycle past it;
+        # everything under the last layer is steps 1-5 and stays put.
+        set(),
         overrides={("U", 0, 2): RED, ("F", 0, 2): BLUE},  # FL corner: red on top, blue on front
         dir_arrows=[
             ((0.5, 3, 0.5), (2.5, 3, 2.5), (1.5, 3, 1.5)),  # BL → FR (straight)
@@ -915,12 +1230,14 @@ def _edge_case_steps() -> list[StepDiagram]:
             "Edge Right",
             "edge_right",
             set(_FIRST_LAYER),
+            set(),  # the first layer is step 2's; the edge above it is the case
             overrides={("F", 1, 2): RED, ("U", 1, 2): GREEN},
         ),
         StepDiagram(
             "Edge Left",
             "edge_left",
             set(_FIRST_LAYER),
+            set(),
             overrides={("F", 1, 2): RED, ("U", 1, 2): BLUE},
         ),
     ]
@@ -983,17 +1300,25 @@ def _n_sticker_color(face: str, a: int, b: int, layer: str, cw: bool) -> str:
     return base
 
 
-def _n_sticker_pts(face: str, a: int, b: int) -> list[tuple[float, float]]:
-    """Get projected 2D corners of sticker (a,b) on a visible face."""
+def _n_face_quad(face: str, a0: int, a1: int, b0: int, b1: int) -> list[tuple[float, float]]:
+    """Projected 2D corners of the rectangle a in [a0,a1], b in [b0,b1] on a
+    visible face. One sticker is the a1=a0+1, b1=b0+1 case; a slot outline
+    spans several cells, which is the only reason this is not just
+    `_n_sticker_pts`."""
     if face == "U":
-        corners = [(a, 3, b), (a + 1, 3, b), (a + 1, 3, b + 1), (a, 3, b + 1)]
+        corners = [(a0, 3, b0), (a1, 3, b0), (a1, 3, b1), (a0, 3, b1)]
     elif face == "F":
-        corners = [(a, b + 1, 3), (a + 1, b + 1, 3), (a + 1, b, 3), (a, b, 3)]
+        corners = [(a0, b1, 3), (a1, b1, 3), (a1, b0, 3), (a0, b0, 3)]
     elif face == "R":
-        corners = [(3, b + 1, a), (3, b + 1, a + 1), (3, b, a + 1), (3, b, a)]
+        corners = [(3, b1, a0), (3, b1, a1), (3, b0, a1), (3, b0, a0)]
     else:
         return []
     return [_n_proj(*c) for c in corners]
+
+
+def _n_sticker_pts(face: str, a: int, b: int) -> list[tuple[float, float]]:
+    """Get projected 2D corners of sticker (a,b) on a visible face."""
+    return _n_face_quad(face, a, a + 1, b, b + 1)
 
 
 def _n_draw_arrow(dwg: svgwrite.Drawing, layer: str, clockwise: bool) -> None:
@@ -1093,6 +1418,14 @@ def _draw_iso_stickers(dwg: svgwrite.Drawing, color_fn: Callable[[str, int, int]
                 dwg.add(dwg.polygon(pts, fill=color, stroke=STICKER_STROKE, stroke_width=1.2))
 
 
+def _iso_viewbox(pad: float) -> tuple[float, float, float, float]:
+    """Tight (x, y, w, h) around the projected cube, with `pad` on every side."""
+    proj_pts = [_n_proj(x, y, z) for x in (0, 3) for y in (0, 3) for z in (0, 3)]
+    min_x, max_x = min(p[0] for p in proj_pts), max(p[0] for p in proj_pts)
+    min_y, max_y = min(p[1] for p in proj_pts), max(p[1] for p in proj_pts)
+    return (min_x - pad, min_y - pad, max_x - min_x + 2 * pad, max_y - min_y + 2 * pad)
+
+
 def _draw_cube_outline(dwg: svgwrite.Drawing) -> None:
     """Draw the cube outline edges."""
     for edge_a, edge_b in _CUBE_OUTLINE_EDGES:
@@ -1156,18 +1489,8 @@ def render_step(step: StepDiagram, output_dir: Path, style: DiagramStyle = SCREE
     subdir.mkdir(parents=True, exist_ok=True)
     filepath = subdir / f"{step.filename}.svg"
 
-    # Tight canvas from cube bounding box
-    all_corners = [(x, y, z) for x in (0, 3) for y in (0, 3) for z in (0, 3)]
-    proj_pts = [_n_proj(*c) for c in all_corners]
-    min_x = min(p[0] for p in proj_pts)
-    max_x = max(p[0] for p in proj_pts)
-    min_y = min(p[1] for p in proj_pts)
-    max_y = max(p[1] for p in proj_pts)
     pad = 6 if step.arrow or step.swap_arrows or step.dir_arrows else 4
-    vb_x = min_x - pad
-    vb_y = min_y - pad
-    vb_w = max_x - min_x + 2 * pad
-    vb_h = max_y - min_y + 2 * pad
+    vb_x, vb_y, vb_w, vb_h = _iso_viewbox(pad)
 
     dwg = svgwrite.Drawing(
         str(filepath),
@@ -1180,7 +1503,10 @@ def render_step(step: StepDiagram, output_dir: Path, style: DiagramStyle = SCREE
     _draw_iso_stickers(
         dwg,
         lambda f, a, b: recolor.get(
-            c := _step_sticker_color(f, a, b, step.solved, step.face_colors, step.overrides), c
+            c := _step_sticker_color(
+                f, a, b, step.solved, step.face_colors, step.overrides, step.subject
+            ),
+            c,
         ),
     )
     _draw_cube_outline(dwg)
@@ -1196,6 +1522,107 @@ def render_step(step: StepDiagram, output_dir: Path, style: DiagramStyle = SCREE
     # Directional arrows (unidirectional 3D Bezier)
     for src, dst, ctrl in step.dir_arrows:
         _render_bezier_arrow(dwg, src, dst, ctrl)
+
+    dwg.save(pretty=True)
+    return filepath
+
+
+# ── Slot-and-pair case diagrams (F2L) ─────────────────────────────────
+# A last-layer case is a plan view because everything that identifies it faces
+# up. An F2L case is the opposite: it is a corner and an edge whose identity
+# lives in sideways-facing stickers, one layer under the U face, and in how far
+# the pair sits from the slot it belongs in. A top-down grid cannot say any of
+# that, so these reuse the isometric U/F/R projection the 19 step diagrams
+# already draw — the same picture, at the same scale, so an F2L tile sits
+# beside the guide's step figures without looking like a different product.
+#
+# U/F/R is sufficient and that is a measured claim, not a hope. Across the 41
+# cases the corner is only ever at UFR or DFR and the edge only at FR, UR, UF,
+# UL or UB, so at least one facelet of each piece is always in view; 18 cases
+# show all five, and the other 23 hide exactly one, which the two visible ones
+# determine (the FR edge is *the* red/green edge — one sticker fixes the
+# other). The FR slot itself lands on the near vertical edge, dead centre of
+# the projection, which is where the eye goes first anyway.
+#
+# What it must NOT copy is `StepDiagram`'s idiom. A step diagram hand-declares
+# its solved set, which is the one place in this repo that writes sticker
+# layouts by hand; it gets away with it because a progress figure is an
+# illustration, not a case. A case is data. So `SlotDiagram` carries a complete
+# 27-entry colour map and a slot set, both computed in `fullsets.py` from the
+# case's setup algorithm through the simulator, and this renderer has no
+# opinion about cubes at all.
+
+SLOT_STROKE_W = 3.0
+
+
+@dataclass
+class SlotDiagram:
+    """An isometric case diagram with a marked target slot.
+
+    Every field is derived: `colors` is the complete map over the 27 visible
+    facelets and `slot` names the facelets of the slot being filled. Nothing
+    here is declared by hand — see `fullsets.f2l_cases`.
+    """
+
+    name: str  # filename stem
+    label: str  # human-readable label
+    subdir: str  # output subdirectory under guide/figures/generated/
+    colors: dict[tuple[str, int, int], str]
+    slot: frozenset[tuple[str, int, int]]
+
+
+def _slot_outline_quads(
+    slot: frozenset[tuple[str, int, int]],
+) -> list[list[tuple[float, float]]]:
+    """One outline per visible face, around the union of that face's slot cells.
+
+    Drawn as a single pocket per face rather than a box per sticker: the slot
+    is one hole with a corner half and an edge half, and four separate squares
+    read as four separate things.
+    """
+    quads = []
+    for face in ("F", "R", "U"):
+        cells = [(a, b) for f, a, b in slot if f == face]
+        if not cells:
+            continue
+        a_vals = [a for a, _ in cells]
+        b_vals = [b for _, b in cells]
+        quads.append(_n_face_quad(face, min(a_vals), max(a_vals) + 1, min(b_vals), max(b_vals) + 1))
+    return quads
+
+
+def render_slot(case: SlotDiagram, output_dir: Path, style: DiagramStyle = SCREEN) -> Path:
+    """Render a slot-and-pair case diagram (3D isometric cube) to SVG."""
+    recolor = _restyle(style)
+    subdir = output_dir / case.subdir
+    subdir.mkdir(parents=True, exist_ok=True)
+    filepath = subdir / f"{case.name}.svg"
+
+    vb_x, vb_y, vb_w, vb_h = _iso_viewbox(4)
+    dwg = svgwrite.Drawing(
+        str(filepath),
+        size=(f"{vb_w:.0f}px", f"{vb_h:.0f}px"),
+        viewBox=f"{vb_x:.1f} {vb_y:.1f} {vb_w:.1f} {vb_h:.1f}",
+    )
+    if style.themed:
+        _add_theme(dwg)
+    dwg.add(_bg(dwg, (vb_x, vb_y), (vb_w, vb_h), 6))
+    _draw_iso_stickers(dwg, lambda f, a, b: recolor.get(c := case.colors[f, a, b], c))
+    _draw_cube_outline(dwg)
+
+    # The slot marker goes on last so it reads over the stickers it frames.
+    # It is not themed: it is drawn on sticker fills, which never flip, so an
+    # ink colour that followed the page would disappear on one of the two.
+    for quad in _slot_outline_quads(case.slot):
+        dwg.add(
+            dwg.polygon(
+                quad,
+                fill="none",
+                stroke=ARROW_COLOR,
+                stroke_width=SLOT_STROKE_W,
+                stroke_linejoin="round",
+            )
+        )
 
     dwg.save(pretty=True)
     return filepath
@@ -1603,9 +2030,16 @@ def main() -> None:
         total += 1
 
     # Full OLL/PLL sets, derived from the extracted (machine-verified) dataset.
-    from cubepath.fullsets import render_fullsets
+    from cubepath.fullsets import render_big_sets, render_f2l, render_fullsets
 
     total += render_fullsets(output_dir)
+
+    # F2L: 41 slot-and-pair isometric cases, derived from the same extraction.
+    total += render_f2l(output_dir)
+
+    # 4x4: 27 OLL + 22 PLL, derived from the kpuzzle states in case-states.json
+    # because cube.py cannot model a 4x4 and must not be taught to.
+    total += render_big_sets(output_dir)
 
     for move in _notation_moves():
         path = render_notation(move, output_dir)
