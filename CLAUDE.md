@@ -83,7 +83,7 @@ of these is therefore pinned by a test:
 | artifact | produced by | pinned by |
 | --- | --- | --- |
 | `app/public/cubepath.pdf` | `make build-guide` | `tests/test_guide.py` (input digest in `guide/pdf.stamp.json`) |
-| `app/public/diagrams/**` (220 SVGs) | `make diagrams` | `tests/test_diagrams.py` — generator match + byte-identity with `guide/figures/generated/` |
+| `app/public/diagrams/**` (221 SVGs) | `make diagrams` | `tests/test_diagrams.py` — generator match + byte-identity with `guide/figures/generated/` |
 | `app/public/cards/*.pdf`, `app/src/data/cards.json` | `make cards` | `tests/test_cards.py` |
 | `app/public/favicon.svg`, `app/public/icons/*.png` | `make logo` | `tests/test_logo.py` |
 | `app/src/data/fullsets*.gen.ts` | `node scripts/gen-cases.mjs` | `app/tests/algs.spec.ts` (kpuzzle) |
@@ -211,6 +211,37 @@ Four case groups: `_oll_cross_cases()` (3), `_oll_corner_cases()` (8), `_pll_cor
 
 OLL cases have no arrows; PLL cases use `swaps` (bidirectional), `cycles` (directional) and
 `dashed_swaps` (the secondary edge movement in a corner PLL) arrow fields — hand-declared for layout but permutation-verified by tests.
+
+`render_overview` draws the notation overview — the six face turns on one cube — in one
+of two layouts. `OVERVIEW_PINS` is the shipped `overview.svg`: a pin out of every face
+centre, a dot at its tip, the letter beyond it, and a 3D ribbon ring around each pin
+showing which way that face turns, clockwise as seen from outside it; the hidden faces'
+pins and rings run behind the cube, which occludes their inner half, and their dots go
+under their rings (the tip is beyond the ring's plane, away from the camera) where the
+visible faces' dots go over. The ribbon is the
+original figure's geometry (`_ribbon_arc`: a band around the axis split into back and
+front halves around the pin, arrowhead in the band's own plane) at a radius and sweep that
+survive 272 px; pin lengths are solved from two screen radii (`_OV_PIN_TIP`) and the
+arrowhead's position on the ring is derived from the view direction, never hand-set.
+`OVERVIEW_HUB` (`overview_hub.svg`, kept as the backup) shows the turns as the reader
+sees them: F spins as a ring in the middle of the front face and every other letter slides
+its layer along an edge of a visible face, with the strip directions **derived** —
+`_strip_arrow` marks the strip on a solved cube, applies the letter, and points at the
+face the marks left for (`exit_face`). Both are gated: rings must pass their face's
+edge-middle stickers in the order one turn carries a sticker, the layer table
+`_LAYER_OF` is checked against the simulator, every arrowhead in the SVG is the projected
+end of an arrow, and the computed frame holds every coordinate and label. Slices,
+rotations and modifiers stay in the fifteen move diagrams: they did not fit on the same
+cube without a second idiom, and a nine-arrow version was judged less clear than the pins.
+The same function renders the annex card's copy (the pins) in `CARD` style; when
+`_ov_needs_halo` finds the palette fails 3:1 against the ink, the pins' on-face segments
+and the hub's arrows get a paper-coloured halo (the ribbons carry their own paper fill).
+On screen the figure flips with the theme through three classes in `_THEME_CSS`: `.ink`
+(filled labels and dots), `.ink-stroke` (a pin's run across the plate) and `.paper` (the
+ribbons' occluding fill: white by default, `DARK_PAPER` in the dark scheme — pinned to
+`tokens.css` by a test, because an occluder only works if it is the page); a pin is split
+where it leaves its face, because its on-face run has to stay dark against the sticker
+colour.
 
 `StepDiagram` dataclasses produce 3D isometric progress/case diagrams: `_step_cases()` (8 steps), `_corner_case_steps()` (3), `_edge_case_steps()` (2), `_orient_corner_case()` (1), `_orient_corner_cases_15()` (2), `_corner_pos_case()` (1), `_align_edge_cases()` (2) — 19 in all, composed by the public
 `all_steps()`, which both the guide build and the card generator render, so a new step group
@@ -392,10 +423,10 @@ mirrored byte-for-byte into `app/public/diagrams/` by `make diagrams`:
 | `f2l/` | 41 | F2L slot-and-pair cases, 3D isometric (`SlotDiagram`) |
 | `444-oll/` | 27 | 4×4 OLL incl. parity (plan-view, from `case-states.json`) |
 | `444-pll/` | 22 | 4×4 PLL incl. parity (plan-view) |
-| `notation/` | 16 | 3D isometric move notation diagrams + the overview |
+| `notation/` | 17 | 3D isometric move notation diagrams, the overview, and its `overview_hub` backup |
 | `steps/` | 19 | 3D isometric step progress + case diagrams |
 
-220 in total. `guide/cubepath.md` references 51 of them; the card set re-renders
+221 in total. `guide/cubepath.md` references 51 of them; the card set re-renders
 its own in `CARD` style rather than reusing these.
 
 ## Writing Philosophy

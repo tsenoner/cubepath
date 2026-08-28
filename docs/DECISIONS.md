@@ -418,6 +418,88 @@ Deliberately *not* a copy of the prior art: the Z-Cube set is organised by
 algorithm family (F2L / OLL / PLL), this one by learner stage, so finishing any
 card still leaves you able to solve the whole cube.
 
+## Notation overview — redrawn (2026-08-28)
+
+`guide/figures/generated/notation/overview.svg` was a flat three-quad block with
+a spike out of each face centre and a ~280° ribbon ring around it. The idea —
+a pin per face, its letter at the tip, its turn around the pin — was right,
+and the user liked it; the drawing was not. At the two shipped sizes (272 px
+in the PDF, 360 px in the app) the rings were unreadable, the 1×1 block read
+as a whole-cube rotation, both consumers' captions called it "the x, y, z
+rotation axes", it was the one diagram that derived nothing, its only gate was
+"the file exists", and a layout commit (`817b7d1`) had evicted it from the
+Notation section to the last line of the PDF.
+
+**Shipped: the pins, drawn to read.** Same idea, same 3D ribbon geometry (the
+band around the axis, split around the pin, the arrowhead in the band's own
+plane — `_ribbon_arc` is the original code with parameters), with what made
+it unreadable fixed: ring radius 0.72 stickers instead of 0.6, a 250° sweep
+instead of 280°, a larger head, faint layer lines on the cube so it is a
+3×3 and not a block, and the six tips at two derived screen radii so the star
+is balanced and compact (183 × 183 units against 226 × 231). Dots at the
+tips and the letters just beyond them, as before. The arrowhead's position on
+each ring is derived from the view direction. Six face turns only.
+
+**Kept as backup: the F hub** (`overview_hub.svg`). F spins as a ring in the
+middle of the front face and every other letter slides its layer along an
+edge of a face you can see — the turns as seen from your seat — with the
+strip directions derived by marking the strip on a solved cube and applying
+the move. Rendered and committed beside `overview.svg` — so the byte-identity
+gate and the 131 count cover it, and the app serves (and precaches) it at
+`/diagrams/notation/overview_hub.svg` — but referenced by no lesson, guide
+page or card; one filename swap away.
+
+**Tried and dropped, recorded so it is not retried.** A first redesign put
+all nine layer turns (faces plus slices) on one cube — arcs on the visible
+faces, hooks over the edges — with a small dashed cube for x / y / z and three
+micro cubes for the modifiers. Correct and gated, and judged by the user
+*more* confusing than the pins: three arrow idioms on one cube and labels far
+from the arrows they named. On this cube anything beyond the six face turns
+needs a second idiom, and the fifteen move diagrams sit right below.
+
+**Gates.** The rings must pass their face's edge-middle stickers in the order
+one turn of that face carries a sticker (simulator-checked for the visible
+faces; the ring basis is proven clockwise-from-outside for all six); pins
+start at the face centre, run along the normal and land at the layout's
+screen radius; every arrowhead's tip in the SVG is the projected end of its
+ring; a dot is painted under every ribbon vertex it meets on screen that is
+nearer the camera and over every one that is farther (B's dot used to sit
+on top of its own ring); the hidden faces' ribbons — both band edges, the
+head and half the stroke — clear the cube's silhouette (the centre line
+alone once passed while B's inner edge was a tenth inside it); every letter
+is present once and sits on the plate so it flips with the theme; the
+computed frame holds every coordinate and label, in both layouts and both
+palettes; the committed SVGs match the generator byte for byte. The hub
+keeps its own gates (strip directions re-derived independently of the
+renderer, reverse reading false, letters nearer their own arrow than any
+other, card halo by `palette.contrast`).
+
+**Theme and card.** A review found the pins tagged `.ink`, a rule on `fill`
+that does nothing to a `<line>`, so on a dark page the six dots and letters
+flipped and the pins stayed `#222222` on `#161412` (1.15:1) — inherited from
+the old figure, whose axis lines were never tagged, but load-bearing once
+the figure led the lesson. The ribbons' literal white fills glared the same
+way. `_THEME_CSS` now flips three classes: `.ink` (fills), `.ink-stroke`
+(plate strokes: the pins' plate runs, the ribbons' edges and caps) and
+`.paper` (the ribbons' occluding fill; its dark value is pinned to
+`tokens.css`, because an occluder only works if it is the page). A
+visible face's pin is split where it leaves its face, because its on-face
+run must stay dark against the sticker; on the annex card that run gets the
+same paper rim the hub's arrows get, measured by `_ov_needs_halo` — the
+card's red is 1.97:1 against the ink and the F pin used to cross it bare.
+Gated: nothing white on the pins' plate but `.bg` and `.paper`, every plate
+line `.ink-stroke`, one rim per on-face run in `CARD` and none on screen.
+
+**Placement.** Back in `# Notation` in the guide (a one-cell borderless
+table, so it centres without pandoc's captioned `#figure` wrapper — the old
+figure was the PDF's only "Figure 1"), at the top of the app's notation
+lesson as the map the sections then detail, and on the annex card beside the
+notation key in card ink.
+
+Larger question filed, not acted on: [#2](https://github.com/tsenoner/cubepath/issues/2),
+whether the generator should move to TypeScript on cubing.js so the repo has
+one cube model instead of `cube.py` plus kpuzzle.
+
 ## Python vs JS/TS — no migration; JS becomes the cube's source of truth (2026-08-27)
 
 The question was asked plainly: where do we need Python, could most of it be

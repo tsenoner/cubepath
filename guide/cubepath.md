@@ -26,9 +26,13 @@ Interactive version — every case playable in 3D, plus trainer and full CFOP: *
 
 # Notation
 
-Each letter = one 90° CW turn (looking at that face). **'** = CCW, **2** = 180°, lowercase (e.g. **r**) = wide (two layers).
+Each letter = one 90° CW turn, looking at that face — so from your seat L, D and B look CCW. **'** = CCW, **2** = 180°, lowercase (e.g. **r**) = wide (two layers).
 
 ::: {.borderless}
+
+|                                                                                   |
+| :-------------------------------------------------------------------------------: |
+| ![The six faces and how each turns](figures/generated/notation/overview.svg){ width=34% } |
 
 |                                                           |                                                           |                                                           |                                                           |                                                           |                                                           |
 | :-------------------------------------------------------: | :-------------------------------------------------------: | :-------------------------------------------------------: | :-------------------------------------------------------: | :-------------------------------------------------------: | :-------------------------------------------------------: |
@@ -328,5 +332,3 @@ Then take these three in order — the ordering is the advice:
 3. **Full OLL** (57 algorithms) — last, because 22 of the 57 differ only by a sliver on a side face. Drill it with randomised setups rather than a table.
 
 After those, **cross planning** and **look-ahead** — skills, not case lists.
-
-![Overview of cube faces and rotation axes](figures/generated/notation/overview.svg){ width=40% }

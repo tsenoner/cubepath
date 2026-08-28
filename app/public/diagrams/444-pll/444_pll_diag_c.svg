@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xlink="http://www.w3.org/1999/xlink" baseProfile="full" height="234px" version="1.1" viewBox="0 0 234 234" width="234px">
   <defs>
-    <style type="text/css"><![CDATA[.bg{fill:#FFFFFF}.ink{fill:#222222}@media (prefers-color-scheme:light){.bg{fill:none}}@media (prefers-color-scheme:dark){.bg{fill:none}.ink{fill:#ECE8E1}}]]></style>
+    <style type="text/css"><![CDATA[.bg{fill:#FFFFFF}.paper{fill:#FFFFFF}.ink{fill:#222222}.ink-stroke{stroke:#222222}@media (prefers-color-scheme:light){.bg{fill:none}}@media (prefers-color-scheme:dark){.bg{fill:none}.paper{fill:#161412}.ink{fill:#ECE8E1}.ink-stroke{stroke:#ECE8E1}}]]></style>
     <marker id="arrowhead" markerHeight="10" markerUnits="userSpaceOnUse" markerWidth="10" orient="auto" refX="5" refY="5">
       <polygon fill="#222222" points="0,0 10,5 0,10"/>
     </marker>
