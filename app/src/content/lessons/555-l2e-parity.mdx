@@ -1,83 +1,108 @@
 ---
 title: "5×5: Last Two Edges"
-description: "The final two edge groups have no spare slot to freeslice into — a small case set finishes them, and the only parity a 5×5 has lives here."
+description: "The final two edge groups have no spare slot to freeslice into — slice, flip, slice back finishes them, and the only parity a 5×5 has lives here."
 phase: "555"
 order: 350
+minutes: 14
+objectives:
+  - "Finish the last two edge groups with slice, flip, slice back — repeated."
+  - "Recognise 5×5 edge parity and know why it is legal here but impossible on a 3×3."
+  - "Keep the 5×5 parity algorithm separate from its 4×4 near-twin."
+prerequisites: ["555-centers-edges"]
+algorithms: ["555.l2e-6"]
+practice:
+  groups: ["555-l2e"]
+  note: "One case, and it is the only recognition question a 5×5 asks: is this parity, or not? Drill it until you answer without thinking — you meet it in half your solves."
 ---
 
 import CaseRow from "../../components/CaseRow.astro";
+import AlgText from "../../components/AlgText.astro";
 import Callout from "../../components/Callout.astro";
 
 Freeslicing works because a broken edge group elsewhere absorbs the damage
 from your slice moves. With ten groups done, nothing is left to absorb it —
-the last two edges need sequences that put the slices back themselves.
-That's all L2E is: insert, then restore, in one motion.
+the last two groups have no spare slot to work in.
 
-Hold both unfinished groups where you can see them — the recognition text on
-each case tells you the exact angle.
+You do not need a case set for this. You need the flip you already have, aimed
+by hand.
 
-## The flip/insert family
+## Slice, flip, slice back
 
-Three cases cover most endings. Tap any case to see it solve in 3D.
+Take one slice out so the two unfinished groups sit across from each other,
+flip the front-right group with the algorithm from the last lesson, and put
+the slice back:
 
-<div class="case-list">
-  <CaseRow id="555.l2e-1" open />
-  <CaseRow id="555.l2e-2" />
-  <CaseRow id="555.l2e-3" />
-</div>
+<AlgText moves="R U R' F R' F' R" />
 
 <Callout type="tip">
-  All three share one skeleton: move a slice out, place the wing next to its
-  midge, move the slice back. Watch the player at quarter speed once and the
-  family stops being three algorithms — it's one idea at three angles.
+  You supply the slice, so the same seven moves work anywhere on either big
+  cube. That is the whole difference between this and a memorised L2E case: a
+  case bakes the slice in at a fixed width and applies to one position, while
+  this you aim.
 </Callout>
+
+Repeat it. Each round trades a wing into place, and you keep going until the
+two groups are whole — usually two or three rounds, sometimes more if you aim
+badly. It is slower than a one-look case set, which is exactly the trade: no
+recognition table to learn, and a 5×5 you can actually finish today.
+
+There is one thing this loop cannot fix, and you meet it in half your solves.
 
 ## Edge parity
 
-Half of your solves end with this: the last edge sits in its slot looking
-flipped, everything else paired. On a 3×3 that state is impossible —
-flipping a single edge breaks the permanent laws of the puzzle. Here it's
-expected, because wings have no orientation of their own: what looks like a
-flipped piece is really a legal rearrangement of wings around the midge.
-One dedicated algorithm fixes it.
+Half of your solves end with this: the last group sits in its slot looking
+flipped, everything else paired. On a 3×3 that state is impossible — flipping
+a single edge breaks the permanent laws of the puzzle. Here it is expected,
+and one dedicated algorithm fixes it.
 
 <div class="case-list">
-  <CaseRow id="555.l2e-6" />
+  <CaseRow id="555.l2e-6" open />
 </div>
 
+**Hold the flipped group at UF** — top layer, facing you. That is not a
+stylistic note: the algorithm was tested against the same state held at UB,
+UR, FR and DF, and it only solves it at UF.
+
+Two things it does on the way, both measured, and both harmless: it swaps the
+UR and UL edge groups, and it swaps two corners. Those are legal 3×3 states
+your own method finishes. Nothing is broken — do not undo it and start again.
+
 <Callout type="caution">
-  This algorithm is a **near-twin** of the 4×4 OLL parity algorithm. Muscle
-  memory will happily execute the wrong one and shred your paired edges.
-  Keep them separate from day one — compare
-  [4×4 OLL parity](/reference/#444-oll-parity) and
-  [5×5 edge parity](/reference/#555-l2e-6) side by side until the
-  difference is burned in.
+  This algorithm is a **near-twin** of the 4×4 OLL parity algorithm — one token
+  apart, `Rw'` on the 4×4 where the 5×5 needs `3Rw'`. Muscle memory will happily
+  fire the wrong one, and it does real damage: measured on a 5×5, the 4×4 form
+  **breaks four edge groups apart** (UB, UF, DF, DB) **and wrecks the centres**,
+  with no whole-cube rotation that brings them back. That one token is a
+  conjugated inner-slice turn, and an inner slice moves midges away from their
+  wings. Keep them separate from day one — open
+  [4×4 OLL parity](/case/444.oll-parity/) and
+  [5×5 edge parity](/case/555.l2e-6/) side by side until the difference is
+  burned in.
 </Callout>
 
-## The remaining cases
+## Why parity exists at all
 
-The other nine cases (l2e-4 through l2e-13, minus the parity case above)
-are combinations of what you just learned — flips on both groups, parity
-plus a flip, both wings wrong at once. Nothing conceptually new. Learn them
-from the [L2E reference](/reference/), which lists all thirteen with
-recognition and 3D playback.
+Everything you do while pairing swaps wings in **pairs**. Turn an outer face,
+flip a group, conjugate the flip by any slice you like — every one of those
+moves an even number of wings, and no combination of them can ever add up to an
+odd number.
+
+Parity is the state where one swap is left over. That is why no amount of
+pairing technique reaches it, and why it needs an algorithm of its own rather
+than more of what you were already doing.
 
 ## Why there is no PLL parity
 
-The 4×4 hides an ambiguity: its centers are built from four identical
-pieces, so "solved" centers can be internally rearranged, and half of those
-hidden arrangements force an odd edge permutation that surfaces at the end
-as PLL parity. A 5×5 has a true fixed center piece on every face — the color
-scheme is anchored absolutely, and midges obey the same permutation
-arithmetic as 3×3 edges. Once your edges are paired against those fixed
-anchors, midge and corner permutations always share the same parity — the
-3×3 law holds. Every last layer you meet is a genuine 3×3 last layer,
-solvable by the algorithms you already own. The flipped-looking edge above
-is the only surprise a 5×5 can throw, and it lives here in L2E — not at the
-end of your solve.
+A 5×5 has a true fixed center piece on every face, so the color scheme is
+anchored absolutely and its midges obey 3×3 permutation law. Every last
+layer you meet is a genuine 3×3 last layer, solvable by the algorithms you
+already own — the flipped-looking edge above is the only surprise a 5×5 can
+throw, and it lives here in L2E rather than at the end of your solve.
 
 ## You're done learning
 
-A 3×3 solver who has worked through these lessons holds everything a 5×5
-can ask: build centers, pair edges, fix the flip when it appears, and let
-your 3×3 finish the solve.
+A 3×3 solver who has worked through these lessons holds everything a 5×5 can
+ask, and it is a short list: **two algorithms and one technique.** The flip,
+the parity fix, and the centre insert you aim rather than recall. Build
+centres, pair edges, fix the parity when it appears, and let your 3×3 finish
+the solve.

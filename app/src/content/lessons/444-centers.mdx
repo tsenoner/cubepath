@@ -3,9 +3,24 @@ title: "4×4: Centers First"
 description: "No fixed centers on a 4×4 — the corners carry the color scheme, and you rebuild all six centers before anything else."
 phase: "444"
 order: 300
+minutes: 16
+objectives:
+  - "Read wide-move notation: Rw, 3Rw and how they differ from plain R."
+  - "Use a single white corner to work out where every side colour belongs."
+  - "Build all six centers in bars, and finish the last two without breaking the first four."
+prerequisites: ["course-complete"]
+algorithms: []
+practice:
+  groups: []
+  links:
+    - href: "/practice/"
+      label: "Open the trainer"
+  note: "Set the trainer to 4×4 and build all six centers, then scramble and do it again — centers are the slowest part of a big-cube solve and the one that repays deliberate practice most."
 ---
 
+import AlgText from "../../components/AlgText.astro";
 import Callout from "../../components/Callout.astro";
+import Figure from "../../components/Figure.astro";
 import TwistyPlayer from "../../components/TwistyPlayer.astro";
 
 A 4×4 is your 3×3 plus two new skills, plus parity you'll learn to expect.
@@ -22,8 +37,13 @@ left layer. The number counts layers in from the named face, and plain `R`
 is still just the outer layer. Everything else — `'`, `2`, other faces like
 `Uw` — works exactly as on the 3×3.
 
-<TwistyPlayer alg="Rw" puzzle="4x4x4" anchor="start" />
-<TwistyPlayer alg="3Rw" puzzle="4x4x4" anchor="start" />
+<Figure size="card" height={320} caption="Rw — the outer two right layers, as one.">
+  <TwistyPlayer alg="Rw" puzzle="4x4x4" anchor="start" />
+</Figure>
+
+<Figure size="card" height={320} caption="3Rw — three layers in from the right; on a 4×4 that is everything but L.">
+  <TwistyPlayer alg="3Rw" puzzle="4x4x4" anchor="start" />
+</Figure>
 
 ## The corners carry the color scheme
 
@@ -56,15 +76,49 @@ gets checked against them.
   that ring once and any single white corner orients the whole cube.
 </Callout>
 
+## Two shortcuts for the last two centres
+
+The build order above finishes every case on its own — these two only make the
+two most annoying last-two-centres positions fast. They are optional, and they
+are not course algorithms.
+
+<AlgText moves="Rw' F2 Rw2 U2 Rw'" /> swaps pieces between the **U and F**
+centres, leaving R, L, D and B untouched.
+
+<AlgText moves="Rw2 U2 D2 Rw2" /> swaps pieces between the **U and D** centres,
+leaving F, B, L and R untouched.
+
+<Callout type="caution">
+  Both wreck the corners and edges — measured, four to eight corners and twelve
+  to sixteen wings move. That is fine here and only here: centres come first,
+  so nothing else is placed yet. Never reach for them later in a solve. They
+  also do **not** carry across to a 5×5: there they reach only half of each
+  centre, so they finish nothing.
+</Callout>
+
 ## The last two centers
 
 Rotate the whole cube so the two unfinished centers sit **front** and
 **top** — the four finished ones are now safe on the other faces. The
-insert is a three-beat rhythm: a wide turn lifts a column of the front
-center into the top, a top turn drops the piece you need into that column
-(or clears one you don't), and the inverse wide turn brings the column
-home. The four finished centers come back untouched. Repeat until both
-faces are solid.
+insert is a three-beat rhythm, and this is it:
+
+<Figure size="card" height={320} caption="Rw U Rw' — lift a column of the front centre into the top, turn the top, lower it home. The four finished centres come back untouched.">
+  {/* The last-two-centres insert is a STEP, so it gets the 4x4 ladder's first
+      stage: centres in full colour, everything the reduction has not reached
+      yet in grey. The two `Rw`/`3Rw` players above are notation demos and
+      deliberately carry no stage — masking the layers a move grabs would hide
+      the only thing they are there to show. */}
+  <TwistyPlayer
+    alg="Rw U Rw'"
+    puzzle="4x4x4"
+    anchor="start"
+    context={{ ladder: "444", stage: "444-centers" }}
+  />
+</Figure>
+
+The middle beat is the one you choose: turn the top to drop the piece you
+need into that column, or to clear one you don't. Repeat until both faces
+are solid.
 
 <Callout type="caution">
   A misplaced center is cheap now and brutal later: two colors built on

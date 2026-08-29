@@ -35,9 +35,22 @@ from cubepath.notation import (
     pll_rows,
     tokenize,
 )
-from cubepath.palette import FAMILY, FAMILY_LABELS, TRIGGER_COLORS
+from cubepath.palette import (
+    CALLOUTS,
+    DARK_TRIGGER_COLORS,
+    FAMILY,
+    FAMILY_LABELS,
+    SCREEN_TRIGGER_COLORS,
+    TRIGGER_COLORS,
+    contrast,
+    print_tint,
+)
 
 _REPO = Path(__file__).resolve().parents[3]
+_LUA = _REPO / "guide" / "filters" / "callouts.lua"
+_TOKENS = _REPO / "app" / "src" / "styles" / "tokens.css"
+_CALLOUT_ASTRO = _REPO / "app" / "src" / "components" / "Callout.astro"
+_ALGTEXT_ASTRO = _REPO / "app" / "src" / "components" / "AlgText.astro"
 
 
 # ── Losslessness ──────────────────────────────────────────────────────
@@ -124,6 +137,15 @@ def test_big_cube_algs_match_their_verified_sources() -> None:
     assert f'"{bc["4x4-oll-parity"]}"' in extract
     assert f'"{bc["4x4-pll-parity"]}"' in extract
     assert f'"{bc["5x5-edge-parity"]}"' in l2e
+    # The flip is the one card string with no case of its own to be looked up
+    # in, so this is the only thing tying the printed string to the verifier
+    # that proves it is outer-turns-only and legal on both big cubes. Without
+    # it the card could quietly print a different algorithm under a cue —
+    # "slice out, run it, slice back -- both cubes" — that is only true of
+    # this one. It printed l2e-1 for exactly that reason until 2026-08-28.
+    assert f'const EDGE_FLIP = "{bc["l2e-flip"]}";' in l2e, (
+        "the card's flip string is not the one verify-l2e.mjs pins"
+    )
 
 
 def test_big_cube_chunks_round_trip() -> None:
@@ -153,11 +175,159 @@ def test_family_keys_are_canonical_token_strings() -> None:
         assert " ".join(tokenize(key)) == key, f"{key!r} is not normalised"
 
 
+# ── One palette, three renderings ─────────────────────────────────────
+# palette.py declares the colours; guide/filters/callouts.lua draws them on
+# paper and app/src/{styles/tokens.css,components/*.astro} draws them on
+# screen. None of the three can import either of the others, so the rule the
+# repo already applies to the trigger triad — a duplicated value is pinned by
+# a test — is applied here to every value they share.
+
+
+def _lua_callouts() -> dict[str, dict[str, str]]:
+    """The `callout_styles` table, as the guide filter actually spells it."""
+    lua = _LUA.read_text()
+    table = lua[lua.index("local callout_styles = {") : lua.index("\nlocal trigger_colors")]
+    entries = re.findall(r"\n  (\w+) = \{(.*?)\n  \},", table, re.S)
+    assert entries, "callout_styles no longer parses — the filter's shape changed"
+    return {name: dict(re.findall(r'(\w+) = "([^"]+)"', body)) for name, body in entries}
+
+
+def _css_tokens(scope: str) -> dict[str, str]:
+    """Custom properties declared in one theme block of tokens.css.
+
+    `scope` is "light" (the :root palette, everything above the dark block),
+    "dark" (the [data-theme="dark"] override the toggle sets) or "media" (the
+    prefers-color-scheme copy). The app hand-duplicates the last two, so the
+    tests below check the pair rather than trusting one of them.
+    """
+    css = _TOKENS.read_text()
+    anchors = {
+        "light": ("/* Cubepath design tokens", '[data-theme="dark"]'),
+        "dark": ('[data-theme="dark"] {', "\n}"),
+        "media": (':root:not([data-theme="light"])', "\n  }"),
+    }
+    open_at, close = anchors[scope]
+    start = css.index(open_at)
+    block = css[start : css.index(close, start + len(open_at))]
+    found = dict(re.findall(r"(--[\w-]+):\s*([^;]+);", block))
+    assert found, f"no tokens parsed from the {scope} block"
+    return found
+
+
 def test_palette_matches_the_guide_filter() -> None:
     """One palette, defined once. The guide PDF and the card must agree."""
-    lua = (_REPO / "guide" / "filters" / "callouts.lua").read_text()
+    lua = _LUA.read_text()
     found = dict(re.findall(r'\["trig-(\w)"\] = \{ hex = "(\w{6})" \}', lua))
     assert found == TRIGGER_COLORS
+
+
+def test_screen_triads_match_the_app_tokens() -> None:
+    """The screen counterparts are declared in palette.py so the print
+    deviation is a relation between two named triads, not a docstring. That
+    only holds while the names still describe what the app ships."""
+    for scope, expected in (
+        ("light", SCREEN_TRIGGER_COLORS),
+        ("dark", DARK_TRIGGER_COLORS),
+        ("media", DARK_TRIGGER_COLORS),
+    ):
+        tokens = _css_tokens(scope)
+        found = {k: tokens[f"--trig-{k}"].lstrip("#").upper() for k in expected}
+        assert found == expected, f"tokens.css {scope} --trig-* drifted from palette.py"
+
+
+def test_print_triad_is_darker_than_the_screen_triad() -> None:
+    """The one licensed fork in the trigger palette, asserted in both
+    directions: print is darker than screen for every family (not just on
+    average), and clears 7:1 on white so it out-weighs nothing it sits beside
+    on a mono laser. Delete this and "deliberately darkened" becomes a claim
+    no one can check."""
+    for fam, print_hex in TRIGGER_COLORS.items():
+        screen_hex = SCREEN_TRIGGER_COLORS[fam]
+        assert contrast(print_hex, "FFFFFF") > contrast(screen_hex, "FFFFFF"), (
+            f"family {fam}: the print hex is no longer darker than the screen hex"
+        )
+        assert contrast(print_hex, "FFFFFF") >= 7.0, f"family {fam} faded on paper"
+
+
+def test_app_trigger_families_match_the_palette() -> None:
+    """`palette.FAMILY` says colour is never hand-assigned. AlgText.astro held
+    4 of these 10, so six families — every mirror and wide-grip sexy move —
+    were coloured on paper and plain in the app."""
+    src = _ALGTEXT_ASTRO.read_text()
+    table = src[src.index("const FAMILY: Record") : src.index("\n};", src.index("const FAMILY"))]
+    found = dict(re.findall(r'"([^"]+)": "(\w)"', table))
+    assert found == FAMILY
+
+
+def test_callout_palette_matches_the_guide_filter() -> None:
+    """Same four callouts, same anatomy, one definition. `ink` is the rule and
+    the label both — the guide's old Material 500 borders measured 2.16-3.12:1
+    on white and answered to no token on either side."""
+    found = _lua_callouts()
+    assert set(found) == set(CALLOUTS)
+    for name, style in CALLOUTS.items():
+        assert found[name] == {
+            "label": style.label,
+            "bg": print_tint(style),
+            "ink": style.ink,
+        }, f"callouts.lua .{name} drifted from palette.CALLOUTS"
+
+
+def test_callout_palette_matches_the_app_tokens() -> None:
+    """Every callout hex in palette.py names the tokens.css property it
+    mirrors; resolve the names against the real stylesheet. This is the seam
+    that had drifted furthest — the app retuned --warn to #b23c00 in a
+    contrast audit and the guide kept printing E65100 at 3.46:1 on its tint."""
+    light = _css_tokens("light")
+    for name, style in CALLOUTS.items():
+        assert light[style.tint_token].lstrip("#").upper() == style.tint, f".{name} tint"
+        assert light[style.ink_token].lstrip("#").upper() == style.ink, f".{name} ink"
+
+
+def test_app_callout_uses_the_token_pair_it_declares() -> None:
+    """Callout.astro must reach its colours through the two tokens palette.py
+    names, and must draw the rule and the label with the same one."""
+    css = _CALLOUT_ASTRO.read_text()
+    declared = re.search(r"const LABELS = \{([^}]*)\}", css)
+    assert declared, "Callout.astro LABELS no longer parses"
+    labels = dict(re.findall(r'(\w+): "([^"]+)"', declared.group(1)))
+    assert labels == {name: style.label for name, style in CALLOUTS.items()}
+    for name, style in CALLOUTS.items():
+        surface = re.search(
+            rf"\.{name} \{{\s*background: var\((--[\w-]+)\);\s*border-color: var\((--[\w-]+)\);",
+            css,
+        )
+        label = re.search(rf"\.{name} \.label \{{\s*color: var\((--[\w-]+)\);", css)
+        assert surface and label, f"Callout.astro .{name} no longer parses"
+        assert surface.group(1) == style.tint_token, f".{name} tint token"
+        assert surface.group(2) == label.group(1) == style.ink_token, f".{name} ink token"
+
+
+def test_only_the_recessed_surface_forks_between_print_and_screen() -> None:
+    """The second licensed deviation. `--card` is the app's *lift* off an
+    off-white --paper; the guide prints on pure white, where a lift does not
+    exist, so that one surface recesses instead. Every other callout colour is
+    identical on both sides — assert that, so a third fork cannot be slipped
+    in as a fourth colour tweak."""
+    light = _css_tokens("light")
+    forked = {n for n, s in CALLOUTS.items() if print_tint(s) != s.tint}
+    assert forked == {"info"}, f"unlicensed print/screen fork: {forked - {'info'}}"
+    card, paper = light["--card"], light["--paper"]
+    assert contrast(card, "000000") > contrast(paper, "000000"), (
+        "--card no longer lifts off --paper"
+    )
+    assert contrast(print_tint(CALLOUTS["info"]), "FFFFFF") > 1.0, "the print tint vanished"
+
+
+def test_dark_theme_blocks_agree_on_every_callout_token() -> None:
+    """tokens.css writes the dark palette twice — [data-theme] and the media
+    query — so the callouts these tests pin are only pinned in one theme
+    unless the two copies agree."""
+    dark, media = _css_tokens("dark"), _css_tokens("media")
+    shared = {t for s in CALLOUTS.values() for t in (s.tint_token, s.ink_token)}
+    shared |= {f"--trig-{k}" for k in TRIGGER_COLORS}
+    for token in sorted(shared):
+        assert dark[token] == media[token], f"{token} differs between the two dark blocks"
 
 
 def test_guide_trigger_spans_are_known_families() -> None:

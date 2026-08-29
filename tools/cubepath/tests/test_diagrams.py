@@ -1,6 +1,5 @@
 """Tests for cubepath diagram generation."""
 
-import filecmp
 import itertools
 import math
 import re
@@ -35,14 +34,17 @@ from cubepath.diagrams import (
     CARD_FACES,
     DARK_INK,
     DARK_PAPER,
+    DIM_TARGET_DE,
     GREEN,
-    GREY,
     ORANGE,
     OVERVIEW_HUB,
     OVERVIEW_PINS,
     RED,
     SCREEN,
     SCREEN_FACES,
+    SLOT_STROKE_W,
+    UNORIENTED,
+    UNREACHED,
     WHITE,
     YELLOW,
     _align_edge_cases,
@@ -66,6 +68,8 @@ from cubepath.diagrams import (
     _step_cases,
     all_cases,
     all_steps,
+    delta_e,
+    dim,
     exit_face,
     overview_pin,
     overview_pin_head,
@@ -75,11 +79,29 @@ from cubepath.diagrams import (
     render,
     render_notation,
     render_overview,
+    render_slot,
     render_step,
     slab_of,
     sticker_centre,
     sticker_of,
+    to_lab,
 )
+from cubepath.fullsets import (
+    _plan_permutation,
+    big_oll_cases,
+    big_pll_cases,
+    card_pll_cases,
+    diagram_name,
+    f2l_cases,
+    full_oll_cases,
+    full_pll_cases,
+    plan_oll_cases,
+    plan_pll_cases,
+    render_big_sets,
+    render_f2l,
+    render_fullsets,
+)
+from cubepath.notation import case_states
 from cubepath.palette import contrast
 
 # ViewBox dimensions (computed from layout constants)
@@ -239,7 +261,7 @@ def test_pll_corner_cases_show_true_edge_colors():
     """PLL corner cases show real (non-grey) edge sticker colors from the pre-state."""
     for case in _pll_corner_cases():
         for side in (case.top_side, case.right_side, case.bottom_side, case.left_side):
-            assert GREY not in side, f"{case.name}: grey sticker in side strip"
+            assert UNORIENTED not in side, f"{case.name}: masked sticker in side strip"
 
 
 # ── Render smoke tests ──────────────────────────────────────────────
@@ -745,7 +767,7 @@ def test_card_bands_grow_outward_only(tmp_path) -> None:
 
 
 # ── Theming ───────────────────────────────────────────────────────────
-# The 131 generated SVGs are loaded as plain <img src>, which cannot see the
+# The generated SVGs are loaded as plain <img src>, which cannot see the
 # page's CSS custom properties, so each one carries its own colour-scheme
 # rules. resvg (typst) skips every @media block, which is what leaves the
 # guide PDF with the opaque plate it needs behind the 13 figures that sit in a
@@ -753,9 +775,52 @@ def test_card_bands_grow_outward_only(tmp_path) -> None:
 # block is emitted, the print style is exempt, and the two shipped trees agree.
 
 _REPO = Path(__file__).resolve().parents[3]
-_GUIDE_SVG = _REPO / "guide" / "figures" / "generated"
 _APP_SVG = _REPO / "app" / "public" / "diagrams"
-_SVG_DIRS = ("oll", "oll-full", "pll", "pll-full", "steps", "notation")
+# Derived, never listed: a hardcoded tuple silently skipped `f2l/` when it
+# landed, which is the same failure scripts/sync-diagrams.sh guards against.
+_SVG_DIRS = tuple(sorted(p.name for p in _APP_SVG.iterdir() if p.is_dir()))
+
+
+# The count is PINNED, not measured off the tree it is checking. Deriving it
+# from `guide/figures/generated/` only proves the two trees agree, so a
+# generator that silently stopped emitting a whole group would drop it from
+# both and still pass. The pin is cross-checked against the generators' own
+# inventories below, so a deliberate change fails in exactly one obvious place.
+EXPECTED_DIAGRAMS = 221
+
+
+def _render_everything(out: Path) -> None:
+    """Every SVG `cubepath-diagrams` writes, into `out`. One list, so a group
+    cannot be gated here and forgotten in `diagrams.main()` or the reverse."""
+    for case in all_cases():
+        render(case, out)
+    render_fullsets(out)
+    render_f2l(out)
+    render_big_sets(out)
+    for move in _notation_moves():
+        render_notation(move, out)
+    for layout in (OVERVIEW_HUB, OVERVIEW_PINS):
+        render_overview(out, layout=layout)
+    for step in all_steps():
+        render_step(step, out)
+
+
+def test_the_pinned_diagram_count_matches_the_generators() -> None:
+    inventory = (
+        len(all_cases())
+        + len(full_oll_cases())
+        + len(full_pll_cases())
+        + len(f2l_cases())
+        + len(big_oll_cases())
+        + len(big_pll_cases())
+        + len(_notation_moves())
+        + 2  # the overview, in both its layouts
+        + len(all_steps())
+    )
+    assert inventory == EXPECTED_DIAGRAMS, (
+        f"the generators now produce {inventory} diagrams; if that is intended, "
+        f"update EXPECTED_DIAGRAMS and re-run `make diagrams`"
+    )
 
 
 def _themed_renders(tmp_path) -> dict[str, str]:
@@ -887,45 +952,68 @@ def test_overview_paints_nothing_white_but_the_plate(tmp_path) -> None:
 
 def test_committed_diagrams_match_the_generator(tmp_path) -> None:
     """`make diagrams` is the only way these files change — a hand-edit fails
-    here, the same contract test_logo.py holds over the favicon. Covers the
-    diagrams this module owns; `fullsets.py`'s 78 are covered by the two
-    whole-tree tests below."""
-    fresh = tmp_path / "gen"
-    for case in all_cases():
-        render(case, fresh)
-    for step in all_steps():
-        render_step(step, fresh)
-    for move in _notation_moves():
-        render_notation(move, fresh)
-    for layout in (OVERVIEW_HUB, OVERVIEW_PINS):
-        render_overview(fresh, layout=layout)
+    here, the same contract test_logo.py holds over the favicon.
 
+    Every group, not just this module's: `fullsets.py`'s 78 OLL/PLL and 41 F2L
+    used to be gated only by the two trees agreeing with *each other*, which a
+    hand-edit synced into both would have passed.
+    """
+    fresh = tmp_path / "gen"
+    _render_everything(fresh)
+
+    committed = {str(p.relative_to(_APP_SVG)) for p in _APP_SVG.rglob("*.svg")}
+    generated = {str(p.relative_to(fresh)) for p in fresh.rglob("*.svg")}
+    assert generated == committed, (
+        f"tree membership differs — orphaned: {sorted(committed - generated)}, "
+        f"missing: {sorted(generated - committed)}"
+    )
     stale = [
-        str(p.relative_to(fresh))
-        for p in sorted(fresh.rglob("*.svg"))
-        if (_GUIDE_SVG / p.relative_to(fresh)).read_text() != p.read_text()
+        name
+        for name in sorted(generated)
+        if (_APP_SVG / name).read_bytes() != (fresh / name).read_bytes()
     ]
     assert not stale, f"committed SVGs differ from the generator: {stale}"
 
 
-def test_the_two_diagram_trees_are_byte_identical() -> None:
-    """app/public/diagrams is a literal copy of guide/figures/generated made by
-    scripts/sync-diagrams.sh. Nothing else gated that, so the app could ship a
-    stale diagram indefinitely."""
-    for sub in _SVG_DIRS:
-        guide_dir, app_dir = _GUIDE_SVG / sub, _APP_SVG / sub
-        assert app_dir.is_dir(), f"{sub}/ never synced into the app"
-        names = sorted(p.name for p in guide_dir.glob("*.svg"))
-        assert names == sorted(p.name for p in app_dir.glob("*.svg")), f"{sub}/ file sets differ"
-        match, mismatch, errors = filecmp.cmpfiles(guide_dir, app_dir, names, shallow=False)
-        assert not mismatch and not errors, f"{sub}/ drifted: {mismatch + errors}"
+def test_the_guide_references_the_one_diagram_tree() -> None:
+    """There is ONE committed tree, app/public/diagrams/, and the guide reaches
+    up into it. This replaces a byte-identity check between two trees that
+    existed only to prove scripts/sync-diagrams.sh had run; the duplication it
+    guarded is gone, so what needs guarding instead is the wiring — that every
+    figure the guide names resolves, and that nothing has quietly recreated the
+    second tree or gone back to the old relative paths.
+
+    `guide/defaults/pdf.yaml` must keep `--root ..` or typst refuses every one
+    of these paths for escaping its project root; scripts/guide_stamp.py
+    resolves the same references and would fail first if they broke.
+    """
+    guide_md = _REPO / "guide" / "cubepath.md"
+    text = guide_md.read_text()
+
+    refs = re.findall(r"\]\((\.\./app/public/diagrams/[^)\s]+)", text)
+    assert refs, "the guide names no diagrams — did the figure paths change?"
+    missing = sorted({r for r in refs if not (guide_md.parent / r).is_file()})
+    assert not missing, f"guide references figures that do not exist: {missing}"
+
+    assert "figures/generated" not in text, (
+        "the guide still points at the deleted guide/figures/generated tree"
+    )
+    assert not (_REPO / "guide" / "figures").exists(), "the second diagram tree is back"
+    assert not (_REPO / "scripts" / "sync-diagrams.sh").exists(), (
+        "sync-diagrams.sh is back — there is only one tree to sync to now"
+    )
+
+    pdf_yaml = (_REPO / "guide" / "defaults" / "pdf.yaml").read_text()
+    assert "--root" in pdf_yaml and '".."' in pdf_yaml, (
+        "pdf.yaml lost `--root ..`; typst will reject every ../ figure path"
+    )
 
 
 def test_every_shipped_diagram_is_themed() -> None:
     """The regression the user actually reported, asserted over the real
     shipped tree rather than a fresh render."""
     svgs = sorted(_APP_SVG.rglob("*.svg"))
-    assert len(svgs) == 131, f"expected 131 diagrams, found {len(svgs)}"
+    assert len(svgs) == EXPECTED_DIAGRAMS, f"expected {EXPECTED_DIAGRAMS}, found {len(svgs)}"
     for svg in svgs:
         content = svg.read_text()
         assert "prefers-color-scheme" in content, f"{svg.name} has no colour-scheme rules"
@@ -976,3 +1064,803 @@ def test_the_pdf_never_sees_the_media_block(tmp_path) -> None:
     assert px(6, 6) == (255, 255, 255), "the guide PDF lost its background plate"
     assert px(4, h // 2) == (255, 255, 255)
     assert px(0, 0) == (232, 244, 253), "sampled the wrong pixel — tint not visible"
+
+
+# ── The three tiers ───────────────────────────────────────────────────
+# Three meanings now share a diagram — full colour "this step solves it", dim
+# "an earlier step did, keep it", and a grey "not reached yet" that is NOT the
+# same grey as an OLL diagram's "not yellow yet". Every one of those has to be
+# separable from the others by measurement, in both palettes, and — the part
+# that matters — in the fills that actually reach the emitted SVG. A tier that
+# is correct in `dim()` and absent from the file is the bug this work exists to
+# fix, so the gates below open the files.
+#
+# Distances are CIE76 ΔE (`diagrams.delta_e`): ~2.3 is one just-noticeable
+# difference. WCAG contrast is quoted alongside wherever the medium is a mono
+# laser, which is the only place luminance alone is the right question.
+
+_STICKER_FILL = re.compile(r'fill="(#[0-9A-Fa-f]{6})"')
+
+
+def _fills(svg_text: str) -> set[str]:
+    """Every literal fill colour in a rendered SVG, upper-cased."""
+    return {m.upper() for m in _STICKER_FILL.findall(svg_text)}
+
+
+def test_the_dim_tier_is_a_measurably_different_tone_in_both_palettes() -> None:
+    """The tier's whole job. The mix this replaced managed 15.1 ΔE at worst —
+    white, which has no chroma to spend — and 1.48:1 in greyscale, barely past
+    the 1.36:1 in the player's palette that this pipeline exists to beat."""
+    for name, faces in (("SCREEN", SCREEN_FACES), ("CARD", CARD_FACES)):
+        for letter, full in faces.items():
+            quiet = dim(full)
+            assert delta_e(full, quiet) >= DIM_TARGET_DE - 0.5, (
+                f"{name} {letter}: dim is only {delta_e(full, quiet):.1f} ΔE from its face"
+            )
+            # A card is printed, often on a mono laser, where ΔE means nothing.
+            assert contrast(full, quiet) >= 1.5, (
+                f"{name} {letter}: dim is {contrast(full, quiet):.2f}:1 in greyscale"
+            )
+
+
+def test_dim_white_clears_the_white_it_sits_beside() -> None:
+    """The one case a single mix toward grey could not reach: white has no
+    chroma, so the whole separation has to be lightness. `orient_corner` holds
+    the cube white-up with the entire white face solved, so this is the tone the
+    hero image of that lesson is drawn in."""
+    assert delta_e(WHITE, dim(WHITE)) >= 29.0
+    assert contrast(WHITE, dim(WHITE)) >= 2.2, "dim white would vanish against white"
+    # And against the page it is drawn on, which is white in the guide PDF.
+    assert contrast(dim(WHITE), "#FFFFFF") >= 2.2
+
+
+def test_dim_keeps_a_third_of_the_chroma_so_it_still_names_its_face() -> None:
+    """A learner reads the dim region to confirm the cross survived, so "some
+    colour" is not enough — the tone has to stay recognisably ITS colour."""
+
+    def chroma(hex_color: str) -> float:
+        _, a, b = to_lab(hex_color)
+        return math.hypot(a, b)
+
+    for name, faces in (("SCREEN", SCREEN_FACES), ("CARD", CARD_FACES)):
+        for letter, full in faces.items():
+            if chroma(full) < 1:  # white has no hue to keep
+                continue
+            kept = chroma(dim(full)) / chroma(full)
+            assert 0.28 <= kept <= 0.36, f"{name} {letter}: dim kept {kept:.0%} of its chroma"
+
+
+def test_dim_is_separable_from_the_not_reached_tone_it_shares_a_picture_with() -> None:
+    """Dim and not-reached appear side by side in every F2L and step diagram.
+    The old ramp put dim yellow 7.2 ΔE from the grey — close enough to read as
+    a second grey, which is the opposite of what the tier says."""
+    for name, style in (("SCREEN", SCREEN), ("CARD", CARD)):
+        for letter, full in style.faces.items():
+            gap = delta_e(dim(full), style.unreached)
+            assert gap >= 15.0, f"{name} {letter}: dim is {gap:.1f} ΔE from not-reached"
+
+
+def test_a_full_face_is_separable_from_the_not_reached_tone_too() -> None:
+    """The gate above covers the DIM tier; this covers the FULL one, and it is
+    the binding constraint on how light "not reached" may be. `step_1_cross`
+    puts full-colour WHITE stickers polygon-to-polygon with not-reached ones,
+    and white is the only face with no hue to separate it: 15.0 ΔE on SCREEN
+    where every other face is 60+. The whole argument in `diagrams.py` for the
+    tone's lightness is an argument about THIS number — "going lighter spends
+    white-face separation the picture does need" — so it is measured rather
+    than reasoned about. The tier sits ON its floor; brightening it fails here
+    before it fails anywhere else."""
+    for name, style in (("SCREEN", SCREEN), ("CARD", CARD)):
+        for letter, full in style.faces.items():
+            gap = delta_e(full, style.unreached)
+            assert gap >= 15.0, f"{name} {letter}: full is {gap:.1f} ΔE from not-reached"
+
+
+def test_the_two_greys_are_different_tones() -> None:
+    """ "Not yellow yet" and "not reached yet" are different claims and they meet
+    on one page — `yellow-cross.mdx` prints step_4_ycross above the three OLL
+    cross cases. One token cannot carry both.
+
+    THE SCREEN THRESHOLD IS 8, NOT 12, AND THAT IS THE WEAKER OF TWO GATES ON
+    PURPOSE. The two greys never share a FILE, and the gate that enforces that
+    is `test_no_diagram_ever_carries_both_greys`, which is absolute. All this
+    one has to buy is that they read as different tones when two pictures sit
+    adjacent on a page, and 8 ΔE is ~3.5 just-noticeable differences with a hue
+    change on top (the mask is neutral, the not-reached tier is warm). The
+    threshold was 12 while the tier was `#C0D4E6`, and 12 is what forced that
+    tone so light: a neutral can only buy ΔE from the mask with lightness, so
+    every point of the gate pushed it further toward the page and toward the
+    white face it also has to clear (which
+    `test_a_full_face_is_separable_from_the_not_reached_tone_too` now measures).
+    Lowering it to 8 is what let the tier come back down to `#D8D5CF`,
+    which reads as a grey rather than as a seventh sticker colour and sits
+    15.0 ΔE off white instead of 10.2. See diagrams.py for the full trade.
+
+    THE CARD KEEPS 12, because none of that argument is about the card. Its
+    palette did not move (`CARD.unreached` is still `#3F3F3F`, print inverts the
+    tier), it sits at 13.7 ΔE, and a card is printed on a mono laser where hue
+    is gone and only the luminance gap survives — so relaxing the card's floor
+    alongside the screen's would have given away a gate for nothing."""
+    for name, style, floor in (("SCREEN", SCREEN, 8.0), ("CARD", CARD, 12.0)):
+        gap = delta_e(style.masked, style.unreached)
+        assert gap >= floor, f"{name}: the two greys are {gap:.1f} ΔE apart"
+    # And on the light page the guide prints on, the not-reached tier is the
+    # quieter of the two — closer to the paper than the mask is, so "nothing
+    # here yet" never outweighs a sticker that is really there. (On a dark app
+    # background the order flips, which is inherent to a light neutral on a
+    # dark ground and was already true of the single grey this replaced.)
+    assert contrast(UNREACHED, "#FFFFFF") < contrast(UNORIENTED, "#FFFFFF")
+
+
+def test_restyle_never_maps_two_tiers_onto_one_colour() -> None:
+    """If a dim tone landed on a face colour — or two tiers on the same output —
+    a card would silently say the wrong thing about what is solved."""
+    for name, style in (("SCREEN", SCREEN), ("CARD", CARD)):
+        remap = _restyle(style)
+        assert len(remap) == 14, f"{name}: 6 faces + 6 dim + masked + not-reached"
+        assert len(set(remap.values())) == len(remap), f"{name}: two tiers collide"
+
+
+# ── What actually reaches the page ────────────────────────────────────
+# Every assertion below reads a rendered file. The audit this work answers
+# found a three-tier model that was correct, tested, and wired to nothing: the
+# tests exercised the functions while the renderer called something else. So
+# these do not ask `dim()` anything — they ask the SVG.
+
+_TIERED_STEPS = {
+    "step_2_corners",
+    "step_3_edges",
+    "step_4_ycross",
+    "step_5_yedges",
+    "step_6_ycorners_pos",
+    "corner_right",
+    "corner_front",
+    "corner_up",
+    "edge_right",
+    "edge_left",
+    "orient_corner",
+    "orient_right",
+    "orient_front",
+    "corner_cycle",
+    "align_adjacent",
+    "align_diagonal",
+}
+# The three with nothing earlier to preserve — see `_step_cases`.
+_FLAT_STEPS = {"step_1_cross", "step_flip", "step_7_solved"}
+
+
+def test_every_shipped_step_diagram_draws_the_tier_its_lesson_needs() -> None:
+    """The headline defect, asserted on the shipped tree. `step_2_corners` is
+    the hero image of the white-corners lesson and drew the already-solved white
+    cross at exactly the saturation of the corners being taught."""
+    svgs = {p.stem: p for p in sorted((_APP_SVG / "steps").glob("*.svg"))}
+    assert set(svgs) == _TIERED_STEPS | _FLAT_STEPS, sorted(svgs)
+    dim_tones = {dim(c).upper() for c in SCREEN_FACES.values()}
+    for stem, path in svgs.items():
+        present = _fills(path.read_text()) & dim_tones
+        if stem in _TIERED_STEPS:
+            assert present, f"{stem}: no dim tier reached the file"
+        else:
+            assert not present, f"{stem}: has nothing earlier-solved but drew {present}"
+
+
+def test_the_hero_image_separates_the_cross_from_the_corners() -> None:
+    """`step_2_corners` names the exact pixels the complaint was about: the two
+    cross edges' side stickers, against the four corner stickers beside them."""
+    fills = _fills((_APP_SVG / "steps" / "step_2_corners.svg").read_text())
+    for face in (RED, GREEN):
+        assert face in fills, "the corners being taught are not in full colour"
+        assert dim(face).upper() in fills, "the cross under them is not dimmed"
+        assert delta_e(face, dim(face)) >= DIM_TARGET_DE - 0.5
+
+
+def test_no_diagram_ever_carries_both_greys() -> None:
+    """The tonal split is only worth anything if the two never share a file —
+    otherwise a reader has to tell two claims apart inside one picture."""
+    both = [
+        p.relative_to(_APP_SVG)
+        for p in sorted(_APP_SVG.rglob("*.svg"))
+        if {UNORIENTED, UNREACHED} <= _fills(p.read_text())
+    ]
+    assert not both, f"diagrams carrying both greys: {both}"
+
+
+def test_the_oll_plan_views_are_untouched_two_tier_pictures() -> None:
+    """Item 3 of the brief, pinned: an OLL diagram has no earlier-solved region
+    in frame, so it must keep exactly yellow + the orientation mask and must not
+    grow a dim tier."""
+    for subdir, count in (("oll", 11), ("oll-full", 57), ("444-oll", 27)):
+        svgs = sorted((_APP_SVG / subdir).glob("*.svg"))
+        assert len(svgs) == count, f"{subdir}: {len(svgs)} diagrams"
+        for svg in svgs:
+            assert _fills(svg.read_text()) <= {YELLOW, UNORIENTED, WHITE}, (
+                f"{svg.name}: an OLL plan view grew a tier it does not need"
+            )
+
+
+def test_every_shipped_pll_plan_view_dims_the_oll_face() -> None:
+    """PLL runs after OLL, so the U face is a finished result to preserve — the
+    dim tier — while the side bands are what the step permutes. Before this,
+    49 files carried zero dim and zero grey: every sticker full saturation."""
+    quiet = dim(YELLOW).upper()
+    for subdir, count, n in (("pll", 6, 3), ("pll-full", 21, 3), ("444-pll", 22, 4)):
+        svgs = sorted((_APP_SVG / subdir).glob("*.svg"))
+        assert len(svgs) == count, f"{subdir}: {len(svgs)} diagrams"
+        for svg in svgs:
+            text = svg.read_text()
+            fills = _fills(text)
+            assert quiet in fills, f"{svg.name}: the OLL-solved U face is not dimmed"
+            assert YELLOW not in fills, f"{svg.name}: full yellow survived on a PLL diagram"
+            assert text.count(f'fill="{dim(YELLOW)}"') == n * n, (
+                f"{svg.name}: dim yellow is not exactly the {n}x{n} U face"
+            )
+            # The bands PLL actually permutes stay loud.
+            assert fills & {RED, GREEN, ORANGE, BLUE}, f"{svg.name}: no full-colour side band"
+            for band in fills & {RED, GREEN, ORANGE, BLUE}:
+                assert delta_e(band, quiet) >= 30.0, f"{svg.name}: {band} too close to dim yellow"
+
+
+def test_f2l_diagrams_are_themed_and_mark_the_slot(tmp_path) -> None:
+    cases = f2l_cases()
+    assert len(cases) == 41
+    for case in cases[:3] + cases[-3:]:
+        content = render_slot(case, tmp_path).read_text()
+        assert "prefers-color-scheme" in content, f"{case.name}: no colour-scheme rules"
+        assert content.count('class="bg"') == 1, f"{case.name}: expected exactly one plate"
+        # Two slot outlines, one per visible face, drawn as unfilled polygons.
+        outlines = re.findall(r'<polygon[^>]*fill="none"[^>]*/>', content)
+        assert len(outlines) == 2, f"{case.name}: {len(outlines)} slot outlines, expected 2"
+        for outline in outlines:
+            assert f'stroke-width="{SLOT_STROKE_W}"' in outline
+
+
+def test_every_shipped_f2l_diagram_marks_its_slot() -> None:
+    """Asserted over the shipped tree, not a fresh render: a slot marker that
+    silently stopped being drawn would leave 41 plausible-looking pictures with
+    no indication of where the pair is going."""
+    svgs = sorted((_APP_SVG / "f2l").glob("*.svg"))
+    assert len(svgs) == 41, f"expected 41 F2L diagrams, found {len(svgs)}"
+    for svg in svgs:
+        assert svg.read_text().count('fill="none"') == 2, f"{svg.name}: slot marker missing"
+
+
+# ── The icon filename contract ────────────────────────────────────────
+# gen-cases.mjs synthesises every case's diagram path by string-building a
+# filename that this generator has to have produced — two independent slug and
+# zero-padding implementations that must agree, asserted nowhere until now. A
+# divergence ships a broken image on every affected case with both halves' own
+# gates green, which is exactly the failure this repo pins everywhere else.
+
+_GENERATED_TS = _REPO / "app" / "src" / "data" / "fullsets.gen.ts"
+
+
+def test_every_generated_case_icon_resolves_to_a_shipped_diagram() -> None:
+    icons = re.findall(r'"?icon"?:\s*"([^"]+)"', _GENERATED_TS.read_text())
+    assert icons, "no icon paths in fullsets.gen.ts — did gen-cases.mjs stop emitting them?"
+    missing = [i for i in icons if not (_APP_SVG.parent / i.lstrip("/")).is_file()]
+    assert not missing, f"gen-cases.mjs points at diagrams that do not exist: {missing}"
+
+
+def test_the_f2l_set_is_fully_iconed() -> None:
+    """The hole this work closed: /reference rendered all 41 F2L tiles as empty
+    numbered boxes because no F2L case carried an icon."""
+    text = _GENERATED_TS.read_text()
+    f2l_icons = re.findall(r'"/diagrams/f2l/([a-z0-9_]+\.svg)"', text)
+    assert sorted(f2l_icons) == [f"f2l_{n:02d}.svg" for n in range(1, 42)]
+    for case in f2l_cases():
+        assert f"/diagrams/f2l/{case.name}.svg" in text, f"{case.name} has no icon in the app"
+
+
+# ── The 4x4 sets ──────────────────────────────────────────────────────
+# 49 diagrams whose state Python cannot derive and must not learn to: cube.py
+# is a gated 3x3 mirror, and the states come from the cubing.js kpuzzle through
+# app/src/data/extracted/case-states.json. That makes these tests unusual —
+# they cannot re-derive the answer, so instead they check the things a wrong
+# picture could not survive: that the same renderer reproduces the 78 shipped
+# 3x3 diagrams exactly, that every 4x4 picture is a physically possible cube,
+# and that its arrows and its JPerm label agree with its own drawn colours.
+
+_BIG_SETS = (("444-oll", big_oll_cases, 27), ("444-pll", big_pll_cases, 22))
+
+
+def test_the_four_by_four_sets_are_complete_and_four_wide() -> None:
+    for subdir, builder, expected in _BIG_SETS:
+        cases = builder()
+        assert len(cases) == expected, f"{subdir}: {len(cases)} cases, expected {expected}"
+        assert len({c.name for c in cases}) == expected, f"{subdir}: duplicate filenames"
+        for case in cases:
+            assert case.n == 4, f"{case.name}: drawn as a {case.n}x{case.n}"
+            assert len(case.u_face) == 16, f"{case.name}: {len(case.u_face)} U facelets"
+            for strip in (case.top_side, case.right_side, case.bottom_side, case.left_side):
+                assert len(strip) == 4, f"{case.name}: {len(strip)}-cell side band"
+
+
+def test_the_state_driven_renderer_reproduces_the_simulator_driven_one() -> None:
+    """THE cross-language gate, at the level that matters here.
+
+    The 4x4 diagrams are drawn from case-states.json by code that no Python
+    cube model can check. So the same code is pointed at the 3x3 OLL and PLL
+    sets, where cube.py derives the answer independently — and every drawn
+    field must match: the U mask, all four side bands, and, for PLL, the arrows
+    read off the piece permutation. 78 cases agreeing across two cube models
+    is what makes the 49 that only one model can reach trustworthy.
+    """
+    drawn = ("u_face", "top_side", "right_side", "bottom_side", "left_side", "swaps", "cycles")
+    for from_json, from_sim in (
+        (plan_oll_cases("oll", "oll_full"), full_oll_cases()),
+        (plan_pll_cases("pll", "pll_full"), full_pll_cases()),
+    ):
+        assert len(from_json) == len(from_sim) and from_json, "set sizes differ"
+        for a, b in zip(from_json, from_sim, strict=True):
+            for attr in drawn:
+                assert getattr(a, attr) == getattr(b, attr), (
+                    f"{b.name}: {attr} differs between the kpuzzle export and cube.py"
+                )
+
+
+def test_the_two_halves_agree_on_what_colour_each_face_is() -> None:
+    """cubing.js ships its own palette (U white, F green); this repo uses
+    another (U yellow, F red). The JSON therefore names FACES and carries the
+    colour scheme separately, and that scheme is the single point where the two
+    vocabularies meet — so it is checked, not assumed."""
+    from cubepath.cube import COLORS
+
+    named = case_states()["faceColors"]
+    assert set(named) == set(COLORS), "the export and cube.py disagree on the six faces"
+    for face, letter in COLORS.items():
+        assert named[face].startswith(letter), f"{face}: {named[face]} vs cube.py {letter!r}"
+
+
+def _u_layer_pieces(case) -> list[list[str]]:
+    """Every last-layer piece of a plan-view diagram, as the list of colours it
+    shows. Derived from the drawing's own geometry: a side band cell sits
+    against the U cell the renderer draws it beside, so band i of `top` touches
+    U row 0 column i, and a corner touches two bands."""
+    n = case.n
+    bands = {
+        "top": [(0, i) for i in range(n)],
+        "bottom": [(n - 1, i) for i in range(n)],
+        "left": [(i, 0) for i in range(n)],
+        "right": [(i, n - 1) for i in range(n)],
+    }
+    strips = {
+        "top": case.top_side,
+        "bottom": case.bottom_side,
+        "left": case.left_side,
+        "right": case.right_side,
+    }
+    touching: dict[tuple[int, int], list[str]] = {}
+    for band, cells in bands.items():
+        for i, cell in enumerate(cells):
+            touching.setdefault(cell, []).append(strips[band][i])
+    return [[case.u_face[r * n + c], *sides] for (r, c), sides in touching.items()]
+
+
+def test_every_oll_picture_is_a_physically_possible_cube() -> None:
+    """A last-layer piece has exactly one yellow sticker — it is either up or
+    it is not. Checked on the 4x4 set, which nothing else can check, and on the
+    3x3 set, which proves the check itself is right.
+
+    This is also the only gate that would catch a side band drawn against the
+    wrong edge of the U grid: mis-index one band and some piece ends up with
+    two yellows or none.
+    """
+    for label, cases in (("3x3", full_oll_cases()), ("4x4", big_oll_cases())):
+        assert cases
+        for case in cases:
+            for piece in _u_layer_pieces(case):
+                yellow = piece.count(YELLOW)
+                assert yellow == 1, f"{label} {case.name}: a piece shows {yellow} yellow stickers"
+
+
+# Each corner's two side stickers, as (band, index into that band), in the
+# ring order top -> right -> bottom -> left. Handedness is uniform around the
+# ring, which is what makes the twist below comparable between corners.
+_CORNER_BANDS = {
+    "tl": ("left", "top"),
+    "tr": ("top", "right"),
+    "br": ("right", "bottom"),
+    "bl": ("bottom", "left"),
+}
+
+
+def _corner_twists(case) -> list[int]:
+    """Each corner's orientation: 0 yellow up, 1 yellow on the next face
+    clockwise, 2 yellow on the one after."""
+    n = case.n
+    strips = {
+        "top": case.top_side,
+        "right": case.right_side,
+        "bottom": case.bottom_side,
+        "left": case.left_side,
+    }
+    cell = {"tl": (0, 0), "tr": (0, n - 1), "br": (n - 1, n - 1), "bl": (n - 1, 0)}
+    end = {
+        ("tl", "top"): 0,
+        ("tl", "left"): 0,
+        ("tr", "top"): -1,
+        ("tr", "right"): 0,
+        ("br", "right"): -1,
+        ("br", "bottom"): -1,
+        ("bl", "bottom"): 0,
+        ("bl", "left"): -1,
+    }
+    twists = []
+    for corner, (incoming, outgoing) in _CORNER_BANDS.items():
+        r, c = cell[corner]
+        if case.u_face[r * n + c] == YELLOW:
+            twists.append(0)
+        elif strips[outgoing][end[corner, outgoing]] == YELLOW:
+            twists.append(1)
+        else:
+            assert strips[incoming][end[corner, incoming]] == YELLOW, (
+                f"{case.name}: the {corner} corner has no yellow sticker at all"
+            )
+            twists.append(2)
+    return twists
+
+
+def test_every_oll_picture_obeys_the_corner_twist_law() -> None:
+    """Corner orientations sum to zero mod 3 on any legal cube — you cannot
+    twist one corner in place, at any size.
+
+    This is the check that reaches furthest into the 4x4 states Python cannot
+    model: it is a law about the physical puzzle, not about this repo's
+    conventions, and a state export that mis-derived an orientation would break
+    it. That it holds for all 57 3x3 pictures, which cube.py derives
+    independently, is what shows the reading below is the right one.
+    """
+    for label, cases in (("3x3", full_oll_cases()), ("4x4", big_oll_cases())):
+        for case in cases:
+            twists = _corner_twists(case)
+            assert sum(twists) % 3 == 0, f"{label} {case.name}: corner twists {twists}"
+
+
+def _claimed_permutation(case) -> dict[str, str]:
+    """The movement a diagram's arrows claim: anchor -> destination."""
+    perm: dict[str, str] = {}
+    for a, b in case.swaps:
+        perm[a], perm[b] = b, a
+    for cycle in case.cycles:
+        for i, pos in enumerate(cycle):
+            perm[pos] = cycle[(i + 1) % len(cycle)]
+    return perm
+
+
+def _drawn_permutation(case) -> dict[str, str]:
+    """The movement the diagram's own side colours imply, re-read from the
+    finished CubeDiagram rather than from the state it was built from."""
+    letters = {v: k for k, v in SCREEN_FACES.items()}
+    sides = {
+        "top": [letters[c] for c in case.top_side],
+        "right": [letters[c] for c in case.right_side],
+        "bottom": [letters[c] for c in case.bottom_side],
+        "left": [letters[c] for c in case.left_side],
+    }
+    return _plan_permutation(sides, case.n)
+
+
+def test_four_by_four_pll_arrows_match_the_colours_beside_them() -> None:
+    """Arrows are derived, so this is not a spelling check: it re-reads the
+    permutation out of the finished picture and requires the arrows to agree
+    with it, which is the property a reader actually relies on."""
+    for case in big_pll_cases():
+        real = _drawn_permutation(case)
+        claimed = _claimed_permutation(case)
+        for pos, dest in real.items():
+            if pos == dest:
+                assert pos not in claimed, f"{case.name}: arrow on a solved piece at {pos}"
+            else:
+                assert claimed.get(pos) == dest, (
+                    f"{case.name}: the piece at {pos} belongs at {dest}, "
+                    f"arrows say {claimed.get(pos)}"
+                )
+
+
+# ── Net whole-cube rotation ───────────────────────────────────────────
+# Five of the 21 primary PLL algorithms end with the cube in a different
+# orientation than they started: Aa and Ja open with `x`, Ab and E with `x'`,
+# and V has a `y` in the middle. Deriving a case by inverting such an algorithm
+# on a solved cube lands the last layer somewhere other than the top, and any
+# mask or highlight computed in that frame disagrees with the frame the picture
+# is drawn in — which is exactly how a 3-cycle ends up with one or two of its
+# three pieces marked.
+#
+# `fullsets.case_state` handles it by searching the 24 whole-cube rotations for
+# the one pre-rotation that brings every centre home, and composing it on the
+# LEFT of the inverse. The two tests below are what makes that a guarantee
+# rather than a comment: the first names the five algorithms so a data change
+# cannot quietly drop one, and the second requires the arrow count in every
+# shipped PLL picture to equal the number of pieces its permutation actually
+# moves — the property a frame mismatch breaks first.
+_NET_ROTATION_PLL = {"Aa", "Ab", "E", "Ja", "V"}
+
+
+def test_the_pll_algorithms_that_rotate_the_whole_cube_are_known() -> None:
+    from cubepath.cube import COLORS, invert_algorithm
+    from cubepath.fullsets import _load, case_state
+
+    rotating = set()
+    for case in _load()["pll"]:
+        cube = Cube.solved()
+        cube.apply(invert_algorithm(case["algs"][0]))
+        if not all(cube.faces[f][4] == COLORS[f] for f in COLORS):
+            rotating.add(case["name"])
+        # ... and the derived case is always brought back to yellow-up.
+        home = case_state(case["algs"][0])
+        assert all(home.faces[f][4] == COLORS[f] for f in COLORS), (
+            f"{case['name']}: the case state kept a net rotation"
+        )
+    assert rotating == _NET_ROTATION_PLL, f"the rotating set changed: {sorted(rotating)}"
+
+
+def _pll_diagrams_everywhere():
+    """Every PLL picture this repo ships, at either cube size and in either
+    palette's source data: 6 curated + 21 guide + 21 card + 22 4x4."""
+    return (
+        _pll_corner_cases()
+        + _pll_edge_cases()
+        + full_pll_cases()
+        + card_pll_cases()
+        + big_pll_cases()
+    )
+
+
+def test_every_pll_diagram_marks_exactly_the_pieces_its_permutation_moves() -> None:
+    """The count gate. A picture whose arrows touch fewer anchors than the
+    permutation moves is the visible symptom of a frame mismatch, and it is the
+    one a reader cannot recover from: they learn the wrong case."""
+    checked = 0
+    for case in _pll_diagrams_everywhere():
+        drawn = _drawn_permutation(case)
+        moved = {a for a, dest in drawn.items() if a != dest}
+        touched = {a for pair in case.swaps for a in pair}
+        touched |= {a for pair in case.dashed_swaps for a in pair}
+        touched |= {a for cycle in case.cycles for a in cycle}
+        assert touched == moved, (
+            f"{case.name}: arrows touch {sorted(touched)}, the permutation moves {sorted(moved)}"
+        )
+        counted = 2 * (len(case.swaps) + len(case.dashed_swaps))
+        counted += sum(len(c) for c in case.cycles)
+        assert counted == len(moved), (
+            f"{case.name}: {counted} arrow endpoints for {len(moved)} moved pieces"
+        )
+        checked += 1
+    assert checked == 6 + 21 + 21 + 22, checked
+
+
+def test_the_arrows_that_reach_the_svg_are_the_ones_the_case_declares(tmp_path) -> None:
+    """And the same count, read back out of the rendered file. `_draw_swap`
+    gives a swap both markers and `_draw_cycle` gives each segment only an end
+    marker, so the two marker counts recover the swap and cycle totals without
+    the renderer being asked."""
+    for case in _pll_corner_cases() + _pll_edge_cases() + full_pll_cases() + big_pll_cases():
+        text = render(case, tmp_path).read_text()
+        starts = text.count('marker-start="url(#arrowhead-rev)"')
+        ends = text.count('marker-end="url(#arrowhead)"')
+        swaps = len(case.swaps) + len(case.dashed_swaps)
+        assert starts == swaps, f"{case.name}: {starts} swap arrows drawn, {swaps} declared"
+        segments = sum(len(c) for c in case.cycles)
+        assert ends - starts == segments, (
+            f"{case.name}: {ends - starts} cycle segments drawn, {segments} declared"
+        )
+        drawn = _drawn_permutation(case)
+        moved = len([a for a, dest in drawn.items() if a != dest])
+        assert 2 * starts + segments == moved, (
+            f"{case.name}: the file marks {2 * starts + segments} pieces, {moved} move"
+        )
+
+
+# A quarter turn of the top layer, on the eight anchors: F->L->B->R->F.
+_AUF = {
+    "bottom": "left",
+    "left": "top",
+    "top": "right",
+    "right": "bottom",
+    "bl": "tl",
+    "tl": "tr",
+    "tr": "br",
+    "br": "bl",
+}
+_CORNER_ANCHORS = ("tl", "tr", "br", "bl")
+
+
+def _corner_shape(perm: dict[str, str]) -> str:
+    moved = [c for c in _CORNER_ANCHORS if perm[c] != c]
+    if not moved:
+        return "none"
+    if len(moved) == 2:
+        a, b = moved
+        return "adjacent" if _AUF[a] == b or _AUF[b] == a else "diagonal"
+    return f"{len(moved)}-moved"
+
+
+def test_every_pll_picture_matches_its_jperm_group_up_to_auf() -> None:
+    """JPerm groups PLL by what the corners do — "Edges Only", "Adjacent Corner
+    Swap", "Diagonal Corner Swap" — and that description is true UP TO AUF: an
+    adjacent swap composed with a U turn reads as a corner 3-cycle.
+
+    The diagrams do not normalise the AUF away, deliberately: each picture is
+    the state its own printed algorithm solves, so the algorithm beside it
+    works on the state drawn. 7 of the 21 shipped 3x3 PLL diagrams already show
+    such an offset (Z-perm among them), so this is the existing convention, not
+    a new one. What must still hold is the label, up to a U turn — and it is
+    checked on the 3x3 set too, which is what shows the check is honest rather
+    than tuned to make the 4x4 set pass.
+    """
+    groups = {"Edges Only": "none", "Adjacent Corner Swap": "adjacent"}
+    groups["Diagonal Corner Swap"] = "diagonal"
+    for set_name, cases in (("pll", full_pll_cases()), ("4x4pll", big_pll_cases())):
+        states = [c for c in case_states()["cases"] if c["set"] == set_name]
+        assert len(states) == len(cases)
+        for state, case in zip(states, cases, strict=True):
+            want = groups[state["group"]]
+            perm = _drawn_permutation(case)
+            shapes = []
+            for _ in range(4):
+                shapes.append(_corner_shape(perm))
+                # Undo one AUF: the piece in slot s came from the slot before it.
+                perm = {_AUF[s]: perm[s] for s in perm}
+            assert want in shapes, (
+                f"{case.name}: JPerm calls it {state['group']!r}, but the corners read "
+                f"{shapes} under the four AUFs"
+            )
+
+
+def test_every_four_by_four_picture_is_distinct() -> None:
+    """Two cases that draw the same picture would be unlearnable — and would be
+    the signature of a state export that collapsed a distinction."""
+    for subdir, builder, _ in _BIG_SETS:
+        seen: dict[tuple[object, ...], str] = {}
+        for case in builder():
+            key = (
+                tuple(case.u_face),
+                tuple(case.top_side),
+                tuple(case.right_side),
+                tuple(case.bottom_side),
+                tuple(case.left_side),
+                tuple(sorted(case.swaps)),
+                tuple(sorted(map(tuple, case.cycles))),
+            )
+            assert key not in seen, f"{subdir}: {case.name} draws the same picture as {seen[key]}"
+            seen[key] = case.name
+
+
+def test_every_shipped_four_by_four_diagram_is_present_and_four_wide() -> None:
+    """Asserted over the shipped tree: a 4x4 diagram that silently regressed to
+    a 3x3 grid would still be a valid, themed, plausible SVG."""
+    for subdir, builder, expected in _BIG_SETS:
+        svgs = sorted((_APP_SVG / subdir).glob("*.svg"))
+        assert len(svgs) == expected, f"{subdir}: {len(svgs)} diagrams, expected {expected}"
+        assert {p.stem for p in svgs} == {c.name for c in builder()}
+        for svg in svgs:
+            content = svg.read_text()
+            # 16 U cells + 4 bands of 4 + the plate.
+            assert content.count("<rect") == 33, f"{svg.name}: not a 4x4 grid"
+            assert 'viewBox="0 0 234 234"' in content, f"{svg.name}: wrong viewBox"
+
+
+def test_the_four_by_four_sets_are_fully_iconed() -> None:
+    """The same filename contract the F2L set has: gen-cases.mjs builds each
+    icon path by string surgery on the case id, and this generator builds the
+    filename the same way. Nothing but a test makes the two agree."""
+    text = _GENERATED_TS.read_text()
+    for subdir, builder, expected in _BIG_SETS:
+        icons = re.findall(rf'"/diagrams/{subdir}/([a-z0-9_]+\.svg)"', text)
+        assert len(icons) == expected, f"{subdir}: the app carries {len(icons)} icons"
+        assert sorted(icons) == sorted(f"{c.name}.svg" for c in builder())
+
+
+def test_the_diagram_filename_rule_is_a_pure_function_of_the_case_id() -> None:
+    """Pinned because gen-cases.mjs re-implements it in JavaScript."""
+    assert diagram_name("444.oll.u-f") == "444_oll_u_f"
+    assert diagram_name("444.pll.o-minus") == "444_pll_o_minus"
+    for case in big_oll_cases() + big_pll_cases():
+        assert re.fullmatch(r"[a-z0-9_]+", case.name), case.name
+
+
+def test_a_diagram_cannot_disagree_with_its_own_cube_order() -> None:
+    """The failure this closes: hand a 4x4 renderer nine facelets and it draws
+    a perfectly convincing picture of nothing."""
+    from cubepath.diagrams import CubeDiagram
+
+    with pytest.raises(ValueError, match="U facelets"):
+        CubeDiagram(name="x", label="x", category="444_oll", u_face=[YELLOW] * 9, n=4)
+    with pytest.raises(ValueError, match="has 3 cells"):
+        CubeDiagram(
+            name="x",
+            label="x",
+            category="444_oll",
+            u_face=[YELLOW] * 16,
+            top_side=[YELLOW] * 3,
+            n=4,
+        )
+    # An unstated band still fills to the right width for the cube it is on.
+    assert CubeDiagram(name="x", label="x", category="444_oll", u_face=[YELLOW] * 16, n=4).left_side
+
+
+def test_an_unknown_category_cannot_be_written_to_the_tree_root() -> None:
+    """It used to be: `_case_subdir` fell through to "", which put the file in
+    the root of guide/figures/generated, where sync-diagrams.sh (which copies
+    subdirectories) would never have shipped it."""
+    from cubepath.diagrams import _case_subdir
+
+    with pytest.raises(ValueError, match="unknown diagram category"):
+        _case_subdir("555_l2e")
+
+
+def test_edge_anchors_sit_at_the_centre_of_the_edge_not_a_cell() -> None:
+    """On a 4x4 an "edge" is a dedge — two wings — so its arrow must start
+    between them. Anchoring it on a cell instead would point every 4x4 edge
+    arrow half a sticker off, which is the kind of wrong that still looks
+    right."""
+    step = 42  # CELL + GAP
+    for name in ("top", "bottom", "left", "right"):
+        x4, y4 = _arrow_pos(name, 4)
+        x3, y3 = _arrow_pos(name, 3)
+        moving = x4 if name in ("top", "bottom") else y4
+        wings = [_arrow_pos("tl", 4), _arrow_pos("br", 4)]
+        # Midway between the two middle cell centres, i.e. half a step past one.
+        assert moving in (
+            wings[0][0] + 1.5 * step,
+            wings[0][1] + 1.5 * step,
+        ), f"{name}: anchored at a cell centre, not between the wings"
+        # The 3x3 anchors are unchanged: one cell IS the whole edge there.
+        assert (x3, y3) == _arrow_pos(name), f"{name}: the 3x3 anchor moved"
+    for name in ("tl", "tr", "bl", "br"):
+        x, y = _arrow_pos(name, 4)
+        assert 34 <= x <= 200 and 34 <= y <= 200, f"{name}: {x},{y} outside the 4x4 grid"
+
+
+def _u_face_cells(case) -> tuple[list[int], list[int]]:
+    """(corner indices, edge-wing indices) into a plan view's U face."""
+    n = case.n
+    corners, wings = [], []
+    for r in range(n):
+        for c in range(n):
+            on_r, on_c = r in (0, n - 1), c in (0, n - 1)
+            if on_r and on_c:
+                corners.append(r * n + c)
+            elif on_r or on_c:
+                wings.append(r * n + c)
+    return corners, wings
+
+
+def test_every_four_by_four_oll_picture_shows_exactly_one_flipped_dedge() -> None:
+    """The parity signature — and the whole reason these 27 diagrams exist.
+
+    Every case in JPerm's 4x4 OLL set carries OLL parity: exactly one dedge is
+    flipped, which is impossible on a 3x3 and unrepresentable in a three-cell
+    row. In the picture it must read as two ADJACENT wings grey on top with
+    their yellow on the side. I checked the same count independently against
+    the cubing.js kpuzzle orbits — 2 flipped EDGES wings in all 27 cases, with
+    no facelet map involved — so this pins the picture to the puzzle, not to
+    the export.
+    """
+    for case in big_oll_cases():
+        _, wings = _u_face_cells(case)
+        flipped = [i for i in wings if case.u_face[i] != YELLOW]
+        assert len(flipped) == 2, f"{case.name}: {len(flipped)} wings grey, expected one dedge"
+        a, b = ((i // case.n, i % case.n) for i in flipped)
+        assert abs(a[0] - b[0]) + abs(a[1] - b[1]) == 1, (
+            f"{case.name}: the two flipped wings at {a} and {b} are not one dedge"
+        )
+
+
+def test_every_four_by_four_oll_picture_shows_the_corner_count_jperm_names() -> None:
+    """JPerm groups this set by how many corners are already oriented — "4
+    Corners", "2 Corners", "1 Corner", "0 Corners" — so the group name is an
+    independent statement of what the picture must show, written by someone who
+    never saw this renderer. Counted against the kpuzzle too: 0/2/3/4 corners
+    twisted, matching 4/2/1/0 oriented, in all 27 cases.
+    """
+    states = {c["name"]: c for c in case_states()["cases"] if c["set"] == "4x4oll"}
+    for case in big_oll_cases():
+        name = case.label.split(" — ")[0]
+        group = states[name]["group"]
+        expected = int(group.split()[0])
+        corners, _ = _u_face_cells(case)
+        oriented = sum(1 for i in corners if case.u_face[i] == YELLOW)
+        assert oriented == expected, (
+            f"{case.name}: JPerm calls it {group!r}, the picture shows {oriented} oriented"
+        )

@@ -3,11 +3,32 @@ title: "Step 1: The White Cross"
 description: "Four white edges around the white center, placed intuitively — then flip the cube for good."
 phase: "phase-1"
 order: 30
+minutes: 10
+objectives:
+  - "Build a white cross whose side colours match their centres, with no algorithm."
+  - "Recognise a flipped edge and re-approach it from the bottom layer."
+  - "Finish in the grip the rest of the course uses: white down, yellow up."
+prerequisites: ["notation"]
+algorithms: []
+practice:
+  groups: []
+  links:
+    - href: "/practice/"
+      label: "Open the trainer"
+    - href: "/print"
+      label: "Printable cards"
+  note: "Set the trainer to Full solve, take its scramble and build only the cross — ten scrambles in a row with no piece knocked back out is enough."
 ---
 
 import Callout from "../../components/Callout.astro";
+import Figure from "../../components/Figure.astro";
 
-<img src="/diagrams/steps/step_1_cross.svg" alt="White cross on top: four white edges around the white center, each side color matching its center" width="60" />
+<Figure
+  size="side"
+  src="/diagrams/steps/step_1_cross.svg"
+  alt="White cross on top: four white edges around the white center, each side color matching its center"
+  caption="The goal: a white plus, side colours matched."
+/>
 
 Hold the cube **white center up** — for this step only. The goal: four white
 edges around the white center, each edge's second color sitting directly
@@ -34,18 +55,21 @@ the bottom layer as above.
 ## Why there's no algorithm
 
 Nothing else is solved yet, so every turn is free — you cannot break what
-does not exist. Algorithms exist to change one piece of the cube while
-preserving the rest; with nothing to preserve, plain turns are enough.
-The only constraint grows as you work: don't knock out edges you've
-already placed. If a move would, turn the blocker out of the way first,
-insert, then restore it.
+does not exist. The only constraint grows as you work: don't knock out edges
+you've already placed, and if a move would, turn the blocker out of the way
+first, insert, then restore it.
 
 Repeat until all four edges are in. Done means: white cross on top, and
 each side face shows its edge sticker matching the center below it.
 
 ## Flip it
 
-<img src="/diagrams/steps/step_flip.svg" alt="Cube flipped upside down so white faces the table and yellow faces up" width="60" />
+<Figure
+  size="side"
+  src="/diagrams/steps/step_flip.svg"
+  alt="Cube flipped upside down so white faces the table and yellow faces up"
+  caption="x2 — and it stays this way to the end."
+/>
 
 Turn the whole cube upside down: `x2`. White is now on the bottom, yellow
 on top — **and stays that way for the rest of the solve**. Every later

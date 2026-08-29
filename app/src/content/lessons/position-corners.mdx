@@ -3,13 +3,32 @@ title: "Step 6: Position the Yellow Corners"
 description: "Niklas cycles three corners around the top while a fourth stays put — place all four, ignore the twist."
 phase: "phase-1"
 order: 80
+minutes: 10
+objectives:
+  - "Decide whether a corner is in the right slot, ignoring how it is twisted."
+  - "Run Niklas, R U' L' U R' U' L, and re-square the top with U."
+  - "Reach a cube where every corner's three colours match its three faces."
+prerequisites: ["align-edges"]
+algorithms: []
+practice:
+  groups: []
+  links:
+    - href: "/practice/"
+      label: "Open the trainer"
+  note: "Full solve in the trainer up to positioned corners — you should never need Niklas more than three times, so count your passes and stop if a fourth appears."
 ---
 
 import AlgText from "../../components/AlgText.astro";
 import Callout from "../../components/Callout.astro";
+import Figure from "../../components/Figure.astro";
 import TwistyPlayer from "../../components/TwistyPlayer.astro";
 
-<img src="/diagrams/steps/step_6_ycorners_pos.svg" alt="Cube solved except the four yellow corners" width="60" />
+<Figure
+  size="side"
+  src="/diagrams/steps/step_6_ycorners_pos.svg"
+  alt="Cube solved except the four yellow corners"
+  caption="Four corners from solved."
+/>
 
 Yellow cross done, edges matched to their centers — the cube is four corners
 from solved. This step drags each corner into its correct **slot**; making
@@ -41,18 +60,22 @@ One algorithm handles everything:
 three: front-right → back-right → back-left → front-right. The bottom two
 layers come back untouched.
 
-![Front-left corner held in place while the other three top corners cycle](/diagrams/steps/corner_cycle.svg)
+<Figure
+  size="card"
+  src="/diagrams/steps/corner_cycle.svg"
+  alt="Front-left corner held in place while the other three top corners cycle"
+  caption="The held corner shows red on top and blue in front — right place, wrong twist. It still counts, and Niklas leaves it alone."
+/>
 
-In the diagram the held corner shows red on top and blue in front — right
-place, wrong twist. It still counts as positioned, and Niklas leaves it
-alone.
-
-<TwistyPlayer alg="R U' L' U R' U' L" anchor="start" />
-
-Play it from solved: after the seven moves the top layer sits a quarter-turn
-off — turn `U` once so the edges line back up with the centers. Re-squared,
-three corners have traded seats and the front-left corner is back where it
-started.
+<Figure size="card" height={320} caption="Niklas from solved. Square the top with one U and three corners have traded seats.">
+  {/* Beginner ladder, `cp`: position only. The twist is Step 7, so the
+      corners carry the permutation char and not the orientation one. */}
+  <TwistyPlayer
+    alg="R U' L' U R' U' L"
+    anchor="start"
+    context={{ ladder: "beginner", stage: "cp" }}
+  />
+</Figure>
 
 ## The routine
 

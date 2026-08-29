@@ -1,5 +1,6 @@
 ---
 import { pwaInfo } from "virtual:pwa-info";
+import "../styles/fonts.css";
 import "../styles/tokens.css";
 import PwaShell from "../components/PwaShell.astro";
 
@@ -20,15 +21,77 @@ const {
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#fcfbf8" />
+    {
+      /*
+      Two media-scoped theme-colors, not one hardcoded cream: a dark-mode user
+      used to get a #fcfbf8 browser chrome above a #161412 page. When the
+      header's toggle *forces* a theme against the OS, the script below inserts
+      a third, media-less meta ahead of these — the UA applies the first one
+      whose media matches, so tree order is what makes the override win.
+    */
+    }
+    <meta name="theme-color" content="#fcfbf8" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#161412" media="(prefers-color-scheme: dark)" />
+    {
+      /*
+      Blocking, inline, and first: a stored theme has to be on <html> before the
+      first paint or the page flashes the OS theme and then swaps. It is ~10
+      lines, so inlining it costs less than the request it would otherwise be.
+      Only "light" and "dark" are ever stored — "system" is the absence of a
+      value, which is why nothing is written for it.
+    */
+    }
+    <script is:inline>
+      (function () {
+        try {
+          const t = localStorage.getItem("cubepath.theme");
+          if (t === "light" || t === "dark") {
+            document.documentElement.setAttribute("data-theme", t);
+            document.documentElement.style.colorScheme = t;
+            const m = document.createElement("meta");
+            m.name = "theme-color";
+            m.setAttribute("data-theme-color-forced", "");
+            m.content = t === "dark" ? "#161412" : "#fcfbf8";
+            document.head.insertBefore(m, document.head.firstChild);
+          }
+        } catch {
+          /* Storage denied (private window, blocked cookies) — follow the OS. */
+        }
+      })();
+    </script>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     {pwaInfo && <Fragment set:html={pwaInfo.webManifest.linkTag} />}
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    {
+      /*
+      Fonts are self-hosted (src/styles/fonts.css) and precached, not fetched
+      from fonts.googleapis.com. Two <link rel="preconnect"> and a blocking
+      Google stylesheet used to sit here; on a PWA sold on airplane mode that
+      meant a cold offline load — HTTP cache empty, service worker warm — had
+      no typeface at all and fell back to Georgia / system-ui.
+
+      Only the two faces every route paints immediately are preloaded:
+      Newsreader carries the header wordmark and every heading, Plex Sans
+      carries the body. IBM Plex Mono is content-level (`.alg`, the timer) and
+      absent from the home page, so it is left to the stylesheet rather than
+      spending 20 KB of first-paint bandwidth on pages that never show it.
+      `crossorigin` is required even same-origin: fonts are always fetched in
+      CORS mode, and a preload without it is discarded and fetched twice.
+    */
+    }
     <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap"
+      rel="preload"
+      href="/fonts/newsreader-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/ibm-plex-sans-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
     />
     <link rel="sitemap" href="/sitemap-index.xml" />
     <meta property="og:title" content={title} />
@@ -38,7 +101,81 @@ const {
     <title>{title}</title>
   </head>
   <body>
+    <a class="skip-link" href="#main">Skip to content</a>
     <slot />
+    <footer class="site-footer">
+      <div class="footer-bar">
+        <span>
+          Free forever · MIT + CC BY 4.0 ·{" "}
+          <a href="https://github.com/tsenoner/cubepath">Open source</a>
+        </span>
+        <nav aria-label="Offline">
+          <a href="/cubepath.pdf">PDF guide</a>
+          <a href="/print/">Print the cards</a>
+        </nav>
+      </div>
+    </footer>
     <PwaShell />
   </body>
 </html>
+
+<style is:global>
+  /*
+   * `color-scheme` is what makes the UA's own surfaces — scrollbars, form
+   * controls, the canvas behind the page — follow the theme. Without it a dark
+   * page kept light scrollbars. A forced theme overrides this inline, from the
+   * head script above and from the header toggle.
+   */
+  :root {
+    color-scheme: light dark;
+  }
+</style>
+
+<style>
+  /*
+   * Keyboard users had to tab the brand and four nav links on every route.
+   * The target is <Page>'s default id="main".
+   */
+  .skip-link {
+    position: absolute;
+    left: var(--space-2);
+    top: var(--space-2);
+    z-index: 100;
+    padding: var(--space-2) var(--space-4);
+    background: var(--card);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: var(--r-sm);
+    font-weight: 600;
+    transform: translateY(-200%);
+  }
+  .skip-link:focus-visible {
+    transform: none;
+  }
+
+  /*
+   * The footer lives here, not on the home page. It used to be rendered once,
+   * by index.astro, so every other route — 25 lessons, 181 case pages,
+   * practice, reference — simply stopped, with no licence and no way back.
+   */
+  .site-footer {
+    border-top: 1px solid var(--line);
+    margin-top: var(--space-4);
+    color: var(--faint);
+    font-size: var(--text-sm);
+  }
+  .footer-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3) var(--space-5);
+    max-width: var(--shell-max);
+    margin: 0 auto;
+    padding: var(--space-5) var(--shell-x);
+  }
+  .footer-bar nav {
+    display: flex;
+    gap: var(--space-5);
+  }
+</style>

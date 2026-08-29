@@ -1,11 +1,26 @@
 ---
-title: "5×5: Centers and Freeslice Edges"
+title: "5×5: Centres and Edge Pairing"
 description: "Fixed centers hand you the color scheme back — build them in bars, then pair every edge with freeslice."
 phase: "555"
 order: 340
+minutes: 14
+objectives:
+  - "Build a 5×5 centre in three bars, in the order white, yellow, then the ring."
+  - "Name the three pieces of a 5×5 edge and say when it counts as paired."
+  - "Run the freeslice loop, and flip a wing that faces the wrong way."
+prerequisites: ["444-edge-pairing"]
+algorithms: []
+practice:
+  groups: []
+  links:
+    - href: "/practice/"
+      label: "Open the trainer"
+  note: "Set the trainer to 5×5 and drill centres alone: scramble, solve all six, scramble again. Centres are often half the solve, so this buys more time than any algorithm in the course."
 ---
 
+import AlgText from "../../components/AlgText.astro";
 import Callout from "../../components/Callout.astro";
+import Figure from "../../components/Figure.astro";
 import TwistyPlayer from "../../components/TwistyPlayer.astro";
 
 The 5×5 is your 4×4 toolkit with one gift attached: an odd layer count. Odd
@@ -23,7 +38,10 @@ centers, pair edges, solve as a 3×3. Only the sizes changed.
 One notation addition: a number in front of a wide move widens the grab.
 `Rw` still turns two layers; `3Rw` turns three.
 
-<TwistyPlayer alg="3Rw" puzzle="5x5x5" anchor="start" />
+<Figure size="card" height={320} caption="3Rw on a 5×5 — three layers in from the right, turning as one.">
+  {/* Notation demo — no stage, so every layer the move grabs stays visible. */}
+  <TwistyPlayer alg="3Rw" puzzle="5x5x5" anchor="start" />
+</Figure>
 
 ## Centers: three bars each
 
@@ -39,6 +57,33 @@ opposite. Then hold white and yellow on left and right — the four remaining
 faces form a ring around the cube, and every move you make stays on unsolved
 faces. Finish the ring one center at a time; the last two complete together.
 
+## The insert: taking a piece away and putting it back
+
+Sooner or later a centre piece you need is on a face you have already
+finished, and you cannot just turn that face to fetch it. The move is always
+the same shape: **take a column away, do the one turn you actually wanted,
+put the column back.**
+
+<Figure size="card" height={320} caption="Rw U Rw' — lift a column of the front centre into the top, turn the top, lower it home.">
+  <TwistyPlayer alg="Rw U Rw'" puzzle="5x5x5" anchor="start" context={{ ladder: "555", stage: "555-centers" }} />
+</Figure>
+
+Why it is safe: `Rw` carries a whole column away, `U` only touches the top
+layer, `Rw'` carries the column back. Every piece the grab moved that the
+middle turn did not touch returns to the exact slot it left — measured, the
+R, L, B and D centres come back untouched. The only pieces that end up
+somewhere new are the one you wanted to move and the one you displaced to
+make room.
+
+<Callout type="info">
+  **There is no algorithm on this page.** Centres are a pattern you aim, not a
+  sequence you recall. `Rw U Rw'` above is *one instance* of it — the grab you
+  choose depends on which column the piece has to land in, and the middle turn
+  depends on what you want on top. On a 5×5 there is a third column that the
+  two-wide grab cannot reach at all: for that one, grab the middle slice with
+  `M` instead.
+</Callout>
+
 ## Edges: a midge and two wings
 
 Each edge slot holds three pieces: the **midge** in the middle — this is your
@@ -52,18 +97,44 @@ Pair edges with inner-slice turns, and don't repair the centers in between —
 that's the "free":
 
 - **Slice** — turn an inner layer so a wing rides next to its matching midge.
-  The pair forms at a front edge.
+  The pair forms at a front edge. Two inserts do almost all of this work, and
+  which one you reach for depends only on which gets the wing in the right way
+  round: <AlgText moves="R U' R'" /> or <AlgText moves="F R' F' R" />.
 - **Store** — move the finished edge into the top or bottom layer, out of the
   working zone, and drop an unpaired edge into its place.
 - **Repeat** — keep slicing and storing. The centers look wrecked mid-run.
   Ignore them.
+- **Flip** — when a wing sits next to its midge but facing the wrong way, no
+  amount of slicing will pair them. Turn the group over in place:
+
+  <AlgText moves="R U R' F R' F' R" />
+
 - **Restore** — when no pairable edges remain, turn the slices back. The
   centers snap back with them.
 
+<Callout type="info">
+  The rule that keeps the centres recoverable: **for every `R` you make while
+  sliced out, make an `R'`.** Both inserts above obey it, and so does the flip
+  below — count them. Break it and the centres no longer come back with the
+  slices, which is the only way this step goes wrong.
+</Callout>
+
+<Figure size="card" height={320} caption="R U R' F R' F' R — the front-right group turns over in place. The four top groups move one place round, intact.">
+  <TwistyPlayer alg="R U R' F R' F' R" puzzle="5x5x5" anchor="start" context={{ ladder: "555", stage: "555-pairing" }} />
+</Figure>
+
+You already know most of it: the last four moves are the second insert above,
+and the first three are the first insert with the middle turn reversed. Seven
+outer turns, and that is what makes it safe — an outer turn carries both wings
+of a group together, so this algorithm is **mechanically incapable of breaking
+a pair you have already made**. Fire it whenever a wing faces the
+wrong way. It is also the same seven moves on a 4×4 — nothing in it counts
+layers, so there is no wide-move trap to fall into.
+
 The top and bottom layers hold eight finished edges between them; the rest
 pair in the middle as you go. When only **two unpaired edges** remain, there
-is nowhere left to store spares — the last two edges get their own technique,
-next lesson.
+is nowhere left to store spares — the last two groups get their own
+treatment, next lesson — the same flip, aimed by hand.
 
 <Callout type="tip">
   Centers dominate 5×5 solve time — often half the solve. Practice them

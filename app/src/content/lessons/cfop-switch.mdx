@@ -3,6 +3,16 @@ title: "The CFOP Switch"
 description: "Reorder the last layer to orientation-first — two new algorithms, and the order never changes again."
 phase: "phase-2"
 order: 110
+minutes: 14
+objectives:
+  - "Run the last layer in CFOP order: orient edges, orient corners, permute corners, permute edges."
+  - "Chain Sune to orient every corner case without learning a second algorithm."
+  - "Read headlights and finish with T-Perm and Ub."
+prerequisites: ["speed-tricks"]
+algorithms: ["oll.27", "pll.t", "pll.ub"]
+practice:
+  groups: ["2look-pll-corners", "2look-pll-edges"]
+  note: "Drill T-Perm and Ub until each runs without a pause, then do full solves in the new order until you stop reaching for Niklas out of habit."
 ---
 
 import CaseRow from "../../components/CaseRow.astro";
@@ -17,7 +27,9 @@ Why it wins: in the beginner order the yellow face came together last, so
 every step meant re-scanning a half-scrambled top. Orientation-first means
 that once the corners are done, the top is solid yellow — every remaining
 decision reads off side stickers alone. The finished method is still only
-about eighteen algorithms all told; the switch itself costs two.
+nineteen algorithms in daily use; the switch itself costs two and retires three
+— Niklas and both Orient Corners finishers have no job once corners are
+oriented first.
 
 Grip stays the same throughout: **white on the bottom, yellow on top**.
 Nothing changes before the last layer — solve the cross, the first two

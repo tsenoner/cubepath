@@ -1,40 +1,216 @@
 ---
 import Base from "../../layouts/Base.astro";
 import Header from "../../components/Header.astro";
+import Page from "../../components/Page.astro";
 import CaseRow from "../../components/CaseRow.astro";
-import { CASES, type CaseDef } from "../../data/algs";
+import EmptyState from "../../components/EmptyState.astro";
+import ProgressBar from "../../components/ProgressBar.astro";
+import { ALL_CASES, CASES, caseById, type CaseDef } from "../../data/algs";
 import { GENERATED_CASES } from "../../data/fullsets.gen";
+import { RICH } from "../../data/fullsets.rich.gen";
 import { caseIcon } from "../../data/icons";
+import { TAUGHT_444_CASES, isLocked } from "../../lib/unlocks";
 
-const GROUPS: { key: string; name: string }[] = [
-  { key: "cross-eo", name: "Yellow Cross" },
-  { key: "2look-oll-corners", name: "Corner Orientation (2-Look OLL)" },
-  { key: "2look-pll-corners", name: "Corner Permutation (2-Look PLL)" },
-  { key: "2look-pll-edges", name: "Edge Permutation (2-Look PLL)" },
-  { key: "444-parity", name: "4×4 Parity" },
-];
+/**
+ * The reference is the site's index of every case, so two things here are
+ * structural rather than decorative:
+ *
+ *  1. Every section carries an `id` derived from the group key it renders, and
+ *     every case an id derived from its case id (dots -> dashes). Astro pages
+ *     get no rehype-slug pass, so these are written out by hand; without them
+ *     a deep link into nine sections and a few hundred rows lands at the top of
+ *     the page.
+ *  2. Nothing is orphaned. Every id in ALL_CASES that lib/unlocks.ts is not
+ *     hiding appears in exactly one grid or row list below — including the
+ *     5x5 cases which had a /case/ page but no link to it from anywhere on
+ *     the site. The locked ids are not rendered here and get no /case/ page
+ *     either (see pages/case/[...id].astro), so "reachable from nowhere"
+ *     stays impossible in both directions.
+ */
 
-// Full sets, grouped by shape/type, linking to per-case pages. The grids
-// iterate GENERATED_CASES: every case carries its true shape group there,
-// so the 2-look overlap ids (oll.21–27, pll.*) appear exactly once, under
-// their shape heading — never under a curated "2look-…" group. The /case/
-// pages still resolve curated content for the overlap ids.
-function grouped(cases: CaseDef[]) {
-  const groups = new Map<string, CaseDef[]>();
-  for (const k of cases) {
-    if (!groups.has(k.group)) groups.set(k.group, []);
-    groups.get(k.group)!.push(k);
-  }
-  return [...groups.entries()];
+// ── Sections ─────────────────────────────────────────────────────────
+interface Sub {
+  key: string;
+  title: string;
+  items: CaseDef[];
 }
-const fullOLL = grouped(GENERATED_CASES.filter((k) => /^oll\.\d+$/.test(k.id)));
-const fullPLL = grouped(GENERATED_CASES.filter((k) => k.id.startsWith("pll.")));
-const f2lGroups = grouped(GENERATED_CASES.filter((k) => k.phase === "full-f2l"));
-const groupTitle = (g: string) =>
-  g
-    .replace(/^(oll|pll)-/, "")
+interface Section {
+  /** URL fragment. Derived from the group/phase key this section renders. */
+  id: string;
+  title: string;
+  /** Short form, for the jump bar. */
+  nav: string;
+  blurb?: string;
+  kind: "rows" | "grid";
+  items: CaseDef[];
+  subs: Sub[];
+}
+
+/** "4x4oll-0-corners" -> "0 Corners"; "oll-small-l-shape" -> "Small L Shape". */
+const subTitle = (key: string) =>
+  key
+    .replace(/^(?:4x4oll|4x4pll|oll|pll|f2l|555)-/, "")
     .replace(/-/g, " ")
     .replace(/\b\w/g, (c) => c.toUpperCase());
+
+/** Group a flat case list by its own `group` key, preserving dataset order. */
+function subsOf(cases: CaseDef[]): Sub[] {
+  const byKey = new Map<string, CaseDef[]>();
+  for (const k of cases) {
+    const list = byKey.get(k.group);
+    if (list) list.push(k);
+    else byKey.set(k.group, [k]);
+  }
+  return [...byKey].map(([key, items]) => ({ key, title: subTitle(key), items }));
+}
+
+const gen = (test: (k: CaseDef) => boolean) => GENERATED_CASES.filter(test);
+
+/**
+ * Curated course cases, rendered as full CaseRows — id is the group key, and
+ * the members default to the curated cases carrying it. `items` overrides that
+ * for a section whose membership is the course's rather than the data's.
+ */
+const rows = (
+  id: string,
+  nav: string,
+  title: string,
+  blurb?: string,
+  items?: CaseDef[],
+): Section => ({
+  id,
+  nav,
+  title,
+  ...(blurb ? { blurb } : {}),
+  kind: "rows",
+  items: items ?? CASES.filter((k) => k.group === id),
+  subs: [],
+});
+
+/** A full set, rendered as icon tiles grouped by shape — id is the phase key. */
+const grid = (
+  id: string,
+  nav: string,
+  title: string,
+  items: CaseDef[],
+  blurb: string,
+): Section => ({
+  id,
+  nav,
+  title,
+  blurb,
+  kind: "grid",
+  items,
+  subs: subsOf(items),
+});
+
+const SECTIONS: Section[] = [
+  rows(
+    "cross-eo",
+    "Cross",
+    "Yellow Cross",
+    "Three cases — and the first two are the same trigger.",
+  ),
+  rows("2look-oll-corners", "OLL corners", "Corner Orientation — 2-Look OLL"),
+  rows("2look-pll-corners", "PLL corners", "Corner Permutation — 2-Look PLL"),
+  rows("2look-pll-edges", "PLL edges", "Edge Permutation — 2-Look PLL"),
+  grid(
+    "full-oll",
+    "Full OLL",
+    "Full OLL",
+    gen((k) => /^oll\.\d+$/.test(k.id)),
+    "The complete orientation set, grouped the way you recognize them.",
+  ),
+  grid(
+    "full-f2l",
+    "F2L",
+    "F2L",
+    gen((k) => k.phase === "full-f2l"),
+    "First-two-layers pairs for the front-right slot; learn them intuitively first and look the awkward ones up here.",
+  ),
+  grid(
+    "full-pll",
+    "Full PLL",
+    "Full PLL",
+    gen((k) => k.id.startsWith("pll.")),
+    "Permutations with their piece-movement arrows.",
+  ),
+  rows(
+    "444-parity",
+    "4×4 parity",
+    "4×4 Parity",
+    "The two states a 3×3 can never produce — and the whole of what a 4×4 last layer adds.",
+    // Course membership, not data membership: the two PLL-parity faces were
+    // generated into "4x4pll-edges-only" alongside cases the course does not
+    // teach, but the 4×4 lesson teaches both of them.
+    [...TAUGHT_444_CASES].map((id) => caseById.get(id)!),
+  ),
+  grid(
+    "444-oll",
+    "4×4 OLL",
+    "4×4 OLL",
+    gen((k) => k.group.startsWith("4x4oll-")),
+    "Edge-flip states of the 4×4 last layer, grouped by how many corners are already oriented.",
+  ),
+  grid(
+    "444-pll",
+    "4×4 PLL",
+    "4×4 PLL",
+    gen((k) => k.group.startsWith("4x4pll-")),
+    "Permutations that need the 4×4 parity algorithm folded into them.",
+  ),
+  grid(
+    "555-l2e",
+    "5×5 L2E",
+    "5×5 Last Two Edges",
+    gen((k) => k.phase === "555"),
+    "Pairing the last two edge triplets — the only 5×5 cases that are not already a 3×3 or 4×4 skill.",
+  ),
+];
+
+/*
+ * Locked sets never reach the page: sections keyed to a locked set are dropped
+ * whole, and every remaining section has its items re-filtered, so a locked
+ * case cannot slip through a section that merely overlaps it. Both go through
+ * the one `isLocked` predicate — unlocking restores the sections untouched.
+ */
+const VISIBLE: Section[] = SECTIONS.filter((s) => !isLocked(s.id)).map((s) => ({
+  ...s,
+  items: s.items.filter((k) => !isLocked(k)),
+  subs: s.subs
+    .map((sub) => ({ ...sub, items: sub.items.filter((k) => !isLocked(k)) }))
+    .filter((sub) => sub.items.length > 0),
+}));
+
+// ── Anchors ──────────────────────────────────────────────────────────
+// One id per case: the case id with dots replaced by dashes, so
+// /reference/#555-l2e-6 and /reference/#444-oll-parity both resolve. The
+// curated 2-look rows deliberately repeat ids that also appear in the Full OLL
+// and Full PLL grids, so the anchor goes to whichever section renders first —
+// the row, which is the richer presentation — and the tile goes without.
+const anchorOwner = new Map<string, string>();
+for (const s of VISIBLE) {
+  for (const k of s.items) if (!anchorOwner.has(k.id)) anchorOwner.set(k.id, s.id);
+}
+/** The anchor for `id`, but only in the one section that owns it. */
+const anchorOf = (section: string, id: string) =>
+  anchorOwner.get(id) === section ? id.replace(/\./g, "-") : undefined;
+
+// ── Presentation helpers ─────────────────────────────────────────────
+/** "OLL 27" -> "27"; "Ba (4×4 PLL)" -> "Ba"; "T-Perm" -> "T". */
+const tileLabel = (name: string) =>
+  name
+    .replace(/\s*\(4×4 (?:OLL|PLL)\)$/, "")
+    .replace(/^(?:OLL|F2L|L2E)\s+/, "")
+    .replace(/-Perm$/, "");
+
+/** Name + recognition cue + id, lowercased — what the filter matches against. */
+const searchText = (k: CaseDef) =>
+  `${k.name} ${k.recognition ?? RICH[k.id]?.recognition ?? ""} ${k.id}`.toLowerCase();
+
+// Distinct cases, not the sum of the sections: the 2-look rows deliberately
+// repeat ids the Full OLL / Full PLL grids also carry.
+const total = ALL_CASES.filter((k) => !isLocked(k)).length;
 ---
 
 <Base
@@ -42,150 +218,432 @@ const groupTitle = (g: string) =>
   description="Every Cubepath algorithm — machine-verified, tap to play in 3D."
 >
   <Header active="reference" />
-  <main>
+  <Page measure="app">
     <h1>Algorithm Reference</h1>
     <p class="lead">
-      Every algorithm on this site is machine-verified against a cube simulator before it ships. Tap
-      a case to play it in 3D. Prefer paper?
-      <a href="/cubepath.pdf">Download the PDF guide</a> or the
-      <a href="/print">printable card set</a> — three progression cards plus an annex.
+      All {total} cases this site teaches, each machine-verified against a cube simulator before it ships.
+      Tap a case to play it in 3D. Prefer paper? <a href="/cubepath.pdf">Download the PDF guide</a> or
+      the <a href="/print">printable card set</a> — three progression cards plus an annex.
     </p>
+
+    <div class="toolbar">
+      <div class="controls">
+        <input
+          type="search"
+          class="search"
+          data-ref-search
+          placeholder="Filter — name, number or recognition cue"
+          aria-label="Filter cases by name or recognition cue"
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <p class="hint count" role="status" data-ref-count></p>
+      </div>
+      <nav class="jump" aria-label="Sections">
+        {
+          VISIBLE.map((s) => (
+            <a href={`#${s.id}`} class="chip" data-jump={s.id}>
+              {s.nav} <span class="n">{s.items.length}</span>
+            </a>
+          ))
+        }
+      </nav>
+      <div class="progress-wrap" hidden>
+        <ProgressBar label="Cases you have started" value={0} max={total} id="ref-progress" />
+      </div>
+    </div>
+
+    <div class="noresults" data-ref-empty hidden>
+      <EmptyState glyph="⌕" title="No case matches that">
+        Try a case name (<em>Sune</em>), a number (<em>27</em>), or a word from a recognition cue (<em
+          >headlights</em
+        >).
+      </EmptyState>
+    </div>
+
     {
-      GROUPS.map((g) => {
-        const items = CASES.filter((k) => k.group === g.key);
-        if (items.length === 0) return null;
+      VISIBLE.map((s) => {
+        const hasIcons = s.items.some((k) => k.icon);
         return (
-          <section>
-            <h2>{g.name}</h2>
-            <div class="case-list card">
-              {items.map((k) => (
-                <CaseRow id={k.id} />
-              ))}
-            </div>
+          <section id={s.id} data-section>
+            <h2>
+              {s.title} <span class="n">({s.items.length})</span>
+            </h2>
+            {s.blurb && <p class="lead">{s.blurb}</p>}
+            {s.kind === "rows" ? (
+              <div class="case-list card">
+                {s.items.map((k) => {
+                  const anchor = anchorOf(s.id, k.id);
+                  return <CaseRow id={k.id} {...(anchor ? { anchor } : {})} />;
+                })}
+              </div>
+            ) : (
+              <Fragment>
+                {!hasIcons && (
+                  <p class="hint nodiagram">
+                    No diagrams for this set yet — the tile carries the case name. Open one for its
+                    algorithm and a 3D replay.
+                  </p>
+                )}
+                {s.subs.map((sub) => (
+                  <div class="full-group" data-sub {...(s.subs.length > 1 ? { id: sub.key } : {})}>
+                    {s.subs.length > 1 && (
+                      <h3>
+                        {sub.title} <span class="n">({sub.items.length})</span>
+                      </h3>
+                    )}
+                    <div class:list={["tiles", { "tiles--text": !hasIcons }]}>
+                      {sub.items.map((k) => {
+                        const icon = caseIcon(k.id);
+                        return (
+                          <a
+                            href={`/case/${k.id}/`}
+                            class="tile"
+                            id={anchorOf(s.id, k.id)}
+                            title={k.name}
+                            aria-label={k.name}
+                            data-case={k.id}
+                            data-search={searchText(k)}
+                          >
+                            {icon && (
+                              <img src={icon} alt="" width="72" height="72" loading="lazy" />
+                            )}
+                            <span class="tile-name">{tileLabel(k.name)}</span>
+                            <span class="tile-status" data-case-status hidden />
+                          </a>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </Fragment>
+            )}
           </section>
         );
       })
     }
-
-    <section>
-      <h2>Full OLL — all 57 cases by shape</h2>
-      <p class="lead">The complete orientation set, grouped the way you recognize them.</p>
-      {
-        fullOLL.map(([group, items]) => (
-          <div class="full-group">
-            <h3>{groupTitle(group)}</h3>
-            <div class="icon-grid">
-              {items.map((k) => (
-                <a href={`/case/${k.id}/`} class="icon-cell" title={k.name}>
-                  <img src={caseIcon(k.id)} alt={k.name} width="72" height="72" loading="lazy" />
-                  <span>{k.name.replace("OLL ", "")}</span>
-                </a>
-              ))}
-            </div>
-          </div>
-        ))
-      }
-    </section>
-
-    <section>
-      <h2>F2L — all 41 cases</h2>
-      <p class="lead">
-        First-two-layers pairs for the front-right slot; learn intuitively first, look up the
-        awkward ones here.
-      </p>
-      {
-        f2lGroups.map(([group, items]) => (
-          <div class="full-group">
-            <h3>{groupTitle(group.replace("f2l-", ""))}</h3>
-            <div class="icon-grid">
-              {items.map((k) => (
-                <a href={`/case/${k.id}/`} class="icon-cell f2l-cell" title={k.name}>
-                  <span>{k.name.replace("F2L ", "")}</span>
-                </a>
-              ))}
-            </div>
-          </div>
-        ))
-      }
-    </section>
-
-    <section>
-      <h2>Full PLL — all 21 cases</h2>
-      <p class="lead">Permutations with their piece-movement arrows.</p>
-      {
-        fullPLL.map(([group, items]) => (
-          <div class="full-group">
-            <h3>{groupTitle(group)}</h3>
-            <div class="icon-grid">
-              {items.map((k) => (
-                <a href={`/case/${k.id}/`} class="icon-cell" title={k.name}>
-                  <img src={caseIcon(k.id)} alt={k.name} width="72" height="72" loading="lazy" />
-                  <span>{k.name.replace("-Perm", "")}</span>
-                </a>
-              ))}
-            </div>
-          </div>
-        ))
-      }
-    </section>
-  </main>
+  </Page>
 </Base>
 
+<script>
+  import { allProgress, getDB, type CaseStatus } from "../../lib/db";
+
+  // ── Filter ─────────────────────────────────────────────────────────
+  // Static-build friendly and offline-safe: everything it matches on is
+  // already in the DOM as `data-search`, so there is no index to fetch. Hiding
+  // uses the `hidden` attribute, which tokens.css backs with
+  // `display: none !important` — a `display: grid` cannot defeat it the way it
+  // did on /practice.
+  const search = document.querySelector<HTMLInputElement>("[data-ref-search]");
+  const countOut = document.querySelector<HTMLElement>("[data-ref-count]");
+  const noResults = document.querySelector<HTMLElement>("[data-ref-empty]");
+  const entries = [...document.querySelectorAll<HTMLElement>("[data-search]")];
+  const subs = [...document.querySelectorAll<HTMLElement>("[data-sub]")];
+  const sections = [...document.querySelectorAll<HTMLElement>("[data-section]")];
+  const jumps = [...document.querySelectorAll<HTMLAnchorElement>("[data-jump]")];
+
+  function apply(raw: string): void {
+    const needle = raw.trim().toLowerCase();
+    let shown = 0;
+    for (const el of entries) {
+      const hit = needle === "" || (el.dataset.search ?? "").includes(needle);
+      el.hidden = !hit;
+      if (hit) shown += 1;
+    }
+    for (const sub of subs) sub.hidden = !sub.querySelector("[data-search]:not([hidden])");
+    for (const section of sections) {
+      section.hidden = !section.querySelector("[data-search]:not([hidden])");
+    }
+    for (const jump of jumps) {
+      const target = jump.dataset.jump ? document.getElementById(jump.dataset.jump) : null;
+      jump.classList.toggle("off", target !== null && target.hidden);
+    }
+    if (noResults) noResults.hidden = shown > 0;
+    if (countOut) {
+      countOut.textContent = needle === "" ? "" : `${shown} ${shown === 1 ? "match" : "matches"}`;
+    }
+  }
+
+  if (search) {
+    search.addEventListener("input", () => apply(search.value));
+    // A back-navigation restores the field's value but not the filtered DOM.
+    if (search.value) apply(search.value);
+  }
+
+  // ── Sticky offsets ─────────────────────────────────────────────────
+  // The site header and this page's toolbar are both sticky, so an anchor jump
+  // must clear the pair of them. Measured, not hard-coded: the header shrinks
+  // below 560px and the toolbar wraps at any width.
+  const header = document.querySelector<HTMLElement>(".site-header");
+  const toolbar = document.querySelector<HTMLElement>(".toolbar");
+  function measure(): void {
+    const root = document.documentElement;
+    if (header) root.style.setProperty("--hdr-h", `${Math.round(header.offsetHeight)}px`);
+    if (toolbar) root.style.setProperty("--toolbar-h", `${Math.round(toolbar.offsetHeight)}px`);
+  }
+  measure();
+  window.addEventListener("resize", () => requestAnimationFrame(measure), { passive: true });
+
+  // ── Your own progress, in the table ────────────────────────────────
+  // jperm — the reference benchmark — puts your own times beside the case. We
+  // keep FSRS scheduling per case and showed it nowhere. Read-only and
+  // best-effort: a browser with IndexedDB blocked leaves the page as rendered.
+  const DAY = 86_400_000;
+  const rel = (ms: number): string => {
+    const days = Math.round(Math.abs(ms) / DAY);
+    if (days === 0) return "today";
+    if (days < 30) return `${days}d`;
+    return `${Math.round(days / 30)}mo`;
+  };
+
+  async function stampProgress(): Promise<void> {
+    const progress = await allProgress();
+    const started = progress.filter((p) => p.status !== "unseen");
+    if (started.length === 0) return;
+
+    const cards = await (await getDB()).getAll("cards");
+    const scheduled = new Map(cards.map((c) => [c.caseId, c] as const));
+    const status = new Map<string, CaseStatus>(started.map((p) => [p.caseId, p.status] as const));
+    const now = Date.now();
+
+    const bar = document.getElementById("ref-progress");
+    const wrap = bar?.closest<HTMLElement>(".progress-wrap");
+    if (bar && wrap) {
+      const max = Number(bar.querySelector("[role=progressbar]")?.getAttribute("aria-valuemax"));
+      const done = Math.min(started.length, max);
+      bar.style.setProperty("--pct", `${(done / max) * 100}%`);
+      const text = bar.querySelector("[data-progress-count]");
+      if (text) text.textContent = `${done}/${max}`;
+      bar.querySelector("[role=progressbar]")?.setAttribute("aria-valuenow", `${done}`);
+      wrap.hidden = false;
+    }
+
+    for (const el of document.querySelectorAll<HTMLElement>("[data-case]")) {
+      const id = el.dataset.case;
+      const state = id ? status.get(id) : undefined;
+      if (!id || !state) continue;
+      const card = scheduled.get(id);
+      const due = card ? card.due.getTime() : null;
+      const overdue = due !== null && due <= now;
+      el.dataset.status = overdue ? "due" : state;
+      const slot = el.querySelector<HTMLElement>("[data-case-status]");
+      if (!slot) continue;
+      slot.textContent =
+        due === null
+          ? state === "learned"
+            ? "Learned"
+            : "Learning"
+          : overdue
+            ? "Due now"
+            : `Due in ${rel(due - now)}`;
+      const last = card?.last_review;
+      slot.title = last ? `Last reviewed ${rel(now - last.getTime())} ago` : "Not reviewed yet";
+      slot.hidden = false;
+    }
+  }
+
+  void stampProgress().catch(() => {
+    /* No IndexedDB (private mode, blocked storage) — the page stands as rendered. */
+  });
+</script>
+
 <style>
-  main {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 34px 20px 60px;
+  h1 {
+    margin-block-end: var(--space-2);
   }
   .lead {
-    color: var(--soft);
-    margin: 8px 0 10px;
+    max-inline-size: var(--measure-prose);
   }
+
+  /*
+   * Toolbar: filter, jump bar, progress. Sticky *under* the site header
+   * (z-index below its 10), so the page's own navigation survives the
+   * sections and rows beneath it.
+   */
+  .toolbar {
+    position: sticky;
+    top: var(--hdr-h, 47px);
+    z-index: 5;
+    display: grid;
+    gap: var(--space-2);
+    margin: var(--space-4) 0 var(--space-5);
+    padding: var(--space-3) 0;
+    background: var(--paper);
+    border-block-end: 1px solid var(--line);
+  }
+  .controls {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-3);
+  }
+  .search {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    max-inline-size: 32rem;
+    font: inherit;
+    color: var(--ink);
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--r-sm);
+    padding: var(--space-2) var(--space-3);
+  }
+  .count {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .jump {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .jump .chip:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    text-decoration: none;
+  }
+  /* A section the current filter emptied: still reachable, visibly inactive. */
+  .jump .chip.off {
+    opacity: 0.45;
+  }
+  .n {
+    color: var(--faint);
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+  }
+  .progress-wrap {
+    max-inline-size: 22rem;
+  }
+
+  .noresults {
+    margin-block: var(--space-5);
+  }
+
   section {
-    margin-top: 26px;
+    margin-block-start: var(--space-7);
+    /* Clear both sticky bars when an anchor jump lands here. */
+    scroll-margin-block-start: calc(var(--hdr-h, 47px) + var(--toolbar-h, 104px) + var(--space-3));
   }
   h2 {
-    font-size: 20px;
-    margin-bottom: 10px;
+    margin-block-end: var(--space-2);
   }
   .case-list {
     overflow: hidden;
   }
+  /* An anchored row is a link target too, so it needs the same clearance as a
+     section heading. :global because the row belongs to CaseRow.astro — but it
+     is scoped to this page's .case-list, which is why the offsets are safe. */
+  .case-list :global(.case-row[id]) {
+    scroll-margin-block-start: calc(var(--hdr-h, 47px) + var(--toolbar-h, 104px) + var(--space-3));
+  }
+  .nodiagram {
+    margin-block: var(--space-2) 0;
+  }
   .full-group {
-    margin: 14px 0;
+    margin-block: var(--space-4);
+    scroll-margin-block-start: calc(var(--hdr-h, 47px) + var(--toolbar-h, 104px) + var(--space-3));
   }
   .full-group h3 {
-    font-size: 15px;
     color: var(--soft);
-    margin-bottom: 8px;
+    margin-block-end: var(--space-2);
   }
-  .icon-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
+
+  /*
+   * A real grid, not a wrapping flex row: the subsections hold 2, 4, 5, 6, 7,
+   * 8, 10, 12 and 13 cases, so packing them left gave every heading its own
+   * ragged right margin.
+   */
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+    gap: var(--space-2);
   }
-  .icon-cell {
+  .tiles--text {
+    grid-template-columns: repeat(auto-fill, minmax(116px, 1fr));
+  }
+  .tile {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
-    padding: 8px;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    background: var(--card);
-    color: var(--soft);
-    font-size: 12px;
-    font-weight: 600;
-  }
-  .f2l-cell {
-    min-width: 48px;
-    min-height: 44px;
     justify-content: center;
-    font-size: 14px;
+    gap: var(--space-1);
+    padding: var(--space-2);
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    color: var(--soft);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    text-align: center;
   }
-  .icon-cell:hover {
+  .tiles--text .tile {
+    min-block-size: 52px;
+    font-size: var(--text-sm);
+  }
+  .tile:hover {
     text-decoration: none;
     border-color: var(--accent);
     color: var(--accent);
+  }
+  .tile img {
+    display: block;
+    inline-size: min(72px, 100%);
+    block-size: auto;
+    aspect-ratio: 1;
+    object-fit: contain;
+  }
+  .tile-name {
+    overflow-wrap: anywhere;
+  }
+  /* Written by the progress script. Text, never colour alone. */
+  .tile-status {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .tile[data-status="learned"] {
+    border-color: var(--ok);
+  }
+  .tile[data-status="learned"] .tile-status {
+    color: var(--ok);
+  }
+  .tile[data-status="due"] {
+    border-color: var(--warn);
+  }
+  .tile[data-status="due"] .tile-status {
+    color: var(--warn);
+  }
+
+  @media (max-width: 560px) {
+    .controls {
+      flex-direction: column;
+      align-items: stretch;
+      gap: var(--space-1);
+    }
+    .search {
+      max-inline-size: none;
+    }
+    /* The jump chips stack three rows deep on a phone and push the first
+       case off the screen; scroll them sideways instead. */
+    .jump {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+      margin-inline: calc(-1 * var(--shell-x));
+      padding-inline: var(--shell-x);
+    }
+    .jump .chip {
+      white-space: nowrap;
+    }
+    .progress-wrap {
+      display: none;
+    }
+    /* Three columns instead of two on a 390px phone: this many cases in
+       one-column tiles is a scroll no jump bar can rescue. */
+    .tiles {
+      grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+    }
+    .tiles--text {
+      grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    }
   }
 </style>

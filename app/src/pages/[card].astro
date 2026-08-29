@@ -5,6 +5,7 @@
 // without turning the card over.
 import Base from "../layouts/Base.astro";
 import Header from "../components/Header.astro";
+import Page from "../components/Page.astro";
 import manifest from "../data/cards.json";
 
 export function getStaticPaths() {
@@ -20,9 +21,9 @@ const ladder = manifest.cards.filter((c) => c.num !== null);
   title={`${card.title} — Cubepath card ${card.num ?? "A"}`}
   description={`Cubepath printable card ${card.num ? `${card.num} of ${card.of}` : "annex"}: ${card.title}. What it covers, what unlocks the next card, and where to reprint it.`}
 >
-  <Header />
-  <main>
-    <p class="kicker">{card.num ? `Card ${card.num} of ${card.of}` : "Annex — not a tier"}</p>
+  <Header active="print" />
+  <Page>
+    <p class="label">{card.num ? `Card ${card.num} of ${card.of}` : "Annex — not a tier"}</p>
     <h1>{card.title}</h1>
 
     {
@@ -30,14 +31,14 @@ const ladder = manifest.cards.filter((c) => c.num !== null);
         <section>
           <h2>What unlocks the next card</h2>
           <p class="gate">{card.unlock}</p>
-          {card.master && <p class="note">{card.master}</p>}
+          {card.master && <p class="hint">{card.master}</p>}
         </section>
       )
     }
 
     {
       card.supersedes && (
-        <p class="note">
+        <p class="hint">
           This card retires part of the previous one. That is the only thing in the set that gets
           replaced — everything else keeps working.
         </p>
@@ -69,7 +70,7 @@ const ladder = manifest.cards.filter((c) => c.num !== null);
           <span>Two 85.6 × 53.98 mm pages, for a print shop.</span>
         </li>
       </ul>
-      <p class="note">
+      <p class="hint">
         Print at 100 % / Actual size — the <a href="/print">print guide</a> has the per-viewer settings
         and the calibration check.
       </p>
@@ -90,60 +91,53 @@ const ladder = manifest.cards.filter((c) => c.num !== null);
       </ol>
       {
         next && (
-          <p class="note">
+          <p class="hint">
             Next: <a href={next.route}>{next.title}</a>.
           </p>
         )
       }
     </section>
-  </main>
+  </Page>
 </Base>
 
 <style>
-  main {
-    max-width: 720px;
-    margin: 0 auto;
-    padding: 34px 20px 60px;
-  }
-  .kicker {
-    color: var(--soft);
-    font-size: 14px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    margin: 0;
-  }
+  /*
+   * Layout only. Width, centring and gutter come from <Page>; .label and .hint
+   * come from tokens.css — this page used to spell them "kicker" and "note".
+   */
   h1 {
-    margin: 4px 0 0;
+    margin: var(--space-1) 0 0;
   }
   section {
-    margin-top: 26px;
+    margin-top: var(--space-5);
   }
   h2 {
-    font-size: 20px;
-    margin-bottom: 10px;
+    margin-bottom: var(--space-3);
+  }
+  /* Same paragraph rhythm as /print, its sibling page. `p.hint` is spelled out
+     because .hint is `margin: 0` — a caption default that would otherwise win
+     over the element rule and jam the aside against the block above it. */
+  p,
+  p.hint {
+    margin: var(--space-2) 0;
   }
   .gate {
     font-weight: 600;
   }
-  .note {
-    color: var(--soft);
-    font-size: 14px;
-  }
-  .files,
   .ladder {
-    padding-left: 18px;
+    padding-left: var(--space-4);
   }
   .files {
     list-style: none;
     padding: 0;
   }
   .files li {
-    margin: 8px 0;
+    margin: var(--space-2) 0;
   }
   .files span {
     display: block;
     color: var(--soft);
-    font-size: 14px;
+    font-size: var(--text-sm);
   }
   .ladder .here {
     font-weight: 700;

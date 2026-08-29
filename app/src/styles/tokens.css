@@ -22,8 +22,11 @@
   --on-accent: #ffffff; /* 5.75:1 on accent */
   --on-ok: #ffffff; /* 5.13:1 on ok */
   --on-warn: #ffffff; /* 5.93:1 on warn */
-  --shell-max: 1200px;
-  --shell-x: 20px;
+  /* Layout shell. --shell-max is an alias of --measure-app (see "Scales"
+     below) so the header bar and a wide page share one edge; --shell-x is the
+     gutter both sides of it use, so the brand lines up with page content. */
+  --shell-max: var(--measure-app);
+  --shell-x: clamp(16px, 4vw, 24px);
   --brand: #ffd500;
   --logo-body: #17130f;
   --logo-u: #7a736b;
@@ -89,6 +92,68 @@
   }
 }
 
+/*
+ * Scales. These are theme-independent, so they sit apart from the palette.
+ *
+ * The rule: a page-scoped <style> block may not invent a raw px value that one
+ * of these already names. The audit counted 22 font sizes, 27 paddings, 12
+ * gaps, 29 margins and 6 radii across 835 lines of per-page CSS — every one of
+ * them an improvisation of one of the numbers below.
+ */
+:root {
+  /* Spacing. 4 8 12 16 24 32 48 72 — use for padding, gap and margin alike. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 72px;
+
+  /* Type. --text-md is body size; the heading scale below is built from these
+     and is set ONCE, here. Pages must not override h1/h2/h3 font-size. */
+  --text-xs: 12px; /* .label — the floor; nothing smaller ships */
+  --text-sm: 13px; /* .hint, captions, metadata */
+  --text-md: 15px; /* body */
+  --text-lg: 17px; /* h3 */
+  --text-xl: 20px;
+  --text-2xl: 24px; /* h2 */
+  --text-3xl: 34px; /* h1 */
+
+  /* Radii. --r-md is the card/panel default; --r-sm is for chips of text and
+     inline code; --r-lg for large framed media; --r-pill for chips + badges. */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-pill: 999px;
+
+  /* Measures. Two, and only two: a reading column and a wide app column.
+     `main` was declared six times with five widths (860/900/900/1000/720/1200)
+     before these existed — Page.astro now picks one with a single prop.
+
+     The last holdout was 720px on /print and /c0–/c3. It is gone rather than
+     promoted to a third token: those pages are short prose plus lists of
+     download links, so their longest line is running text — exactly what the
+     reading column is measured for — and 720px is ~76ch, past it. The one
+     wide thing on either page, the print-viewer settings table, has two
+     columns that wrap identically at both widths. A third measure would have
+     cost the "pick one of two" rule to move five routes' content edge by
+     30px. */
+  --measure-prose: 68ch; /* ~72 characters at --text-md — lessons, home, print, cards */
+  --measure-app: 1200px; /* practice, reference — grids, not prose */
+}
+
+/*
+ * Breakpoints. CSS has no portable custom-media syntax, so this is a naming
+ * convention rather than a token: use these four numbers and no others.
+ *
+ *   sm  560px   phone -> small tablet   (header collapse, single column)
+ *   md  768px   two-column content becomes one
+ *   lg 1024px   side rails drop away
+ *   xl 1200px   --measure-app is reached; nothing changes above this
+ */
+
 * {
   box-sizing: border-box;
 }
@@ -125,7 +190,7 @@ body {
   background: var(--paper);
   color: var(--ink);
   font-family: var(--font-body);
-  font-size: 15px;
+  font-size: var(--text-md);
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
 }
@@ -146,6 +211,12 @@ footer a {
   text-decoration: underline;
 }
 
+/*
+ * The heading scale is set here and nowhere else. It used to be overridden per
+ * page — h1 34 -> 30 -> 28, h2 23 -> 20 -> 19, h3 17 -> 15 — so no two routes
+ * agreed on what a section heading looked like. Set the *margins* you need in
+ * the page; leave font-size alone.
+ */
 h1,
 h2,
 h3 {
@@ -154,78 +225,132 @@ h3 {
   margin: 0;
 }
 h1 {
-  font-size: 34px;
+  font-size: var(--text-3xl);
   line-height: 1.15;
   letter-spacing: -0.01em;
 }
 h2 {
-  font-size: 23px;
+  font-size: var(--text-2xl);
   line-height: 1.2;
 }
 h3 {
-  font-size: 17px;
+  font-size: var(--text-lg);
   line-height: 1.3;
 }
 
 .alg {
   font-family: var(--font-mono);
   font-weight: 600;
-  font-size: 14.5px;
+  font-size: var(--text-md);
   letter-spacing: 0.01em;
 }
+
+/*
+ * Shared component classes.
+ *
+ * These are the whole vocabulary. Each one was previously redefined in two to
+ * four page-scoped blocks (`.chip` in three files, `.hint` in three under two
+ * names, `.note` in three with two different meanings), which is why a chip on
+ * /practice and a chip on /case looked like different objects. A page may add
+ * *layout* around these — margin, grid placement — but must not restate their
+ * type, colour, padding or radius.
+ *
+ * Two names were merged on the way in:
+ *   .tiny  -> .hint   (identical declarations, different file)
+ *   .note  -> .hint when it meant "small faint aside" (case page),
+ *          -> .lead when it meant "soft intro paragraph" (print, [card])
+ */
 
 .card {
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--r-md);
 }
-
-/* Shared component classes — pages layer scoped overrides on top. */
 
 .crumbs {
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: var(--soft);
   display: flex;
-  gap: 8px;
-  margin-bottom: 14px;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
 }
 
+/* Soft intro paragraph under a page title. */
+.lead {
+  color: var(--soft);
+  font-size: var(--text-md);
+  margin: var(--space-2) 0 var(--space-3);
+}
+
+/* Small faint aside: captions, counts, "press space to start". */
 .hint {
   color: var(--faint);
-  font-size: 12px;
+  font-size: var(--text-sm);
   margin: 0;
 }
 
+/* Uppercase eyebrow above a block. Use on a real heading element when it
+   titles a section — a <span> leaves the section with no accessible name. */
 .label {
-  font-size: 11.5px;
+  font-size: var(--text-xs);
   font-weight: 600;
   letter-spacing: 0.09em;
   color: var(--faint);
 }
 
 .chip {
-  font: 600 12.5px var(--font-body);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: 1.4;
   border: 1px solid var(--line);
   color: var(--soft);
   background: transparent;
-  border-radius: 999px;
-  padding: 4px 12px;
+  border-radius: var(--r-pill);
+  padding: var(--space-1) var(--space-3);
+}
+/* Selected. Colour alone is not a state — pair it with aria-pressed. */
+.chip--active,
+.chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+/* Not a control: a read-only tag (probability, group name, case count). */
+.chip--ghost,
+.chip.ghost {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+  cursor: default;
 }
 
 .btn {
-  font: 600 14px var(--font-body);
+  font-family: var(--font-body);
+  font-size: var(--text-md);
+  font-weight: 600;
+  line-height: 1.4;
   border: 1px solid var(--line);
   background: transparent;
   color: var(--ink);
-  border-radius: 8px;
-  padding: 9px 16px;
+  border-radius: var(--r-sm);
+  padding: var(--space-2) var(--space-4);
   cursor: pointer;
 }
 .btn:hover {
   text-decoration: none;
 }
+/* The one filled call to action on a view. --on-accent, never #fff: the
+   dark-mode accent is light, and #fff on it measured 2.44:1. */
+.btn--primary,
 .btn.primary {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--on-accent);
+}
+/* Outlined secondary beside a primary. This variant exists so index.astro can
+   drop the scoped `.btn` override whose own comment documented the cascade
+   accident it caused. */
+.btn--accent {
+  border-color: var(--accent);
+  color: var(--accent);
 }

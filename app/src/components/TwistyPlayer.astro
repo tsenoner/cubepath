@@ -12,12 +12,24 @@
  *    mask is generated instead — and narrowed to the pieces this algorithm
  *    actually fixes, rather than lighting up the whole last layer.
  *
+ * `context` is what turns that mask into the THREE-tier ladder: full colour for
+ * what this step solves, dim for what an earlier step solved and must be
+ * preserved, grey for what the method has not reached. It is the reason the
+ * ladder exists, and until it was threaded through here the whole of
+ * lib/ladders.ts had no renderer — `maskFor` was called with three arguments
+ * and 0 of 185 cases rendered a ladder mask. Callers that know which case they
+ * are showing pass `contextForCase(def)`; a lesson that teaches a step out of
+ * CFOP order (the beginner ladder permutes edges before orienting corners)
+ * passes its own ladder and stage; anything else falls back to the case this
+ * algorithm uniquely identifies, or to cubing.js's two tiers if none does.
+ *
  * The library's own control panel is off (`control-panel="none"`): it is a
  * closed shadow root with no ::part, so it cannot be themed, and it ate ~20%
  * of the box. The controls below replace it.
  */
 import type { Puzzle, Stickering } from "../data/algs";
-import { SETUP_ALG, maskFor } from "../lib/stickering";
+import type { StageContext } from "../lib/ladders";
+import { SETUP_ALG, contextForPlayer, maskFor } from "../lib/stickering";
 
 interface Props {
   alg: string;
@@ -25,6 +37,13 @@ interface Props {
   stickering?: Stickering;
   /** "end" = show the case, play to solved; "start" = play from solved. */
   anchor?: "start" | "end";
+  /**
+   * Which step of which method this player is illustrating — the three-tier
+   * ladder (lib/ladders). Omit it only for a NOTATION demo, where every layer
+   * has to stay visible because the move itself is the subject; anything that
+   * illustrates a solving step should say which one.
+   */
+  context?: StageContext;
   /** Static diagram painted until cubing.js has the cube on screen. */
   poster?: string;
   posterAlt?: string;
@@ -36,12 +55,22 @@ const {
   puzzle = "3x3x3",
   stickering = "full",
   anchor = "end",
+  context,
   poster,
   posterAlt = "",
   class: className,
 } = Astro.props;
 
-const mask = await maskFor(puzzle, stickering, alg);
+// An explicit context always wins. Without one, resolve the case this exact
+// (puzzle, stickering, algorithm) triple identifies — which is how the case
+// pages get the ladder without every one of them restating it. The resolver
+// returns undefined when the triple is ambiguous, and then the mask falls back
+// to cubing.js's two tiers rather than guessing at a stage. Two cases are
+// ambiguous (eo.line and oll.45 share `F R U R' U' F'`), so /case/[...id]
+// should pass `context={contextForCase(def)}` — a page that knows which case it
+// is rendering never needs the fallback.
+const stage = context ?? (await contextForPlayer(puzzle, stickering, alg));
+const mask = await maskFor(puzzle, stickering, alg, stage);
 // Last-layer cases are read off the top face, so tip the camera down for them;
 // F2L and cross cases need the side layers, so they keep the stock 35.
 const lastLayer = ["OLL", "OCLL", "PLL", "ELL", "LL"].includes(stickering);

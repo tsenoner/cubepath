@@ -32,6 +32,7 @@ import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from cubepath.algs import ALGORITHMS
 from cubepath.palette import FAMILY
@@ -143,43 +144,66 @@ def block_compactable(algs: list[str]) -> bool:
     return all(compactable(a) for a in algs)
 
 
-# ── Big-cube algorithms, sourced from the files that already verify them ──
-# Nothing here is retyped. Each string is read back out of the module that
-# pins it for CI, so the card cannot drift from the verifier.
+# ── Big-cube algorithms, read from the JSON the JS side writes ────────
+# Nothing here is retyped, and nothing here parses JavaScript any more. Three
+# of these four strings used to be recovered by regex-scraping `const NAME =
+# "...";` out of extract-algs.mjs and verify-l2e.mjs — Python reading another
+# language's source text because the two halves share no module system. They
+# now arrive as data: `gen-case-states.mjs` locates each parity algorithm
+# inside the verified extraction by the mechanism that put it there (the `[*]`
+# marker expansion, and the one-token relationship between the 4x4 and 5x5
+# forms) and writes it to case-states.json with its source path and the
+# signature it was found by.
 
-_EXTRACT = _REPO / "app" / "scripts" / "extract-algs.mjs"
-_VERIFY_L2E = _REPO / "app" / "scripts" / "verify-l2e.mjs"
-_L2E_DATA = _REPO / "app" / "src" / "data" / "extracted" / "l2e-raw.json"
+_CASE_STATES = _REPO / "app" / "src" / "data" / "extracted" / "case-states.json"
 
 
-def _js_const(path: Path, name: str) -> str:
-    """Read a `const NAME = "...";` string out of a JS source file."""
-    m = re.search(rf'^const {name} = "([^"]+)";', path.read_text(), re.M)
-    if not m:
-        raise AssertionError(f"{name} not found in {path} — the card's source moved")
-    return m.group(1)
+@functools.cache
+def case_states() -> dict[str, Any]:
+    """The kpuzzle-derived case export. The single JS→Python data boundary."""
+    if not _CASE_STATES.exists():
+        raise AssertionError(
+            f"{_CASE_STATES} is missing — run `node scripts/gen-case-states.mjs` in app/"
+        )
+    data: dict[str, Any] = json.loads(_CASE_STATES.read_text())
+    return data
 
 
 def bigcube_algs() -> dict[str, str]:
     """The four big-cube strings the card prints, from their verified sources."""
-    l2e = json.loads(_L2E_DATA.read_text())
-    flip = next(c for c in l2e if c["slug"] == "l2e-1")["algs"][0]
+    parity = case_states()["parityAlgs"]
+    missing = {"4x4-oll-parity", "4x4-pll-parity", "5x5-edge-parity", "edge-flip"} - set(parity)
+    if missing:
+        raise AssertionError(f"case-states.json is missing parity algs: {sorted(missing)}")
     return {
-        # verified on the 5x5 kpuzzle by verify-l2e.mjs; also legal on the 4x4
-        "l2e-flip": flip,
-        # pinned in extract-algs.mjs and cross-checked against jperm's lib files
-        "4x4-oll-parity": _js_const(_EXTRACT, "OLL_PARITY"),
-        "4x4-pll-parity": _js_const(_EXTRACT, "PLL_PARITY"),
-        # pinned in verify-l2e.mjs; differs from the 4x4 form by one token
-        "5x5-edge-parity": _js_const(_VERIFY_L2E, "EDGE_PARITY_5X5"),
+        # The pairing algorithm the course teaches on BOTH big cubes. This used
+        # to read l2e-1's string out of l2e-raw.json, which was a different
+        # algorithm doing a similar job — a last-two-edges finisher with the
+        # slice baked in at a fixed width, so its `Rw` means two layers on a
+        # 5x5 and something else on a 4x4. The card's cue "slice out, run it,
+        # slice back -- both cubes" is only true of this one.
+        "l2e-flip": parity["edge-flip"]["alg"],
+        # located in jperm-raw.json by gen-case-states.mjs, which also records
+        # the source path and the signature each was identified by
+        "4x4-oll-parity": parity["4x4-oll-parity"]["alg"],
+        "4x4-pll-parity": parity["4x4-pll-parity"]["alg"],
+        # from l2e-raw.json; differs from the 4x4 form by exactly one token
+        "5x5-edge-parity": parity["5x5-edge-parity"]["alg"],
     }
 
 
 # Chunkings for the big-cube algs. These blocks are NOT compacted (see
-# `compactable`): every one of them carries a layer-count prefix somewhere in
-# the block, so spaces stay and only the inter-chunk gap encodes structure.
+# `compactable`), and that is now a per-block CHOICE rather than a property of
+# the strings. It used to be the latter: every big-cube string carried a
+# layer-count prefix somewhere, which forced spaces to stay. `l2e-flip` is the
+# first that does not — it is outer turns only, which is exactly what makes it
+# mean the same thing on both cubes — so it would fall through to the compacted
+# path and render unlike its three neighbours. Keeping the whole table
+# uncompacted keeps the block visually one thing.
 BIGCUBE_CHUNKS: dict[str, list[Chunk]] = {
-    "l2e-flip": [["Rw'"], ["U' R' U"], ["R' F R F'"], ["Rw"]],
+    # Two chunks, and the split is the teaching: the second four moves are the
+    # freeslice insert the learner already knows.
+    "l2e-flip": [["R U R'"], ["F R' F' R"]],
     "4x4-pll-parity": [["2R2 U2"], ["2R2 Uw2"], ["2R2 Uw2"]],
     "4x4-oll-parity": [["Rw U2 x Rw U2 Rw U2 Rw' U2"], ["Lw U2 Rw' U2"], ["Rw U2 Rw' U2 Rw'"]],
     "5x5-edge-parity": [["Rw U2 x Rw U2 Rw U2 3Rw' U2"], ["Lw U2 Rw' U2"], ["Rw U2 Rw' U2 Rw'"]],

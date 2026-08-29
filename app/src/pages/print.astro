@@ -1,6 +1,7 @@
 ---
 import Base from "../layouts/Base.astro";
 import Header from "../components/Header.astro";
+import Page from "../components/Page.astro";
 
 // This page is the URL printed on the back of every card, so its path must
 // stay /print. Content mirrors docs/printing.md.
@@ -58,8 +59,8 @@ const VIEWERS = [
   title="Print the cards — Cubepath"
   description="Print the Cubepath card set at home: one fold-over sheet for all four cards, per-card reprints, and the settings that keep them wallet-sized."
 >
-  <Header />
-  <main>
+  <Header active="print" />
+  <Page>
     <h1>Print the cards</h1>
     <p class="lead">
       Four cards: three numbered progression cards and one annex. Each one leaves you able to solve
@@ -90,7 +91,7 @@ const VIEWERS = [
             ))
           }
         </ul>
-        <p class="note">
+        <p class="hint">
           There is deliberately no single file that works under either flip. The numeral on both
           faces is your check — cut one card first and make sure its front and back agree.
         </p>
@@ -121,7 +122,7 @@ const VIEWERS = [
       <h2>2. Print at 100 %</h2>
       <p>
         This is the one setting that matters. Never “Fit to page”, “Shrink oversized pages”, or
-        “Scale to fit”. Each sheet carries an <strong>80 mm calibration bar</strong>
+        “Scale to fit”. Each sheet carries an <strong>80 mm calibration bar</strong>{" "}
         in both margins — measure it after the first page. If it isn’t 80 mm, the scale is wrong and the
         card won’t fit a wallet slot.
       </p>
@@ -137,7 +138,7 @@ const VIEWERS = [
           }
         </tbody>
       </table>
-      <p class="note">
+      <p class="hint">
         Check your printer driver’s own dialog too — a driver-level “Fit to Paper Size” overrides
         whatever the application asked for.
       </p>
@@ -163,7 +164,7 @@ const VIEWERS = [
         160–200 gsm feeds through most home printers. Cut on the grey hairlines — they run the full
         sheet, so one straight cut serves four cards.
       </p>
-      <p class="note">
+      <p class="hint">
         A standard 54 × 86 mm “credit card” laminating pouch leaves about 0.4 mm of total clearance
         and will not seal. Either keep it wallet-sized and don’t laminate (the folded 200 gsm card
         is stiff enough), or use a 60 × 90 mm business-card pouch and accept that the result no
@@ -174,32 +175,27 @@ const VIEWERS = [
     <p class="lead">
       Also on paper: <a href="/cubepath.pdf">the full PDF guide</a>.
     </p>
-  </main>
+  </Page>
 </Base>
 
 <style>
-  main {
-    max-width: 720px;
-    margin: 0 auto;
-    padding: 34px 20px 60px;
-  }
-  .lead {
-    color: var(--soft);
-    margin: 8px 0 10px;
-  }
+  /*
+   * Layout only. Width, centring and gutter come from <Page>; .lead and .hint
+   * come from tokens.css. A page that restates their colour or type is how the
+   * site ended up with five content widths and two spellings of "soft aside".
+   */
   section {
-    margin-top: 26px;
+    margin-top: var(--space-5);
   }
   h2 {
-    font-size: 20px;
-    margin-bottom: 10px;
+    margin-bottom: var(--space-3);
   }
-  p {
-    margin: 8px 0;
-  }
-  .note {
-    color: var(--soft);
-    font-size: 14px;
+  /* `p.hint` is spelled out because .hint is `margin: 0` — a caption default
+     that would otherwise win over the element rule and jam the aside against
+     the block above it. */
+  p,
+  p.hint {
+    margin: var(--space-2) 0;
   }
   .files {
     list-style: none;
@@ -209,9 +205,9 @@ const VIEWERS = [
   .files li {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px 10px;
+    gap: var(--space-1) var(--space-3);
     align-items: baseline;
-    padding: 10px 0;
+    padding: var(--space-3) 0;
     border-bottom: 1px solid var(--line);
   }
   .files a {
@@ -219,20 +215,20 @@ const VIEWERS = [
   }
   .files span {
     color: var(--soft);
-    font-size: 14px;
+    font-size: var(--text-sm);
   }
   table {
     border-collapse: collapse;
     width: 100%;
-    margin: 10px 0;
+    margin: var(--space-3) 0;
   }
   th,
   td {
     text-align: left;
     vertical-align: top;
-    padding: 8px 10px 8px 0;
+    padding: var(--space-2) var(--space-3) var(--space-2) 0;
     border-bottom: 1px solid var(--line);
-    font-size: 14px;
+    font-size: var(--text-sm);
   }
   th {
     white-space: nowrap;

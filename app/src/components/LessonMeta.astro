@@ -1,0 +1,145 @@
+---
+/**
+ * LessonMeta — lesson completion: records it, and shows it.
+ *
+ *   <LessonMeta id={id} />                    (once, anywhere on a lesson page)
+ *   <LessonMeta id={id} position />           (…and print "Step 4 of 25 · Phase 1")
+ *
+ * This is the *write* half of the course's progress layer. The home page reads
+ * the `lessons` store in lib/db.ts to draw its per-phase bars, its ✓ marks and
+ * its "Resume: <lesson>" button; nothing was ever writing that store. Dropping
+ * this component onto a lesson page is all it takes — it finds the pager
+ * itself and marks the lesson complete when the reader moves on.
+ *
+ * CONTRACT WITH THE PAGER — the "next" control is found as:
+ *
+ *     a[data-lesson-next], a.pager-link.next
+ *
+ * The second half matches Lesson.astro's markup as it stands, so this works
+ * with no change to that file. Add `data-lesson-next` to the next-link if the
+ * class ever changes and this keeps working either way.
+ *
+ * The last lesson has no next lesson, but its pager still renders a "Course
+ * overview →" link with the same class — so finishing the course records the
+ * final lesson too.
+ *
+ * `position` is off by default because Lesson.astro renders its own "Step N of
+ * M" bar; turn it on for a page that does not. With it off and the lesson not
+ * yet finished, this component renders nothing visible and occupies no space.
+ *
+ * All of it is client-side: the static build is unaffected and it works
+ * offline like the rest of the app.
+ */
+import { getCollection } from "astro:content";
+import { phaseName } from "../data/phases";
+
+interface Props {
+  /** The lesson's content-collection id, i.e. its slug. */
+  id: string;
+  /** Also render "Step N of M · Phase". Off: Lesson.astro already shows it. */
+  position?: boolean;
+  class?: string;
+}
+const { id, position = false, class: className } = Astro.props;
+
+const all = (await getCollection("lessons")).sort((a, b) => a.data.order - b.data.order);
+const idx = all.findIndex((l) => l.id === id);
+const step = idx >= 0 ? idx + 1 : 0;
+const phase = idx >= 0 ? all[idx]?.data.phase : undefined;
+---
+
+<p
+  class:list={["lesson-meta", { "lesson-meta--position": position }, className]}
+  data-lesson-meta
+  data-lesson-slug={id}
+>
+  {
+    position && (
+      <span class="step">
+        Step {step} of {all.length}
+      </span>
+    )
+  }
+  {
+    position && phase && (
+      <span aria-hidden="true" class="sep">
+        ·
+      </span>
+    )
+  }
+  {position && phase && <span>{phaseName(phase)}</span>}
+  <span class="done" hidden data-lesson-done>✓ Completed</span>
+</p>
+
+<style>
+  .lesson-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2);
+    /* No margin by default: with `position` off and nothing completed this
+       element is empty, and an empty element must not push the page around. */
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--faint);
+  }
+  .lesson-meta--position,
+  .lesson-meta:has(.done:not([hidden])) {
+    margin-block-end: var(--space-3);
+  }
+  .step {
+    font-weight: 600;
+    color: var(--soft);
+  }
+  .done {
+    font-weight: 600;
+    color: var(--ok);
+  }
+</style>
+
+<script>
+  import { completedLessons, markLessonComplete } from "../lib/db";
+
+  const meta = document.querySelector<HTMLElement>("[data-lesson-meta]");
+  const slug = meta?.dataset.lessonSlug;
+
+  if (meta && slug) {
+    // Reflect an existing completion. A failed read is not worth a message:
+    // the page is still a lesson, it just does not show the badge.
+    void completedLessons()
+      .then((done) => {
+        if (!done.has(slug)) return;
+        const badge = meta.querySelector<HTMLElement>("[data-lesson-done]");
+        if (badge) badge.hidden = false;
+      })
+      .catch(() => undefined);
+
+    const next = document.querySelector<HTMLAnchorElement>(
+      "a[data-lesson-next], a.pager-link.next",
+    );
+
+    next?.addEventListener("click", (e) => {
+      // Leave modified clicks alone — cmd/ctrl-click opens a new tab, and
+      // stealing that to run an async write would break it.
+      if (e.defaultPrevented || e.button !== 0) return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      if (next.target && next.target !== "_self") return;
+
+      const href = next.href;
+      e.preventDefault();
+      // Navigate as soon as the write lands, or after 400ms regardless. An
+      // IndexedDB that is blocked (another tab mid-upgrade, a private window
+      // that denies storage) must never strand the reader on the page.
+      let gone = false;
+      const go = () => {
+        if (gone) return;
+        gone = true;
+        window.location.assign(href);
+      };
+      window.setTimeout(go, 400);
+      void markLessonComplete(slug)
+        .catch(() => undefined)
+        .then(go);
+    });
+  }
+</script>

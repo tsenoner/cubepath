@@ -2,7 +2,7 @@
 # Build the guide PDF, ship it into the app, and stamp its inputs.
 #
 # Diagram generation deliberately does NOT live here. It used to, which made
-# `make build-guide` quietly regenerate guide/figures/generated/ — an input to
+# `make build-guide` quietly regenerate app/public/diagrams/ — an input to
 # the *app* — without syncing it, while `make diagrams` regenerated and synced.
 # The Makefile now expresses that as `build-guide: diagrams`, so the tree has
 # one owner and this script only runs pandoc.

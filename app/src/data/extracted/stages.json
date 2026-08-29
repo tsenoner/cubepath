@@ -1,0 +1,1189 @@
+{
+  "schema": "cubepath/stages@2",
+  "generatedBy": "app/scripts/gen-stickering.mjs",
+  "setupAlg": "x2 y",
+  "puzzles": {
+    "3x3x3": {
+      "orbits": [
+        {
+          "name": "EDGES",
+          "numPieces": 12
+        },
+        {
+          "name": "CORNERS",
+          "numPieces": 8
+        },
+        {
+          "name": "CENTERS",
+          "numPieces": 6
+        }
+      ],
+      "orbitKinds": {
+        "EDGES": "edge",
+        "CORNERS": "corner",
+        "CENTERS": "center"
+      },
+      "frame": {
+        "EDGES": [5, 4, 7, 6, 1, 0, 3, 2, 8, 10, 9, 11],
+        "CORNERS": [4, 5, 6, 7, 0, 1, 2, 3],
+        "CENTERS": [5, 4, 3, 2, 1, 0]
+      },
+      "pieceNames": {
+        "EDGES": ["UF", "UR", "UB", "UL", "DF", "DR", "DB", "DL", "FR", "FL", "BR", "BL"],
+        "CORNERS": ["UFR", "UBR", "UBL", "UFL", "DFR", "DFL", "DBL", "DBR"],
+        "CENTERS": ["U", "L", "F", "R", "B", "D"]
+      }
+    },
+    "4x4x4": {
+      "orbits": [
+        {
+          "name": "CORNERS",
+          "numPieces": 8
+        },
+        {
+          "name": "EDGES",
+          "numPieces": 24
+        },
+        {
+          "name": "CENTERS",
+          "numPieces": 24
+        }
+      ],
+      "orbitKinds": {
+        "CORNERS": "corner",
+        "EDGES": "edge",
+        "CENTERS": "center"
+      },
+      "frame": {
+        "CORNERS": [4, 5, 6, 7, 0, 1, 2, 3],
+        "EDGES": [
+          23, 20, 21, 22, 18, 19, 16, 17, 14, 15, 12, 13, 10, 11, 8, 9, 6, 7, 4, 5, 1, 2, 3, 0
+        ],
+        "CENTERS": [
+          23, 20, 21, 22, 18, 19, 16, 17, 14, 15, 12, 13, 10, 11, 8, 9, 6, 7, 4, 5, 1, 2, 3, 0
+        ]
+      },
+      "pieceNames": {
+        "CORNERS": ["UFR", "UBR", "UBL", "UFL", "DFR", "DFL", "DBL", "DBR"],
+        "EDGES": [
+          "UB",
+          "UR",
+          "UF",
+          "UL",
+          "UL",
+          "FL",
+          "DL",
+          "BL",
+          "UF",
+          "FR",
+          "DF",
+          "FL",
+          "UR",
+          "BR",
+          "DR",
+          "FR",
+          "UB",
+          "BL",
+          "DB",
+          "BR",
+          "DF",
+          "DR",
+          "DB",
+          "DL"
+        ],
+        "CENTERS": [
+          "U",
+          "U",
+          "U",
+          "U",
+          "L",
+          "L",
+          "L",
+          "L",
+          "F",
+          "F",
+          "F",
+          "F",
+          "R",
+          "R",
+          "R",
+          "R",
+          "B",
+          "B",
+          "B",
+          "B",
+          "D",
+          "D",
+          "D",
+          "D"
+        ]
+      }
+    },
+    "5x5x5": {
+      "orbits": [
+        {
+          "name": "EDGES",
+          "numPieces": 24
+        },
+        {
+          "name": "EDGES2",
+          "numPieces": 12
+        },
+        {
+          "name": "CORNERS",
+          "numPieces": 8
+        },
+        {
+          "name": "CENTERS",
+          "numPieces": 24
+        },
+        {
+          "name": "CENTERS2",
+          "numPieces": 24
+        },
+        {
+          "name": "CENTERS3",
+          "numPieces": 6
+        }
+      ],
+      "orbitKinds": {
+        "EDGES": "edge",
+        "EDGES2": "edge",
+        "CORNERS": "corner",
+        "CENTERS": "center",
+        "CENTERS2": "center",
+        "CENTERS3": "center"
+      },
+      "frame": {
+        "EDGES": [
+          23, 20, 21, 22, 18, 19, 16, 17, 14, 15, 12, 13, 10, 11, 8, 9, 6, 7, 4, 5, 1, 2, 3, 0
+        ],
+        "EDGES2": [6, 7, 11, 8, 4, 9, 0, 1, 3, 5, 10, 2],
+        "CORNERS": [4, 5, 6, 7, 0, 1, 2, 3],
+        "CENTERS": [
+          23, 20, 21, 22, 18, 19, 16, 17, 14, 15, 12, 13, 10, 11, 8, 9, 6, 7, 4, 5, 1, 2, 3, 0
+        ],
+        "CENTERS2": [
+          23, 20, 21, 22, 18, 19, 16, 17, 14, 15, 12, 13, 10, 11, 8, 9, 6, 7, 4, 5, 1, 2, 3, 0
+        ],
+        "CENTERS3": [1, 0, 3, 2, 5, 4]
+      },
+      "pieceNames": {
+        "EDGES": [
+          "UB",
+          "UR",
+          "UF",
+          "UL",
+          "UL",
+          "FL",
+          "DL",
+          "BL",
+          "UF",
+          "FR",
+          "DF",
+          "FL",
+          "UR",
+          "BR",
+          "DR",
+          "FR",
+          "UB",
+          "BL",
+          "DB",
+          "BR",
+          "DF",
+          "DR",
+          "DB",
+          "DL"
+        ],
+        "EDGES2": ["DF", "FL", "DR", "DB", "FR", "DL", "UR", "BR", "UL", "UB", "BL", "UF"],
+        "CORNERS": ["UFR", "UBR", "UBL", "UFL", "DFR", "DFL", "DBL", "DBR"],
+        "CENTERS": [
+          "U",
+          "U",
+          "U",
+          "U",
+          "L",
+          "L",
+          "L",
+          "L",
+          "F",
+          "F",
+          "F",
+          "F",
+          "R",
+          "R",
+          "R",
+          "R",
+          "B",
+          "B",
+          "B",
+          "B",
+          "D",
+          "D",
+          "D",
+          "D"
+        ],
+        "CENTERS2": [
+          "U",
+          "U",
+          "U",
+          "U",
+          "L",
+          "L",
+          "L",
+          "L",
+          "F",
+          "F",
+          "F",
+          "F",
+          "R",
+          "R",
+          "R",
+          "R",
+          "B",
+          "B",
+          "B",
+          "B",
+          "D",
+          "D",
+          "D",
+          "D"
+        ],
+        "CENTERS3": ["F", "R", "D", "U", "L", "B"]
+      }
+    }
+  },
+  "baseMasks": {
+    "full": "EDGES:------------,CORNERS:--------,CENTERS:------",
+    "Cross": "EDGES:IIII----IIII,CORNERS:IIIIIIII,CENTERS:DDDDD-",
+    "F2L": "EDGES:IIII--------,CORNERS:IIII----,CENTERS:I-----",
+    "LL": "EDGES:----DDDDDDDD,CORNERS:----DDDD,CENTERS:-DDDDD",
+    "OLL": "EDGES:OOOODDDDDDDD,CORNERS:OOOODDDD,CENTERS:-DDDDD",
+    "OCLL": "EDGES:ooooDDDDDDDD,CORNERS:OOOODDDD,CENTERS:DDDDDD",
+    "PLL": "EDGES:PPPPDDDDDDDD,CORNERS:PPPPDDDD,CENTERS:DDDDDD",
+    "ELL": "EDGES:----DDDDDDDD,CORNERS:DDDDDDDD,CENTERS:DDDDDD"
+  },
+  "tierChars": {
+    "highlight": {
+      "both": "-",
+      "orientation": "O",
+      "permutation": "P"
+    },
+    "dim": {
+      "both": "D",
+      "orientation": "o",
+      "permutation": "D"
+    },
+    "grey": {
+      "both": "I",
+      "orientation": "I",
+      "permutation": "I"
+    }
+  },
+  "stages": {
+    "cross": {
+      "aspect": "both",
+      "puzzles": ["3x3x3", "4x4x4", "5x5x5"],
+      "members": null,
+      "pieces": {
+        "3x3x3": {
+          "EDGES": [4, 5, 6, 7],
+          "CORNERS": [],
+          "CENTERS": [0, 1, 2, 3, 4, 5]
+        },
+        "4x4x4": {
+          "CORNERS": [],
+          "EDGES": [6, 10, 14, 18, 20, 21, 22, 23],
+          "CENTERS": [
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23
+          ]
+        },
+        "5x5x5": {
+          "EDGES": [6, 10, 14, 18, 20, 21, 22, 23],
+          "EDGES2": [0, 2, 3, 5],
+          "CORNERS": [],
+          "CENTERS": [
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23
+          ],
+          "CENTERS2": [
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23
+          ],
+          "CENTERS3": [0, 1, 2, 3, 4, 5]
+        }
+      },
+      "pieceNames": {
+        "3x3x3": {
+          "EDGES": ["DF", "DR", "DB", "DL"],
+          "CORNERS": [],
+          "CENTERS": ["U", "L", "F", "R", "B", "D"]
+        },
+        "4x4x4": {
+          "CORNERS": [],
+          "EDGES": ["DL", "DF", "DR", "DB", "DF", "DR", "DB", "DL"],
+          "CENTERS": [
+            "U",
+            "U",
+            "U",
+            "U",
+            "L",
+            "L",
+            "L",
+            "L",
+            "F",
+            "F",
+            "F",
+            "F",
+            "R",
+            "R",
+            "R",
+            "R",
+            "B",
+            "B",
+            "B",
+            "B",
+            "D",
+            "D",
+            "D",
+            "D"
+          ]
+        },
+        "5x5x5": {
+          "EDGES": ["DL", "DF", "DR", "DB", "DF", "DR", "DB", "DL"],
+          "EDGES2": ["DF", "DR", "DB", "DL"],
+          "CORNERS": [],
+          "CENTERS": [
+            "U",
+            "U",
+            "U",
+            "U",
+            "L",
+            "L",
+            "L",
+            "L",
+            "F",
+            "F",
+            "F",
+            "F",
+            "R",
+            "R",
+            "R",
+            "R",
+            "B",
+            "B",
+            "B",
+            "B",
+            "D",
+            "D",
+            "D",
+            "D"
+          ],
+          "CENTERS2": [
+            "U",
+            "U",
+            "U",
+            "U",
+            "L",
+            "L",
+            "L",
+            "L",
+            "F",
+            "F",
+            "F",
+            "F",
+            "R",
+            "R",
+            "R",
+            "R",
+            "B",
+            "B",
+            "B",
+            "B",
+            "D",
+            "D",
+            "D",
+            "D"
+          ],
+          "CENTERS3": ["F", "R", "D", "U", "L", "B"]
+        }
+      }
+    },
+    "f1l": {
+      "aspect": "both",
+      "puzzles": ["3x3x3", "4x4x4", "5x5x5"],
+      "members": null,
+      "pieces": {
+        "3x3x3": {
+          "EDGES": [],
+          "CORNERS": [4, 5, 6, 7],
+          "CENTERS": []
+        },
+        "4x4x4": {
+          "CORNERS": [4, 5, 6, 7],
+          "EDGES": [],
+          "CENTERS": []
+        },
+        "5x5x5": {
+          "EDGES": [],
+          "EDGES2": [],
+          "CORNERS": [4, 5, 6, 7],
+          "CENTERS": [],
+          "CENTERS2": [],
+          "CENTERS3": []
+        }
+      },
+      "pieceNames": {
+        "3x3x3": {
+          "EDGES": [],
+          "CORNERS": ["DFR", "DFL", "DBL", "DBR"],
+          "CENTERS": []
+        },
+        "4x4x4": {
+          "CORNERS": ["DFR", "DFL", "DBL", "DBR"],
+          "EDGES": [],
+          "CENTERS": []
+        },
+        "5x5x5": {
+          "EDGES": [],
+          "EDGES2": [],
+          "CORNERS": ["DFR", "DFL", "DBL", "DBR"],
+          "CENTERS": [],
+          "CENTERS2": [],
+          "CENTERS3": []
+        }
+      }
+    },
+    "e-layer": {
+      "aspect": "both",
+      "puzzles": ["3x3x3", "4x4x4", "5x5x5"],
+      "members": null,
+      "pieces": {
+        "3x3x3": {
+          "EDGES": [8, 9, 10, 11],
+          "CORNERS": [],
+          "CENTERS": []
+        },
+        "4x4x4": {
+          "CORNERS": [],
+          "EDGES": [5, 7, 9, 11, 13, 15, 17, 19],
+          "CENTERS": []
+        },
+        "5x5x5": {
+          "EDGES": [5, 7, 9, 11, 13, 15, 17, 19],
+          "EDGES2": [1, 4, 7, 10],
+          "CORNERS": [],
+          "CENTERS": [],
+          "CENTERS2": [],
+          "CENTERS3": []
+        }
+      },
+      "pieceNames": {
+        "3x3x3": {
+          "EDGES": ["FR", "FL", "BR", "BL"],
+          "CORNERS": [],
+          "CENTERS": []
+        },
+        "4x4x4": {
+          "CORNERS": [],
+          "EDGES": ["FL", "BL", "FR", "FL", "BR", "FR", "BL", "BR"],
+          "CENTERS": []
+        },
+        "5x5x5": {
+          "EDGES": ["FL", "BL", "FR", "FL", "BR", "FR", "BL", "BR"],
+          "EDGES2": ["FL", "FR", "BR", "BL"],
+          "CORNERS": [],
+          "CENTERS": [],
+          "CENTERS2": [],
+          "CENTERS3": []
+        }
+      }
+    },
+    "eo": {
+      "aspect": "orientation",
+      "puzzles": ["3x3x3", "4x4x4", "5x5x5"],
+      "members": null,
+      "pieces": {
+        "3x3x3": {
+          "EDGES": [0, 1, 2, 3],
+          "CORNERS": [],
+          "CENTERS": []
+        },
+        "4x4x4": {
+          "CORNERS": [],
+          "EDGES": [0, 1, 2, 3, 4, 8, 12, 16],
+          "CENTERS": []
+        },
+        "5x5x5": {
+          "EDGES": [0, 1, 2, 3, 4, 8, 12, 16],
+          "EDGES2": [6, 8, 9, 11],
+          "CORNERS": [],
+          "CENTERS": [],
+          "CENTERS2": [],
+          "CENTERS3": []
+        }
+      },
+      "pieceNames": {
+        "3x3x3": {
+          "EDGES": ["UF", "UR", "UB", "UL"],
+          "CORNERS": [],
+          "CENTERS": []
+        },
+        "4x4x4": {
+          "CORNERS": [],
+          "EDGES": ["UB", "UR", "UF", "UL", "UL", "UF", "UR", "UB"],
+          "CENTERS": []
+        },
+        "5x5x5": {
+          "EDGES": ["UB", "UR", "UF", "UL", "UL", "UF", "UR", "UB"],
+          "EDGES2": ["UR", "UL", "UB", "UF"],
+          "CORNERS": [],
+          "CENTERS": [],
+          "CENTERS2": [],
+          "CENTERS3": []
+        }
+      }
+    },
+    "oc": {
+      "aspect": "orientation",
+      "puzzles": ["3x3x3", "4x4x4", "5x5x5"],
+      "members": null,
+      "pieces": {
+        "3x3x3": {
+          "EDGES": [],
+          "CORNERS": [0, 1, 2, 3],
+          "CENTERS": []
+        },
+        "4x4x4": {
+          "CORNERS": [0, 1, 2, 3],
+          "EDGES": [],
+          "CENTERS": []
+        },
+        "5x5x5": {
+          "EDGES": [],
+          "EDGES2": [],
+          "CORNERS": [0, 1, 2, 3],
+          "CENTERS": [],
+          "CENTERS2": [],
+          "CENTERS3": []
+        }
+      },
+      "pieceNames": {
+        "3x3x3": {
+          "EDGES": [],
+          "CORNERS": ["UFR", "UBR", "UBL", "UFL"],
+          "CENTERS": []
+        },
+        "4x4x4": {
+          "CORNERS": ["UFR", "UBR", "UBL", "UFL"],
+          "EDGES": [],
+          "CENTERS": []
+        },
+        "5x5x5": {
+          "EDGES": [],
+          "EDGES2": [],
+          "CORNERS": ["UFR", "UBR", "UBL", "UFL"],
+          "CENTERS": [],
+          "CENTERS2": [],
+          "CENTERS3": []
+        }
+      }
+    },
+    "cp": {
+      "aspect": "permutation",
+      "puzzles": ["3x3x3", "4x4x4", "5x5x5"],
+      "members": null,
+      "pieces": {
+        "3x3x3": {
+          "EDGES": [],
+          "CORNERS": [0, 1, 2, 3],
+          "CENTERS": []
+        },
+        "4x4x4": {
+          "CORNERS": [0, 1, 2, 3],
+          "EDGES": [],
+          "CENTERS": []
+        },
+        "5x5x5": {
+          "EDGES": [],
+          "EDGES2": [],
+          "CORNERS": [0, 1, 2, 3],
+          "CENTERS": [],
+          "CENTERS2": [],
+          "CENTERS3": []
+        }
+      },
+      "pieceNames": {
+        "3x3x3": {
+          "EDGES": [],
+          "CORNERS": ["UFR", "UBR", "UBL", "UFL"],
+          "CENTERS": []
+        },
+        "4x4x4": {
+          "CORNERS": ["UFR", "UBR", "UBL", "UFL"],
+          "EDGES": [],
+          "CENTERS": []
+        },
+        "5x5x5": {
+          "EDGES": [],
+          "EDGES2": [],
+          "CORNERS": ["UFR", "UBR", "UBL", "UFL"],
+          "CENTERS": [],
+          "CENTERS2": [],
+          "CENTERS3": []
+        }
+      }
+    },
+    "ep": {
+      "aspect": "permutation",
+      "puzzles": ["3x3x3", "4x4x4", "5x5x5"],
+      "members": null,
+      "pieces": {
+        "3x3x3": {
+          "EDGES": [0, 1, 2, 3],
+          "CORNERS": [],
+          "CENTERS": []
+        },
+        "4x4x4": {
+          "CORNERS": [],
+          "EDGES": [0, 1, 2, 3, 4, 8, 12, 16],
+          "CENTERS": []
+        },
+        "5x5x5": {
+          "EDGES": [0, 1, 2, 3, 4, 8, 12, 16],
+          "EDGES2": [6, 8, 9, 11],
+          "CORNERS": [],
+          "CENTERS": [],
+          "CENTERS2": [],
+          "CENTERS3": []
+        }
+      },
+      "pieceNames": {
+        "3x3x3": {
+          "EDGES": ["UF", "UR", "UB", "UL"],
+          "CORNERS": [],
+          "CENTERS": []
+        },
+        "4x4x4": {
+          "CORNERS": [],
+          "EDGES": ["UB", "UR", "UF", "UL", "UL", "UF", "UR", "UB"],
+          "CENTERS": []
+        },
+        "5x5x5": {
+          "EDGES": ["UB", "UR", "UF", "UL", "UL", "UF", "UR", "UB"],
+          "EDGES2": ["UR", "UL", "UB", "UF"],
+          "CORNERS": [],
+          "CENTERS": [],
+          "CENTERS2": [],
+          "CENTERS3": []
+        }
+      }
+    },
+    "f2l": {
+      "aspect": "both",
+      "puzzles": ["3x3x3", "4x4x4", "5x5x5"],
+      "members": ["f1l", "e-layer"],
+      "pieces": {
+        "3x3x3": {
+          "EDGES": [8, 9, 10, 11],
+          "CORNERS": [4, 5, 6, 7],
+          "CENTERS": []
+        },
+        "4x4x4": {
+          "CORNERS": [4, 5, 6, 7],
+          "EDGES": [5, 7, 9, 11, 13, 15, 17, 19],
+          "CENTERS": []
+        },
+        "5x5x5": {
+          "EDGES": [5, 7, 9, 11, 13, 15, 17, 19],
+          "EDGES2": [1, 4, 7, 10],
+          "CORNERS": [4, 5, 6, 7],
+          "CENTERS": [],
+          "CENTERS2": [],
+          "CENTERS3": []
+        }
+      },
+      "pieceNames": {
+        "3x3x3": {
+          "EDGES": ["FR", "FL", "BR", "BL"],
+          "CORNERS": ["DFR", "DFL", "DBL", "DBR"],
+          "CENTERS": []
+        },
+        "4x4x4": {
+          "CORNERS": ["DFR", "DFL", "DBL", "DBR"],
+          "EDGES": ["FL", "BL", "FR", "FL", "BR", "FR", "BL", "BR"],
+          "CENTERS": []
+        },
+        "5x5x5": {
+          "EDGES": ["FL", "BL", "FR", "FL", "BR", "FR", "BL", "BR"],
+          "EDGES2": ["FL", "FR", "BR", "BL"],
+          "CORNERS": ["DFR", "DFL", "DBL", "DBR"],
+          "CENTERS": [],
+          "CENTERS2": [],
+          "CENTERS3": []
+        }
+      }
+    },
+    "oll": {
+      "aspect": "orientation",
+      "puzzles": ["3x3x3", "4x4x4", "5x5x5"],
+      "members": ["eo", "oc"],
+      "pieces": {
+        "3x3x3": {
+          "EDGES": [0, 1, 2, 3],
+          "CORNERS": [0, 1, 2, 3],
+          "CENTERS": []
+        },
+        "4x4x4": {
+          "CORNERS": [0, 1, 2, 3],
+          "EDGES": [0, 1, 2, 3, 4, 8, 12, 16],
+          "CENTERS": []
+        },
+        "5x5x5": {
+          "EDGES": [0, 1, 2, 3, 4, 8, 12, 16],
+          "EDGES2": [6, 8, 9, 11],
+          "CORNERS": [0, 1, 2, 3],
+          "CENTERS": [],
+          "CENTERS2": [],
+          "CENTERS3": []
+        }
+      },
+      "pieceNames": {
+        "3x3x3": {
+          "EDGES": ["UF", "UR", "UB", "UL"],
+          "CORNERS": ["UFR", "UBR", "UBL", "UFL"],
+          "CENTERS": []
+        },
+        "4x4x4": {
+          "CORNERS": ["UFR", "UBR", "UBL", "UFL"],
+          "EDGES": ["UB", "UR", "UF", "UL", "UL", "UF", "UR", "UB"],
+          "CENTERS": []
+        },
+        "5x5x5": {
+          "EDGES": ["UB", "UR", "UF", "UL", "UL", "UF", "UR", "UB"],
+          "EDGES2": ["UR", "UL", "UB", "UF"],
+          "CORNERS": ["UFR", "UBR", "UBL", "UFL"],
+          "CENTERS": [],
+          "CENTERS2": [],
+          "CENTERS3": []
+        }
+      }
+    },
+    "pll": {
+      "aspect": "permutation",
+      "puzzles": ["3x3x3", "4x4x4", "5x5x5"],
+      "members": ["cp", "ep"],
+      "pieces": {
+        "3x3x3": {
+          "EDGES": [0, 1, 2, 3],
+          "CORNERS": [0, 1, 2, 3],
+          "CENTERS": []
+        },
+        "4x4x4": {
+          "CORNERS": [0, 1, 2, 3],
+          "EDGES": [0, 1, 2, 3, 4, 8, 12, 16],
+          "CENTERS": []
+        },
+        "5x5x5": {
+          "EDGES": [0, 1, 2, 3, 4, 8, 12, 16],
+          "EDGES2": [6, 8, 9, 11],
+          "CORNERS": [0, 1, 2, 3],
+          "CENTERS": [],
+          "CENTERS2": [],
+          "CENTERS3": []
+        }
+      },
+      "pieceNames": {
+        "3x3x3": {
+          "EDGES": ["UF", "UR", "UB", "UL"],
+          "CORNERS": ["UFR", "UBR", "UBL", "UFL"],
+          "CENTERS": []
+        },
+        "4x4x4": {
+          "CORNERS": ["UFR", "UBR", "UBL", "UFL"],
+          "EDGES": ["UB", "UR", "UF", "UL", "UL", "UF", "UR", "UB"],
+          "CENTERS": []
+        },
+        "5x5x5": {
+          "EDGES": ["UB", "UR", "UF", "UL", "UL", "UF", "UR", "UB"],
+          "EDGES2": ["UR", "UL", "UB", "UF"],
+          "CORNERS": ["UFR", "UBR", "UBL", "UFL"],
+          "CENTERS": [],
+          "CENTERS2": [],
+          "CENTERS3": []
+        }
+      }
+    },
+    "444-centers": {
+      "aspect": "both",
+      "puzzles": ["4x4x4"],
+      "members": null,
+      "pieces": {
+        "4x4x4": {
+          "CORNERS": [],
+          "EDGES": [],
+          "CENTERS": [
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23
+          ]
+        }
+      },
+      "pieceNames": {
+        "4x4x4": {
+          "CORNERS": [],
+          "EDGES": [],
+          "CENTERS": [
+            "U",
+            "U",
+            "U",
+            "U",
+            "L",
+            "L",
+            "L",
+            "L",
+            "F",
+            "F",
+            "F",
+            "F",
+            "R",
+            "R",
+            "R",
+            "R",
+            "B",
+            "B",
+            "B",
+            "B",
+            "D",
+            "D",
+            "D",
+            "D"
+          ]
+        }
+      }
+    },
+    "444-pairing": {
+      "aspect": "both",
+      "puzzles": ["4x4x4"],
+      "members": null,
+      "pieces": {
+        "4x4x4": {
+          "CORNERS": [],
+          "EDGES": [
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23
+          ],
+          "CENTERS": []
+        }
+      },
+      "pieceNames": {
+        "4x4x4": {
+          "CORNERS": [],
+          "EDGES": [
+            "UB",
+            "UR",
+            "UF",
+            "UL",
+            "UL",
+            "FL",
+            "DL",
+            "BL",
+            "UF",
+            "FR",
+            "DF",
+            "FL",
+            "UR",
+            "BR",
+            "DR",
+            "FR",
+            "UB",
+            "BL",
+            "DB",
+            "BR",
+            "DF",
+            "DR",
+            "DB",
+            "DL"
+          ],
+          "CENTERS": []
+        }
+      }
+    },
+    "555-centers": {
+      "aspect": "both",
+      "puzzles": ["5x5x5"],
+      "members": null,
+      "pieces": {
+        "5x5x5": {
+          "EDGES": [],
+          "EDGES2": [],
+          "CORNERS": [],
+          "CENTERS": [
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23
+          ],
+          "CENTERS2": [
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23
+          ],
+          "CENTERS3": [0, 1, 2, 3, 4, 5]
+        }
+      },
+      "pieceNames": {
+        "5x5x5": {
+          "EDGES": [],
+          "EDGES2": [],
+          "CORNERS": [],
+          "CENTERS": [
+            "U",
+            "U",
+            "U",
+            "U",
+            "L",
+            "L",
+            "L",
+            "L",
+            "F",
+            "F",
+            "F",
+            "F",
+            "R",
+            "R",
+            "R",
+            "R",
+            "B",
+            "B",
+            "B",
+            "B",
+            "D",
+            "D",
+            "D",
+            "D"
+          ],
+          "CENTERS2": [
+            "U",
+            "U",
+            "U",
+            "U",
+            "L",
+            "L",
+            "L",
+            "L",
+            "F",
+            "F",
+            "F",
+            "F",
+            "R",
+            "R",
+            "R",
+            "R",
+            "B",
+            "B",
+            "B",
+            "B",
+            "D",
+            "D",
+            "D",
+            "D"
+          ],
+          "CENTERS3": ["F", "R", "D", "U", "L", "B"]
+        }
+      }
+    },
+    "555-pairing": {
+      "aspect": "both",
+      "puzzles": ["5x5x5"],
+      "members": null,
+      "pieces": {
+        "5x5x5": {
+          "EDGES": [
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23
+          ],
+          "EDGES2": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+          "CORNERS": [],
+          "CENTERS": [],
+          "CENTERS2": [],
+          "CENTERS3": []
+        }
+      },
+      "pieceNames": {
+        "5x5x5": {
+          "EDGES": [
+            "UB",
+            "UR",
+            "UF",
+            "UL",
+            "UL",
+            "FL",
+            "DL",
+            "BL",
+            "UF",
+            "FR",
+            "DF",
+            "FL",
+            "UR",
+            "BR",
+            "DR",
+            "FR",
+            "UB",
+            "BL",
+            "DB",
+            "BR",
+            "DF",
+            "DR",
+            "DB",
+            "DL"
+          ],
+          "EDGES2": ["DF", "FL", "DR", "DB", "FR", "DL", "UR", "BR", "UL", "UB", "BL", "UF"],
+          "CORNERS": [],
+          "CENTERS": [],
+          "CENTERS2": [],
+          "CENTERS3": []
+        }
+      }
+    }
+  },
+  "ladders": {
+    "444": ["444-centers", "444-pairing", "cross", "f1l", "e-layer", "eo", "oc", "cp", "ep"],
+    "555": ["555-centers", "555-pairing", "cross", "f1l", "e-layer", "eo", "oc", "cp", "ep"],
+    "beginner": ["cross", "f1l", "e-layer", "eo", "ep", "cp", "oc"],
+    "cfop": ["cross", "f1l", "e-layer", "eo", "oc", "cp", "ep"]
+  },
+  "ladderPuzzle": {
+    "444": "4x4x4",
+    "555": "5x5x5",
+    "beginner": "3x3x3",
+    "cfop": "3x3x3"
+  },
+  "renderedLadders": ["444", "555", "beginner", "cfop"],
+  "stageOfGroup": [
+    {
+      "kind": "exact",
+      "key": "cross-eo",
+      "stage": "eo"
+    },
+    {
+      "kind": "exact",
+      "key": "2look-oll-corners",
+      "stage": "oc"
+    },
+    {
+      "kind": "exact",
+      "key": "2look-pll-corners",
+      "stage": "cp"
+    },
+    {
+      "kind": "exact",
+      "key": "2look-pll-edges",
+      "stage": "ep"
+    },
+    {
+      "kind": "exact",
+      "key": "444-parity",
+      "stage": "eo"
+    },
+    {
+      "kind": "exact",
+      "key": "555-l2e",
+      "stage": "555-pairing"
+    },
+    {
+      "kind": "prefix",
+      "key": "f2l-",
+      "stage": "f2l"
+    },
+    {
+      "kind": "prefix",
+      "key": "oll-",
+      "stage": "oll"
+    },
+    {
+      "kind": "prefix",
+      "key": "pll-",
+      "stage": "pll"
+    },
+    {
+      "kind": "prefix",
+      "key": "4x4oll-",
+      "stage": "eo"
+    },
+    {
+      "kind": "prefix",
+      "key": "4x4pll-edges",
+      "stage": "ep"
+    },
+    {
+      "kind": "prefix",
+      "key": "4x4pll-",
+      "stage": "cp"
+    }
+  ],
+  "ladderOfPhase": {
+    "444": "444",
+    "555": "555",
+    "basics": "beginner",
+    "phase-1": "beginner",
+    "phase-1.5": "beginner",
+    "phase-2": "cfop",
+    "phase-3": "cfop",
+    "full-cfop": "cfop",
+    "full-f2l": "cfop",
+    "full-oll": "cfop",
+    "full-pll": "cfop"
+  },
+  "defaultLadder": "cfop",
+  "masks": {
+    "444": {
+      "cross": "CORNERS:IIIIIIII,EDGES:DDDDDD-DDD-DDD-DDD-D----,CENTERS:DDDDDDDDDDDDDDDDDDDDDDDD",
+      "f1l": "CORNERS:IIII----,EDGES:DDDDDDDDDDDDDDDDDDDDDDDD,CENTERS:DDDDDDDDDDDDDDDDDDDDDDDD",
+      "e-layer": "CORNERS:IIIIDDDD,EDGES:DDDDD-D-D-D-D-D-D-D-DDDD,CENTERS:DDDDDDDDDDDDDDDDDDDDDDDD",
+      "eo": "CORNERS:IIIIDDDD,EDGES:OOOOODDDODDDODDDODDDDDDD,CENTERS:DDDDDDDDDDDDDDDDDDDDDDDD",
+      "oc": "CORNERS:OOOODDDD,EDGES:oooooDDDoDDDoDDDoDDDDDDD,CENTERS:DDDDDDDDDDDDDDDDDDDDDDDD",
+      "cp": "CORNERS:PPPPDDDD,EDGES:oooooDDDoDDDoDDDoDDDDDDD,CENTERS:DDDDDDDDDDDDDDDDDDDDDDDD",
+      "ep": "CORNERS:DDDDDDDD,EDGES:PPPPPDDDPDDDPDDDPDDDDDDD,CENTERS:DDDDDDDDDDDDDDDDDDDDDDDD",
+      "f2l": "CORNERS:IIII----,EDGES:DDDDD-D-D-D-D-D-D-D-DDDD,CENTERS:DDDDDDDDDDDDDDDDDDDDDDDD",
+      "oll": "CORNERS:OOOODDDD,EDGES:OOOOODDDODDDODDDODDDDDDD,CENTERS:DDDDDDDDDDDDDDDDDDDDDDDD",
+      "pll": "CORNERS:PPPPDDDD,EDGES:PPPPPDDDPDDDPDDDPDDDDDDD,CENTERS:DDDDDDDDDDDDDDDDDDDDDDDD",
+      "444-centers": "CORNERS:IIIIIIII,EDGES:IIIIIIIIIIIIIIIIIIIIIIII,CENTERS:------------------------",
+      "444-pairing": "CORNERS:IIIIIIII,EDGES:------------------------,CENTERS:DDDDDDDDDDDDDDDDDDDDDDDD"
+    },
+    "555": {
+      "cross": "EDGES:DDDDDD-DDD-DDD-DDD-D----,EDGES2:-D--D-DDDDDD,CORNERS:IIIIIIII,CENTERS:DDDDDDDDDDDDDDDDDDDDDDDD,CENTERS2:DDDDDDDDDDDDDDDDDDDDDDDD,CENTERS3:DDDDDD",
+      "f1l": "EDGES:DDDDDDDDDDDDDDDDDDDDDDDD,EDGES2:DDDDDDDDDDDD,CORNERS:IIII----,CENTERS:DDDDDDDDDDDDDDDDDDDDDDDD,CENTERS2:DDDDDDDDDDDDDDDDDDDDDDDD,CENTERS3:DDDDDD",
+      "e-layer": "EDGES:DDDDD-D-D-D-D-D-D-D-DDDD,EDGES2:D-DD-DD-DD-D,CORNERS:IIIIDDDD,CENTERS:DDDDDDDDDDDDDDDDDDDDDDDD,CENTERS2:DDDDDDDDDDDDDDDDDDDDDDDD,CENTERS3:DDDDDD",
+      "eo": "EDGES:OOOOODDDODDDODDDODDDDDDD,EDGES2:DDDDDDODOODO,CORNERS:IIIIDDDD,CENTERS:DDDDDDDDDDDDDDDDDDDDDDDD,CENTERS2:DDDDDDDDDDDDDDDDDDDDDDDD,CENTERS3:DDDDDD",
+      "oc": "EDGES:oooooDDDoDDDoDDDoDDDDDDD,EDGES2:DDDDDDoDooDo,CORNERS:OOOODDDD,CENTERS:DDDDDDDDDDDDDDDDDDDDDDDD,CENTERS2:DDDDDDDDDDDDDDDDDDDDDDDD,CENTERS3:DDDDDD",
+      "cp": "EDGES:oooooDDDoDDDoDDDoDDDDDDD,EDGES2:DDDDDDoDooDo,CORNERS:PPPPDDDD,CENTERS:DDDDDDDDDDDDDDDDDDDDDDDD,CENTERS2:DDDDDDDDDDDDDDDDDDDDDDDD,CENTERS3:DDDDDD",
+      "ep": "EDGES:PPPPPDDDPDDDPDDDPDDDDDDD,EDGES2:DDDDDDPDPPDP,CORNERS:DDDDDDDD,CENTERS:DDDDDDDDDDDDDDDDDDDDDDDD,CENTERS2:DDDDDDDDDDDDDDDDDDDDDDDD,CENTERS3:DDDDDD",
+      "f2l": "EDGES:DDDDD-D-D-D-D-D-D-D-DDDD,EDGES2:D-DD-DD-DD-D,CORNERS:IIII----,CENTERS:DDDDDDDDDDDDDDDDDDDDDDDD,CENTERS2:DDDDDDDDDDDDDDDDDDDDDDDD,CENTERS3:DDDDDD",
+      "oll": "EDGES:OOOOODDDODDDODDDODDDDDDD,EDGES2:DDDDDDODOODO,CORNERS:OOOODDDD,CENTERS:DDDDDDDDDDDDDDDDDDDDDDDD,CENTERS2:DDDDDDDDDDDDDDDDDDDDDDDD,CENTERS3:DDDDDD",
+      "pll": "EDGES:PPPPPDDDPDDDPDDDPDDDDDDD,EDGES2:DDDDDDPDPPDP,CORNERS:PPPPDDDD,CENTERS:DDDDDDDDDDDDDDDDDDDDDDDD,CENTERS2:DDDDDDDDDDDDDDDDDDDDDDDD,CENTERS3:DDDDDD",
+      "555-centers": "EDGES:IIIIIIIIIIIIIIIIIIIIIIII,EDGES2:IIIIIIIIIIII,CORNERS:IIIIIIII,CENTERS:------------------------,CENTERS2:------------------------,CENTERS3:------",
+      "555-pairing": "EDGES:------------------------,EDGES2:------------,CORNERS:IIIIIIII,CENTERS:DDDDDDDDDDDDDDDDDDDDDDDD,CENTERS2:DDDDDDDDDDDDDDDDDDDDDDDD,CENTERS3:DDDDDD"
+    },
+    "beginner": {
+      "cross": "EDGES:IIII----IIII,CORNERS:IIIIIIII,CENTERS:------",
+      "f1l": "EDGES:IIIIDDDDIIII,CORNERS:IIII----,CENTERS:DDDDDD",
+      "e-layer": "EDGES:IIIIDDDD----,CORNERS:IIIIDDDD,CENTERS:DDDDDD",
+      "eo": "EDGES:OOOODDDDDDDD,CORNERS:IIIIDDDD,CENTERS:DDDDDD",
+      "oc": "EDGES:DDDDDDDDDDDD,CORNERS:OOOODDDD,CENTERS:DDDDDD",
+      "cp": "EDGES:DDDDDDDDDDDD,CORNERS:PPPPDDDD,CENTERS:DDDDDD",
+      "ep": "EDGES:PPPPDDDDDDDD,CORNERS:IIIIDDDD,CENTERS:DDDDDD",
+      "f2l": "EDGES:IIIIDDDD----,CORNERS:IIII----,CENTERS:DDDDDD",
+      "oll": "EDGES:OOOODDDDDDDD,CORNERS:OOOODDDD,CENTERS:DDDDDD",
+      "pll": "EDGES:PPPPDDDDDDDD,CORNERS:PPPPDDDD,CENTERS:DDDDDD"
+    },
+    "cfop": {
+      "cross": "EDGES:IIII----IIII,CORNERS:IIIIIIII,CENTERS:------",
+      "f1l": "EDGES:IIIIDDDDIIII,CORNERS:IIII----,CENTERS:DDDDDD",
+      "e-layer": "EDGES:IIIIDDDD----,CORNERS:IIIIDDDD,CENTERS:DDDDDD",
+      "eo": "EDGES:OOOODDDDDDDD,CORNERS:IIIIDDDD,CENTERS:DDDDDD",
+      "oc": "EDGES:ooooDDDDDDDD,CORNERS:OOOODDDD,CENTERS:DDDDDD",
+      "cp": "EDGES:ooooDDDDDDDD,CORNERS:PPPPDDDD,CENTERS:DDDDDD",
+      "ep": "EDGES:PPPPDDDDDDDD,CORNERS:DDDDDDDD,CENTERS:DDDDDD",
+      "f2l": "EDGES:IIIIDDDD----,CORNERS:IIII----,CENTERS:DDDDDD",
+      "oll": "EDGES:OOOODDDDDDDD,CORNERS:OOOODDDD,CENTERS:DDDDDD",
+      "pll": "EDGES:PPPPDDDDDDDD,CORNERS:PPPPDDDD,CENTERS:DDDDDD"
+    }
+  },
+  "notes": [
+    "Masks are in HOME-SLOT order; remap through the ladder's puzzle frame (puzzles[p].frame, mirrored as FRAMES in src/lib/stickering.ts) to get the player attribute.",
+    "A centre is never GREY and is highlighted by exactly one stage per ladder — the first one that claims it. It is the frame every recognition cue is written against, so 'not yet reached' is never true of it.",
+    "LIMITATION (3x3 renderer): the tiers are told apart by colour alone, and every pair under WCAG 2:1, worst first, is — grey is #666666, H highlight, D dim: 1.09:1 orange D #885500 vs grey; 1.21:1 blue H #2266FF vs grey; 1.24:1 green D #008800 vs grey; 1.36:1 white D #DDDDDD vs H #FFFFFF; 1.44:1 red H #FF0000 vs grey; 1.52:1 yellow D #888800 vs grey; 1.97:1 blue D #113388 vs grey. So both boundaries fail, on different faces: dim-vs-grey is the worst pair on the cube and the most common, highlight-vs-grey carries the most meaning and fails second-worst, and highlight-vs-dim fails only on white — which confines that clash to `f1l` and `f2l`. Every ratio measured off decoded screenshots of the player; src/lib/ladders.ts carries the palette as data and the tests recompute it.",
+    "LIMITATION (big cubes): 4x4 and 5x5 render through PG3D, a different palette whose dim is a ~0.73 multiply and whose grey is #444444. Measured: yellow #F4F400/#B3B300 H:D 1.90:1, D:grey 4.34:1, H:grey 8.25:1; green #44EE00/#2FAF00 1.86:1, 3.36:1, 6.25:1; red #FF0000/#BC0000 1.67:1, 1.46:1, 2.44:1. The trade runs the other way there: highlight and dim are closer (all three faces under 2:1), but dim and grey are much further apart on every face except red, and highlight-vs-grey is the strongest boundary rather than the weakest.",
+    "There is no cube-palette API in cubing 0.63.3, so none of this is tunable in the player. The worst-affected stages are illustrated by static SVGs, where the palette is ours; the tier assignment in this file is the shared artifact, the colours are not."
+  ]
+}

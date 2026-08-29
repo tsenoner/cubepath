@@ -83,7 +83,7 @@ of these is therefore pinned by a test:
 | artifact | produced by | pinned by |
 | --- | --- | --- |
 | `app/public/cubepath.pdf` | `make build-guide` | `tests/test_guide.py` (input digest in `guide/pdf.stamp.json`) |
-| `app/public/diagrams/**` (131 SVGs) | `make diagrams` | `tests/test_diagrams.py` — generator match + byte-identity with `guide/figures/generated/` |
+| `app/public/diagrams/**` (221 SVGs) | `make diagrams` | `tests/test_diagrams.py` — generator match, and the guide's figure paths resolve |
 | `app/public/cards/*.pdf`, `app/src/data/cards.json` | `make cards` | `tests/test_cards.py` |
 | `app/public/favicon.svg`, `app/public/icons/*.png` | `make logo` | `tests/test_logo.py` |
 | `app/src/data/fullsets*.gen.ts` | `node scripts/gen-cases.mjs` | `app/tests/algs.spec.ts` (kpuzzle) |
@@ -161,6 +161,26 @@ alternates, build-time only) → merged with curated entries in `src/data/algs.t
 (`ALL_CASES`). Never hand-edit generated files; never retype algorithms — every
 alg is kpuzzle-verified in `tests/algs.spec.ts`.
 
+**Not every case in the data is a case in the UI.** `app/src/lib/unlocks.ts`
+holds one boolean per set that ships verified but is deliberately not surfaced,
+and exports the single predicate `isLocked(caseOrGroupKey)` that the trainer,
+`/reference` and `/case/[...id]` all ask — locked cases are dropped from the
+trainer's set list, pool and counts, get no reference row and get no page built
+at all. Two sets are locked, 60 cases in total:
+
+- **`444-parity-embedded`** — the 48 parity-embedded 4×4 last-layer cases
+  (`444.oll.*` / `444.pll.*` minus the two the course teaches).
+- **`555-l2e-onelook`** — twelve of the thirteen 5×5 last-two-edges cases.
+  `555.l2e-6` (edge parity) stays, and so does the `555-l2e` GROUP: a one-case
+  trainer set still drills the only recognition question a 5×5 asks.
+
+Do not "fix" the gap by regenerating anything — the data, the diagrams and the
+algorithm tests all still cover every locked case; flipping the boolean in
+`UNLOCKED` restores every surface at once. `tests/unlocks.spec.ts` gates both
+states of both keys, including the unlocked ones. Why they are hidden:
+docs/DECISIONS.md § "4×4 parity-embedded cases" and § "The 5×5 course is two
+algorithms and one technique".
+
 Deploys: Vercel project `cubepath` (deploy setup in docs/DECISIONS.md § Deploys), git-linked via
 the Vercel GitHub App — **every push to master auto-deploys** to
 https://cubepath-six.vercel.app (root `vercel.json` builds from `app/`).
@@ -192,9 +212,9 @@ named for the package now (`parents[N]` depths are unchanged, so no code moved).
 
 ### Diagram Pipeline
 
-`tools/cubepath/src/cubepath/diagrams.py` defines the guide's 17 core cube diagrams as `CubeDiagram` dataclasses rendered to SVG using `svgwrite`. Case sticker data is **derived from algorithms** via `_derived_cross_case` / `_derived_oll_corner_case` / `_derived_pll_case` (OLL: yellow/grey masks; PLL: true colors). The entry point `cubepath-diagrams` writes to `guide/figures/generated/`.
+`tools/cubepath/src/cubepath/diagrams.py` defines the guide's 17 core cube diagrams as `CubeDiagram` dataclasses rendered to SVG using `svgwrite`. Case sticker data is **derived from algorithms** via `_derived_cross_case` / `_derived_oll_corner_case` / `_derived_pll_case` (OLL: yellow/grey masks; PLL: true colors). The entry point `cubepath-diagrams` writes to `app/public/diagrams/` — the one committed tree.
 
-Four case groups: `_oll_cross_cases()` (3), `_oll_corner_cases()` (8), `_pll_corner_cases()` (2), `_pll_edge_cases()` (4). `fullsets.py` builds a further 78 (57 OLL + 21 PLL) from the app's extraction, into `oll-full/` and `pll-full/`.
+Four case groups: `_oll_cross_cases()` (3), `_oll_corner_cases()` (8), `_pll_corner_cases()` (2), `_pll_edge_cases()` (4) — the 17 `all_cases()` returns. `fullsets.py` builds the rest from the app's extraction: 78 plan views (57 OLL + 21 PLL) into `oll-full/` and `pll-full/`, 41 isometric `SlotDiagram` pictures into `f2l/`, and 49 big-cube plan views (27 + 22) into `444-oll/` and `444-pll/` — those from the kpuzzle states in `case-states.json`, because `cube.py` cannot model a 4×4 and must not be taught to. 221 SVGs in all, and `tests/test_diagrams.py` pins that number: `EXPECTED_DIAGRAMS` is asserted against a full render, so a group added to `main()` and forgotten in the test (or the reverse) fails the build.
 
 OLL cases have no arrows; PLL cases use `swaps` (bidirectional), `cycles` (directional) and
 `dashed_swaps` (the secondary edge movement in a corner PLL) arrow fields — hand-declared for layout but permutation-verified by tests.
@@ -299,6 +319,83 @@ Handles five things:
 
 5. **Borderless tables** — `::: {.borderless}` converts a table to a Typst `#grid()` so columns distribute equally.
 
+## The three-tier colour model
+
+Every picture on this site — 3D player or static SVG — puts each facelet in one
+of three tiers, and the tier is the whole teaching device:
+
+| tier | means | player (cubing.js) | SVG |
+| --- | --- | --- | --- |
+| **FULL COLOUR** | what THIS step solves | the face colour | the face colour |
+| **DIM** | solved by an EARLIER step — preserve it, do not re-solve it | a darkened face colour | `diagrams.dim()` |
+| **GREY** | the method has not REACHED this piece yet | `#666666` (3×3), `#444444` (PG3D) | `UNREACHED = #D8D5CF` |
+
+**Where it is defined.** `app/src/data/extracted/stages.json` (schema
+`cubepath/stages@2`) is the single source, generated by
+`app/scripts/gen-stickering.mjs` from cubing.js itself — every stage's piece set
+comes out of layer-move algebra, no slot index is ever typed. `app/src/lib/ladders.ts`
+reads it; `app/src/lib/stickering.ts` turns a `StageContext` into the player's
+`experimental-stickering-mask-orbits` attribute. Regenerate with
+`npm run gen:stickering`; never hand-edit either file.
+
+Three facts shape it, and each is gated: there are **two 3×3 ladders**
+(beginner permutes the last-layer edges before orienting the corners, CFOP
+orients first), so the tier cannot live on `CaseDef` — the stage comes from the
+case's `group`, the ladder from the calling context; **"done" is not a boolean**
+for a last-layer piece, so every stage carries an aspect (both / orientation /
+permutation) and the mask is narrowed on that aspect alone; and **a centre is
+never grey**, because it is the frame every recognition cue on the site is
+written against.
+
+**Which surfaces render it.** Every player takes a `context` prop
+(`contextForCase(def)` for a case, an explicit ladder+stage for a lesson that
+teaches a step out of CFOP order). The one deliberate exemption is a NOTATION
+demo, where the move itself is the subject and every layer has to stay visible:
+six players in all — `R U R' U'` on `/learn/notation` and `/learn/finger-tricks`,
+plus the four big-cube wide-turn demos (`Rw`, `3Rw`, `Uw`, `3Rw`).
+`tests/algs.spec.ts` allows those by lesson+algorithm — per FILE was not enough,
+because it let four unclassified big-cube players hide a lesson that had lost
+its context — and fails any other unmasked player. On the SVG side the tier lives in `StepDiagram.subject`
+(derived as `milestone - previous`, never declared) and in the PLL plan views'
+dim U face. The OLL plan views are two-tier ON PURPOSE: nothing earlier-solved
+is in frame, and their grey means "a real sticker that is not yellow", not "not
+reached" — which is why those are two different greys (`UNORIENTED` `#C0C0C0`
+vs `UNREACHED` `#D8D5CF`) and why no single SVG may contain both.
+
+**Contrast limits.** Only the SVG palette is ours; cubing 0.63.3 has no
+cube-palette API, so the player's tones are what they are. Two metrics, and they
+disagree — say which one you mean:
+
+- **WCAG contrast** is luminance-only and is the number `ladders.ts`
+  tabulates. On the 3×3 renderer seven tier pairs fall under 2:1, worst
+  first: orange D:grey 1.09, blue H:grey 1.21, green D:grey 1.24, white H:D
+  1.36, red H:grey 1.44, yellow D:grey 1.52, blue D:grey 1.97.
+  `tests/algs.spec.ts` recomputes all 18 pairs and fails if that list stops
+  being exhaustive at 2:1.
+- **CIE ΔE** is what decides whether two adjacent PATCHES read as different,
+  and it ranks them differently: orange D:grey is 51.8 ΔE (plainly different
+  hues, low luminance contrast). The one genuinely marginal pair is **white
+  H:D at 11.9 ΔE** — the only pair with no hue to separate it — and it is
+  confined to `f1l`/`f2l`. In practice it does not reach the screen: the white
+  face points down under `SETUP_ALG`, and a piece in the dim tier is a solved
+  first-layer piece, whose white facelet is therefore on D.
+
+The SVG palette was tuned against ΔE for exactly that reason: `dim()` is a Lab
+transform (same hue, chroma × `DIM_CHROMA`, an L\* step away from `DIM_PIVOT`)
+sized so **min ΔE(full, dim) = 30.0** across both palettes, and `UNREACHED` sits
+8.3 ΔE from `UNORIENTED`. `UNREACHED` is a WARM neutral one step lighter than
+the mask, and both halves of that are deliberate. It has to clear the white
+face and the page, which are 1.6 ΔE apart, so it buys distance with a tint or
+with lightness; the cube already owns a blue face, so a cool tint (the original
+`#C0D4E6`) read as a seventh sticker colour rather than as "no claim here", and
+paying in lightness instead (`#E6E3DD`) read as a hole in the page. Its floor is
+DIM WHITE at 15.7 ΔE — the one neighbour with no hue to separate it. The two
+greys are only gated at ≥8 ΔE because the gate that actually enforces the split
+is that no single SVG may contain both. `diagrams.py` carries the full trade.
+The shared artifact between the two renderers is stages.json's TIER ASSIGNMENT
+and never the colours — which is why the player keeps cubing.js's tones and the
+SVGs do not match them.
+
 ## Rubik's Cube Color Scheme & Physics
 
 Standard Western color scheme with **Yellow on top, White on bottom, Red in front**:
@@ -331,13 +428,26 @@ if they stop matching, rather than silently passing.
 
 ### Diagram output structure
 
-Generated SVGs are organized in subdirectories under `guide/figures/generated/`:
-- `oll/` — OLL case diagrams (plan-view, top-down)
-- `pll/` — PLL case diagrams (plan-view with arrows)
-- `oll-full/` — the full 57-OLL set (from `fullsets.py`)
-- `pll-full/` — the full 21-PLL set (from `fullsets.py`)
-- `notation/` — 3D isometric move notation diagrams, plus `overview.svg` (the six face turns on one cube) and its unreferenced backup `overview_hub.svg`
-- `steps/` — 3D isometric step progress + case diagrams
+Generated SVGs are organized in subdirectories under `app/public/diagrams/`,
+which is the ONE committed tree. `guide/cubepath.md` reaches up into it with
+`../app/public/diagrams/…` paths, which is why `guide/defaults/pdf.yaml` passes
+`--root ..` to typst — without it typst rejects every figure for escaping its
+project root. There is no copy step and no second tree:
+
+| directory | n | what |
+| --- | --- | --- |
+| `oll/` | 11 | the guide's OLL cases (plan-view, top-down) |
+| `pll/` | 6 | the guide's PLL cases (plan-view with arrows) |
+| `oll-full/` | 57 | the full OLL set (`fullsets.py`) |
+| `pll-full/` | 21 | the full PLL set (`fullsets.py`) |
+| `f2l/` | 41 | F2L slot-and-pair cases, 3D isometric (`SlotDiagram`) |
+| `444-oll/` | 27 | 4×4 OLL incl. parity (plan-view, from `case-states.json`) |
+| `444-pll/` | 22 | 4×4 PLL incl. parity (plan-view) |
+| `notation/` | 17 | 3D isometric move notation diagrams, the overview, and its `overview_hub` backup |
+| `steps/` | 19 | 3D isometric step progress + case diagrams |
+
+221 in total. `guide/cubepath.md` references 51 of them; the card set re-renders
+its own in `CARD` style rather than reusing these.
 
 ## Writing Philosophy
 
@@ -345,9 +455,10 @@ The guide should be as small and concise as possible while containing all inform
 
 ## Key Conventions
 
-- `diagrams.py` defines `Y` (YELLOW) / `G` (GREY) shorthands for u_face color arrays, but they are
-  largely vestigial: cases are derived through `_yellow_mask()`, and only `oll_solved` still
-  writes `Y` literals. Derive, don't hand-write a mask.
+- `diagrams.py` defines a `Y` (YELLOW) shorthand for u_face color arrays, and it is nearly
+  vestigial: cases are derived through `_yellow_mask()`, and only `oll_solved` still writes `Y`
+  literals. The matching `G` (GREY) shorthand is gone — nothing wrote one. Derive, don't
+  hand-write a mask.
 - U-face indices are row-major: 0=TL, 1=TC, 2=TR, 3=ML, 4=Center, 5=MR, 6=BL, 7=BC, 8=BR. Top row = back of cube, bottom row = front.
 - OLL cross algorithms: `F(R U R' U')F'` solves **Line** (hold horizontal), `f(R U R' U')f'` solves **Hook** (hold L in front-right).
 - Ruff config: Python 3.12, line-length 100, rules E/F/I/UP/W.

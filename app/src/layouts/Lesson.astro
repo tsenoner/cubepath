@@ -1,11 +1,42 @@
 ---
 /**
- * Lesson page shell: breadcrumb, title, MDX body, prev/next navigation.
+ * Lesson page shell.
+ *
+ * Five slots, in order, and only two of them are written in MDX:
+ *
+ *   position   breadcrumb + "Step 4 of 25", so the reader knows where they are
+ *   goal       title + description + "What you'll learn" + time + prerequisites
+ *   body       the MDX (Why + How) — the author writes this
+ *   practice   rendered from frontmatter, so no lesson can end without a handoff
+ *   next       the pager
+ *
+ * The prose rules below are the other half of the fix. `.prose` used to style
+ * h2/h3/p/ul/ol/li/strong/code and *nothing else* — no img, figure, table or
+ * link rule — so a lesson diagram was a bare `display: inline` 60px stamp at
+ * the left edge of an 820px column and the Dot/Hook/Line recognition table
+ * rendered 214px wide with 1px cell padding. Pictures now come in through
+ * <Figure>, which frames and captions them; everything here is the safety net
+ * for what markdown itself emits.
  */
 import { getCollection } from "astro:content";
 import Base from "./Base.astro";
 import Header from "../components/Header.astro";
+import Page from "../components/Page.astro";
+import ProgressBar from "../components/ProgressBar.astro";
+import LessonMeta from "../components/LessonMeta.astro";
 import { phaseName } from "../data/phases";
+import { caseById } from "../data/algs";
+import { TRAINER_GROUPS } from "../lib/trainer";
+
+interface PracticeLink {
+  href: string;
+  label: string;
+}
+interface Practice {
+  groups: string[];
+  links: PracticeLink[];
+  note: string;
+}
 
 interface Props {
   id: string;
@@ -13,33 +44,129 @@ interface Props {
   description: string;
   phase: string;
   order: number;
+  minutes: number;
+  objectives: string[];
+  prerequisites: string[];
+  algorithms: string[];
+  practice: Practice;
 }
-const { id, title, description, phase } = Astro.props;
+
+const { id, title, description, phase, minutes, objectives, prerequisites, algorithms, practice } =
+  Astro.props;
 
 const all = (await getCollection("lessons")).sort((a, b) => a.data.order - b.data.order);
+const byId = new Map(all.map((l) => [l.id, l]));
 const idx = all.findIndex((l) => l.id === id);
+const step = idx + 1;
 const prev = idx > 0 ? all[idx - 1] : undefined;
 const next = idx >= 0 && idx < all.length - 1 ? all[idx + 1] : undefined;
+
+// Cross-references are validated here rather than in the Zod schema, which
+// cannot see the other lessons or the case data. This runs once per lesson at
+// build time, so a typo in `prerequisites`, `algorithms` or `practice.groups`
+// fails `astro build` instead of shipping a dead chip or a link to a trainer
+// set that does not exist.
+const groupKeys = new Set(TRAINER_GROUPS.map((g) => g.key));
+for (const p of prerequisites) {
+  if (!byId.has(p)) throw new Error(`${id}: unknown prerequisite lesson "${p}"`);
+}
+for (const a of algorithms) {
+  if (!caseById.has(a)) throw new Error(`${id}: unknown case id "${a}" in algorithms`);
+}
+for (const g of practice.groups) {
+  if (!groupKeys.has(g)) throw new Error(`${id}: unknown trainer group "${g}"`);
+}
+
+const prereqs = prerequisites.map((p) => byId.get(p)!);
+const drills = practice.groups.map((key) => ({
+  key,
+  name: TRAINER_GROUPS.find((g) => g.key === key)!.name,
+}));
 ---
 
 <Base title={`${title} — Cubepath`} description={description}>
   <Header active="learn" />
-  <main>
-    <nav class="crumbs">
-      <a href="/">3×3 course</a>
-      <span class="sep">›</span>
-      <span>{phaseName(phase)}</span>
-    </nav>
+  <Page>
+    <div class="lesson-head">
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <a href="/">3×3 course</a>
+        <span class="sep" aria-hidden="true">›</span>
+        <span>{phaseName(phase)}</span>
+      </nav>
+      <div class="position">
+        <ProgressBar
+          label={`Step ${step} of ${all.length}`}
+          value={step}
+          max={all.length}
+          count={false}
+        />
+      </div>
+    </div>
+
     <h1>{title}</h1>
-    <p class="description">{description}</p>
+    <p class="lead">{description}</p>
+
+    <div class="meta">
+      <span class="chip chip--ghost">≈ {minutes} min</span>
+      {
+        prereqs.map((p) => (
+          <a class="chip" href={`/learn/${p.id}/`}>
+            After: {p.data.title}
+          </a>
+        ))
+      }
+    </div>
+
+    {
+      /*
+      The *write* half of the course progress layer. db.ts has a `lessons`
+      store and index.astro reads it for the per-phase bars, the ✓ marks and
+      the "Resume: <lesson>" CTA — but nothing called markLessonComplete(), so
+      every phase bar read 0/N forever and Resume never appeared. `position` is
+      off: the "Step N of M" bar above already says that. Renders nothing and
+      occupies no space until the lesson has actually been completed.
+    */
+    }
+    <LessonMeta id={id} />
+
+    <section class="objectives card" aria-labelledby="objectives-heading">
+      <h2 id="objectives-heading" class="label">What you'll learn</h2>
+      <ul>
+        {objectives.map((o) => <li>{o}</li>)}
+      </ul>
+    </section>
+
     <article class="prose">
       <slot />
     </article>
-    <nav class="pager">
+
+    <section class="practice card" aria-labelledby="practice-heading">
+      <h2 id="practice-heading">Practice</h2>
+      <p>{practice.note}</p>
+      <div class="actions">
+        {
+          drills.map((d) => (
+            <a class="btn btn--primary" href={`/practice/?group=${d.key}`}>
+              Drill {d.name}
+            </a>
+          ))
+        }
+        {
+          practice.links.map((l) => (
+            <a class="btn" href={l.href}>
+              {l.label}
+            </a>
+          ))
+        }
+      </div>
+    </section>
+
+    <nav class="pager" aria-label="Lesson">
       {
         prev ? (
           <a class="pager-link" href={`/learn/${prev.id}/`}>
-            ← {prev.data.title}
+            <span class="dir">← Previous</span>
+            <span class="what">{prev.data.title}</span>
           </a>
         ) : (
           <span />
@@ -48,50 +175,88 @@ const next = idx >= 0 && idx < all.length - 1 ? all[idx + 1] : undefined;
       {
         next ? (
           <a class="pager-link next" href={`/learn/${next.id}/`}>
-            {next.data.title} →
+            <span class="dir">Next →</span>
+            <span class="what">{next.data.title}</span>
           </a>
         ) : (
           <a class="pager-link next" href="/">
-            Course overview →
+            <span class="dir">Done →</span>
+            <span class="what">Course overview</span>
           </a>
         )
       }
     </nav>
-  </main>
+  </Page>
 </Base>
 
 <style>
-  main {
-    max-width: 860px;
-    margin: 0 auto;
-    padding: 26px 20px 70px;
+  /* --- position + goal ---------------------------------------------------- */
+
+  .lesson-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3) var(--space-5);
+  }
+  .crumbs {
+    margin-bottom: 0;
   }
   .sep {
     color: var(--faint);
   }
-  h1 {
-    font-size: 30px;
-    margin-bottom: 6px;
+  .position {
+    flex: 0 1 180px;
   }
-  .description {
-    color: var(--soft);
-    margin: 0 0 22px;
+
+  h1 {
+    margin: var(--space-4) 0 0;
+  }
+  .lead {
+    margin: var(--space-2) 0 0;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    margin: var(--space-4) 0 0;
+  }
+
+  .objectives {
+    margin: var(--space-5) 0 var(--space-6);
+    padding: var(--space-4) var(--space-5);
+  }
+  .objectives ul {
+    margin: var(--space-2) 0 0;
+    padding-left: var(--space-5);
+  }
+  .objectives li {
+    margin: var(--space-1) 0;
+  }
+
+  /* --- the MDX body ------------------------------------------------------- */
+
+  .prose {
+    /* A long algorithm string or a URL must not push the column sideways. */
+    overflow-wrap: break-word;
   }
   .prose :global(h2) {
-    margin: 26px 0 10px;
+    margin: var(--space-6) 0 var(--space-3);
   }
   .prose :global(h3) {
-    margin: 20px 0 8px;
+    margin: var(--space-5) 0 var(--space-2);
   }
   .prose :global(p) {
-    margin: 10px 0;
+    margin: var(--space-3) 0;
   }
   .prose :global(ul),
   .prose :global(ol) {
-    padding-left: 22px;
+    padding-left: var(--space-5);
   }
   .prose :global(li) {
-    margin: 4px 0;
+    margin: var(--space-1) 0;
   }
   .prose :global(strong) {
     font-weight: 600;
@@ -101,39 +266,127 @@ const next = idx >= 0 && idx < all.length - 1 ? all[idx + 1] : undefined;
     font-size: 0.92em;
     background: var(--accent-soft);
     padding: 1px 5px;
-    border-radius: 4px;
+    border-radius: var(--r-sm);
+  }
+
+  /* Safety net. Every deliberate picture goes through <Figure>; this is what
+     catches a markdown `![alt](src)` or a hand-written <img> so that it can
+     never again render as a 60px inline stamp with no max-width. */
+  .prose :global(img) {
+    display: block;
+    max-inline-size: 100%;
+    block-size: auto;
+    margin: var(--space-5) 0;
+  }
+  /* …but never inside a <Figure>: the frame owns that spacing, and the rule
+     above would otherwise push 24px of air between the border and the image. */
+  .prose :global(figure img) {
+    margin: 0;
+  }
+
+  /* Markdown tables. There were no table rules at all, so the Dot/Hook/Line
+     recognition table — the single most important visual of Step 4 — rendered
+     214px wide with 1px cell padding and no separators. */
+  .prose :global(table) {
+    inline-size: 100%;
+    border-collapse: collapse;
+    margin: var(--space-5) 0;
+  }
+  .prose :global(th),
+  .prose :global(td) {
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+    vertical-align: top;
+  }
+  .prose :global(thead th) {
+    font-size: var(--text-sm);
+    color: var(--soft);
+  }
+  .prose :global(tbody tr:last-child td) {
+    border-bottom: 0;
+  }
+
+  .prose :global(hr) {
+    border: 0;
+    border-top: 1px solid var(--line);
+    margin: var(--space-6) 0;
+  }
+  .prose :global(blockquote) {
+    margin: var(--space-5) 0;
+    padding-left: var(--space-4);
+    border-left: 3px solid var(--line);
+    color: var(--soft);
   }
   .prose :global(.case-list) {
     background: var(--card);
     border: 1px solid var(--line);
-    border-radius: 10px;
+    border-radius: var(--r-md);
     overflow: hidden;
-    margin: 14px 0;
+    margin: var(--space-4) 0;
   }
+
+  /* --- practice + next ---------------------------------------------------- */
+
+  .practice {
+    margin: var(--space-7) 0 0;
+    padding: var(--space-4) var(--space-5) var(--space-5);
+  }
+  .practice p {
+    margin: var(--space-2) 0 var(--space-4);
+    color: var(--soft);
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .actions .btn {
+    text-decoration: none;
+  }
+
   .pager {
     display: flex;
     justify-content: space-between;
-    gap: 12px;
-    margin-top: 34px;
-    padding-top: 18px;
+    gap: var(--space-3);
+    margin-top: var(--space-6);
+    padding-top: var(--space-4);
     border-top: 1px solid var(--line);
   }
   .pager-link {
-    font-weight: 600;
-    font-size: 14px;
-    padding: 10px 16px;
+    display: grid;
+    gap: 2px;
+    max-inline-size: 46%;
+    padding: var(--space-2) var(--space-4);
     border: 1px solid var(--line);
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     color: var(--ink);
   }
   .pager-link:hover {
     text-decoration: none;
     border-color: var(--accent);
-    color: var(--accent);
   }
+  .pager-link .dir {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--faint);
+  }
+  .pager-link .what {
+    font-weight: 600;
+  }
+  /* --on-accent, never #fff: the dark-mode accent is light, and #fff on it
+     measured 2.44:1. */
   .pager-link.next {
     background: var(--accent);
     border-color: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
+    text-align: right;
+  }
+  /* No opacity here: --on-accent at 0.75 blends toward --accent and measures
+     3.87:1 in light mode, which axe flags as a serious contrast violation. The
+     eyebrow is already distinguished by size, weight and letter-spacing. */
+  .pager-link.next .dir {
+    color: var(--on-accent);
   }
 </style>

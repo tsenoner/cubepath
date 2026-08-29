@@ -3,18 +3,37 @@ title: "Step 5: Align the Yellow Edges"
 description: "Turn U until two edges match their centers, then Sune + U swaps the other two into place."
 phase: "phase-1"
 order: 70
+minutes: 10
+objectives:
+  - "Count matching edges at each U angle and know why three is impossible."
+  - "Tell an adjacent matching pair from an opposite one."
+  - "Use Sune + U to swap the front and left edges without touching the cross."
+prerequisites: ["yellow-cross"]
+algorithms: []
+practice:
+  groups: []
+  links:
+    - href: "/practice/"
+      label: "Open the trainer"
+  note: "Full solve in the trainer, stopping once all four side stickers match — adjacent should take one pass and opposite exactly two, every time."
 ---
 
 import Callout from "../../components/Callout.astro";
 import AlgText from "../../components/AlgText.astro";
+import Figure from "../../components/Figure.astro";
 import TwistyPlayer from "../../components/TwistyPlayer.astro";
+
+<Figure
+  size="side"
+  src="/diagrams/steps/step_5_yedges.svg"
+  alt="Goal state: yellow cross with every edge's side sticker matching the center below it"
+  caption="The goal: every side sticker over its own centre."
+/>
 
 The yellow cross is up, but from the side the cube still looks chaotic. Each
 cross edge has a second sticker facing outwards, and it belongs above the
 center of the same color. This step puts all four home — white stays on the
 bottom, yellow on top, as always.
-
-<img src="/diagrams/steps/step_5_yedges.svg" alt="Goal state: yellow cross with every edge's side sticker matching the center below it" width="60" />
 
 ## Find the matching pair
 
@@ -37,13 +56,25 @@ Held normally, this swaps the **front and left** edges while leaving the back
 and right edges — and the entire yellow cross — untouched. It scrambles the
 corners; ignore them completely, they are Steps 6 and 7.
 
-<TwistyPlayer alg="R U R' U R U2 R' U" anchor="start" />
-
-*Sune + U — watch the front and left edges trade places.*
+<Figure size="card" height={320} caption="Sune + U — watch the front and left edges trade places.">
+  {/* Beginner ladder: this method permutes the yellow edges (`ep`) BEFORE it
+      positions or orients the corners, so the corners are grey here. On the
+      CFOP ladder the same algorithm is the `oc` step. */}
+  <TwistyPlayer
+    alg="R U R' U R U2 R' U"
+    anchor="start"
+    context={{ ladder: "beginner", stage: "ep" }}
+  />
+</Figure>
 
 ## Adjacent pair
 
-<img src="/diagrams/steps/align_adjacent.svg" alt="Two matching edges side by side — hold them at the back and right" width="60" />
+<Figure
+  size="side"
+  src="/diagrams/steps/align_adjacent.svg"
+  alt="Two matching edges side by side — hold them at the back and right"
+  caption="Adjacent: hold the pair back-and-right."
+/>
 
 Hold the cube so the two matching edges sit at the **back and right**. Run
 Sune, then `U`. The front and left edges trade places, and all four edges are
@@ -51,7 +82,12 @@ home.
 
 ## Opposite pair
 
-<img src="/diagrams/steps/align_diagonal.svg" alt="Two matching edges facing each other across the cube" width="60" />
+<Figure
+  size="side"
+  src="/diagrams/steps/align_diagonal.svg"
+  alt="Two matching edges facing each other across the cube"
+  caption="Opposite: no grip helps — convert it first."
+/>
 
 No grip puts an opposite pair at back-and-right, so run Sune + `U` from
 **any** angle. It won't solve the edges — it converts the case: turn U again

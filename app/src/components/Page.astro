@@ -1,0 +1,50 @@
+---
+/**
+ * Page — the <main> every route renders into.
+ *
+ *   <Page>…</Page>                  reading column: lessons, home, print, case
+ *   <Page measure="app">…</Page>    wide column: practice, reference
+ *
+ * It owns exactly three things — max-width, centring, and the page gutter —
+ * and nothing else. `main { max-width; margin; padding }` used to be written
+ * six times with five different widths (860/900/900/1000/720/1200), so the
+ * content edge jumped 170px as you moved between Learn and Practice. One prop
+ * replaces all of them. Do not re-declare `main { max-width }` in a page.
+ *
+ * The gutter is `--shell-x`, the same value the header bar uses, so the brand
+ * lines up with the content beneath it on `measure="app"` routes.
+ *
+ * `class` is for global/utility classes. A page-scoped `<style>` cannot reach
+ * this element — Astro scoping is per-component — so put page-specific layout
+ * on a wrapper element inside the slot, where the page's own styles apply.
+ */
+interface Props {
+  measure?: "prose" | "app";
+  /** Global class(es) on <main>. Not reachable from a page-scoped <style>. */
+  class?: string;
+  /** Skip-link target. One <main> per document, so defaulting this is safe. */
+  id?: string;
+}
+const { measure = "prose", class: className, id = "main" } = Astro.props;
+---
+
+<main id={id} class:list={["page", `page--${measure}`, className]}>
+  <slot />
+</main>
+
+<style>
+  .page {
+    inline-size: 100%;
+    margin-inline: auto;
+    padding-inline: var(--shell-x);
+    padding-block: var(--space-5) var(--space-8);
+  }
+  /* The gutter is added on top of the measure: box-sizing is border-box, so
+     without this the reading column would lose 2 × --shell-x of its width. */
+  .page--prose {
+    max-inline-size: calc(var(--measure-prose) + 2 * var(--shell-x));
+  }
+  .page--app {
+    max-inline-size: var(--measure-app);
+  }
+</style>

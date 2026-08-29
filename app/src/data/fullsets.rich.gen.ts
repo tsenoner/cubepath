@@ -1021,10 +1021,10 @@ export const RICH: Record<string, { recognition: string; alternates: AlgVariant[
     ]
   },
   "555.l2e-6": {
-    "recognition": "Last two edges (5×5)",
+    "recognition": "One edge group flipped, nothing else unsolved — hold it at UF",
     "alternates": [
       {
-        "moves": "Rw U2 x Rw U2 Rw U2 3Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'"
+        "moves": "Rw' U2 3Rw U2 3Rw' F2 Rw2 U2 Rw U2 Rw' U2 F2 Rw2 F2"
       },
       {
         "moves": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 3Rw' U2 Rw U2 Rw' U2 Rw'"
@@ -1239,7 +1239,7 @@ export const RICH: Record<string, { recognition: string; alternates: AlgVariant[
     "alternates": []
   },
   "444.pll.pure-e": {
-    "recognition": "Edges Only",
+    "recognition": "Two edge pairs swapped, opposite each other — the corners in the picture are a free U2",
     "alternates": []
   },
   "444.pll.adj-e": {

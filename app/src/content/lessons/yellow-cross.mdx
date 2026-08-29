@@ -3,11 +3,29 @@ title: "Step 4: The Yellow Cross"
 description: "One algorithm — F-sexy-F' — drives the top face from Dot through Hook and Line to the yellow cross."
 phase: "phase-1"
 order: 60
+minutes: 10
+objectives:
+  - "Read the top face as one of three patterns: Dot, Hook or Line."
+  - "Hold each pattern at the angle its algorithm expects."
+  - "Run F R U R' U' F' and count the passes each state needs."
+prerequisites: ["second-layer"]
+algorithms: ["eo.dot", "eo.hook", "eo.line"]
+practice:
+  groups: ["cross-eo"]
+  note: "Drill the three cross cases until you name the pattern before your hands move — recognition, not execution, is the slow half here."
 ---
 
 import AlgText from "../../components/AlgText.astro";
 import Callout from "../../components/Callout.astro";
+import Figure from "../../components/Figure.astro";
 import TwistyPlayer from "../../components/TwistyPlayer.astro";
+
+<Figure
+  size="side"
+  src="/diagrams/steps/step_4_ycross.svg"
+  alt="Goal state: a yellow plus on the top face, the four yellow edges pointing up"
+  caption="The goal: a yellow plus. Corners can be anything."
+/>
 
 Two layers down. From here you stop chasing individual pieces and start
 reading **patterns** on the top face. The goal: all four yellow edges
@@ -30,9 +48,11 @@ back out flipped and tucks a second one in, and F' restores everything
 else — net effect, exactly two edges reoriented per pass. Ignoring
 corners, only three starting patterns exist:
 
-| <img src="/diagrams/oll/oll_dot.svg" alt="Dot case — only the yellow center faces up" width="60" /> | <img src="/diagrams/oll/oll_hook.svg" alt="Hook case — yellow center plus two adjacent edges forming an L" width="60" /> | <img src="/diagrams/oll/oll_line.svg" alt="Line case — yellow center plus two opposite edges in a row" width="60" /> |
-| :-------------: | :--------------: | :--------------: |
-| **Dot** — ×3    | **Hook** — ×2    | **Line** — ×1    |
+<Figure src="/diagrams/oll/oll_dot.svg" alt="Dot case — only the yellow center faces up" caption="Dot — three passes" />
+
+<Figure src="/diagrams/oll/oll_hook.svg" alt="Hook case — yellow center plus two adjacent edges forming an L" caption="Hook — two passes" />
+
+<Figure src="/diagrams/oll/oll_line.svg" alt="Line case — yellow center plus two opposite edges in a row" caption="Line — one pass" />
 
 The count is how many passes you need: each pass advances one state,
 **Dot → Hook → Line → Cross**.
@@ -57,9 +77,17 @@ yellow plus appears. The side colors of those edges won't match the side
 centers yet; that's correct, and it's exactly what Step 5 fixes. Already
 have the cross? Skip ahead.
 
-<TwistyPlayer alg="F R U R' U' F'" anchor="end" stickering="OLL" />
-
-*The Line case: held horizontal, one pass completes the cross.*
+<Figure size="card" height={320} caption="The Line case: held horizontal, one pass completes the cross.">
+  {/* Beginner ladder, `eo` stage: this lesson orients the yellow EDGES. The
+      corners are three lessons away, so they are grey. The cubing.js "OLL"
+      scope covers the corners too and lit all four of them here. */}
+  <TwistyPlayer
+    alg="F R U R' U' F'"
+    anchor="end"
+    stickering="OLL"
+    context={{ ladder: "beginner", stage: "eo" }}
+  />
+</Figure>
 
 <Callout type="tip">
   Hook feels slow at two passes — Phase 1.5 gives it a dedicated one-pass

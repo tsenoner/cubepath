@@ -20,7 +20,7 @@ make install     # install app + Python dependencies
 make dev         # app dev server -> http://localhost:4321
 make check       # local gate: ruff, pytest, astro check, vitest, build
 make build       # diagrams, PDF guide, card set and the app
-make diagrams    # regenerate SVG diagrams and sync them into the app
+make diagrams    # regenerate the SVG diagrams into app/public/diagrams/
 ```
 
 The `Makefile` is the single source of truth for this command surface — the
@@ -37,7 +37,7 @@ cd app && npm run dev                        # app only
 Every published algorithm is machine-verified against the bundled cube simulator,
 and every case diagram is derived from its algorithm — a mismatch is a build
 error, not a shipped bug. The same applies to the generated files the app ships:
-the PDF, the 131 diagrams, the card PDFs and the favicon are each pinned to their
+the PDF, the 221 diagrams, the card PDFs and the favicon are each pinned to their
 generator by a test, so `make check` fails rather than letting a stale artifact
 reach production.
 

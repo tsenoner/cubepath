@@ -2,38 +2,46 @@
 --- Transforms fenced divs (.algorithm, .tip, .caution, .info) into styled
 --- blocks. Also handles image rotation and algorithm trigger color spans.
 
+-- Both tables below are the guide's rendering of ONE definition that lives in
+-- tools/cubepath/src/cubepath/palette.py, alongside the app/src/styles/
+-- tokens.css property each value mirrors. Lua cannot import Python, so
+-- tests/test_notation.py reads this file, palette.py and tokens.css and
+-- asserts all three still spell the same colours. Change a value there.
+--
+-- `ink` is the rule AND the label, exactly as Callout.astro does it. The
+-- Material 500 borders this replaced (2196F3/4CAF50/FF9800/9E9E9E) measured
+-- 2.16-3.12:1 on white — three of the four below WCAG 1.4.11's 3:1 floor for
+-- a non-text UI component — and belonged to no token on either side.
 local callout_styles = {
   algorithm = {
     label = "Algorithm",
-    bg = "e8f4fd",
-    border = "2196F3",
-    text = "1565C0",
+    bg = "E8F4FD",   -- --accent-soft
+    ink = "1565C0",  -- --accent
   },
   tip = {
     label = "Tip",
-    bg = "e8f5e9",
-    border = "4CAF50",
-    text = "2E7D32",
+    bg = "E8F5E9",   -- --ok-soft
+    ink = "2E7D32",  -- --ok
   },
   caution = {
     label = "Caution",
-    bg = "fff3e0",
-    border = "FF9800",
-    text = "E65100",
+    bg = "FFF3E0",   -- --warn-soft
+    ink = "B23C00",  -- --warn; retuned from E65100, which read 3.46:1 on the tint
   },
   info = {
     label = "Info",
-    bg = "f5f5f5",
-    border = "9E9E9E",
-    text = "616161",
+    -- palette.PRINT_TINT: --card is a lift off the app's off-white --paper,
+    -- and the guide prints on pure white, so this one surface recesses.
+    bg = "F5F5F5",   -- --card, print substitution
+    ink = "57534E",  -- --soft
   },
 }
 
--- Keep in sync with tools/cubepath/src/cubepath/palette.py — the cheat card
--- renders the same three families, and tests/test_notation.py asserts these
--- hexes still match. Darkened from the original D32F2F/2E7D32/1565C0 triad,
--- which converted to luma 96/93/88 — lighter than the black body text, so on
--- a mono printer the triggers you most want to grab came out faded.
+-- The one place print is allowed to leave the screen value: a trigger span
+-- sits inline in black monospace, and the screen triad (D32F2F/2E7D32/1565C0)
+-- converts to luma 111/109/102 against body ink at 31 — lighter than the text
+-- around it, so on a mono printer the triggers you most want to grab came out
+-- faded. These land at 85/82/69. See palette.SCREEN_TRIGGER_COLORS.
 local trigger_colors = {
   ["trig-r"] = { hex = "A61B1B" },  -- Red: R U R' U' family
   ["trig-g"] = { hex = "1B5E20" },  -- Green: R U R' U family
@@ -264,7 +272,7 @@ function Div(el)
 
       local open = pandoc.RawBlock("typst", string.format(
         '#block(\n  fill: rgb("%s"),\n  stroke: (left: 4pt + rgb("%s")),\n  inset: (left: 12pt, top: 6pt, bottom: 6pt, right: 8pt),\n  radius: 4pt,\n  width: 100%%,\n)[\n  #text(weight: "bold", size: 0.9em, fill: rgb("%s"))[%s] \\',
-        style.bg, style.border, style.text, label
+        style.bg, style.ink, style.ink, label
       ))
       local close = pandoc.RawBlock("typst", "]")
 

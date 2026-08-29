@@ -6,6 +6,11 @@ number-sections: false
 shift-heading-level-by: 0
 metadata-file: metadata.yaml
 output-file: build/cubepath.pdf
+# The figures live in app/public/diagrams/, one level above this project dir,
+# and typst sandboxes file reads to its project root — without this the build
+# fails on every `../` image. pandoc cannot rewrite the paths for us because
+# filters/callouts.lua emits raw `#image()` markup for rotated figures.
+pdf-engine-opts: ["--root", ".."]
 filters:
   - filters/callouts.lua
 include-in-header:

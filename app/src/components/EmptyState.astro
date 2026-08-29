@@ -1,0 +1,89 @@
+---
+/**
+ * EmptyState — what a slot shows when it has nothing to show.
+ *
+ *   <EmptyState title="No diagram yet">
+ *     F2L cases are recognised from the pair in your hand, not a picture.
+ *   </EmptyState>
+ *
+ *   <EmptyState glyph="✓" title="Nothing due" href="/practice/" action="Drill instead">
+ *     Every card you have learned is scheduled for a later day.
+ *   </EmptyState>
+ *
+ * Use it wherever the app currently renders nothing, or — worse — renders a
+ * broken thing: the 41 F2L tiles that are empty numbered boxes, the case pages
+ * with no recognition diagram, the review queue before a card exists, the
+ * drill pool with no case set selected. A user cannot tell "nothing here yet"
+ * from "the images are broken" unless you say which it is.
+ *
+ * Explain *why* it is empty and, where there is one, offer the way out. Pass
+ * `href` + `action` for a single link, or fill the `action` slot for anything
+ * more (a button the page wires up, two links, a form).
+ */
+interface Props {
+  /** Decorative glyph. Keep it a single character; it is aria-hidden. */
+  glyph?: string;
+  title?: string;
+  /** Convenience single action. Both must be set for the link to render. */
+  href?: string;
+  action?: string;
+  class?: string;
+}
+const { glyph = "◇", title, href, action, class: className } = Astro.props;
+---
+
+<div class:list={["empty", className]}>
+  <span class="glyph" aria-hidden="true">{glyph}</span>
+  {title && <p class="title">{title}</p>}
+  <div class="body"><slot /></div>
+  {
+    href && action && (
+      <a class="btn" href={href}>
+        {action}
+      </a>
+    )
+  }
+  <slot name="action" />
+</div>
+
+<style>
+  .empty {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-2);
+    padding: var(--space-6) var(--space-4);
+    text-align: center;
+    color: var(--soft);
+    border: 1px dashed var(--line);
+    border-radius: var(--r-md);
+    background: var(--card);
+  }
+  /* Dashed, not solid, and no shadow: this is a placeholder, and it should not
+     read as a populated card at a glance. */
+  .glyph {
+    font-size: var(--text-2xl);
+    line-height: 1;
+    color: var(--faint);
+  }
+  .title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .body {
+    max-inline-size: 46ch;
+    font-size: var(--text-sm);
+  }
+  .body :global(p) {
+    margin: 0;
+  }
+  .body:empty {
+    display: none;
+  }
+  .btn {
+    margin-block-start: var(--space-2);
+    text-decoration: none;
+  }
+</style>

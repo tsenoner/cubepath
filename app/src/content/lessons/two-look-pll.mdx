@@ -3,10 +3,21 @@ title: "Permute Everything: Y-Perm + the Edge Set"
 description: "Four final algorithms — Y-Perm plus the M-slice edge set — finish 2-look CFOP: every OLL and PLL case solved in one algorithm."
 phase: "phase-3"
 order: 130
+minutes: 16
+objectives:
+  - "Solve a diagonal corner swap directly with Y-Perm instead of two T-Perms."
+  - "Turn the M slice cleanly and know why it cannot disturb your corners."
+  - "Pick between Ua, Ub, H and Z from one look at the side faces."
+prerequisites: ["two-look-oll"]
+algorithms: ["pll.y", "pll.ua", "pll.h", "pll.z"]
+practice:
+  groups: ["2look-pll-corners", "2look-pll-edges"]
+  note: "Drill the corner set and the edge set together — the whole gain of this lesson is that each stage now takes one look, and mixed drilling is the only thing that proves it."
 ---
 
 import CaseRow from "../../components/CaseRow.astro";
 import Callout from "../../components/Callout.astro";
+import Figure from "../../components/Figure.astro";
 
 Phase 2 left gaps: a diagonal corner swap cost you two T-Perms, and a
 wrong-direction edge cycle cost two Ubs. Four algorithms close them all —
@@ -36,7 +47,12 @@ chained double T-Perm.
 
 One piece of new notation before the edges.
 
-<img src="/diagrams/notation/move_m.svg" alt="M slice turn — middle layer follows the L direction" width="90" />
+<Figure
+  size="side"
+  src="/diagrams/notation/move_m.svg"
+  alt="M slice turn — middle layer follows the L direction"
+  caption="M — the slice between L and R, turning as L does."
+/>
 
 **M** turns the middle layer — the slice between L and R — in the **same
 direction as L**. `M2` is the double turn. Drill `M2` on its own: repeat it
@@ -44,10 +60,9 @@ until the two flicks feel like one motion and the cube stays square in your
 hands. All three edge algorithms below are built entirely from M-slice and
 `U` turns.
 
-Why the M slice? It contains only edges and centers — no corners. M moves
-cannot touch a corner, and in each algorithm below the U turns cancel out,
-so your finished corners are physically safe. That is the whole trick behind
-the edge set.
+The M slice contains only edges and centers, so it cannot touch a corner —
+and in each algorithm below the U turns cancel out. That is why your finished
+corners are physically safe.
 
 <Callout type="caution">
   M moves the centers too. If an edge algorithm ends with the centers
@@ -75,6 +90,10 @@ then count edges that match their face:
 
 No edge matches after any U turn — that alone rules out the U-perms. To
 split the last two, read any side face:
+
+<Figure src="/diagrams/pll/pll_hperm.svg" alt="H-Perm — both edge pairs swap straight across the cube" caption="H — opposite colours face each other" />
+
+<Figure src="/diagrams/pll/pll_zperm.svg" alt="Z-Perm — the edges swap around the corners in two adjacent pairs" caption="Z — adjacent colours face each other" />
 
 - **Opposite colors facing each other** (orange edge on the red face) —
   every edge has jumped straight across the cube: **H-Perm**.

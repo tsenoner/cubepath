@@ -20,6 +20,7 @@
     "verify:data": "node scripts/verify-f2l.mjs && node scripts/verify-l2e.mjs",
     "gen:icons": "node scripts/gen-icons.mjs",
     "gen:stickering": "node scripts/gen-stickering.mjs",
+    "gen:case-states": "node scripts/gen-case-states.mjs",
     "e2e": "playwright test"
   },
   "dependencies": {
