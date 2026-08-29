@@ -36,7 +36,7 @@ from cubepath.diagrams import (
     render,
     render_slot,
 )
-from cubepath.notation import pll_algs
+from cubepath.notation import case_states, pll_algs
 
 _REPO = Path(__file__).resolve().parents[4]
 _DATA = _REPO / "app" / "src" / "data" / "extracted" / "jperm-raw.json"
@@ -271,6 +271,16 @@ def render_fullsets(output_dir: Path) -> int:
 
 _F2L_DATA = _REPO / "app" / "src" / "data" / "extracted" / "f2l-raw.json"
 
+
+@functools.cache
+def _f2l_data() -> dict[str, Any]:
+    """The verified F2L extraction, read once. `f2l_cases()` is called from the
+    renderer and from several tests, and each call re-simulates all 41 setups;
+    re-reading the file underneath them as well bought nothing."""
+    data: dict[str, Any] = json.loads(_F2L_DATA.read_text())
+    return data
+
+
 # (face, index) over all 54 facelets, and the 27 the isometric view shows.
 _ALL_FACELETS = [(f, i) for f in "UDFBRL" for i in range(9)]
 _VISIBLE = [(f, a, b) for f in ("U", "F", "R") for a in range(3) for b in range(3)]
@@ -336,7 +346,7 @@ def f2l_cases() -> list[SlotDiagram]:
     slot_visible = frozenset(v for v in _VISIBLE if _sim_index(*v) in slot_home)
 
     cases: list[SlotDiagram] = []
-    for c in json.loads(_F2L_DATA.read_text())["f2l"]:
+    for c in _f2l_data()["f2l"]:
         setup: str = c["setup"]
         cube = Cube.solved()
         cube.apply(setup)
@@ -426,19 +436,9 @@ def render_f2l(output_dir: Path) -> int:
 # state drawn, and the cube is solved. `tests/test_diagrams.py` gates the label
 # the honest way, up to AUF.
 
-_CASE_STATES = _REPO / "app" / "src" / "data" / "extracted" / "case-states.json"
-
-
-@functools.cache
-def _case_states() -> dict[str, Any]:
-    """The kpuzzle-derived case states. Its schema is documented in full at the
-    top of `app/scripts/gen-case-states.mjs`; treat that as the contract."""
-    if not _CASE_STATES.exists():
-        raise FileNotFoundError(
-            f"{_CASE_STATES} is missing — run `node scripts/gen-case-states.mjs` in app/"
-        )
-    data: dict[str, Any] = json.loads(_CASE_STATES.read_text())
-    return data
+# The case-states loader lives in `notation`, which owns the JS->Python data
+# boundary; this module reads the same file through it rather than opening it a
+# second time.
 
 
 @functools.cache
@@ -453,7 +453,7 @@ def _color_of_face() -> dict[str, str]:
     scheme on every face, so a palette change on either side fails here instead
     of silently repainting 49 diagrams.
     """
-    named = _case_states()["faceColors"]
+    named = case_states()["faceColors"]
     for face, letter in COLORS.items():
         name = named[face]
         if not name.startswith(letter):
@@ -464,7 +464,7 @@ def _color_of_face() -> dict[str, str]:
 
 
 def _states_of(set_name: str) -> list[dict[str, Any]]:
-    cases = [c for c in _case_states()["cases"] if c["set"] == set_name]
+    cases = [c for c in case_states()["cases"] if c["set"] == set_name]
     if not cases:
         raise AssertionError(f"case-states.json carries no {set_name} cases")
     return cases
@@ -472,7 +472,7 @@ def _states_of(set_name: str) -> list[dict[str, Any]]:
 
 def _case_order(case: dict[str, Any]) -> int:
     """The cube order this case is on, read from the layout it belongs to."""
-    n: int = _case_states()["layouts"][case["puzzle"]]["n"]
+    n: int = case_states()["layouts"][case["puzzle"]]["n"]
     return n
 
 

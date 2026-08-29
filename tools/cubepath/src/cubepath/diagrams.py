@@ -6,6 +6,7 @@ plus 3D isometric notation move diagrams.
 
 from __future__ import annotations
 
+import functools
 import math
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -42,14 +43,41 @@ STICKER_STROKE = "#333333"
 #
 # The orientation mask keeps #C0C0C0 to the byte: it is correct, it is what
 # every OLL reference draws, and 95 shipped plan views are built on it. The
-# not-reached tier is the one that moves, to a cooler and slightly lighter
-# neutral — 13.1 ΔE from the mask (the just-noticeable difference is ~2.3), far
-# enough that the two read as different tones on one page, and light enough
-# that "not reached" stays the quietest thing in the picture rather than
-# becoming the heaviest. `tests/test_diagrams.py` measures both claims against
-# the emitted SVGs, including that no single file ever contains both tones.
+# not-reached tier is the one that moves, to a WARM neutral one step lighter —
+# 8.3 ΔE from the mask (the just-noticeable difference is ~2.3), enough that
+# the two read as different tones when two pictures sit adjacent on a page, and
+# light enough that "not reached" stays the quietest thing in the picture
+# rather than becoming the heaviest. That the two never share a FILE is a
+# separate and absolute gate in `tests/test_diagrams.py`; this tone only has to
+# survive being NEAR the mask, never inside the same picture as it.
+#
+# WHY WARM, and why not the cool tint this replaced. The tier has to clear the
+# WHITE face and the page, which are 1.6 ΔE apart — so a neutral cannot be far
+# from both at once, and buys that distance either with lightness or with a
+# tint. The first version bought it with blue (#C0D4E6, b* -11.1): 19.7 ΔE off
+# white for free. But the cube already OWNS a blue face, the five dim tones are
+# all warm or muted (#BEAB7A tan, #CA8876 salmon, #9ABCA6 sage, #A07757,
+# #797C9F), and a pale blue among them does not read as "no claim here" — it
+# reads as a seventh sticker colour, which is exactly the report this replaces
+# ("the grey looks blue").
+#
+# WHY THIS LIGHT AND NO LIGHTER. Warming the tier costs the cheap distance blue
+# was buying, so the first warm attempt paid for it in lightness instead
+# (#E6E3DD, L* 90.3) and came out glaringly bright — it read as a hole in the
+# page rather than as a grey. The floor is set by DIM WHITE (#ABABAB), the one
+# tone with no hue to separate it: the ≥15 ΔE dim gate puts the bottom at
+# L* ~85, and #D8D5CF sits there at 15.7. That is also the value that reads as
+# the SAME KIND OF GREY as the OLL mask — which is the point, because they are
+# both "grey" to a reader and only the tone distinguishes the claim. Going
+# lighter buys mask separation the split does not need and spends white-face
+# separation the picture does need: #D8D5CF is 15.0 ΔE off white where #E6E3DD
+# was 10.2 — and it sits ON that floor, so
+# `test_a_full_face_is_separable_from_the_not_reached_tone_too` is the gate a
+# brighter value fails first. Do not restore a cool value, and do not brighten
+# it back, without re-reading this, that test, and
+# `test_the_two_greys_are_different_tones`.
 UNORIENTED = "#C0C0C0"  # OLL/PLL plan views: a real sticker, not yellow
-UNREACHED = "#C0D4E6"  # step + F2L diagrams: the method has not got here yet
+UNREACHED = "#D8D5CF"  # step + F2L diagrams: the method has not got here yet
 
 # Layout constants (plan-view diagrams)
 CELL = 40  # sticker size in px
@@ -322,6 +350,7 @@ def delta_e(a: str, b: str) -> float:
     return math.dist(to_lab(a), to_lab(b))
 
 
+@functools.cache
 def dim(face_color: str) -> str:
     """The "solved earlier, keep it" tone of a face colour.
 
@@ -400,7 +429,6 @@ class CubeDiagram:
 
 
 Y = YELLOW
-G = UNORIENTED
 
 # Simulator color letter → diagram hex color
 _SIM_COLOR = {"Y": YELLOW, "R": RED, "G": GREEN, "O": ORANGE, "B": BLUE, "W": WHITE}
@@ -523,9 +551,6 @@ def _derived_pll_case(
 # 3x3, the midpoint of the dedge's two wings on a 4x4 — which is why the
 # coordinate is (n - 1) / 2 rather than an index. The eight literal pixel
 # anchors this replaces could only ever describe a 3x3.
-ARROW_ANCHORS = ("top", "right", "bottom", "left", "tl", "tr", "bl", "br")
-
-
 def _anchor_cell(name: str, n: int) -> tuple[float, float]:
     """(col, row) of a named anchor on an n x n U-face grid."""
     mid = (n - 1) / 2
@@ -1482,9 +1507,7 @@ def _draw_iso_stickers(dwg: svgwrite.Drawing, color_fn: Callable[[str, int, int]
 
 def _iso_viewbox(pad: float) -> tuple[float, float, float, float]:
     """Tight (x, y, w, h) around the projected cube, with `pad` on every side."""
-    proj_pts = [_n_proj(x, y, z) for x in (0, 3) for y in (0, 3) for z in (0, 3)]
-    min_x, max_x = min(p[0] for p in proj_pts), max(p[0] for p in proj_pts)
-    min_y, max_y = min(p[1] for p in proj_pts), max(p[1] for p in proj_pts)
+    min_x, min_y, max_x, max_y = _N_CUBE_BOX
     return (min_x - pad, min_y - pad, max_x - min_x + 2 * pad, max_y - min_y + 2 * pad)
 
 

@@ -464,11 +464,22 @@ const GREY = "I";
 const orbitCharsOf = (mask: string): Record<string, string> => orbitChars(mask);
 
 describe("the stage ladder", () => {
-  test("TIER_CHARS' dim row IS the QUIET demotion that already ships", () => {
+  test("TIER_CHARS is the alphabet stickering.ts builds masks out of", () => {
+    // `QUIET` is DERIVED from TIER_CHARS now, so "the two agree" is a
+    // tautology and nothing to assert. What derivation cannot guarantee is the
+    // ALPHABET: stickering.ts hard-codes `GREY = "I"` and `DIM = "D"` (what a
+    // grey centre is promoted to), and every expected mask string in this file
+    // spells the chars out. Regenerate stages.json with a different letter and
+    // those literals silently stop matching the mask around them — so the
+    // letters are pinned here, at the one place they enter the app.
+    expect(TIER_CHARS.highlight).toEqual({ both: "-", orientation: "O", permutation: "P" });
+    expect(TIER_CHARS.dim).toEqual({ both: "D", orientation: "o", permutation: "D" });
     for (const aspect of ["both", "orientation", "permutation"] as const) {
-      expect(TIER_CHARS.dim[aspect], aspect).toBe(QUIET[TIER_CHARS.highlight[aspect]!]);
       expect(TIER_CHARS.grey[aspect], aspect).toBe(GREY);
     }
+    // And the demotion covers every highlight char, none left to fall through
+    // `QUIET[c] ?? c` in `build` and ship a lit piece as if it were this step's.
+    expect(Object.keys(QUIET).sort()).toEqual(Object.values(TIER_CHARS.highlight).sort());
   });
 
   test("the generated slot names are the faces that move each piece", async () => {
@@ -795,10 +806,9 @@ describe("algorithms that carry a net whole-cube rotation", () => {
       const centres = Object.entries(ORBIT_KINDS[def.puzzle]!)
         .filter(([, kind]) => kind === "center")
         .map(([orbitName]) => orbitName);
+      const solved = kp.defaultPattern();
       const home = centres.every((o) =>
-        state.patternData[o]!.pieces.every(
-          (v, i) => v === kp.defaultPattern().patternData[o]!.pieces[i],
-        ),
+        state.patternData[o]!.pieces.every((v, i) => v === solved.patternData[o]!.pieces[i]),
       );
       if (!home) found.push(def.id);
     }
@@ -908,13 +918,37 @@ const MASK_ATTR = /experimental-stickering-mask-orbits="([^"]*)"/;
 let containerPromise: ReturnType<typeof AstroContainer.create> | undefined;
 const container = () => (containerPromise ??= AstroContainer.create());
 
-/** The mask attribute a component actually renders, or undefined if it renders none. */
-async function renderedMask(
-  Component: Parameters<Awaited<ReturnType<typeof AstroContainer.create>>["renderToString"]>[0],
+type Renderable = Parameters<
+  Awaited<ReturnType<typeof AstroContainer.create>>["renderToString"]
+>[0];
+
+/** component -> serialized props -> the render. Keyed on the component OBJECT:
+ * an Astro component factory has no useful `.name`, so folding it into a string
+ * key would collapse every component onto one namespace and let two suites that
+ * happen to pass the same props read each other's HTML. */
+const maskCache = new Map<Renderable, Map<string, Promise<string | undefined>>>();
+
+/** The mask attribute a component actually renders, or undefined if it renders none.
+ *
+ * Memoised on (component, props): the render is deterministic, and three suites
+ * walk all 185 cases through it, so without this the same ~500 AstroContainer
+ * renders happen for 185 distinct answers. */
+function renderedMask(
+  Component: Renderable,
   props: Record<string, unknown>,
 ): Promise<string | undefined> {
-  const html = await (await container()).renderToString(Component, { props });
-  return MASK_ATTR.exec(html)?.[1];
+  let byProps = maskCache.get(Component);
+  if (!byProps) maskCache.set(Component, (byProps = new Map()));
+  const key = JSON.stringify(props);
+  let hit = byProps.get(key);
+  if (!hit) {
+    hit = (async () => {
+      const html = await (await container()).renderToString(Component, { props });
+      return MASK_ATTR.exec(html)?.[1];
+    })();
+    byProps.set(key, hit);
+  }
+  return hit;
 }
 
 describe("the rendered mask attribute", () => {

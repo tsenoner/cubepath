@@ -139,9 +139,6 @@ const RAW = stagesFile as unknown as {
   masks: Record<string, Record<string, string>>;
 };
 
-/** Bumped by the generator whenever a field changes shape. */
-export const STAGES_SCHEMA = RAW.schema;
-
 /** Ladder -> its stages, in order. The only hand-written data in the pipeline. */
 export const LADDERS = RAW.ladders as Record<LadderKey, readonly StageKey[]>;
 
@@ -152,14 +149,12 @@ export const LADDER_PUZZLE = RAW.ladderPuzzle as Record<LadderKey, string>;
 export const STAGES = RAW.stages as Record<StageKey, StageEntry>;
 
 /**
- * tier -> aspect -> serialized mask char. The `dim` row is exactly the `QUIET`
- * demotion that already ships in stickering.ts; tests/algs.spec.ts asserts the
- * two agree rather than trusting the coincidence.
+ * tier -> aspect -> serialized mask char. The `highlight` and `dim` rows ARE
+ * the `QUIET` demotion in stickering.ts, which is built from them; the chars
+ * themselves are pinned in tests/algs.spec.ts, because that is the part the
+ * derivation cannot guarantee (stickering.ts hard-codes `I` and `D`).
  */
 export const TIER_CHARS = RAW.tierChars;
-
-/** Puzzle -> orbits, piece kinds, setup frame and geometric slot names. */
-export const PUZZLE_GEOMETRY: Record<string, PuzzleGeometry> = RAW.puzzles;
 
 /**
  * Puzzle -> orbit -> slot -> geometric slot name ("UF", "UFR", "U") — the field
@@ -318,7 +313,7 @@ export const LOW_CONTRAST_PAIRS: readonly { face: string; pair: TierPair; ratio:
 ];
 
 /** WCAG 2.x relative luminance of a `#rrggbb` string. */
-export function luminance(hex: string): number {
+function luminance(hex: string): number {
   const channels = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
   const linear = channels.map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
   return 0.2126 * linear[0]! + 0.7152 * linear[1]! + 0.0722 * linear[2]!;

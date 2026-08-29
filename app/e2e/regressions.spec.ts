@@ -196,10 +196,14 @@ async function audit(page: Page): Promise<Audit> {
       }
       return true;
     };
+    // Order matters: `widensThePage` walks every ancestor calling
+    // getComputedStyle, so it runs only for the handful of elements that are
+    // actually past the edge — not for all ~2000 on /reference.
     const past = [...document.querySelectorAll("body *")].filter((el) => {
-      if (!rendered(el) || !widensThePage(el)) return false;
+      if (!rendered(el)) return false;
       const rect = el.getBoundingClientRect();
-      return rect.right > limit + 1 || rect.left < -1;
+      if (rect.right <= limit + 1 && rect.left >= -1) return false;
+      return widensThePage(el);
     });
     const overflowing = past
       .filter((el) => !past.some((other) => other !== el && el.contains(other)))

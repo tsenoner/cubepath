@@ -44,6 +44,7 @@ import type { Puzzle, Stickering } from "../data/algs";
 import {
   ORBIT_KINDS,
   STAGES,
+  TIER_CHARS,
   type Aspect,
   type StageContext,
   contextForCase,
@@ -99,13 +100,22 @@ export const FRAMES: Record<Puzzle, Record<string, readonly number[]>> = {
  * Colour-carrying char -> its quiet counterpart, used for pieces the algorithm
  * never touches. `I` (grey/unknown) and `D` (already dim) are left alone.
  *
- * This is also the HIGHLIGHT -> DIM demotion of the three-tier model, one row
- * of `TIER_CHARS` in stages.json: `-`->`D` (both), `O`->`o` (orientation),
- * `P`->`D` (permutation — there is no dim-permutation char, and `D` "solved,
- * do not care" is the right thing to say about a piece that is already placed).
- * tests/algs.spec.ts asserts the two definitions agree.
+ * This IS the HIGHLIGHT -> DIM demotion of the three-tier model — it is built
+ * from two rows of `TIER_CHARS` in stages.json rather than restating them, so
+ * it cannot drift: `-`->`D` (both), `O`->`o` (orientation), `P`->`D`
+ * (permutation — there is no dim-permutation char, and `D` "solved, do not
+ * care" is the right thing to say about a piece that is already placed).
+ * Because it is derived, "QUIET agrees with TIER_CHARS" is no longer something
+ * a test can find out; what tests/algs.spec.ts pins instead is the ALPHABET —
+ * that the chars stages.json emits are still the ones `GREY` and `DIM` below
+ * hard-code, which is the half of the agreement no derivation can guarantee.
  */
-export const QUIET: Record<string, string> = { "-": "D", O: "o", P: "D" };
+export const QUIET: Record<string, string> = Object.fromEntries(
+  (Object.keys(TIER_CHARS.highlight) as Aspect[]).map((aspect) => [
+    TIER_CHARS.highlight[aspect],
+    TIER_CHARS.dim[aspect],
+  ]),
+);
 
 /** "Not yet reached". Never legal on a centre — see `build`. */
 const GREY = "I";
@@ -158,9 +168,11 @@ const centreOrbits = (puzzle: Puzzle): string[] =>
  * tests/algs.spec.ts asserts that for every case that ships. On a big cube a
  * WIDE MOVE really does displace centres, so a partial demo like `Rw U Rw'`
  * has no home orientation at all; that returns the state as written rather
- * than failing, which is the honest answer to "which pieces does this move".
+ * than failing, which is the honest answer to "which pieces does this move" —
+ * `caseState` falls back to the un-rotated state, `hasHomeOrientation` reports
+ * that no such rotation exists. Both ask this one search.
  */
-function caseState(kp: KPuzzle, puzzle: Puzzle, alg: string): KPattern {
+function homeState(kp: KPuzzle, puzzle: Puzzle, alg: string): KPattern | undefined {
   const orbits = centreOrbits(puzzle);
   const solved = kp.defaultPattern();
   const undo = kp.algToTransformation(alg).invert();
@@ -171,21 +183,19 @@ function caseState(kp: KPuzzle, puzzle: Puzzle, alg: string): KPattern {
     );
     if (home) return p;
   }
-  return solved.applyTransformation(undo);
+  return undefined;
+}
+
+function caseState(kp: KPuzzle, puzzle: Puzzle, alg: string): KPattern {
+  return (
+    homeState(kp, puzzle, alg) ??
+    kp.defaultPattern().applyTransformation(kp.algToTransformation(alg).invert())
+  );
 }
 
 /** Whether some whole-cube rotation brings the case state's centres home. */
 export async function hasHomeOrientation(puzzle: Puzzle, alg: string): Promise<boolean> {
-  const kp = await kpuzzleFor(puzzle);
-  const solved = kp.defaultPattern();
-  const undo = kp.algToTransformation(alg).invert();
-  const orbits = centreOrbits(puzzle);
-  return ROTATIONS.some((r) => {
-    const p = (r ? solved.applyAlg(r) : solved).applyTransformation(undo);
-    return orbits.every((o) =>
-      p.patternData[o]!.pieces.every((v, i) => v === solved.patternData[o]!.pieces[i]),
-    );
-  });
+  return homeState(await kpuzzleFor(puzzle), puzzle, alg) !== undefined;
 }
 
 /**
@@ -257,7 +267,7 @@ export function maskFor(
  * tier invariants on the mask the ladder produces, before `touchedSlots`
  * narrows it down to one case's algorithm.
  */
-export function baseMaskFor(stickering: Stickering, context?: StageContext): string | undefined {
+function baseMaskFor(stickering: Stickering, context?: StageContext): string | undefined {
   if (!context) return BASE_MASKS[stickering];
   const mask = stageMask(context);
   if (!mask) {

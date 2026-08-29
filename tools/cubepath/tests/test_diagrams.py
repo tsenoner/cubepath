@@ -87,7 +87,6 @@ from cubepath.diagrams import (
     to_lab,
 )
 from cubepath.fullsets import (
-    _case_states,
     _plan_permutation,
     big_oll_cases,
     big_pll_cases,
@@ -102,6 +101,7 @@ from cubepath.fullsets import (
     render_f2l,
     render_fullsets,
 )
+from cubepath.notation import case_states
 from cubepath.palette import contrast
 
 # ViewBox dimensions (computed from layout constants)
@@ -1140,13 +1140,50 @@ def test_dim_is_separable_from_the_not_reached_tone_it_shares_a_picture_with() -
             assert gap >= 15.0, f"{name} {letter}: dim is {gap:.1f} ΔE from not-reached"
 
 
+def test_a_full_face_is_separable_from_the_not_reached_tone_too() -> None:
+    """The gate above covers the DIM tier; this covers the FULL one, and it is
+    the binding constraint on how light "not reached" may be. `step_1_cross`
+    puts full-colour WHITE stickers polygon-to-polygon with not-reached ones,
+    and white is the only face with no hue to separate it: 15.0 ΔE on SCREEN
+    where every other face is 60+. The whole argument in `diagrams.py` for the
+    tone's lightness is an argument about THIS number — "going lighter spends
+    white-face separation the picture does need" — so it is measured rather
+    than reasoned about. The tier sits ON its floor; brightening it fails here
+    before it fails anywhere else."""
+    for name, style in (("SCREEN", SCREEN), ("CARD", CARD)):
+        for letter, full in style.faces.items():
+            gap = delta_e(full, style.unreached)
+            assert gap >= 15.0, f"{name} {letter}: full is {gap:.1f} ΔE from not-reached"
+
+
 def test_the_two_greys_are_different_tones() -> None:
     """ "Not yellow yet" and "not reached yet" are different claims and they meet
     on one page — `yellow-cross.mdx` prints step_4_ycross above the three OLL
-    cross cases. One token cannot carry both."""
-    for name, style in (("SCREEN", SCREEN), ("CARD", CARD)):
+    cross cases. One token cannot carry both.
+
+    THE SCREEN THRESHOLD IS 8, NOT 12, AND THAT IS THE WEAKER OF TWO GATES ON
+    PURPOSE. The two greys never share a FILE, and the gate that enforces that
+    is `test_no_diagram_ever_carries_both_greys`, which is absolute. All this
+    one has to buy is that they read as different tones when two pictures sit
+    adjacent on a page, and 8 ΔE is ~3.5 just-noticeable differences with a hue
+    change on top (the mask is neutral, the not-reached tier is warm). The
+    threshold was 12 while the tier was `#C0D4E6`, and 12 is what forced that
+    tone so light: a neutral can only buy ΔE from the mask with lightness, so
+    every point of the gate pushed it further toward the page and toward the
+    white face it also has to clear (which
+    `test_a_full_face_is_separable_from_the_not_reached_tone_too` now measures).
+    Lowering it to 8 is what let the tier come back down to `#D8D5CF`,
+    which reads as a grey rather than as a seventh sticker colour and sits
+    15.0 ΔE off white instead of 10.2. See diagrams.py for the full trade.
+
+    THE CARD KEEPS 12, because none of that argument is about the card. Its
+    palette did not move (`CARD.unreached` is still `#3F3F3F`, print inverts the
+    tier), it sits at 13.7 ΔE, and a card is printed on a mono laser where hue
+    is gone and only the luminance gap survives — so relaxing the card's floor
+    alongside the screen's would have given away a gate for nothing."""
+    for name, style, floor in (("SCREEN", SCREEN, 8.0), ("CARD", CARD, 12.0)):
         gap = delta_e(style.masked, style.unreached)
-        assert gap >= 12.0, f"{name}: the two greys are {gap:.1f} ΔE apart"
+        assert gap >= floor, f"{name}: the two greys are {gap:.1f} ΔE apart"
     # And on the light page the guide prints on, the not-reached tier is the
     # quieter of the two — closer to the paper than the mask is, so "nothing
     # here yet" never outweighs a sticker that is really there. (On a dark app
@@ -1368,7 +1405,7 @@ def test_the_two_halves_agree_on_what_colour_each_face_is() -> None:
     vocabularies meet — so it is checked, not assumed."""
     from cubepath.cube import COLORS
 
-    named = _case_states()["faceColors"]
+    named = case_states()["faceColors"]
     assert set(named) == set(COLORS), "the export and cube.py disagree on the six faces"
     for face, letter in COLORS.items():
         assert named[face].startswith(letter), f"{face}: {named[face]} vs cube.py {letter!r}"
@@ -1654,7 +1691,7 @@ def test_every_pll_picture_matches_its_jperm_group_up_to_auf() -> None:
     groups = {"Edges Only": "none", "Adjacent Corner Swap": "adjacent"}
     groups["Diagonal Corner Swap"] = "diagonal"
     for set_name, cases in (("pll", full_pll_cases()), ("4x4pll", big_pll_cases())):
-        states = [c for c in _case_states()["cases"] if c["set"] == set_name]
+        states = [c for c in case_states()["cases"] if c["set"] == set_name]
         assert len(states) == len(cases)
         for state, case in zip(states, cases, strict=True):
             want = groups[state["group"]]
@@ -1817,7 +1854,7 @@ def test_every_four_by_four_oll_picture_shows_the_corner_count_jperm_names() -> 
     never saw this renderer. Counted against the kpuzzle too: 0/2/3/4 corners
     twisted, matching 4/2/1/0 oriented, in all 27 cases.
     """
-    states = {c["name"]: c for c in _case_states()["cases"] if c["set"] == "4x4oll"}
+    states = {c["name"]: c for c in case_states()["cases"] if c["set"] == "4x4oll"}
     for case in big_oll_cases():
         name = case.label.split(" — ")[0]
         group = states[name]["group"]

@@ -97,7 +97,7 @@ export async function setStatus(caseId: string, status: CaseStatus): Promise<voi
  * home page reads them, `LessonMeta.astro` writes them. Client-side only, so
  * the static build is untouched and it keeps working offline.
  */
-export async function allLessonProgress(): Promise<LessonProgressEntry[]> {
+async function allLessonProgress(): Promise<LessonProgressEntry[]> {
   return (await getDB()).getAll("lessons");
 }
 

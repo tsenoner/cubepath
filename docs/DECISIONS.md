@@ -680,8 +680,10 @@ step or F2L diagram it means "the method has not REACHED here". They meet on one
 page (`yellow-cross.mdx` prints `step_4_ycross` above the three OLL cross
 cases). The orientation mask keeps `#C0C0C0` to the byte — 95 shipped plan views
 are built on it and it is what every OLL reference draws — so the tier that
-moved is the other one: `UNREACHED = #C0D4E6`, 13.1 ΔE away. No single SVG may
-contain both, and `tests/test_diagrams.py` measures it.
+moved is the other one: `UNREACHED`, then `#C0D4E6` and 13.1 ΔE away. No single
+SVG may contain both, and `tests/test_diagrams.py` measures it. (That tone is
+`#D8D5CF` now, 8.3 ΔE away, and the gate moved down with it — see § "The
+not-reached grey is warm, not blue" for why 13 was buying nothing here.)
 
 **Contrast, and which metric.** Only the SVG palette is ours: cubing 0.63.3 has
 no cube-palette API. `ladders.ts` tabulates the player's failures in WCAG
@@ -887,3 +889,78 @@ string appearing in that table fails the test until someone decides.
 remaining pictures are the centre insert, the flip and the parity case — all
 player material. The KNOWN LIMIT in `gen-case-states.mjs` and its Python pin
 stay exactly as they were: both remain true, and they still guard the twelve.
+
+## The not-reached grey is warm, not blue (2026-08-28)
+
+Reported: "the grey looks blue". It did, and it was: `UNREACHED = #C0D4E6`,
+b\* −11.1 — a pale cool tint on every step and F2L diagram, which is 60 of the
+221 shipped SVGs and the largest single region in most of them.
+
+**Why it was blue.** The tier has to be distinguishable from the white face
+*and* recede into the page, and those two are 1.6 ΔE apart (`#FFFFFF` vs
+`--paper #FCFBF8`). A light neutral cannot clear both, so the tone has to buy
+its distance with a tint. Blue bought 19.7 ΔE off white for almost nothing.
+
+**Why that was the wrong purchase.** The cube already owns a blue face, and the
+five dim tones the tier shares every picture with are warm or muted (`#BEAB7A`
+tan, `#CA8876` salmon, `#9ABCA6` sage, `#A07757`, `#797C9F`). A pale blue among
+them does not read as "the method has not reached here" — it reads as a seventh
+sticker colour. On `f2l/f2l_01.svg` the not-reached region is two whole faces,
+so the picture read as a light-blue cube with a few real stickers on it.
+
+**The new value:** `#D8D5CF`, b\* +3.3, L\* 85.3 — a warm grey one step lighter
+than the OLL mask and recognisably the same KIND of grey, which is the point:
+both are "grey" to a reader and only the tone carries the different claim.
+
+Getting there took two passes, and the first is worth recording. Warming the
+tier gives up the cheap separation blue was buying, so the first attempt paid
+for it in lightness instead — `#E6E3DD`, L\* 90.3 — and read as a hole in the
+page rather than as a grey. The brightness was not a taste error; it was forced
+by the ≥12 ΔE two-greys gate, because a neutral can only buy distance from a
+neutral mask with lightness, and every point of that gate pushed the tier
+further toward the page and toward the white face it also has to clear.
+
+**So the SCREEN gate moved, deliberately, from 12 to 8.** It was doing a job it does
+not need to do. The split is enforced absolutely by a different assertion —
+`test_no_diagram_ever_carries_both_greys` — and the two tones only ever appear
+NEAR each other, on a page where `yellow-cross.mdx` prints `step_4_ycross`
+above the three OLL cross cases. 8.3 ΔE is ~3.5 JND plus a neutral-vs-warm hue
+change, which is ample at that distance. Lowering it let the tier come down to
+L\* 85, where the real floor is: DIM WHITE (`#ABABAB`), the one neighbour with
+no hue to separate it, at 15.7 ΔE against a ≥15 gate.
+
+The trade against the old blue: white-vs-not-reached goes 19.7 → 15.0 ΔE (the
+warm pass at `#E6E3DD` would have made it 10.2), and mask-vs-not-reached goes
+13.1 → 8.3. A hue collision no stroke can fix was traded for a lightness gap
+every stroke already handles.
+
+**White-vs-not-reached is now gated, because it is the number that moved.** The
+dim gate covers `dim(WHITE)`; nothing covered the FULL white face, which sits
+polygon-to-polygon with the tier in `step_1_cross` and every F2L picture. It is
+the tier's only binding neighbour — 15.0 ΔE where every other face is 60+ — and
+the whole "no lighter than this" argument above is an argument about it, so
+`test_a_full_face_is_separable_from_the_not_reached_tone_too` measures it at a
+≥15 floor. The tone sits ON that floor: brighten it and this fails first.
+
+Every other gate held unchanged: the lighter-than-the-mask relation, the dim
+separation on both palettes, the never-both-greys-in-one-file rule, and the
+14-way `_restyle` collision check.
+The card palette is untouched — `CARD.unreached` stays `#3F3F3F`, because print
+inverts the tier for reasons of medium, not hue — and **so is the card's
+two-greys floor, which stays at 12** (it sits at 13.7). None of the argument
+above is about the card: it prints on a mono laser where hue is gone and only
+the luminance gap survives, so relaxing its floor alongside the screen's would
+have given away a gate for nothing.
+
+**Not changed: the 3D player.** The obvious follow-on is to make cubing.js's
+tones match the SVG palette. It was tried and rejected on evidence. The 3×3
+renderer keeps its colours in six shared `AxisInfo` materials, which can be
+repainted through `experimentalCurrentThreeJSPuzzleObject()` and survive
+animation. PG3D — the 4×4/5×5 renderer — keeps them as **vertex colours** in a
+shared buffer that `StickerDef.setColor` re-copies from `origColorStickeringMask`
+on every animated frame, so a repaint holds until the first move and then
+reverts sticker by sticker (verified in a headless browser). Repainting only
+the 3×3 would leave the site with two player palettes where it currently has
+one, which is less united, not more. So the players stay stock and the seam
+stays where CLAUDE.md already puts it: the shared artifact between the two
+renderers is stages.json's tier ASSIGNMENT, never the colours.

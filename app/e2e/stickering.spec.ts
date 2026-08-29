@@ -66,14 +66,23 @@ test("EVERY built case page carries a three-tier mask", async ({ page, baseURL }
   expect(urls.length, `sitemap case pages != unlocked cases`).toBe(expected);
   expect(expected).toBeLessThan(ALL_CASES.length);
 
-  const bad: string[] = [];
-  for (const url of urls) {
+  // The fetches are independent, so they go out in parallel: serialised, one
+  // round trip per unlocked case dominated this test's runtime. In BATCHES
+  // rather than all at once — `astro preview` is a single Node process, and
+  // opening every socket simultaneously trades a runtime win for a flake.
+  const check = async (url: string): Promise<string | undefined> => {
     const html = await (await page.request.get(url.replace(/^https?:\/\/[^/]+/, baseURL!))).text();
     const mask = new RegExp(`${ATTR}="([^"]*)"`).exec(html)?.[1];
     // A missing attribute is the two-tier fallback; a grey centre is
     // cubing.js's own F2L scope leaking through. Both shipped once.
-    if (!mask) bad.push(`${url}: no mask`);
-    else if (/CENTERS[0-9]*:[^,"]*I/.test(mask)) bad.push(`${url}: grey centre — ${mask}`);
+    if (!mask) return `${url}: no mask`;
+    if (/CENTERS[0-9]*:[^,"]*I/.test(mask)) return `${url}: grey centre — ${mask}`;
+    return undefined;
+  };
+  const bad: string[] = [];
+  for (let i = 0; i < urls.length; i += 16) {
+    const batch = await Promise.all(urls.slice(i, i + 16).map(check));
+    bad.push(...batch.filter((m): m is string => m !== undefined));
   }
   expect(bad).toEqual([]);
 });
