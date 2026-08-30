@@ -11,13 +11,27 @@
  * this component onto a lesson page is all it takes — it finds the pager
  * itself and marks the lesson complete when the reader moves on.
  *
- * CONTRACT WITH THE PAGER — the "next" control is found as:
+ * TWO WRITERS, because one was not enough.
  *
- *     a[data-lesson-next], a.pager-link.next
+ *   1. Reaching the end of the lesson. An IntersectionObserver on the sentinel
+ *      Lesson.astro renders between the body and the Practice card.
+ *   2. Leaving by a link that means "I am done here" — the pager's Next, and
+ *      the Practice card's drill links, found as:
  *
- * The second half matches Lesson.astro's markup as it stands, so this works
- * with no change to that file. Add `data-lesson-next` to the next-link if the
- * class ever changes and this keeps working either way.
+ *          a[data-lesson-next], a[data-lesson-advance], a.pager-link.next
+ *
+ * The last of those matches Lesson.astro's markup as it stands, so the pager
+ * works with no change to that file. Add `data-lesson-next` to the next-link if
+ * the class ever changes and this keeps working either way.
+ *
+ * WHY THE OBSERVER EXISTS. Until it did, the pager click was the ONLY call site
+ * of markLessonComplete in the app. Every lesson ends with a Practice card
+ * whose filled primary button says "Drill <set>" — the thing the lesson itself
+ * tells the reader to do next — and taking it recorded nothing. So the reader
+ * who followed the course as written got no tick, a phase bar stuck at 0/N and
+ * a hero that still said "Start learning" pointed at lesson one, on every
+ * return visit, forever. index.astro returns early when the store is empty, so
+ * the whole progress layer was dark for them.
  *
  * The last lesson has no next lesson, but its pager still renders a "Course
  * overview →" link with the same class — so finishing the course records the
@@ -104,42 +118,99 @@ const phase = idx >= 0 ? all[idx]?.data.phase : undefined;
   const slug = meta?.dataset.lessonSlug;
 
   if (meta && slug) {
+    const badge = meta.querySelector<HTMLElement>("[data-lesson-done]");
+    const showBadge = (): void => {
+      if (badge) badge.hidden = false;
+    };
+
     // Reflect an existing completion. A failed read is not worth a message:
     // the page is still a lesson, it just does not show the badge.
     void completedLessons()
       .then((done) => {
-        if (!done.has(slug)) return;
-        const badge = meta.querySelector<HTMLElement>("[data-lesson-done]");
-        if (badge) badge.hidden = false;
+        if (done.has(slug)) showBadge();
       })
       .catch(() => undefined);
 
-    const next = document.querySelector<HTMLAnchorElement>(
-      "a[data-lesson-next], a.pager-link.next",
+    let recorded = false;
+    const record = (): Promise<void> => {
+      if (recorded) return Promise.resolve();
+      recorded = true;
+      // markLessonComplete is idempotent and preserves the original
+      // completedAt (db.ts), so the two writers racing is harmless.
+      return markLessonComplete(slug)
+        .then(showBadge)
+        .catch(() => undefined);
+    };
+
+    // ── Writer 1: the reader reached the end of the lesson ──────────────
+    // The sentinel sits between the body and the Practice card, so "seen" means
+    // the prose is behind them. Gated on their having scrolled at least once:
+    // a short lesson can render with the sentinel already in view, and
+    // arriving-and-leaving is not reading. The 2s dwell is the same idea in
+    // time — a fast scroll to the bottom and straight back out does not count.
+    const sentinel = document.querySelector("[data-lesson-end]");
+    if (sentinel && "IntersectionObserver" in window) {
+      let scrolled = false;
+      const onScroll = (): void => {
+        scrolled = true;
+      };
+      window.addEventListener("scroll", onScroll, { passive: true, once: true });
+
+      let timer = 0;
+      const observer = new IntersectionObserver(
+        (records) => {
+          const seen = records.some((r) => r.isIntersecting) && scrolled;
+          if (!seen) {
+            window.clearTimeout(timer);
+            timer = 0;
+            return;
+          }
+          if (timer) return;
+          timer = window.setTimeout(() => {
+            observer.disconnect();
+            window.removeEventListener("scroll", onScroll);
+            void record();
+          }, 2000);
+        },
+        { threshold: 0.5 },
+      );
+      observer.observe(sentinel);
+    }
+
+    // ── Writer 2: they left by a link that means "done here" ────────────
+    // The pager's Next, and the Practice card's drill links. Not every link in
+    // that card: white-cross.mdx offers /print in `practice.links`, and
+    // crediting a lesson because the reader went to fetch the card set would
+    // hide it from Resume permanently. Lesson.astro tags the qualifying ones.
+    const exits = document.querySelectorAll<HTMLAnchorElement>(
+      "a[data-lesson-next], a[data-lesson-advance], a.pager-link.next",
     );
 
-    next?.addEventListener("click", (e) => {
-      // Leave modified clicks alone — cmd/ctrl-click opens a new tab, and
-      // stealing that to run an async write would break it.
-      if (e.defaultPrevented || e.button !== 0) return;
-      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-      if (next.target && next.target !== "_self") return;
+    for (const exit of exits) {
+      exit.addEventListener("click", (e) => {
+        // Leave modified clicks alone — cmd/ctrl-click opens a new tab, and
+        // stealing that to run an async write would break it.
+        if (e.defaultPrevented || e.button !== 0) return;
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        if (exit.target && exit.target !== "_self") return;
+        // Already written by the observer: let the browser navigate normally,
+        // which keeps its own loading feedback instead of a dead 30ms.
+        if (recorded) return;
 
-      const href = next.href;
-      e.preventDefault();
-      // Navigate as soon as the write lands, or after 400ms regardless. An
-      // IndexedDB that is blocked (another tab mid-upgrade, a private window
-      // that denies storage) must never strand the reader on the page.
-      let gone = false;
-      const go = () => {
-        if (gone) return;
-        gone = true;
-        window.location.assign(href);
-      };
-      window.setTimeout(go, 400);
-      void markLessonComplete(slug)
-        .catch(() => undefined)
-        .then(go);
-    });
+        const href = exit.href;
+        e.preventDefault();
+        // Navigate as soon as the write lands, or after 400ms regardless. An
+        // IndexedDB that is blocked (another tab mid-upgrade, a private window
+        // that denies storage) must never strand the reader on the page.
+        let gone = false;
+        const go = (): void => {
+          if (gone) return;
+          gone = true;
+          window.location.assign(href);
+        };
+        window.setTimeout(go, 400);
+        void record().then(go);
+      });
+    }
   }
 </script>

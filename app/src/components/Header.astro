@@ -120,8 +120,25 @@ const links = [
     </a>
     <nav aria-label="Main">
       {
+        /*
+        The active link was a colour change and nothing else, so a screen
+        reader's link list showed four identical nav items on every route.
+
+        "page" only when this really IS the page: `active` is "learn" on all 25
+        lesson routes, whose href is "/", and claiming aria-current="page"
+        there would be literally false. "true" is the correct weaker claim —
+        this is the section you are in.
+      */
+      }
+      {
         links.map((l) => (
-          <a href={l.href} class:list={["navlink", { active: l.key === active }]}>
+          <a
+            href={l.href}
+            class:list={["navlink", { active: l.key === active }]}
+            aria-current={
+              l.key === active ? (Astro.url.pathname === l.href ? "page" : "true") : undefined
+            }
+          >
             {l.label}
           </a>
         ))

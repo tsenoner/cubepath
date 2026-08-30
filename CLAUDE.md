@@ -112,7 +112,7 @@ npm run format:check     # prettier (npm run format to write)
 npx astro check          # strictest type gate for src/ + e2e/ + tests/
 npm run check:scripts    # tsc --checkJs over scripts/*.mjs
 npx vitest run           # every algorithm machine-verified on the cubing.js kpuzzle
-npx playwright test      # smoke + airplane-mode E2E (the PWA gate) + axe a11y
+npx playwright test      # smoke + airplane-mode E2E (the PWA gate) + axe a11y + nav
 node scripts/gen-cases.mjs      # regenerate src/data/fullsets.gen.ts + .rich.gen.ts
 node scripts/extract-algs.mjs   # re-extract + verify the JPerm dataset (gated write)
 node scripts/verify-f2l.mjs     # F2L-41 verifier
@@ -128,6 +128,40 @@ to perform. Annotate new scripts with JSDoc; do not add a script that opts out.
 The scripts stay on `strict` rather than the app's `strictest`, because
 `noUncheckedIndexedAccess` costs ~99 casts in dense cube-math indexing that JS
 cannot write as `!`.
+
+## Navigating the site: three rules that are one rule each
+
+The wayfinding layer was reworked on 2026-08-30 (docs/DECISIONS.md § "Navigating
+/learn and /reference"). Three of its invariants are easy to break by adding
+something reasonable, so they are stated here rather than only in the diff.
+
+**Sticky clearance is declared ONCE**, in `tokens.css`, as
+`html { scroll-padding-block-start: calc(var(--hdr-h) + var(--toolbar-h, 0px) + var(--space-3)) }`.
+Do not add a `scroll-margin` to an anchored element: `scroll-padding` insets the
+scrollport and `scroll-margin` expands the target, so the two STACK and the
+element lands a full header lower than intended. `/reference` used to write the
+same `calc` on three elements and forgot `.tile`, which owns the anchor for 107
+of 120 tiles — the site's own "See it in the reference" link landed with zero
+visible pixels. `Header.astro` measures and publishes `--hdr-h` on every route;
+`/reference` publishes `--toolbar-h` and is the only page that may.
+
+**A phase id comes from `phaseAnchor()`** in `data/phases.ts`, never from the
+raw key. `#444` and `#phase-1.5` are legal fragments but illegal
+`querySelector` arguments, so the prefix and the de-dotting are load-bearing.
+
+**Lesson completion has two writers, and neither is optional.** `LessonMeta`
+observes a `data-lesson-end` sentinel AND the exits tagged `data-lesson-advance`
+(added in `Lesson.astro`). Tag an exit only when following it means "done with
+this lesson" — `white-cross.mdx` puts `/print` in `practice.links`, and
+crediting a lesson for that hides it from Resume permanently. For a year the
+pager click was the only writer, so a reader who took the lesson's own filled
+"Drill …" button never got credit and the whole progress layer stayed dark.
+
+Two shared modules exist so the same string is not built twice:
+`src/lib/search.ts` (the /reference filter's normalisation and matching, used by
+both haystack builders) and `src/lib/teaches.ts` (case → lesson and group →
+lesson, inverted at build time from lesson frontmatter — build-time only, never
+import it from a client `<script>`).
 
 Two Prettier settings are load-bearing, not taste: `.prettierignore` excludes
 `src/content` (its MDX printer rewrites `*italic*` and explodes the lesson

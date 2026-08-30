@@ -28,11 +28,28 @@ interface Props {
 const { measure = "prose", class: className, id = "main" } = Astro.props;
 ---
 
-<main id={id} class:list={["page", `page--${measure}`, className]}>
+{
+  /*
+  tabindex="-1" so the skip link in Base.astro actually skips.
+
+  `<a href="#main">` pointing at a plain <main> is a no-op where it matters
+  most: Chrome papers over it by moving the sequential-focus starting point,
+  but activeElement stays on <body>, and WebKit does not paper over it at all —
+  so on iOS Safari with VoiceOver, the site's only bypass block left the cursor
+  where it was and the reader re-traversed the header on every one of 25
+  lessons. A focusable target is what makes the link move focus.
+*/
+}
+<main id={id} tabindex="-1" class:list={["page", `page--${measure}`, className]}>
   <slot />
 </main>
 
 <style>
+  /* The ring belongs inside the gutter: drawn around a full-width column it
+     sits past the viewport edge. */
+  .page:focus-visible {
+    outline-offset: -2px;
+  }
   .page {
     inline-size: 100%;
     margin-inline: auto;

@@ -59,9 +59,12 @@ const context = contextForCase(def);
 >
   <summary>
     {
-      icon && (
-        <img src={icon} alt={`${def.name} case diagram`} width="62" height="62" loading="lazy" />
-      )
+      /* alt="": the name is the very next thing in the summary, so a described
+         icon makes every row announce "Line, case diagram, Line, …" before the
+         recognition cue that actually tells the rows apart. The informative
+         description is not lost — the same image is the player's poster below,
+         where posterAlt is its only label. */
+      icon && <img src={icon} alt="" width="62" height="62" loading="lazy" />
     }
     <span class="meta">
       <span class="name">{def.name}</span>
@@ -93,6 +96,22 @@ const context = contextForCase(def);
         Starts at the case. Full colour is what this step solves, dim is already solved and has to
         survive it, grey is further down the method.
       </p>
+      {
+        /*
+        The row's way through to the case's own page.
+
+        Every TILE on /reference links to /case/<id>/; a curated ROW did not, so
+        /case/444.pll.pure-e — rendered only as a row, and matching no grid
+        filter — was built, precached and sitemapped with no inbound link
+        anywhere on the site.
+
+        Inside the disclosure body, NOT in the <summary>. A link in a <summary>
+        is a control inside a control: axe flags it `nested-interactive`
+        (serious) and e2e/a11y.spec.ts fails the build, which is exactly what
+        the first attempt at this did.
+      */
+      }
+      <a class="case-link" href={`/case/${id}/`}>Open the full case page →</a>
     </div>
   </div>
 </details>
@@ -198,6 +217,10 @@ const context = contextForCase(def);
   }
   .demo .hint {
     text-align: center;
+  }
+  .case-link {
+    font-size: var(--text-sm);
+    font-weight: 600;
   }
   @media (max-width: 640px) {
     summary {

@@ -10,6 +10,8 @@ import { GENERATED_CASES } from "../../data/fullsets.gen";
 import { RICH } from "../../data/fullsets.rich.gen";
 import { caseIcon } from "../../data/icons";
 import { haystackFor } from "../../lib/search";
+import { lessonForGroup, type TeachingLesson } from "../../lib/teaches";
+import { TRAINER_GROUPS } from "../../lib/trainer";
 import { TAUGHT_444_CASES, isLocked } from "../../lib/unlocks";
 
 /**
@@ -220,6 +222,21 @@ const searchText = (k: CaseDef, nav: string) =>
     extra: nav,
   });
 
+/**
+ * The words a section is known by, beyond its own heading — the jump label plus
+ * the trainer's name for the same set.
+ *
+ * The trainer name is not redundant: it is the site's OTHER public label for
+ * the set, printed on every lesson's "Drill …" button and on /practice, and in
+ * one case it is the only place the site writes down what the set is actually
+ * called. The single 5×5 case is `L2E 6`, cued "One edge group flipped" — the
+ * word "parity" appears nowhere in the case, though the lesson, the trainer and
+ * every cuber alive call it edge parity. Without this, typing "parity" finds
+ * the 4×4 cases and reasonably suggests the 5×5 one is not on the site.
+ */
+const sectionWords = (s: Section) =>
+  `${s.nav} ${TRAINER_GROUPS.find((g) => g.key === s.id)?.name ?? ""}`;
+
 // Distinct cases, not the sum of the sections: the 2-look rows deliberately
 // repeat ids the Full OLL / Full PLL grids also carry.
 const total = ALL_CASES.filter((k) => !isLocked(k)).length;
@@ -228,6 +245,11 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
 // denominator it has to report against; using `total` there would let a query
 // claim more matches than there are cases.
 const listed = VISIBLE.reduce((n, s) => n + s.items.length, 0);
+
+/** Section id -> the lesson that teaches it. Derived from lesson frontmatter. */
+const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
+  await Promise.all(VISIBLE.map(async (s) => [s.id, await lessonForGroup(s.id)] as const)),
+);
 ---
 
 <Base
@@ -254,8 +276,10 @@ const listed = VISIBLE.reduce((n, s) => n + s.items.length, 0);
           autocomplete="off"
           spellcheck="false"
         />
-        {/* Rendered non-empty so the sticky toolbar is its final height from
-            first paint, and so clearing the filter announces the way back. */}
+        {
+          /* Rendered non-empty so the sticky toolbar is its final height from
+            first paint, and so clearing the filter announces the way back. */
+        }
         <p class="hint count" role="status" data-ref-count>{listed} cases</p>
       </div>
       <nav class="jump" aria-label="Sections">
@@ -293,14 +317,34 @@ const listed = VISIBLE.reduce((n, s) => n + s.items.length, 0);
         return (
           <section id={s.id} tabindex="-1" data-section>
             <h2>
-              {s.title} <span class="n" data-section-count>({s.items.length})</span>
+              {s.title}{" "}
+              <span class="n" data-section-count>
+                ({s.items.length})
+              </span>
             </h2>
             {s.blurb && <p class="lead">{s.blurb}</p>}
+            {/*
+              Back into the course. A section id IS a trainer group key, and a
+              lesson declares the groups it teaches, so this edge is derived
+              from the same frontmatter as the lesson's forward link. Nothing on
+              this page led to a lesson before.
+            */}
+            {taughtBy[s.id] && (
+              <p class="hint taught-in">
+                Taught in <a href={taughtBy[s.id]!.href}>{taughtBy[s.id]!.title}</a>
+              </p>
+            )}
             {s.kind === "rows" ? (
               <div class="case-list card">
                 {s.items.map((k) => {
                   const anchor = anchorOf(s.id, k.id);
-                  return <CaseRow id={k.id} searchExtra={s.nav} {...(anchor ? { anchor } : {})} />;
+                  return (
+                    <CaseRow
+                      id={k.id}
+                      searchExtra={sectionWords(s)}
+                      {...(anchor ? { anchor } : {})}
+                    />
+                  );
                 })}
               </div>
             ) : (
@@ -329,7 +373,7 @@ const listed = VISIBLE.reduce((n, s) => n + s.items.length, 0);
                             title={k.name}
                             aria-label={k.name}
                             data-case={k.id}
-                            data-search={searchText(k, s.nav)}
+                            data-search={searchText(k, sectionWords(s))}
                           >
                             {icon && (
                               <img src={icon} alt="" width="72" height="72" loading="lazy" />
