@@ -13,6 +13,7 @@ import { caseById, primaryAlg } from "../data/algs";
 import { RICH } from "../data/fullsets.rich.gen";
 import { caseIcon } from "../data/icons";
 import { contextForCase } from "../lib/ladders";
+import { haystackFor } from "../lib/search";
 
 interface Props {
   id: string;
@@ -23,8 +24,14 @@ interface Props {
    * twice on one page, and two rows sharing an id is an accessibility fault.
    */
   anchor?: string;
+  /**
+   * Extra words the listing page knows and the case does not — /reference
+   * passes the section's own jump label, so a reader who types a heading they
+   * can see ("4×4 parity") finds the rows under it.
+   */
+  searchExtra?: string;
 }
-const { id, open = false, anchor } = Astro.props;
+const { id, open = false, anchor, searchExtra } = Astro.props;
 const def = caseById.get(id);
 if (!def) throw new Error(`CaseRow: unknown case id ${id}`);
 const icon = caseIcon(id);
@@ -42,7 +49,13 @@ const context = contextForCase(def);
   open={open}
   id={anchor}
   data-case={id}
-  data-search={`${def.name} ${recognition} ${id}`.toLowerCase()}
+  data-search={haystackFor({
+    name: def.name,
+    recognition,
+    id,
+    group: def.group,
+    extra: searchExtra,
+  })}
 >
   <summary>
     {

@@ -9,6 +9,7 @@ import { ALL_CASES, CASES, caseById, type CaseDef } from "../../data/algs";
 import { GENERATED_CASES } from "../../data/fullsets.gen";
 import { RICH } from "../../data/fullsets.rich.gen";
 import { caseIcon } from "../../data/icons";
+import { haystackFor } from "../../lib/search";
 import { TAUGHT_444_CASES, isLocked } from "../../lib/unlocks";
 
 /**
@@ -204,13 +205,29 @@ const tileLabel = (name: string) =>
     .replace(/^(?:OLL|F2L|L2E)\s+/, "")
     .replace(/-Perm$/, "");
 
-/** Name + recognition cue + id, lowercased — what the filter matches against. */
-const searchText = (k: CaseDef) =>
-  `${k.name} ${k.recognition ?? RICH[k.id]?.recognition ?? ""} ${k.id}`.toLowerCase();
+/**
+ * What the filter matches against. Built by lib/search.ts, which CaseRow uses
+ * too — the two copies of this string had already drifted, and the shared
+ * builder is why "awkward", "4x4" and "r u r" now find anything at all.
+ * `nav` is the section's own jump label, so a visible heading is searchable.
+ */
+const searchText = (k: CaseDef, nav: string) =>
+  haystackFor({
+    name: k.name,
+    recognition: k.recognition ?? RICH[k.id]?.recognition,
+    id: k.id,
+    group: k.group,
+    extra: nav,
+  });
 
 // Distinct cases, not the sum of the sections: the 2-look rows deliberately
 // repeat ids the Full OLL / Full PLL grids also carry.
 const total = ALL_CASES.filter((k) => !isLocked(k)).length;
+// Rows and tiles actually rendered — 138 against `total`'s 125, because of that
+// same deliberate double-listing. The filter counts DOM entries, so this is the
+// denominator it has to report against; using `total` there would let a query
+// claim more matches than there are cases.
+const listed = VISIBLE.reduce((n, s) => n + s.items.length, 0);
 ---
 
 <Base
@@ -237,13 +254,18 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
           autocomplete="off"
           spellcheck="false"
         />
-        <p class="hint count" role="status" data-ref-count></p>
+        {/* Rendered non-empty so the sticky toolbar is its final height from
+            first paint, and so clearing the filter announces the way back. */}
+        <p class="hint count" role="status" data-ref-count>{listed} cases</p>
       </div>
       <nav class="jump" aria-label="Sections">
         {
           VISIBLE.map((s) => (
-            <a href={`#${s.id}`} class="chip" data-jump={s.id}>
+            <a href={`#${s.id}`} class="chip" data-jump={s.id} aria-disabled="false">
               {s.nav} <span class="n">{s.items.length}</span>
+              <span class="sr-only" data-jump-empty hidden>
+                — no matches
+              </span>
             </a>
           ))
         }
@@ -264,17 +286,21 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
     {
       VISIBLE.map((s) => {
         const hasIcons = s.items.some((k) => k.icon);
+        // tabindex="-1" so the jump bar can move focus to the section, not just
+        // the viewport. Not a labelled `region`: nine of them would restate the
+        // nine h2s a screen reader already navigates by, under a jump bar that
+        // already names every one.
         return (
-          <section id={s.id} data-section>
+          <section id={s.id} tabindex="-1" data-section>
             <h2>
-              {s.title} <span class="n">({s.items.length})</span>
+              {s.title} <span class="n" data-section-count>({s.items.length})</span>
             </h2>
             {s.blurb && <p class="lead">{s.blurb}</p>}
             {s.kind === "rows" ? (
               <div class="case-list card">
                 {s.items.map((k) => {
                   const anchor = anchorOf(s.id, k.id);
-                  return <CaseRow id={k.id} {...(anchor ? { anchor } : {})} />;
+                  return <CaseRow id={k.id} searchExtra={s.nav} {...(anchor ? { anchor } : {})} />;
                 })}
               </div>
             ) : (
@@ -303,13 +329,14 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
                             title={k.name}
                             aria-label={k.name}
                             data-case={k.id}
-                            data-search={searchText(k)}
+                            data-search={searchText(k, s.nav)}
                           >
                             {icon && (
                               <img src={icon} alt="" width="72" height="72" loading="lazy" />
                             )}
                             <span class="tile-name">{tileLabel(k.name)}</span>
-                            <span class="tile-status" data-case-status hidden />
+                            {/* Not `hidden`: the line is reserved, see .tile-status. */}
+                            <span class="tile-status" data-case-status />
                           </a>
                         );
                       })}
@@ -327,6 +354,7 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
 
 <script>
   import { allProgress, getDB, type CaseStatus } from "../../lib/db";
+  import { filter } from "../../lib/search";
 
   // ── Filter ─────────────────────────────────────────────────────────
   // Static-build friendly and offline-safe: everything it matches on is
@@ -342,11 +370,18 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
   const sections = [...document.querySelectorAll<HTMLElement>("[data-section]")];
   const jumps = [...document.querySelectorAll<HTMLAnchorElement>("[data-jump]")];
 
+  const TOTAL = entries.length;
+
+  const haystacks = entries.map((el) => el.dataset.search ?? "");
+
   function apply(raw: string): void {
-    const needle = raw.trim().toLowerCase();
+    const needle = raw.trim();
+    // One pass over the whole list, because the strict/loose decision is a
+    // property of the query against the corpus, not of a single entry.
+    const hits = filter(haystacks, needle);
     let shown = 0;
-    for (const el of entries) {
-      const hit = needle === "" || (el.dataset.search ?? "").includes(needle);
+    for (const [i, el] of entries.entries()) {
+      const hit = hits[i] ?? true;
       el.hidden = !hit;
       if (hit) shown += 1;
     }
@@ -356,33 +391,243 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
     }
     for (const jump of jumps) {
       const target = jump.dataset.jump ? document.getElementById(jump.dataset.jump) : null;
-      jump.classList.toggle("off", target !== null && target.hidden);
+      const off = target !== null && target.hidden;
+      jump.classList.toggle("off", off);
+      // A chip whose section the filter emptied used to stay a live link
+      // pointing at a `display: none` element: pressing it rewrote the URL
+      // fragment and moved nothing, with no feedback at all. Now the semantics
+      // match the appearance — out of the tab order, out of the pointer's
+      // reach (`pointer-events: none` in the style block), and announced.
+      jump.setAttribute("aria-disabled", String(off));
+      jump.tabIndex = off ? -1 : 0;
+      const flag = jump.querySelector<HTMLElement>("[data-jump-empty]");
+      if (flag) flag.hidden = !off;
     }
     if (noResults) noResults.hidden = shown > 0;
     if (countOut) {
-      countOut.textContent = needle === "" ? "" : `${shown} ${shown === 1 ? "match" : "matches"}`;
+      // The zero case carries the way out, not just the count: the visible
+      // EmptyState panel says "try a case name, a number, or a cue" and a
+      // screen reader was hearing only "0 matches" as the page emptied.
+      countOut.textContent =
+        needle === ""
+          ? `${TOTAL} cases`
+          : shown === 0
+            ? "No case matches that — try a case name, a number, or a word from a recognition cue."
+            : `${shown} of ${TOTAL} shown`;
+    }
+  }
+
+  /*
+   * Keep the reader's place, in both directions.
+   *
+   * Typing collapses the document (9344px -> 1368px at 390px wide), the browser
+   * clamps scrollY to the new maximum, and the matches — laid out from the top
+   * — end up ABOVE the viewport while the sticky toolbar confidently reports
+   * "4 matches". Measured: from y=6000 inside the F2L grid, the first match for
+   * "ua" landed at top = -32px. So on the first keystroke, lift the reader to
+   * the results; on clearing, put them back where they were.
+   *
+   * Never scroll downward (someone filtering from the top is not moved), never
+   * `smooth` (one animation per keystroke would fight the thumb), and restore
+   * only if they have not scrolled deliberately inside the filtered view.
+   */
+  let savedY: number | null = null;
+  /*
+   * Did the reader scroll THEMSELVES while the filter was on?
+   *
+   * The obvious test — "is scrollY still where we left it" — does not work,
+   * because clearing the filter grows the document again and Chrome's scroll
+   * anchoring immediately moves the viewport to keep the topmost visible
+   * element steady (measured: 266 -> 2189 before any of our code ran). So the
+   * offset always differs, and the restore never fired. Watch the event
+   * instead, and discount the scrolls we cause ourselves.
+   */
+  let readerScrolled = false;
+  let selfScrollUntil = 0;
+  window.addEventListener(
+    "scroll",
+    () => {
+      if (savedY !== null && performance.now() > selfScrollUntil) readerScrolled = true;
+    },
+    { passive: true },
+  );
+  /** Ignore scroll events for a moment — ours, and the browser's. */
+  function holdScrollAttribution(): void {
+    selfScrollUntil = performance.now() + 300;
+  }
+  function selfScroll(top: number): void {
+    holdScrollAttribution();
+    window.scrollTo({ top, behavior: "auto" });
+  }
+
+  /**
+   * Where the reader has to be for the top match to sit below the sticky bars.
+   *
+   * Computed from the match itself, NOT from `toolbar.offsetTop`: the toolbar
+   * is `position: sticky`, so once it is stuck `offsetTop` reports its shifted
+   * position rather than its position in flow. Deep in the page that reads back
+   * as "you are already at the top of the results" — measured 5997 against a
+   * real flow position of ~250 — and the scroll never happened.
+   *
+   * Reading the rect here forces the reflow the hiding just queued, which is
+   * exactly what we want: these are post-filter coordinates, after the browser
+   * has clamped scrollY to the collapsed document.
+   */
+  function topMatchY(): number | null {
+    const first = entries.find((e) => !e.hidden);
+    if (!first) return null;
+    const chrome = (header?.offsetHeight ?? 0) + (toolbar?.offsetHeight ?? 0);
+    return Math.max(0, first.getBoundingClientRect().top + window.scrollY - chrome - 12);
+  }
+
+  function applyAndKeepPlace(raw: string): void {
+    const wasFiltering = savedY !== null;
+    const nowFiltering = raw.trim() !== "";
+
+    // Before apply(), not after: collapsing the document makes the browser
+    // clamp scrollY, and that clamp fires a scroll event of its own. It is a
+    // consequence of the keystroke, not the reader moving, and counting it as
+    // theirs is what stopped the restore from ever running.
+    holdScrollAttribution();
+
+    if (nowFiltering && !wasFiltering) {
+      savedY = window.scrollY;
+      readerScrolled = false;
+    }
+    apply(raw);
+
+    if (nowFiltering) {
+      const top = topMatchY();
+      // Upward only. Someone filtering from the top of the page is not moved;
+      // someone filtering from deep inside the F2L grid is lifted to their
+      // results instead of being left below all of them. `auto`, never
+      // `smooth`: one animation per keystroke would fight the reader's thumb.
+      if (top !== null && window.scrollY > top) selfScroll(top);
+    } else if (wasFiltering) {
+      const back = savedY ?? 0;
+      const keep = !readerScrolled;
+      savedY = null;
+      if (!keep) return;
+      // Force the reflow the un-hiding queued before setting the offset, so we
+      // are writing against the grown document rather than the collapsed one.
+      void document.documentElement.scrollHeight;
+      selfScroll(back);
     }
   }
 
   if (search) {
-    search.addEventListener("input", () => apply(search.value));
+    search.addEventListener("input", () => applyAndKeepPlace(search.value));
+    // The UA cancel button on <input type="search"> fires `search`, and in some
+    // browsers not `input` — without this the DOM stays filtered behind a box
+    // that looks empty. Escape is the keyboard equivalent, and Firefox renders
+    // no cancel button at all, so it is the only exit there.
+    search.addEventListener("search", () => applyAndKeepPlace(search.value));
+    search.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape" || search.value === "") return;
+      e.preventDefault();
+      search.value = "";
+      applyAndKeepPlace("");
+    });
     // A back-navigation restores the field's value but not the filtered DOM.
     if (search.value) apply(search.value);
+    else apply("");
   }
+
+  // A bfcache restore brings its own scroll position; a saved offset from
+  // before the page was frozen would fight it.
+  window.addEventListener("pageshow", (e) => {
+    if (e.persisted) savedY = null;
+  });
 
   // ── Sticky offsets ─────────────────────────────────────────────────
   // The site header and this page's toolbar are both sticky, so an anchor jump
-  // must clear the pair of them. Measured, not hard-coded: the header shrinks
-  // below 560px and the toolbar wraps at any width.
+  // must clear the pair of them. Header.astro publishes --hdr-h on every route;
+  // this page owns --toolbar-h, because it is the only route with a second bar.
+  //
+  // A ResizeObserver, not the old resize listener. The toolbar grows AFTER the
+  // one-shot measurement in three ways that are not window resizes, and every
+  // one of them left the offsets stale: the progress bar unhides for a reader
+  // with saved progress (+38px at >=561px), the match count appears on the
+  // first keystroke (+20px at 390px), and the webfont settles. The symptom was
+  // that the returning reader — the one the progress bar exists for — is
+  // exactly the one whose jump-bar clicks stopped landing on the heading.
+  //
+  // No feedback loop: measure() writes --toolbar-h, which feeds the sections'
+  // scroll-margin and never the toolbar's own height.
   const header = document.querySelector<HTMLElement>(".site-header");
   const toolbar = document.querySelector<HTMLElement>(".toolbar");
   function measure(): void {
-    const root = document.documentElement;
-    if (header) root.style.setProperty("--hdr-h", `${Math.round(header.offsetHeight)}px`);
-    if (toolbar) root.style.setProperty("--toolbar-h", `${Math.round(toolbar.offsetHeight)}px`);
+    if (toolbar) {
+      document.documentElement.style.setProperty(
+        "--toolbar-h",
+        `${Math.round(toolbar.offsetHeight)}px`,
+      );
+    }
   }
   measure();
-  window.addEventListener("resize", () => requestAnimationFrame(measure), { passive: true });
+  if (toolbar) new ResizeObserver(() => requestAnimationFrame(measure)).observe(toolbar);
+
+  // ── Which section am I in? ─────────────────────────────────────────
+  // The jump bar was write-only: nine chips, no aria-current, no active state,
+  // nothing to say where you are in 9,344px of tiles. On a phone only three of
+  // the nine are on screen at once, so the answer has to be scrolled to as well
+  // as marked.
+  const jumpBar = document.querySelector<HTMLElement>(".jump");
+  if (jumpBar && sections.length > 0 && "IntersectionObserver" in window) {
+    const chipFor = new Map(jumps.map((j) => [j.dataset.jump ?? "", j] as const));
+    // Suppress the auto-scroll for a moment after the reader pans the strip
+    // themselves, so it cannot yank the chips out from under their thumb.
+    let panneduntil = 0;
+    jumpBar.addEventListener("scroll", () => (panneduntil = performance.now() + 1000), {
+      passive: true,
+    });
+
+    const spy = new IntersectionObserver(
+      (records) => {
+        const hit = records.find((r) => r.isIntersecting);
+        if (!hit) return;
+        const chip = chipFor.get(hit.target.id);
+        for (const j of jumps) {
+          j.classList.remove("here");
+          j.removeAttribute("aria-current");
+        }
+        // Never mark a chip the filter has disabled as the place you are.
+        if (!chip || chip.classList.contains("off")) return;
+        chip.classList.add("here");
+        chip.setAttribute("aria-current", "location");
+        if (performance.now() > panneduntil) {
+          chip.scrollIntoView({ block: "nearest", inline: "nearest" });
+        }
+      },
+      // Top edge at the bottom of the sticky chrome, bottom edge 55% up the
+      // viewport: the current section is the one occupying the band you read.
+      { rootMargin: `-${Math.round(chromeHeight())}px 0px -55% 0px` },
+    );
+    for (const s of sections) spy.observe(s);
+  }
+
+  function chromeHeight(): number {
+    return (header?.offsetHeight ?? 0) + (toolbar?.offsetHeight ?? 0);
+  }
+
+  // ── Jump = go there, not just scroll there ─────────────────────────
+  // A chip moved the viewport and left focus on itself, so the next Tab went to
+  // the next chip: for a keyboard reader the only route into the Full PLL tiles
+  // was ~110 tab stops. The sections are focusable (tabindex="-1") purely so a
+  // programmatic focus can land on them; html's scroll-padding does the rest.
+  function focusSection(id: string): void {
+    document.getElementById(id)?.focus();
+  }
+  jumpBar?.addEventListener("click", (e) => {
+    const link = (e.target as HTMLElement | null)?.closest<HTMLAnchorElement>("[data-jump]");
+    if (!link || link.getAttribute("aria-disabled") === "true") return;
+    // Let the browser do the navigation and the scroll; only take the focus.
+    requestAnimationFrame(() => focusSection(link.dataset.jump ?? ""));
+  });
+  window.addEventListener("hashchange", () => {
+    const id = location.hash.slice(1);
+    if (id && document.getElementById(id)?.matches("[data-section]")) focusSection(id);
+  });
 
   // ── Your own progress, in the table ────────────────────────────────
   // jperm — the reference benchmark — puts your own times beside the case. We
@@ -438,7 +683,32 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
             : `Due in ${rel(due - now)}`;
       const last = card?.last_review;
       slot.title = last ? `Last reviewed ${rel(now - last.getTime())} ago` : "Not reviewed yet";
+      // Still needed for the CaseRow chip, which stays `hidden` until written:
+      // .chip carries a border, radius and padding, so reserving it the way the
+      // tile line is reserved would paint an empty pill on every lesson and
+      // case page too. A no-op for the tile, whose line is always present.
       slot.hidden = false;
+      // A tile's aria-label overrode its own content, so the learned/due layer
+      // — the reason this page reads IndexedDB at all — was announced to
+      // nobody. Fold the status in rather than dropping the label: `title` is
+      // still the only way a pointer user sees the name tileLabel() truncated
+      // ("OLL 27" -> "27").
+      if (el.hasAttribute("aria-label")) {
+        el.setAttribute("aria-label", `${el.title} — ${slot.textContent}`);
+      }
+    }
+
+    // Per-section ratios on the headings the reader is already scanning:
+    // "Full OLL (12/57)". Works for rows and tiles alike, because CaseRow
+    // carries data-case on its root too. Left off the JUMP chips on purpose —
+    // that number is the set's SIZE, which is what a first-time visitor picks
+    // a section by, and widening every chip lengthens the nowrap phone strip.
+    for (const section of document.querySelectorAll<HTMLElement>("[data-section]")) {
+      const out = section.querySelector<HTMLElement>("[data-section-count]");
+      if (!out) continue;
+      const all = section.querySelectorAll("[data-case]").length;
+      const seen = section.querySelectorAll("[data-case][data-status]").length;
+      if (seen > 0) out.textContent = `(${seen}/${all})`;
     }
   }
 
@@ -446,6 +716,28 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
     /* No IndexedDB (private mode, blocked storage) — the page stands as rendered. */
   });
 </script>
+
+<style is:global>
+  /*
+   * The pre-JS value of --toolbar-h, and the only global style this page ships.
+   *
+   * tokens.css turns `--hdr-h + --toolbar-h` into one `html scroll-padding`
+   * rule, which is what makes every anchor, focus move and scrollIntoView on
+   * the site clear the sticky chrome. --toolbar-h has to be declared on the
+   * scroll container itself, which a scoped block cannot reach, and it belongs
+   * here rather than in tokens.css because /reference is the only route with a
+   * second sticky bar. Astro bundles page CSS per route, so this loads nowhere
+   * else.
+   *
+   * 136px is the tallest the toolbar gets (600-860px, three wrapped rows), not
+   * the commonest. A fallback that under-clears buries the heading you
+   * navigated to; one that over-clears costs whitespace for the few hundred
+   * milliseconds before the ResizeObserver writes the measured value.
+   */
+  :root {
+    --toolbar-h: 136px;
+  }
+</style>
 
 <style>
   h1 {
@@ -462,7 +754,7 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
    */
   .toolbar {
     position: sticky;
-    top: var(--hdr-h, 47px);
+    top: var(--hdr-h);
     z-index: 5;
     display: grid;
     gap: var(--space-2);
@@ -481,6 +773,17 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
     min-inline-size: 0;
     max-inline-size: 32rem;
     font: inherit;
+    /*
+     * AFTER `font: inherit`, which is a shorthand and resets font-size — order
+     * is load-bearing here. Mobile Safari force-zooms the viewport when a
+     * focused text input is under 16px, and the page never zooms back: the
+     * reader taps the one control that finds a case among 300, and the header
+     * and half of every row go off-screen for the rest of the session. In the
+     * base rule, not the phone block: iPadOS zooms identically at 768-1024px,
+     * where that media query never applies. --text-lg is 17px, and an <input>
+     * is not a heading, so the "never override the heading scale" rule stands.
+     */
+    font-size: var(--text-lg);
     color: var(--ink);
     background: var(--card);
     border: 1px solid var(--line);
@@ -501,9 +804,29 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
     color: var(--accent);
     text-decoration: none;
   }
-  /* A section the current filter emptied: still reachable, visibly inactive. */
+  /*
+   * The section currently under the sticky bars. Exactly the two declarations
+   * :hover already uses, so the chip's type, padding and radius are untouched
+   * and the bar becomes a position indicator as well as a shortcut.
+   */
+  .jump .chip.here {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  /*
+   * A section the current filter emptied. This used to say "still reachable,
+   * visibly inactive" — and it was not reachable: the chip stayed a live link
+   * pointing at a `display: none` element, so a tap rewrote the URL fragment
+   * and moved nothing. The script now sets aria-disabled and tabindex="-1";
+   * this takes it out of the pointer's reach so all three agree.
+   *
+   * Kept as opacity rather than recoloured to --faint: once the chip is
+   * aria-disabled the WCAG 1.4.3 inactive-component exception applies, and
+   * --faint against the normal --soft is a *less* perceptible difference.
+   */
   .jump .chip.off {
     opacity: 0.45;
+    pointer-events: none;
   }
   .n {
     color: var(--faint);
@@ -518,10 +841,32 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
     margin-block: var(--space-5);
   }
 
+  /*
+   * No scroll-margin here any more, on purpose.
+   *
+   * This page used to write `calc(--hdr-h + --toolbar-h + --space-3)` three
+   * times — on `section`, on `.case-list .case-row[id]` and on `.full-group` —
+   * and the one anchored element it forgot was `.tile`, which owns the anchor
+   * for 107 of the 120 tiles. So the round trip the site advertises (a case
+   * page's "See it in the reference") landed the tile with ZERO visible pixels,
+   * fully behind 154px of sticky chrome; measured in both Chromium and WebKit
+   * at 390x844 on oll.40, pll.ga and f2l.12. The row-anchored oll.27, which had
+   * the rule, landed correctly.
+   *
+   * The fix is not a fourth copy. tokens.css sets the clearance once as
+   * `html { scroll-padding-block-start }`, which applies to every scroll into
+   * this page's scrollport — so a tile, a row, a section and a subgroup all
+   * clear the bars by construction, and so does a focus move, which no
+   * scroll-margin ever covered. Adding a scroll-margin back would stack on top
+   * of the padding and double the clearance.
+   */
   section {
     margin-block-start: var(--space-7);
-    /* Clear both sticky bars when an anchor jump lands here. */
-    scroll-margin-block-start: calc(var(--hdr-h, 47px) + var(--toolbar-h, 104px) + var(--space-3));
+  }
+  /* The jump bar focuses the section it scrolls to. Inside, not around: a ring
+     drawn outside a full-width section sits past the viewport edge. */
+  section:focus-visible {
+    outline-offset: -2px;
   }
   h2 {
     margin-block-end: var(--space-2);
@@ -529,18 +874,11 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
   .case-list {
     overflow: hidden;
   }
-  /* An anchored row is a link target too, so it needs the same clearance as a
-     section heading. :global because the row belongs to CaseRow.astro — but it
-     is scoped to this page's .case-list, which is why the offsets are safe. */
-  .case-list :global(.case-row[id]) {
-    scroll-margin-block-start: calc(var(--hdr-h, 47px) + var(--toolbar-h, 104px) + var(--space-3));
-  }
   .nodiagram {
     margin-block: var(--space-2) 0;
   }
   .full-group {
     margin-block: var(--space-4);
-    scroll-margin-block-start: calc(var(--hdr-h, 47px) + var(--toolbar-h, 104px) + var(--space-3));
   }
   .full-group h3 {
     color: var(--soft);
@@ -594,11 +932,29 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
   .tile-name {
     overflow-wrap: anywhere;
   }
-  /* Written by the progress script. Text, never colour alone. */
+  /*
+   * Written by the progress script. Text, never colour alone.
+   *
+   * The line is RESERVED rather than revealed: it used to carry `hidden`, so
+   * stampProgress() grew every tile by 22.6px after paint — and the moment that
+   * costs you is coming Back from a case page, when the browser has already
+   * restored your scroll offset against the shorter layout and the grid then
+   * grows underneath it. The honest cost of reserving is that /reference is
+   * ~650px longer on a phone for everyone, first-time readers included.
+   *
+   * `1lh` is the element's own line box, not a raw px value a token names.
+   */
   .tile-status {
     font-size: var(--text-xs);
     font-weight: 600;
     color: var(--accent);
+    min-block-size: 1lh;
+  }
+  /* Coming back from a case page lands on a tile among forty near-identical
+     ones; :target says which. .tile already sets border-color for :hover and
+     [data-status], so this restates nothing. */
+  .tile:target {
+    border-color: var(--accent);
   }
   .tile[data-status="learned"] {
     border-color: var(--ok);
@@ -623,13 +979,22 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
       max-inline-size: none;
     }
     /* The jump chips stack three rows deep on a phone and push the first
-       case off the screen; scroll them sideways instead. */
+       case off the screen; scroll them sideways instead.
+
+       The strip is 871px wide in a 390px viewport — three of nine chips
+       visible, with `scrollbar-width: none` removing the only hint that the
+       other six exist. A reader looking for Full OLL sees four chips that all
+       say "2-look" and concludes the full sets are not in the bar. The mask is
+       that hint. --space-4 and no wider: a mask multiplies alpha, so a fade
+       that reaches across a chip's label costs it measured contrast, while
+       16px lands in the inter-chip gap and the trailing padding. */
     .jump {
       flex-wrap: nowrap;
       overflow-x: auto;
       scrollbar-width: none;
       margin-inline: calc(-1 * var(--shell-x));
       padding-inline: var(--shell-x);
+      mask-image: linear-gradient(to right, #000 calc(100% - var(--space-4)), transparent);
     }
     .jump .chip {
       white-space: nowrap;

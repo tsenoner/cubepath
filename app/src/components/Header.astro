@@ -392,6 +392,27 @@ const links = [
 
   apply(stored(), false);
 
+  /*
+   * Publish the bar's real height as --hdr-h, on every route.
+   *
+   * tokens.css turns that into `html { scroll-padding-block-start }`, which is
+   * what makes a fragment link, a focus move and a scrollIntoView clear the
+   * sticky header instead of landing behind it. This lives here rather than in
+   * a page because the header is the thing being measured and it ships
+   * everywhere; /reference measures only its own second bar (--toolbar-h).
+   *
+   * A ResizeObserver, not a resize listener: the bar also changes height when
+   * the webfont settles and when the Install button appears, neither of which
+   * is a window resize.
+   */
+  const bar = document.querySelector<HTMLElement>(".site-header");
+  if (bar) {
+    const measureHeader = (): void =>
+      document.documentElement.style.setProperty("--hdr-h", `${Math.round(bar.offsetHeight)}px`);
+    measureHeader();
+    new ResizeObserver(() => requestAnimationFrame(measureHeader)).observe(bar);
+  }
+
   for (const btn of document.querySelectorAll<HTMLElement>("[data-theme-toggle]")) {
     btn.addEventListener("click", () => {
       const current = stored();

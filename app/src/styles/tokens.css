@@ -142,6 +142,31 @@
      30px. */
   --measure-prose: 68ch; /* ~72 characters at --text-md — lessons, home, print, cards */
   --measure-app: 1200px; /* practice, reference — grids, not prose */
+
+  /*
+   * Sticky chrome. The header is `position: sticky; top: 0` on every route, so
+   * anything an anchor, a focus move or a scrollIntoView aims at has to clear
+   * it — otherwise the browser parks the target underneath and the reader sees
+   * the middle of a section with no heading above it.
+   *
+   * --hdr-h is a FALLBACK, not the number: Header.astro measures the real bar
+   * on every route and writes the measured value inline on <html>, which beats
+   * this declaration. 55px is the desktop height (the phone bar is 45px), and a
+   * fallback should over-clear rather than under-clear — extra clearance only
+   * costs whitespace, too little hides the thing you navigated to.
+   *
+   * --toolbar-h is deliberately absent here. Only /reference has a second
+   * sticky bar; it measures and publishes its own, and the `0px` default below
+   * is exactly right for every other route.
+   */
+  --hdr-h: 55px;
+}
+
+/* One rule instead of a scroll-margin per anchored element. scroll-padding
+   covers fragment navigation, sequential focus and scrollIntoView alike, so
+   Shift-Tab stops parking the focused element behind the sticky bars. */
+html {
+  scroll-padding-block-start: calc(var(--hdr-h) + var(--toolbar-h, 0px) + var(--space-3));
 }
 
 /*
@@ -287,6 +312,21 @@ h3 {
   color: var(--faint);
   font-size: var(--text-sm);
   margin: 0;
+}
+
+/* Visible to assistive tech, not to the eye. A utility, not a restatement of a
+   shared class — it was defined privately in index.astro until /reference
+   needed the same thing for its jump chips. Do not use it to hide a control:
+   `hidden` (above) is for that. */
+.sr-only {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 /* Uppercase eyebrow above a block. Use on a real heading element when it
