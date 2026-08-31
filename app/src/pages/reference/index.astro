@@ -40,6 +40,7 @@ interface Section {
   title: string;
   /** Short form, for the jump bar. */
   nav: string;
+  /** Rendered as HTML — may carry a link. Authored here, never from data. */
   blurb?: string;
   kind: "rows" | "grid";
   items: CaseDef[];
@@ -177,12 +178,20 @@ const SECTIONS: Section[] = [
   // tile showed its diagram and nothing else — no algorithm, no recognition
   // cue, and (before the set became drawable) not even a picture, just the
   // word "6". A row carries all three.
+  // Two algorithms finish a 5×5 and only ONE of them is new, so the other is
+  // linked rather than repeated. A second row would have carried the flip's own
+  // `puzzle` with it — 4x4x4 — and opened a 4×4 player under a 5×5 heading; and
+  // the one-home rule at the top of this file has exactly one exception, the
+  // 2-look rows that re-present a case the full-set grids also carry, which is
+  // two different presentations rather than the same row twice.
   rows(
     "555-parity",
-    "5×5 parity",
-    "5×5 Edge Parity",
-    "The one thing a 5×5 asks that a 4×4 does not. Everything else — the flip, the pairing, the 3×3 " +
-      "stage — you already own from the section above.",
+    "5×5",
+    "5×5 Skills",
+    'Two algorithms finish a 5×5, and you already know one: <a href="#444-edge-flip">the edge ' +
+      "flip</a> is the same seven outer turns on both cubes. This is the other one — the only " +
+      "thing a 5×5 asks that a 4×4 does not. Centres and pairing are technique, taught in the " +
+      "lessons.",
     gen((k) => k.phase === "555"),
   ),
 ];
@@ -288,7 +297,10 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
             <h2>
               {s.title} <span class="n">({s.items.length})</span>
             </h2>
-            {s.blurb && <p class="lead">{s.blurb}</p>}
+            {/* HTML, not text: a section sometimes has to point at a case whose
+                home is another section — see the 5×5 blurb. Authored constants
+                only, never anything from data. */}
+            {s.blurb && <p class="lead" set:html={s.blurb} />}
             {s.kind === "rows" ? (
               <div class="case-list card">
                 {s.items.map((k) => {
