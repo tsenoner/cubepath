@@ -253,12 +253,77 @@ export const CASES: CaseDef[] = [
     prereqs: ["pll.ub"],
   },
 
-  // ── Big cubes (M0 proof seeds — full courses land in M5) ───────────
+  // ── The method's own algorithms ────────────────────────────────────
+  // Four strings this course TEACHES that had no case at all, and therefore no
+  // /reference row, no /case page, no 3D player and nowhere to look them up.
+  // Three separate lessons print `R U R' U'` and two print the edge flip; a
+  // reader who wanted either of them again had to remember which lesson it was
+  // in and scroll.
+  //
+  // They are TRIGGERS, not cases, and the difference is not pedantry: a case is
+  // a recognisable state plus the algorithm that solves it, and none of these
+  // four has a state. That is why they carry `stickering: "full"` — there is no
+  // last-layer subset to mask — and why the generic per-stickering invariant in
+  // tests/algs.spec.ts has nothing to say about them. Each is pinned there by
+  // BEHAVIOUR instead, which is the stronger gate: exactly which pieces it
+  // moves, and nothing else. A `full` 3x3 case with no behavioural pin fails
+  // the build, so this cannot become a hole to slip an unverified alg through.
+  {
+    id: "beginner.righty",
+    icon: "/diagrams/steps/corner_right.svg",
+    group: "beginner-triggers",
+    name: "Righty — the sexy move",
+    recognition:
+      "The four moves the whole beginner method is built from — corners, second layer, and the last-layer twist",
+    algs: [{ moves: "R U R' U'", primary: true, note: "Six in a row return the cube to solved" }],
+    stickering: "full",
+    puzzle: "3x3x3",
+    phase: "phase-1",
+  },
+  {
+    id: "beginner.lefty",
+    icon: "/diagrams/steps/corner_front.svg",
+    group: "beginner-triggers",
+    name: "Lefty — righty mirrored",
+    recognition: "Righty in the mirror, run with the left hand — it works the front-left slot",
+    algs: [{ moves: "L' U' L U", primary: true }],
+    stickering: "full",
+    puzzle: "3x3x3",
+    phase: "phase-1",
+    prereqs: ["beginner.righty"],
+  },
+  {
+    id: "beginner.niklas",
+    icon: "/diagrams/steps/corner_cycle.svg",
+    group: "beginner-corner-cycle",
+    name: "Niklas — the corner cycle",
+    recognition:
+      "Holds the front-left corner in its seat and cycles the other three: front-right → back-right → back-left. Square the top with one U first",
+    algs: [{ moves: "R U' L' U R' U' L", primary: true, note: "Then a single U" }],
+    stickering: "full",
+    puzzle: "3x3x3",
+    phase: "phase-1",
+  },
+
+  // ── Big cubes ──────────────────────────────────────────────────────
+  {
+    id: "444.edge-flip",
+    group: "bigcube-pairing",
+    name: "The edge flip",
+    recognition:
+      "Turns the front-right edge pair over in place. Seven outer turns, nothing wide — so it cannot break a pair you have already made, and it means the same thing on a 5×5",
+    algs: [{ moves: "R U R' F R' F' R", primary: true }],
+    stickering: "full",
+    puzzle: "4x4x4",
+    phase: "444",
+  },
   {
     id: "444.oll-parity",
+    icon: "/diagrams/444-parity/444_oll_parity.svg",
     group: "444-parity",
     name: "OLL Parity (4×4)",
-    recognition: "A single flipped edge pair on the last layer — impossible on a 3×3",
+    recognition:
+      "One edge pair on the last layer is flipped over — its two halves show the side colour on top. No 3×3 can reach this",
     algs: [
       {
         moves: "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'",

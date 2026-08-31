@@ -390,7 +390,7 @@ class CubeDiagram:
 
     name: str  # filename (no extension)
     label: str  # human-readable label
-    category: str  # "oll_cross", "oll_corners", "pll_corners", "444_oll", ...
+    category: str  # "oll_cross", "oll_corners", "pll_corners", "444_parity", ...
     # U-face colors: n*n cells, row-major (row 0 = back of the cube).
     u_face: list[str]
     # Side stickers: n each, left-to-right (top/bottom) or back-to-front
@@ -772,8 +772,13 @@ _CASE_SUBDIRS = {
     "pll_corners": "pll",
     "pll_edges": "pll",
     "pll_full": "pll-full",
-    "444_oll": "444-oll",
-    "444_pll": "444-pll",
+    # The big cubes get parity and nothing else: the course teaches reduction,
+    # so a big cube becomes a 3x3 and the 3x3 sets above finish it. The 27+22
+    # 4x4 last-layer cases and the 13 5x5 L2E cases are one-look optimisations,
+    # locked out of the UI by app/src/lib/unlocks.ts, and were the only readers
+    # of the "444-oll", "444-pll" and "555-l2e" trees. See fullsets.TAUGHT_BIG_CUBE.
+    "444_parity": "444-parity",
+    "555_parity": "555-parity",
 }
 
 
@@ -944,6 +949,10 @@ class StepDiagram:
     dir_arrows: list[tuple[tuple[float, ...], tuple[float, ...], tuple[float, ...]]] = field(
         default_factory=list
     )  # Each: (src_3d, dst_3d, ctrl_3d) — unidirectional 3D Bezier arrows
+    # Cube order. 3 leaves every existing step untouched; 4 and 5 are what the
+    # course index uses to show a big cube as a big cube instead of borrowing a
+    # 3x3 with a letter on it.
+    n: int = 3
 
 
 def _notation_moves() -> list[NotationMove]:
@@ -1378,7 +1387,7 @@ def _n_sticker_color(face: str, a: int, b: int, layer: str, cw: bool) -> str:
 Vec3 = tuple[float, float, float]
 
 
-def _n_rect_corners(face: str, a0: int, a1: int, b0: int, b1: int) -> list[Vec3]:
+def _n_rect_corners(face: str, a0: float, a1: float, b0: float, b1: float) -> list[Vec3]:
     """3D corners of the rectangle a in [a0,a1], b in [b0,b1] on a visible face.
     The one place the (a, b) convention of the three visible faces is written
     down: sticker quads, `sticker_centre`, the overview's whole-face quads and
@@ -1398,15 +1407,25 @@ def _n_sticker_corners(face: str, a: int, b: int, size: int = 1) -> list[Vec3]:
     return _n_rect_corners(face, a, a + size, b, b + size)
 
 
-def _n_face_quad(face: str, a0: int, a1: int, b0: int, b1: int) -> list[tuple[float, float]]:
+def _n_face_quad(
+    face: str, a0: float, a1: float, b0: float, b1: float
+) -> list[tuple[float, float]]:
     """Projected 2D corners of a rectangle spanning several cells — an F2L slot
     outline. One sticker is the a1=a0+1, b1=b0+1 case."""
     return [_n_proj(*c) for c in _n_rect_corners(face, a0, a1, b0, b1)]
 
 
-def _n_sticker_pts(face: str, a: int, b: int) -> list[tuple[float, float]]:
-    """Get projected 2D corners of sticker (a,b) on a visible face."""
-    return _n_face_quad(face, a, a + 1, b, b + 1)
+def _n_sticker_pts(face: str, a: int, b: int, n: int = 3) -> list[tuple[float, float]]:
+    """Projected 2D corners of sticker (a, b) on a visible face of an n-cube.
+
+    The cube stays THREE UNITS WIDE whatever its order — only the cell size
+    changes — so a 4x4 and a 5x5 project into the same box as a 3x3, share the
+    outline and the viewBox, and sit at the same size beside one on a page.
+    That is the whole reason the isometric renderer can draw a big cube at all:
+    nothing about the projection, the camera or the arrows is per-order.
+    """
+    step = 3 / n
+    return _n_face_quad(face, a * step, (a + 1) * step, b * step, (b + 1) * step)
 
 
 Arrow3 = tuple[Vec3, Vec3, Vec3]  # src, dst, bezier control
@@ -1495,14 +1514,23 @@ def _n_draw_arrow(dwg: svgwrite.Drawing, layer: str, clockwise: bool) -> None:
         dwg.add(dwg.polygon(head, fill=ARROW_COLOR))
 
 
-def _draw_iso_stickers(dwg: svgwrite.Drawing, color_fn: Callable[[str, int, int], str]) -> None:
-    """Draw 3×3 stickers on each visible face (R → F → U for correct layering)."""
+def _draw_iso_stickers(
+    dwg: svgwrite.Drawing, color_fn: Callable[[str, int, int], str], n: int = 3
+) -> None:
+    """Draw an n x n grid of stickers on each visible face (R → F → U, so the
+    later faces paint over the earlier ones and the layering reads right).
+
+    The stroke thins with the grid: 1.2px between 3x3 stickers is a hairline
+    between 5x5 ones' worth of cube, and at the 92px the course index renders
+    these it would close the gaps up into a solid block.
+    """
+    width = 1.2 * 3 / n
     for face in ("R", "F", "U"):
-        for a in range(3):
-            for b in range(3):
-                pts = _n_sticker_pts(face, a, b)
+        for a in range(n):
+            for b in range(n):
+                pts = _n_sticker_pts(face, a, b, n)
                 color = color_fn(face, a, b)
-                dwg.add(dwg.polygon(pts, fill=color, stroke=STICKER_STROKE, stroke_width=1.2))
+                dwg.add(dwg.polygon(pts, fill=color, stroke=STICKER_STROKE, stroke_width=width))
 
 
 def _iso_viewbox(pad: float) -> tuple[float, float, float, float]:
@@ -1592,6 +1620,7 @@ def render_step(step: StepDiagram, output_dir: Path, style: DiagramStyle = SCREE
             ),
             c,
         ),
+        step.n,
     )
     _draw_cube_outline(dwg)
 
@@ -2386,6 +2415,57 @@ def render_overview(
     return filepath
 
 
+def _phase_art() -> list[StepDiagram]:
+    """Four pictures the COURSE INDEX needs and no lesson does.
+
+    DELIBERATELY NOT IN `all_steps()`. That list is what the guide and the CARD
+    SET render, and a card is 85.6mm of paper — nothing belongs on it that no
+    lesson teaches. `main()` renders this group into the web tree only.
+
+    The index shows one cube per phase, and it is the only place on the site
+    that has to say what a phase gets you before you have read a word of it.
+    Two of the eight phases had nothing honest to point at:
+
+      * 4x4 and 5x5 borrowed a NOTATION diagram — a 3x3 with a large black "r
+        (Rw)" or "M" printed over it. Wrong puzzle, wrong size, and a letter
+        where a picture should be. They are real big cubes now: the isometric
+        renderer takes an order, so a 4x4 and a 5x5 project into the same box
+        a 3x3 does and sit at the same size beside one.
+      * Phase 3 is "every case, one look" — the last layer FINISHED as a face,
+        with the sides still to permute. The nearest existing picture was
+        `step_6_ycorners_pos`, which is the beginner ladder's step 6 and reads
+        as almost the same cube as step 5 at 92px.
+
+    The two big-cube cubes are drawn MID-REDUCTION: centres built, edges not
+    yet paired. That is the phase's actual content — reduction is the method,
+    and a finished big cube would be indistinguishable from a finished 3x3,
+    which is exactly what a solved-cube picture would fail to say.
+    """
+    # OLL done: the whole top face yellow, sides not yet permuted. Not a
+    # milestone on either ladder — it is where the two 2-look halves meet, so
+    # the subject is the U face and everything under it is the dim tier.
+    oll_done = _SECOND_LAYER | {("U", a, b) for a in range(3) for b in range(3)}
+    big = []
+    for n in (4, 5):
+        # Centres are the interior of each face at any order: everything but
+        # the outermost ring, which is corners and edges.
+        centres = {(f, a, b) for f in "UFR" for a in range(1, n - 1) for b in range(1, n - 1)}
+        big.append(
+            StepDiagram(
+                f"{n}x{n} centres", f"step_{n}{n}{n}_centres", centres, subject=centres, n=n
+            )
+        )
+    return [
+        # Basics: a whole cube, and a move. The index used to point this phase
+        # at `step_flip`, whose cube is three-quarters grey because it is drawn
+        # for the moment BEFORE the first layer exists — at 96px that reads as
+        # a blank card rather than as "know your cube, read the moves".
+        StepDiagram("Know Your Cube", "step_anatomy", set(_SOLVED), arrow="x"),
+        StepDiagram("Top Face Oriented", "step_oll_done", set(oll_done), oll_done - _SECOND_LAYER),
+        *big,
+    ]
+
+
 def all_steps() -> list[StepDiagram]:
     """Every 3D step diagram, in guide order.
 
@@ -2428,8 +2508,9 @@ def main() -> None:
     # F2L: 41 slot-and-pair isometric cases, derived from the same extraction.
     total += render_f2l(output_dir)
 
-    # 4x4: 27 OLL + 22 PLL, derived from the kpuzzle states in case-states.json
-    # because cube.py cannot model a 4x4 and must not be taught to.
+    # Big cubes: the three parity pictures the course teaches (two 4x4, one
+    # 5x5), derived from the kpuzzle states in case-states.json because cube.py
+    # cannot model a 4x4 and must not be taught to.
     total += render_big_sets(output_dir)
 
     for move in _notation_moves():
@@ -2441,7 +2522,7 @@ def main() -> None:
         print(f"  {render_overview(output_dir, layout=layout).relative_to(output_dir)}")
         total += 1
 
-    for step in all_steps():
+    for step in [*all_steps(), *_phase_art()]:
         path = render_step(step, output_dir)
         print(f"  {path.relative_to(output_dir)}")
         total += 1

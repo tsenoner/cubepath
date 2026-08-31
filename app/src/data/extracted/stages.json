@@ -1077,8 +1077,23 @@
     },
     {
       "kind": "exact",
-      "key": "555-l2e",
+      "key": "555-parity",
       "stage": "555-pairing"
+    },
+    {
+      "kind": "exact",
+      "key": "beginner-triggers",
+      "stage": "f1l"
+    },
+    {
+      "kind": "exact",
+      "key": "beginner-corner-cycle",
+      "stage": "cp"
+    },
+    {
+      "kind": "exact",
+      "key": "bigcube-pairing",
+      "stage": "444-pairing"
     },
     {
       "kind": "prefix",

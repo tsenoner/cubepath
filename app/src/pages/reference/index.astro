@@ -106,6 +106,17 @@ const grid = (
 
 const SECTIONS: Section[] = [
   rows(
+    "beginner-triggers",
+    "Triggers",
+    "The Beginner Method",
+    "Not cases — the three algorithms the beginner solve is built out of. Righty alone finishes the " +
+      "first two layers and untwists the last corners; Niklas puts the last four corners in their seats.",
+    // Course membership: two groups, one section. The triggers and the corner
+    // cycle sit at different stages of the ladder, but a reader looking up
+    // "the beginner algorithms" wants one list, not two.
+    CASES.filter((k) => k.group === "beginner-triggers" || k.group === "beginner-corner-cycle"),
+  ),
+  rows(
     "cross-eo",
     "Cross",
     "Yellow Cross",
@@ -139,11 +150,14 @@ const SECTIONS: Section[] = [
     "444-parity",
     "4×4 parity",
     "4×4 Parity",
-    "The two states a 3×3 can never produce — and the whole of what a 4×4 last layer adds.",
+    "The edge flip you aim yourself, plus the two states a 3×3 can never produce — the whole of what " +
+      "a 4×4 adds to the method you already have.",
     // Course membership, not data membership: the two PLL-parity faces were
     // generated into "4x4pll-edges-only" alongside cases the course does not
-    // teach, but the 4×4 lesson teaches both of them.
-    [...TAUGHT_444_CASES].map((id) => caseById.get(id)!),
+    // teach, but the 4×4 lesson teaches both of them. The edge flip is a
+    // curated entry with no set of its own — it is a mid-pairing tool, so it
+    // belongs to no case list, which is exactly why it had no row anywhere.
+    [caseById.get("444.edge-flip")!, ...[...TAUGHT_444_CASES].map((id) => caseById.get(id)!)],
   ),
   grid(
     "444-oll",
@@ -159,12 +173,17 @@ const SECTIONS: Section[] = [
     gen((k) => k.group.startsWith("4x4pll-")),
     "Permutations that need the 4×4 parity algorithm folded into them.",
   ),
-  grid(
-    "555-l2e",
-    "5×5 L2E",
-    "5×5 Last Two Edges",
+  // A ROW, not a tile grid. Only one 5x5 case is unlocked, and a lone icon
+  // tile showed its diagram and nothing else — no algorithm, no recognition
+  // cue, and (before the set became drawable) not even a picture, just the
+  // word "6". A row carries all three.
+  rows(
+    "555-parity",
+    "5×5 parity",
+    "5×5 Edge Parity",
+    "The one thing a 5×5 asks that a 4×4 does not. Everything else you already own — the flip above " +
+      "is the same seven moves on both cubes.",
     gen((k) => k.phase === "555"),
-    "Pairing the last two edge triplets — the only 5×5 cases that are not already a 3×3 or 4×4 skill.",
   ),
 ];
 

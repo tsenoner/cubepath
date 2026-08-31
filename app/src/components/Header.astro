@@ -1,20 +1,25 @@
 ---
 /**
- * The site header: brand, the four destinations, the theme control, install.
+ * The site header: brand, the five destinations, the theme control, install.
  *
  * "Print" is a real destination now. The PDF guide and the printable card set
  * — two of the project's four deliverables, one of them literally printed on
  * card stock — used to be reachable only from a sentence inside the reference
  * page's lead paragraph.
+ *
+ * "Glossary" is here rather than buried in /reference because the lessons link
+ * into it a few hundred times: a reader who has followed one of those links
+ * needs a way back to the whole list without using the back button.
  */
 interface Props {
-  active?: "learn" | "practice" | "reference" | "print";
+  active?: "learn" | "practice" | "reference" | "glossary" | "print";
 }
 const { active } = Astro.props;
 const links = [
   { href: "/", label: "Learn", key: "learn" },
   { href: "/practice/", label: "Practice", key: "practice" },
   { href: "/reference/", label: "Reference", key: "reference" },
+  { href: "/glossary/", label: "Glossary", key: "glossary" },
   { href: "/print/", label: "Print", key: "print" },
 ];
 ---

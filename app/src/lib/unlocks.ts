@@ -118,7 +118,10 @@ const UNLOCKABLES: readonly Unlockable[] = [
      *
      * The GROUP stays visible: a one-case trainer set is genuinely useful
      * here, because it drills the only recognition question a 5x5 asks — is
-     * this parity, or not?
+     * this parity, or not? It is keyed `555-parity`, not `555-l2e`, because
+     * that is what is left in it once these twelve are hidden. THIS key keeps
+     * "l2e" on purpose: it names the SOURCE SET it hides, which really is
+     * SpeedCubeDB's L2E set of thirteen.
      */
     reason:
       "one-look last-two-edges cases — a speed refinement; the course finishes L2E with " +

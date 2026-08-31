@@ -1021,7 +1021,7 @@ export const RICH: Record<string, { recognition: string; alternates: AlgVariant[
     ]
   },
   "555.l2e-6": {
-    "recognition": "One edge group flipped, nothing else unsolved — hold it at UF",
+    "recognition": "The last edge group looks flipped: its two wings show the side colour on top and yellow on the side, the middle piece is right. Hold it at UF.",
     "alternates": [
       {
         "moves": "Rw' U2 3Rw U2 3Rw' F2 Rw2 U2 Rw U2 Rw' U2 F2 Rw2 F2"
@@ -1239,7 +1239,7 @@ export const RICH: Record<string, { recognition: string; alternates: AlgVariant[
     "alternates": []
   },
   "444.pll.pure-e": {
-    "recognition": "Two edge pairs swapped, opposite each other — the corners in the picture are a free U2",
+    "recognition": "Both last-layer edge pairs on one axis are swapped with the pair opposite them. The corners look shuffled here — that is a free U2, and the algorithm ignores it.",
     "alternates": []
   },
   "444.pll.adj-e": {

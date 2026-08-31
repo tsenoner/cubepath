@@ -53,7 +53,13 @@
  *  d. round-trip on the DISPLAYED case: synthetic pattern with the ten
  *     non-target groups + corners solved in place and only the target slots
  *     taken from S; alg applied must reach reduction-solved (centers visual +
- *     all 12 slots intact).
+ *     all 12 slots intact). That pattern is also EXPORTED, as `displayed` —
+ *     a delta against solved, one entry per changed edge slot — because it is
+ *     the only drawable form of an L2E case and this file owns the reduction
+ *     model that produces it. `gen-case-states.mjs` patches the kpuzzle's
+ *     default pattern with it and converts to facelets like any other case;
+ *     the Python diagram generator draws from there. Pinned to algs[0], the
+ *     string that ships.
  *  e. case classes: target-slot content of S, canonicalized over pre-AUF
  *     powers that keep target-home pieces on target (U2 swaps UF<->UB; U/U'
  *     move the case off target so they never qualify). All algs of a case
@@ -336,6 +342,81 @@ for (const r of ROTATION_T) {
   for (const slot of SLOT_NAMES) VALID[slot].add(arrKey(p, slot));
 }
 
+/**
+ * A copy of a solved pattern's data whose orbits share no arrays.
+ *
+ * `structuredClone` is NOT safe here and this is not a style preference.
+ * cubing.js's `defaultPattern()` hands every orbit of the same length the SAME
+ * zero-filled orientation array — on the 5x5, EDGES, CENTERS and CENTERS2 are
+ * all 24 slots and all three are literally one array — and `structuredClone`
+ * faithfully preserves that aliasing. So `synth.EDGES.orientation[i] = 1` also
+ * wrote CENTERS.orientation[i] and CENTERS2.orientation[i].
+ *
+ * It was invisible: `centersSolved` compares pieces only, and CENTERS has
+ * numOrientations 1, so a bogus centre orientation changes no check and no
+ * picture. It stops being invisible the moment the pattern is EXPORTED —
+ * `deltaOf` reads orientation, and every case came out claiming centre twists
+ * it does not have. Asserted below rather than trusted.
+ *
+ * @param {Record<string, { pieces: number[]; orientation: number[] }>} data
+ */
+function unaliasedCopy(data) {
+  /** @type {Record<string, { pieces: number[]; orientation: number[] }>} */
+  const out = {};
+  for (const orbit of Object.keys(data)) {
+    out[orbit] = {
+      pieces: [...data[orbit].pieces],
+      orientation: [...data[orbit].orientation],
+    };
+  }
+  return out;
+}
+
+/**
+ * The DISPLAYED case, as a patch on the solved pattern.
+ *
+ * This is the export `gen-case-states.mjs` draws 5x5 L2E from, and it exists
+ * because the raw case state cannot be drawn: an L2E algorithm is written for
+ * a hold partway through reduction, so `alg⁻¹` leaves the two target groups
+ * wherever that hold put them (l2e-1 lands them on R and B) and rigidly cycles
+ * groups that a solver would not consider part of the case. The displayed
+ * pattern is the one this file already builds and round-trips in check (d) —
+ * the ten non-target groups and the corners solved in place, only UF and UB
+ * taken from the case state — so nothing new is being asserted here, only
+ * written down.
+ *
+ * Emitted as a DELTA against solved rather than as a whole pattern: it is
+ * six entries at most (two slots x two wings + one midge), it stays readable
+ * in the committed JSON, and a consumer rebuilds it by patching the kpuzzle's
+ * own default pattern, so no piece numbering is ever transcribed.
+ *
+ * @typedef {{ orbit: string; slot: number; piece: number; orientation: number }} Delta
+ * @param {Record<string, { pieces: number[]; orientation: number[] }>} data
+ * @returns {Delta[]}
+ */
+function deltaOf(data) {
+  /** @type {Delta[]} */
+  const out = [];
+  for (const orbit of Object.keys(data)) {
+    const s = solved.patternData[orbit];
+    for (let i = 0; i < s.pieces.length; i++) {
+      if (
+        data[orbit].pieces[i] === s.pieces[i] &&
+        data[orbit].orientation[i] === s.orientation[i]
+      ) {
+        continue;
+      }
+      out.push({
+        orbit,
+        slot: i,
+        piece: data[orbit].pieces[i],
+        orientation: data[orbit].orientation[i],
+      });
+    }
+  }
+  return out;
+}
+
 /** @param {import("cubing/kpuzzle").KPattern} p */
 const cornersSolvedIn = (p) =>
   solved.patternData.CORNERS.pieces.every(
@@ -396,6 +477,25 @@ function classKeyOf(S) {
     }
   }
   for (const t of TARGETS) if (!SLOTS[t]) fail(`self-check: target slot ${t} not derived`);
+  // The aliasing `unaliasedCopy` exists for: prove cubing.js still shares one
+  // orientation array across same-length orbits (so the helper is not dead
+  // code guarding a fixed upstream), and prove the helper breaks it.
+  {
+    const raw = structuredClone(solved.patternData);
+    raw.EDGES.orientation[0] = 1;
+    const aliased = raw.CENTERS.orientation[0] === 1 && raw.CENTERS2.orientation[0] === 1;
+    const copy = unaliasedCopy(solved.patternData);
+    copy.EDGES.orientation[0] = 1;
+    if (copy.CENTERS.orientation[0] !== 0 || copy.CENTERS2.orientation[0] !== 0) {
+      fail("self-check: unaliasedCopy still shares orientation arrays between orbits");
+    }
+    if (!aliased) {
+      console.warn(
+        "note: cubing.js no longer aliases orientation arrays across orbits — " +
+          "unaliasedCopy is now redundant, but harmless",
+      );
+    }
+  }
   // Notation identities: SCDB/Sarah strings are valid SiGN as-is (contrast
   // with the 4x4 sets in extract-algs.mjs where bare M needed translation).
   for (const [a, b] of [
@@ -427,6 +527,7 @@ function classKeyOf(S) {
  * @property {"solved" | "up-to-AUF" | "permuted"} [corners]
  * @property {string} [class]
  * @property {import("cubing/kpuzzle").KTransformation} [S]
+ * @property {Delta[]} [displayed] - the drawable case, as a patch on solved
  *
  * @param {string} algStr
  * @returns {Analysis}
@@ -502,8 +603,10 @@ function analyze(algStr) {
       : "permuted";
 
   // round-trip on the displayed case: only the target slots unsolved
+  /** @type {Delta[] | undefined} */
+  let displayed;
   if (problems.length === 0) {
-    const synth = structuredClone(solved.patternData);
+    const synth = unaliasedCopy(solved.patternData);
     for (const tgt of TARGETS) {
       for (const i of SLOTS[tgt].wings) {
         synth.EDGES.pieces[i] = caseP.patternData.EDGES.pieces[i];
@@ -517,13 +620,16 @@ function analyze(algStr) {
     let rt = centersSolved(after);
     for (const slot of SLOT_NAMES) if (!VALID[slot].has(arrKey(after, slot))) rt = false;
     if (!rt) problems.push("round-trip: displayed case + alg is not reduction-solved");
+    displayed = deltaOf(synth);
   }
 
-  return { problems, strict, strictAUF, corners, class: classKeyOf(S), S };
+  return { problems, strict, strictAUF, corners, class: classKeyOf(S), S, displayed };
 }
 
 const classOf = new Map(); // slug -> class
 const classToSlug = new Map(); // class -> slug
+/** @type {Map<string, Delta[]>} slug -> the drawable state of algs[0] */
+const DISPLAYED = new Map();
 let nAlgs = 0;
 const strictProfile = { strict: 0, groupRigidOnly: 0 };
 const strictAUFs = new Set();
@@ -542,6 +648,8 @@ for (const c of L2E_CASES) {
   }
   if (new Set(c.algs).size !== c.algs.length) fail(`${c.slug}: duplicate alg strings`);
   let cls = null;
+  /** @type {Delta[] | undefined} */
+  let displayed;
   for (const [j, a] of c.algs.entries()) {
     nAlgs++;
     const r = analyze(a);
@@ -568,7 +676,14 @@ for (const c of L2E_CASES) {
     }
     if (cls === null) cls = r.class;
     else if (r.class !== cls) fail(`${c.slug}: algs disagree on the case (up to pre-AUF): ${a}`);
+    // The drawable state is pinned to algs[0] — the one string that ships, and
+    // therefore the one a diagram beside it must be solved by. Later algs of
+    // the same case can present it a pre-AUF away, which is a different
+    // picture of the same case; that is exactly why this is not averaged.
+    if (j === 0) displayed = r.displayed;
   }
+  if (displayed === undefined) fail(`${c.slug}: no drawable state (algs[0] did not verify)`);
+  else DISPLAYED.set(c.slug, displayed);
   if (cls !== null) {
     if (classToSlug.has(cls)) fail(`${c.slug} duplicates case ${classToSlug.get(cls)}`);
     classToSlug.set(cls, c.slug);
@@ -875,6 +990,13 @@ if (failures === 0) {
       `names (UB, UF, DF, DB) and wrecks the centres past any rotation`,
   );
   report.push(`✓ ${NEGATIVE.length} negative controls fail as required`);
+  report.push(
+    `✓ drawable state exported for all ${DISPLAYED.size} cases (${[...DISPLAYED.values()].reduce(
+      (n, d) => n + d.length,
+      0,
+    )} slot patches on solved) — the pattern check (d) round-trips, so a diagram built ` +
+      `from it is solved by the algorithm printed beside it`,
+  );
 }
 console.log(report.join("\n"));
 if (failures > 0) {
@@ -886,6 +1008,10 @@ if (failures > 0) {
 await mkdir(new URL("../src/data/extracted", import.meta.url), { recursive: true });
 await writeFile(
   new URL("../src/data/extracted/l2e-raw.json", import.meta.url),
-  JSON.stringify(L2E_CASES, null, 1) + "\n",
+  JSON.stringify(
+    L2E_CASES.map((c) => ({ ...c, displayed: DISPLAYED.get(c.slug) })),
+    null,
+    1,
+  ) + "\n",
 );
 console.log("\nWrote src/data/extracted/l2e-raw.json (0 failures)");

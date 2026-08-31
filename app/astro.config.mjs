@@ -6,6 +6,9 @@ import { defineConfig } from "astro/config";
 import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
 import AstroPWA from "@vite-pwa/astro";
+import { unified } from "@astrojs/markdown-remark";
+
+import rehypeGlossary from "./scripts/rehype-glossary.mjs";
 
 /**
  * Vite's preload helper touches `document` unguarded, which crashes when it
@@ -49,6 +52,16 @@ export default defineConfig({
   // course index lives at "/" — `learn/[...slug]` only emits lesson pages, so
   // the printed URL 404'd. A printed URL cannot be reissued; send it home.
   redirects: { "/learn": "/" },
+  // The glossary pass runs over lessons only and rewrites the first mention of
+  // each term into a link carrying its definition — see
+  // scripts/rehype-glossary.mjs for why this is a plugin and not a component.
+  //
+  // `markdown.processor`, not `mdx({ rehypePlugins })`: that option is
+  // deprecated and, on this version, silently does nothing — the build warns
+  // and then produces pages with no glossary links at all. `unified()` from
+  // @astrojs/markdown-remark builds Astro's own pipeline with the plugin added,
+  // and MDX inherits it.
+  markdown: { processor: unified({ rehypePlugins: [rehypeGlossary] }) },
   integrations: [
     mdx(),
     sitemap(),

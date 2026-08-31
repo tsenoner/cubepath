@@ -21,7 +21,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { describe, expect, test } from "vitest";
 import { Alg } from "cubing/alg";
 import { puzzles } from "cubing/puzzles";
-import type { KPuzzle } from "cubing/kpuzzle";
+import type { KPattern, KPuzzle } from "cubing/kpuzzle";
 
 import {
   ALL_CASES,
@@ -69,6 +69,7 @@ import { experimental_AstroContainer as AstroContainer } from "astro/container";
 import CaseRow from "../src/components/CaseRow.astro";
 import TwistyPlayer from "../src/components/TwistyPlayer.astro";
 import STAGES_JSON from "../src/data/extracted/stages.json";
+import CASE_STATES from "../src/data/extracted/case-states.json";
 import { groupSize } from "../src/lib/trainer";
 import { makeSlotKit, type SlotKit } from "../scripts/lib/kpuzzle-utils.mjs";
 
@@ -129,10 +130,161 @@ async function checkStickeringInvariant(def: CaseDef, moves: string): Promise<vo
         "touches only U layer + FR slot",
       ).toBe(true);
       break;
+    case "full":
+      // A TRIGGER, not a case: no last-layer subset to mask, so none of the
+      // four invariants above is the right question. These are pinned one at a
+      // time by BEHAVIOUR instead — "the beginner method's own algorithms"
+      // below — which is a stronger statement than any of the generic ones,
+      // and `TRIGGERS` is asserted to cover every `full` 3x3 case so this
+      // branch cannot become a way in for an unverified algorithm.
+      expect(Object.keys(TRIGGERS), `${def.id} has no behavioural pin`).toContain(def.id);
+      break;
     default:
       throw new Error(`no invariant for 3x3 stickering "${def.stickering}" (${def.id})`);
   }
 }
+
+/**
+ * The method's own algorithms, pinned by what they DO.
+ *
+ * These four are triggers: `R U R' U'` and its mirror, the corner cycle, and
+ * the big-cube edge flip. None of them has a case state, so none of the four
+ * stickering invariants applies — and until they were given CaseDefs, nothing
+ * verified them at all even though three lessons print the first one.
+ *
+ * Every claim below is quoted from the lesson that makes it. That is the point:
+ * a lesson sentence like "six righty triggers in a row return the cube exactly
+ * to where it started" is a factual claim about a cube, and it should fail the
+ * build if it stops being true.
+ */
+const TRIGGERS: Record<string, () => Promise<void>> = {
+  "beginner.righty": async () => {
+    const kit = await kit3();
+    const alg = primaryAlg(caseById.get("beginner.righty")!);
+    expect(alg).toBe("R U R' U'");
+    // white-corners.mdx: "R lifts the front-right corner slot into the top" —
+    // so the first layer outside that one slot has to survive it.
+    const state = kit.solved.applyTransformation(kit.rightRotNormalize(kit.toT(alg)));
+    expect(kit.outsideSolved(state, { allowFRSlot: true }), "only U layer + FR slot").toBe(true);
+    // orient-corners.mdx: "Six righty triggers in a row return the cube exactly
+    // to where it started." That is the whole reason the step's mess repairs
+    // itself, so it is a load-bearing sentence rather than a fun fact.
+    expect(kit.toT(Array(6).fill(alg).join(" ")).isIdentityTransformation()).toBe(true);
+  },
+  "beginner.lefty": async () => {
+    const kit = await kit3();
+    const alg = primaryAlg(caseById.get("beginner.lefty")!);
+    // white-corners.mdx: "Lefty is righty in the mirror." Asserted as an
+    // actual mirror rather than eyeballed: reflecting a cube algorithm through
+    // the M plane swaps R with L and reverses every turn.
+    expect(mirrorLR("R U R' U'")).toBe(alg);
+    const state = kit.solved.applyTransformation(kit.rightRotNormalize(kit.toT(alg)));
+    expect(kit.outsideSolved(state, { allowFRSlot: true }), "does NOT work the FR slot").toBe(
+      false,
+    );
+    expect(kit.toT(Array(6).fill(alg).join(" ")).isIdentityTransformation()).toBe(true);
+  },
+  "beginner.niklas": async () => {
+    const kit = await kit3();
+    const alg = primaryAlg(caseById.get("beginner.niklas")!);
+    // position-corners.mdx: "The bottom two layers come back untouched."
+    const state = kit.solved.applyTransformation(kit.rightRotNormalize(kit.toT(alg)));
+    expect(kit.outsideSolved(state, { allowFRSlot: false }), "preserves the first two layers").toBe(
+      true,
+    );
+    // ...and, squared up with the single `U` the lesson prescribes, it moves
+    // THREE CORNERS AND NOTHING ELSE: "holds the front-left corner in its seat
+    // and cycles the other three". Every U edge is left where it was, which is
+    // what makes this the right tool at a step where the edges are already
+    // aligned and a bare U turn would wreck them.
+    const squared = kit.solved.applyTransformation(kit.rightRotNormalize(kit.toT(`${alg} U`)));
+    const moved = movedSlots(kit, squared);
+    expect(moved.EDGES, "Niklas + U leaves every edge alone").toEqual([]);
+    expect(moved.CORNERS.length, "Niklas + U moves exactly three corners").toBe(3);
+  },
+  "444.edge-flip": async () => {
+    const def = caseById.get("444.edge-flip")!;
+    const alg = primaryAlg(def);
+    // 444-edge-pairing.mdx: "Seven outer turns, nothing wide — so it cannot
+    // break a pair you have already made, and it means LITERALLY THE SAME THING
+    // on a 5x5." Both halves of that sentence, checked.
+    const tokens = alg.split(" ");
+    expect(tokens).toHaveLength(7);
+    for (const token of tokens) expect(token).toMatch(/^[UDFBLR]['2]?$/);
+    for (const puzzle of ["4x4x4", "5x5x5"] as const) {
+      (await kpuzzleFor(puzzle)).algToTransformation(new Alg(alg));
+    }
+    // The same string gen-case-states.mjs locates BY BEHAVIOUR and the cheat
+    // card prints. Two copies of an algorithm is exactly how a card and a page
+    // come to disagree.
+    expect(alg).toBe(CASE_STATES.parityAlgs["edge-flip"]!.alg);
+    // On a 3x3 the seven moves reach only the U layer and the FR slot, which
+    // is the 3x3-checkable form of "it cannot break a finished pair". The deep
+    // big-cube behaviour — centres untouched, the FR group turned over, every
+    // other group intact — is pinned in scripts/verify-l2e.mjs.
+    const kit = await kit3();
+    const state = kit.solved.applyTransformation(kit.rightRotNormalize(kit.toT(alg)));
+    expect(kit.outsideSolved(state, { allowFRSlot: true }), "only U layer + FR slot").toBe(true);
+  },
+};
+
+/** Reflect a 3x3 algorithm through the M plane: R<->L, and every turn reverses. */
+function mirrorLR(alg: string): string {
+  const swap: Record<string, string> = { R: "L", L: "R", U: "U", D: "D", F: "F", B: "B" };
+  return alg
+    .split(" ")
+    .map((token) => {
+      const face = swap[token[0]!] ?? token[0]!;
+      const suffix = token.slice(1);
+      if (suffix === "2") return `${face}2`;
+      return suffix === "'" ? face : `${face}'`;
+    })
+    .join(" ");
+}
+
+/** Slots whose piece or orientation differs from solved, per orbit. */
+function movedSlots(kit: SlotKit, pattern: KPattern): { EDGES: number[]; CORNERS: number[] } {
+  const of = (orbit: string): number[] => {
+    const now = pattern.patternData[orbit]!;
+    const home = kit.solved.patternData[orbit]!;
+    return home.pieces.flatMap((_: number, i: number) =>
+      now.pieces[i] !== home.pieces[i] || now.orientation[i] !== home.orientation[i] ? [i] : [],
+    );
+  };
+  return { EDGES: of("EDGES"), CORNERS: of("CORNERS") };
+}
+
+describe("the method's own algorithms are pinned by what they do", () => {
+  for (const [id, check] of Object.entries(TRIGGERS)) {
+    test(id, async () => {
+      expect(caseById.get(id), `${id} is not in the dataset`).toBeTruthy();
+      await check();
+    });
+  }
+
+  test("every `full` 3x3 case has a behavioural pin", () => {
+    const unpinned = ALL_CASES.filter(
+      (k) => k.puzzle === "3x3x3" && k.stickering === "full" && !(k.id in TRIGGERS),
+    ).map((k) => k.id);
+    expect(unpinned, "a `full` 3x3 case with no invariant and no pin ships unverified").toEqual([]);
+  });
+
+  test("the two 4x4 parity cases print the parity algorithms, byte for byte", () => {
+    // The rename to "OLL Parity (4×4)" / "PLL Parity (4×4)" is only honest if
+    // the algorithms really are the bare parity strings — JPerm's own names
+    // ("Pure-E") do not say so, and the strings arrive by two different routes:
+    // one curated in this file, one out of the extraction.
+    expect(primaryAlg(caseById.get("444.oll-parity")!)).toBe(
+      CASE_STATES.parityAlgs["4x4-oll-parity"]!.alg,
+    );
+    expect(primaryAlg(caseById.get("444.pll.pure-e")!)).toBe(
+      CASE_STATES.parityAlgs["4x4-pll-parity"]!.alg,
+    );
+    expect(primaryAlg(caseById.get("555.l2e-6")!)).toBe(
+      CASE_STATES.parityAlgs["5x5-edge-parity"]!.alg,
+    );
+  });
+});
 
 describe("every 3x3 algorithm satisfies its stickering's invariant", () => {
   for (const def of ALL_CASES.filter((k) => k.puzzle === "3x3x3")) {
@@ -1104,8 +1256,9 @@ describe("aspect-aware narrowing", () => {
     return k.puzzle === "3x3x3" && aspect !== "both";
   });
 
-  test("81 orientation/permutation cases are in scope", () => {
-    expect(relevant.length).toBe(81);
+  test("82 orientation/permutation cases are in scope", () => {
+    // 81 until `beginner.niklas` landed: it sits at `cp`, a permutation stage.
+    expect(relevant.length).toBe(82);
   });
 
   for (const def of relevant) {
@@ -1175,7 +1328,7 @@ describe("aspect-aware narrowing", () => {
 
 describe("the ladder is wired into every renderer", () => {
   test("contextForPlayer resolves the case an algorithm uniquely identifies", async () => {
-    // How /case/[...id] gets the ladder without restating it: 183 of the 185
+    // How /case/[...id] gets the ladder without restating it: 187 of the 189
     // cases are uniquely identified by (puzzle, stickering, algorithm).
     let resolved = 0;
     const unresolved: string[] = [];
@@ -1187,7 +1340,7 @@ describe("the ladder is wired into every renderer", () => {
         resolved++;
       } else unresolved.push(def.id);
     }
-    expect(resolved).toBe(183);
+    expect(resolved).toBe(187);
     // ...and the two it refuses are the pair that share `F R U R' U' F'` and
     // sit at DIFFERENT stages. Guessing between them is the yellow-cross bug.
     expect(unresolved.sort()).toEqual(["eo.line", "oll.45"]);

@@ -1,0 +1,225 @@
+---
+/**
+ * The whole vocabulary, in one place.
+ *
+ * Every entry here is also a live link inside the lessons: the first mention of
+ * a term in each lesson is rewritten to point at its anchor on this page (see
+ * scripts/rehype-glossary.mjs). So this is the destination of a few hundred
+ * links, and its anchors are a contract — the ids are derived from the term
+ * with `glossSlug`, the same function the plugin uses, and never written out.
+ */
+import Base from "../layouts/Base.astro";
+import Header from "../components/Header.astro";
+import Page from "../components/Page.astro";
+import EmptyState from "../components/EmptyState.astro";
+import { GLOSSARY, GLOSS_ENTRIES, glossByTerm, glossSlug } from "../data/glossary";
+
+// A cross-reference to a term that does not exist would be a dead anchor on a
+// page whose whole job is definitions. Fail the build instead.
+for (const entry of GLOSS_ENTRIES) {
+  for (const term of entry.see ?? []) {
+    if (!glossByTerm.has(term)) {
+      throw new Error(`glossary: "${entry.term}" cross-references unknown term "${term}"`);
+    }
+  }
+}
+
+/** Name + definition + variants, lowercased — what the filter matches on. */
+const searchText = (e: (typeof GLOSS_ENTRIES)[number]) =>
+  `${e.term} ${(e.also ?? []).join(" ")} ${e.short} ${e.long ?? ""}`.toLowerCase();
+---
+
+<Base
+  title="Glossary — Cubepath"
+  description="Every cubing term this course uses, defined in one sentence each."
+>
+  <Header active="glossary" />
+  <Page>
+    <h1>Glossary</h1>
+    <p class="lead">
+      {GLOSS_ENTRIES.length} terms this course uses, defined once each. Inside a lesson, the first mention
+      of any of them is underlined — hover it for the short version, or follow it here.
+    </p>
+
+    <div class="toolbar">
+      <input
+        type="search"
+        class="search"
+        data-gloss-search
+        placeholder="Filter — a term or a word from its definition"
+        aria-label="Filter glossary terms"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <p class="hint count" role="status" data-gloss-count></p>
+    </div>
+
+    <div class="noresults" data-gloss-empty hidden>
+      <EmptyState glyph="⌕" title="No term matches that">
+        Try <em>parity</em>, <em>headlights</em>, or <em>slot</em>.
+      </EmptyState>
+    </div>
+
+    {
+      GLOSSARY.map((group) => (
+        <section id={glossSlug(group.title)} data-gloss-group>
+          <h2>{group.title}</h2>
+          <p class="lead">{group.blurb}</p>
+          <dl>
+            {group.entries.map((entry) => (
+              <div class="entry" id={glossSlug(entry.term)} data-search={searchText(entry)}>
+                <dt>
+                  {entry.term}
+                  {entry.also && entry.also.length > 0 && (
+                    <span class="also"> · also {entry.also.join(", ")}</span>
+                  )}
+                </dt>
+                <dd>
+                  <p class="short">{entry.short}</p>
+                  {entry.long && <p class="long">{entry.long}</p>}
+                  <p class="links">
+                    {entry.href && (
+                      <a class="chip" href={entry.href}>
+                        Where it is taught
+                      </a>
+                    )}
+                    {(entry.see ?? []).map((term) => (
+                      <a class="chip ghost see" href={`#${glossSlug(term)}`}>
+                        {term}
+                      </a>
+                    ))}
+                  </p>
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      ))
+    }
+  </Page>
+</Base>
+
+<script>
+  // Same shape as /reference's filter and for the same reasons: everything it
+  // matches on is already in the DOM as `data-search`, so there is no index to
+  // fetch and it works offline. `hidden` is what tokens.css backs with
+  // `display: none !important`.
+  const search = document.querySelector<HTMLInputElement>("[data-gloss-search]");
+  const countOut = document.querySelector<HTMLElement>("[data-gloss-count]");
+  const noResults = document.querySelector<HTMLElement>("[data-gloss-empty]");
+  const entries = [...document.querySelectorAll<HTMLElement>("[data-search]")];
+  const groups = [...document.querySelectorAll<HTMLElement>("[data-gloss-group]")];
+
+  function apply(raw: string): void {
+    const needle = raw.trim().toLowerCase();
+    let shown = 0;
+    for (const el of entries) {
+      const hit = needle === "" || (el.dataset.search ?? "").includes(needle);
+      el.hidden = !hit;
+      if (hit) shown += 1;
+    }
+    for (const group of groups) group.hidden = !group.querySelector("[data-search]:not([hidden])");
+    if (noResults) noResults.hidden = shown > 0;
+    if (countOut) {
+      countOut.textContent = needle === "" ? "" : `${shown} ${shown === 1 ? "term" : "terms"}`;
+    }
+  }
+
+  if (search) {
+    search.addEventListener("input", () => apply(search.value));
+    if (search.value) apply(search.value);
+  }
+</script>
+
+<style>
+  h1 {
+    margin-block-end: var(--space-2);
+  }
+  .lead {
+    max-inline-size: var(--measure-prose);
+  }
+  .toolbar {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-3);
+    margin: var(--space-4) 0 var(--space-5);
+  }
+  .search {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    max-inline-size: 30rem;
+    font: inherit;
+    color: var(--ink);
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--r-sm);
+    padding: var(--space-2) var(--space-3);
+  }
+  .count {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .noresults {
+    margin-block: var(--space-5);
+  }
+  section {
+    margin-block-start: var(--space-7);
+    scroll-margin-block-start: var(--space-6);
+  }
+  h2 {
+    margin-block-end: var(--space-2);
+  }
+  dl {
+    margin: var(--space-4) 0 0;
+  }
+  .entry {
+    padding-block: var(--space-4);
+    border-block-start: 1px solid var(--line);
+    /* An anchor jump lands under the sticky site header. */
+    scroll-margin-block-start: calc(var(--hdr-h, 47px) + var(--space-4));
+  }
+  .entry:target {
+    background: var(--accent-soft);
+    border-radius: var(--r-md);
+    padding-inline: var(--space-3);
+    margin-inline: calc(-1 * var(--space-3));
+  }
+  dt {
+    font-weight: 600;
+    font-size: var(--text-lg);
+  }
+  .also {
+    font-weight: 400;
+    font-size: var(--text-sm);
+    color: var(--faint);
+  }
+  dd {
+    margin: var(--space-1) 0 0;
+    max-inline-size: var(--measure-prose);
+  }
+  .short {
+    margin: 0;
+  }
+  .long {
+    margin: var(--space-2) 0 0;
+    color: var(--soft);
+    font-size: var(--text-sm);
+  }
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: var(--space-3) 0 0;
+  }
+  .links a {
+    text-decoration: none;
+  }
+  .links a:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .see::before {
+    content: "→ ";
+    color: var(--faint);
+  }
+</style>
