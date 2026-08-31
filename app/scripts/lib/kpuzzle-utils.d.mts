@@ -34,3 +34,14 @@ export interface SlotKit extends Kit {
 }
 
 export declare function makeSlotKit(kpuzzle: KPuzzle, kit?: Kit): SlotKit;
+
+/**
+ * A copy of a pattern's data whose orbits share no arrays.
+ *
+ * `structuredClone` is NOT safe: cubing.js gives every orbit of the same length
+ * the SAME zero-filled orientation array, and a clone preserves that aliasing.
+ * See the implementation's comment for the bug it caused.
+ */
+export declare function unaliasedCopy(
+  data: Record<string, { pieces: number[]; orientation: number[] }>,
+): Record<string, { pieces: number[]; orientation: number[] }>;

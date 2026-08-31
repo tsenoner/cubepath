@@ -71,6 +71,11 @@ const slug = (s) =>
  * @type {Record<string, string>}
  */
 const TAUGHT_BIG_CUBE = {
+  // KEY-ONLY. This generator never builds the id `444.oll-parity` — it emits
+  // `444.oll.<slug>`, `444.pll.<slug>` and `555.<slug>` — because OLL parity is
+  // a CURATED case, and src/data/algs.ts owns its icon. The row is here so the
+  // three-language gate can compare one list of ids; test_diagrams.py asserts
+  // this path against the curated one, so the two literals cannot drift.
   "444.oll-parity": "/diagrams/444-parity/444_oll_parity.svg",
   "444.pll.pure-e": "/diagrams/444-parity/444_pll_pure_e.svg",
   "555.l2e-6": "/diagrams/555-parity/555_l2e_6.svg",

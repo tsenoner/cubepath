@@ -506,7 +506,7 @@ def diagram_name(case_id: str) -> str:
     return case_id.replace(".", "_").replace("-", "_")
 
 
-def plan_oll_cases(set_name: str, category: str, ids: set[str] | None = None) -> list[CubeDiagram]:
+def plan_oll_cases(set_name: str, category: str) -> list[CubeDiagram]:
     """OLL diagrams for a whole set, straight from the exported states: yellow
     where the last layer is already oriented, grey where it is not.
 
@@ -518,7 +518,7 @@ def plan_oll_cases(set_name: str, category: str, ids: set[str] | None = None) ->
     construction.
     """
     cases = []
-    for case in _states_of(set_name, ids):
+    for case in _states_of(set_name):
         u, sides = _case_plan_view(case)
         cases.append(
             CubeDiagram(
@@ -673,12 +673,6 @@ def l2e_cases() -> list[CubeDiagram]:
         # ends of every side band. Derived from n, so it holds at any order.
         u_corners = {0, n - 1, n * (n - 1), n * n - 1}
 
-        def strip(side: str, side_masks: dict[str, list[str]] = side_masks) -> list[str]:
-            return [
-                _l2e_tier(colour, mask, i in (0, n - 1))
-                for i, (colour, mask) in enumerate(zip(sides[side], side_masks[side], strict=True))
-            ]
-
         cases.append(
             CubeDiagram(
                 name=diagram_name(case["id"]),
@@ -689,10 +683,10 @@ def l2e_cases() -> list[CubeDiagram]:
                     _l2e_tier(colour, mask, i in u_corners)
                     for i, (colour, mask) in enumerate(zip(u, u_mask, strict=True))
                 ],
-                top_side=strip("top"),
-                right_side=strip("right"),
-                bottom_side=strip("bottom"),
-                left_side=strip("left"),
+                top_side=_l2e_strip(sides["top"], side_masks["top"]),
+                right_side=_l2e_strip(sides["right"], side_masks["right"]),
+                bottom_side=_l2e_strip(sides["bottom"], side_masks["bottom"]),
+                left_side=_l2e_strip(sides["left"], side_masks["left"]),
             )
         )
     return cases
@@ -707,6 +701,16 @@ def _l2e_tier(colour_letter: str, mask: str, is_corner: bool) -> str:
     if mask != ".":
         return _SIM_COLOR[colour_letter]
     return UNREACHED if is_corner else dim(_SIM_COLOR[colour_letter])
+
+
+def _l2e_strip(colours: list[str], masks: list[str]) -> list[str]:
+    """One side band of an L2E plan view. Its two ends are the band's corners,
+    derived from its own length so it holds at any order."""
+    last = len(colours) - 1
+    return [
+        _l2e_tier(colour, mask, i in (0, last))
+        for i, (colour, mask) in enumerate(zip(colours, masks, strict=True))
+    ]
 
 
 def render_big_sets(output_dir: Path) -> int:

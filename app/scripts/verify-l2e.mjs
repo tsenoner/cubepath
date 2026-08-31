@@ -78,7 +78,7 @@ import { Alg } from "cubing/alg";
 import { KPattern } from "cubing/kpuzzle";
 import { puzzles } from "cubing/puzzles";
 
-import { makeKit } from "./lib/kpuzzle-utils.mjs";
+import { makeKit, unaliasedCopy } from "./lib/kpuzzle-utils.mjs";
 
 // ---------------------------------------------------------------------------
 // Pinned data — SCDB 5x5 L2E, algs in page order (top-voted first).
@@ -340,36 +340,6 @@ for (const slot of SLOT_NAMES) VALID[slot] = new Set();
 for (const r of ROTATION_T) {
   const p = solved.applyTransformation(r);
   for (const slot of SLOT_NAMES) VALID[slot].add(arrKey(p, slot));
-}
-
-/**
- * A copy of a solved pattern's data whose orbits share no arrays.
- *
- * `structuredClone` is NOT safe here and this is not a style preference.
- * cubing.js's `defaultPattern()` hands every orbit of the same length the SAME
- * zero-filled orientation array — on the 5x5, EDGES, CENTERS and CENTERS2 are
- * all 24 slots and all three are literally one array — and `structuredClone`
- * faithfully preserves that aliasing. So `synth.EDGES.orientation[i] = 1` also
- * wrote CENTERS.orientation[i] and CENTERS2.orientation[i].
- *
- * It was invisible: `centersSolved` compares pieces only, and CENTERS has
- * numOrientations 1, so a bogus centre orientation changes no check and no
- * picture. It stops being invisible the moment the pattern is EXPORTED —
- * `deltaOf` reads orientation, and every case came out claiming centre twists
- * it does not have. Asserted below rather than trusted.
- *
- * @param {Record<string, { pieces: number[]; orientation: number[] }>} data
- */
-function unaliasedCopy(data) {
-  /** @type {Record<string, { pieces: number[]; orientation: number[] }>} */
-  const out = {};
-  for (const orbit of Object.keys(data)) {
-    out[orbit] = {
-      pieces: [...data[orbit].pieces],
-      orientation: [...data[orbit].orientation],
-    };
-  }
-  return out;
 }
 
 /**

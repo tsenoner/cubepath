@@ -117,7 +117,7 @@ import { Alg } from "cubing/alg";
 import { KPattern } from "cubing/kpuzzle";
 import { puzzles } from "cubing/puzzles";
 
-import { makeKit } from "./lib/kpuzzle-utils.mjs";
+import { makeKit, unaliasedCopy } from "./lib/kpuzzle-utils.mjs";
 
 /**
  * The types are written here rather than inferred: `checkJs` runs over this
@@ -130,7 +130,8 @@ import { makeKit } from "./lib/kpuzzle-utils.mjs";
  * NOTE: `KPattern` is NOT aliased to `any` here — the real class is imported
  * above (patchedState constructs one), and a typedef of the same name would
  * collide with the import.
- * @typedef {{ ROTATION_T: any[]; centersSolved: (pattern: KPattern) => boolean }} Kit
+ * @typedef {{ ROTATION_T: any[]; centersSolved: (pattern: KPattern) => boolean;
+ *             toT: (s: string) => any; rightRotNormalize: (t: any) => any }} Kit
  * @typedef {{ puzzleId: string; kpuzzle: KPuzzle; n: number;
  *             faces: Record<string, FaceGrid>; solved: KPattern }} Model
  * @typedef {{ face: string; index: number }} Address
@@ -613,18 +614,7 @@ function setupState(model, kit, setup) {
  * @param {Delta[]} deltas
  */
 function patchedState(model, kit, deltas) {
-  /** @type {Record<string, { pieces: number[]; orientation: number[] }>} */
-  const data = {};
-  // Per-orbit copies, never `structuredClone`: cubing.js hands every orbit of
-  // the same length ONE zero-filled orientation array (on a 5x5, EDGES,
-  // CENTERS and CENTERS2 are all 24 slots and all three are the same array),
-  // and a clone preserves that aliasing. See verify-l2e.mjs `unaliasedCopy`.
-  for (const orbit of Object.keys(model.solved.patternData)) {
-    data[orbit] = {
-      pieces: [...model.solved.patternData[orbit].pieces],
-      orientation: [...model.solved.patternData[orbit].orientation],
-    };
-  }
+  const data = unaliasedCopy(model.solved.patternData);
   for (const d of deltas) {
     const orbit = data[d.orbit];
     if (!orbit) throw new Error(`displayed state names unknown orbit ${d.orbit}`);
@@ -772,14 +762,7 @@ function flippedPairState(model, kit, alg) {
   /** @type {KPattern[]} */
   const flipped = [];
   for (const ori of [0, 1]) {
-    /** @type {Record<string, { pieces: number[]; orientation: number[] }>} */
-    const data = {};
-    for (const orbit of Object.keys(solved)) {
-      data[orbit] = {
-        pieces: [...solved[orbit].pieces],
-        orientation: [...solved[orbit].orientation],
-      };
-    }
+    const data = unaliasedCopy(solved);
     data.EDGES.pieces[a] = solved.EDGES.pieces[b];
     data.EDGES.pieces[b] = solved.EDGES.pieces[a];
     data.EDGES.orientation[a] = ori;
@@ -822,7 +805,7 @@ function flippedPairState(model, kit, alg) {
   // the U face is one colour. Measured, this algorithm leaves two edge pairs
   // swapped AND two corners twisted — you finish OLL after firing it, which is
   // why parity is a class you leave rather than a case an algorithm solves.
-  const after = pattern.applyTransformation(rotNormalize(model, kit, alg));
+  const after = pattern.applyTransformation(kit.rightRotNormalize(kit.toT(alg)));
   if (wingParity(pattern) !== 1) {
     throw new Error(`${model.puzzleId}: the built flipped-pair state is not odd on wings`);
   }
@@ -837,20 +820,6 @@ function flippedPairState(model, kit, alg) {
     }
   }
   return { pattern, preRotation: "" };
-}
-
-/**
- * An algorithm's transformation with any net whole-cube rotation cancelled on
- * the RIGHT — the forward-state side. @param {Model} model @param {Kit} kit
- * @param {string} alg
- */
-function rotNormalize(model, kit, alg) {
-  const t = model.kpuzzle.algToTransformation(new Alg(alg));
-  for (const rotation of kit.ROTATION_T) {
-    const candidate = t.applyTransformation(rotation);
-    if (kit.centersSolved(model.solved.applyTransformation(candidate))) return candidate;
-  }
-  throw new Error(`no rotation brings centres home after ${alg}`);
 }
 
 /**

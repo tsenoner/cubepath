@@ -1405,13 +1405,9 @@ def test_the_f2l_set_is_fully_iconed() -> None:
 
 
 def _444_parity_cases() -> list[CubeDiagram]:
-    """The two 4x4 pictures `parity_cases()` produces — the third is the 5x5."""
+    """The two 4x4 pictures `parity_cases()` produces — the third is the 5x5.
+    Everything 4x4 that reaches the tree."""
     return [c for c in parity_cases() if c.n == 4]
-
-
-def _444_shipped() -> list[CubeDiagram]:
-    """Everything 4x4 that reaches the tree. Two files."""
-    return _444_parity_cases()
 
 
 # The 4x4 views the renderer is checked against. `big_oll_cases`/`big_pll_cases`
@@ -1792,7 +1788,7 @@ def test_every_shipped_four_by_four_diagram_is_present_and_four_wide() -> None:
     """Asserted over the shipped tree: a 4x4 diagram that silently regressed to
     a 3x3 grid would still be a valid, themed, plausible SVG."""
     svgs = sorted((_APP_SVG / "444-parity").glob("*.svg"))
-    assert {p.stem for p in svgs} == {c.name for c in _444_shipped()}
+    assert {p.stem for p in svgs} == {c.name for c in _444_parity_cases()}
     for svg in svgs:
         content = svg.read_text()
         # 16 U cells + 4 bands of 4 + the plate.
@@ -1821,7 +1817,7 @@ def test_the_four_by_four_sets_are_fully_iconed() -> None:
     filename the same way. Nothing but a test makes the two agree."""
     text = _declared_icons()
     icons = re.findall(r'"/diagrams/444-parity/([a-z0-9_]+\.svg)"', text)
-    assert sorted(icons) == sorted(f"{c.name}.svg" for c in _444_shipped())
+    assert sorted(icons) == sorted(f"{c.name}.svg" for c in _444_parity_cases())
 
 
 def test_the_5x5_parity_picture_is_drawn_and_iconed() -> None:
@@ -1873,7 +1869,20 @@ def test_the_three_taught_big_cube_cases_are_the_same_three_everywhere() -> None
     gen = (_REPO / "app" / "scripts" / "gen-cases.mjs").read_text()
     table = re.search(r"const TAUGHT_BIG_CUBE = \{(.*?)\};", gen, re.S)
     assert table, "gen-cases.mjs no longer declares TAUGHT_BIG_CUBE"
-    assert set(re.findall(r'"([\w.-]+)":\s*"/diagrams/', table.group(1))) == set(TAUGHT_BIG_CUBE)
+    icons = dict(re.findall(r'"([\w.-]+)":\s*"(/diagrams/[^"]+)"', table.group(1)))
+    assert set(icons) == set(TAUGHT_BIG_CUBE)
+
+    # ...and the VALUES have to be live too. `444.oll-parity` is the one id the
+    # generator cannot build (it is curated in algs.ts, which carries its own
+    # icon), so its path here is a second copy of that literal. Compare them, or
+    # renaming the SVG in one file would leave the other silently wrong.
+    curated = _CURATED_TS.read_text()
+    for case_id, icon in icons.items():
+        block = re.search(rf'id:\s*"{re.escape(case_id)}",\s*\n\s*icon:\s*"([^"]+)"', curated)
+        if block:
+            assert block.group(1) == icon, (
+                f"{case_id}: algs.ts says {block.group(1)}, gen-cases.mjs says {icon}"
+            )
 
     # unlocks.ts: the ids it keeps visible while the one-look sets are locked.
     unlocks = (_REPO / "app" / "src" / "lib" / "unlocks.ts").read_text()
@@ -1899,18 +1908,19 @@ def test_a_diagram_cannot_disagree_with_its_own_cube_order() -> None:
     from cubepath.diagrams import CubeDiagram
 
     with pytest.raises(ValueError, match="U facelets"):
-        CubeDiagram(name="x", label="x", category="444_oll", u_face=[YELLOW] * 9, n=4)
+        CubeDiagram(name="x", label="x", category="444_parity", u_face=[YELLOW] * 9, n=4)
     with pytest.raises(ValueError, match="has 3 cells"):
         CubeDiagram(
             name="x",
             label="x",
-            category="444_oll",
+            category="444_parity",
             u_face=[YELLOW] * 16,
             top_side=[YELLOW] * 3,
             n=4,
         )
     # An unstated band still fills to the right width for the cube it is on.
-    assert CubeDiagram(name="x", label="x", category="444_oll", u_face=[YELLOW] * 16, n=4).left_side
+    bare = CubeDiagram(name="x", label="x", category="444_parity", u_face=[YELLOW] * 16, n=4)
+    assert bare.left_side
 
 
 def test_an_unknown_category_cannot_be_written_to_the_tree_root() -> None:

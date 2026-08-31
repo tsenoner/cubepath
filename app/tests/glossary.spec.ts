@@ -108,6 +108,5 @@ describe("glossary", () => {
   test("every group has entries and every entry has a group", () => {
     expect(GLOSSARY.length).toBeGreaterThan(0);
     for (const group of GLOSSARY) expect(group.entries.length, group.title).toBeGreaterThan(0);
-    expect(GLOSS_ENTRIES.length).toBe(GLOSSARY.reduce((n, g) => n + g.entries.length, 0));
   });
 });

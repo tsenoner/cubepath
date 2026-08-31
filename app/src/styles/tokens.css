@@ -397,7 +397,7 @@ h3 {
   padding: var(--space-2) var(--space-3);
   background: var(--card);
   color: var(--ink);
-  border: 1px solid var(--line-firm, var(--line));
+  border: 1px solid var(--line);
   border-radius: var(--r-sm);
   box-shadow: 0 6px 20px rgb(0 0 0 / 18%);
   font-size: var(--text-sm);
@@ -421,11 +421,4 @@ h3 {
 .gloss:hover::after,
 .gloss:focus-visible::after {
   display: block;
-}
-/* A term in the first line of a lesson would open its card off the top of the
-   viewport. Below-the-term is the fallback the plugin cannot decide for us, so
-   it is offered as a class the page can set on a container. */
-.gloss-below .gloss::after {
-  inset-block-end: auto;
-  inset-block-start: calc(100% + 8px);
 }

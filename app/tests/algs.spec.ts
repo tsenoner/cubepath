@@ -111,11 +111,15 @@ function caseStateOf(kit: SlotKit, alg: string) {
   return kit.solved.applyTransformation(kit.leftRotNormalize(kit.toT(alg).invert()));
 }
 
+/** The state an algorithm LEAVES, rotation-normalized — `caseStateOf`'s forward twin. */
+function forwardStateOf(kit: SlotKit, alg: string) {
+  return kit.solved.applyTransformation(kit.rightRotNormalize(kit.toT(alg)));
+}
+
 /** Assert the stickering's invariant on the forward-applied, rotation-normalized state. */
 async function checkStickeringInvariant(def: CaseDef, moves: string): Promise<void> {
   const kit = await kit3();
-  const t = kit.rightRotNormalize(kit.toT(moves)); // toT throws on illegal moves
-  const pattern = kit.solved.applyTransformation(t);
+  const pattern = forwardStateOf(kit, moves); // toT throws on illegal moves
   switch (def.stickering) {
     case "OLL":
     case "OCLL":
@@ -165,7 +169,7 @@ const TRIGGERS: Record<string, () => Promise<void>> = {
     expect(alg).toBe("R U R' U'");
     // white-corners.mdx: "R lifts the front-right corner slot into the top" —
     // so the first layer outside that one slot has to survive it.
-    const state = kit.solved.applyTransformation(kit.rightRotNormalize(kit.toT(alg)));
+    const state = forwardStateOf(kit, alg);
     expect(kit.outsideSolved(state, { allowFRSlot: true }), "only U layer + FR slot").toBe(true);
     // orient-corners.mdx: "Six righty triggers in a row return the cube exactly
     // to where it started." That is the whole reason the step's mess repairs
@@ -179,7 +183,7 @@ const TRIGGERS: Record<string, () => Promise<void>> = {
     // actual mirror rather than eyeballed: reflecting a cube algorithm through
     // the M plane swaps R with L and reverses every turn.
     expect(mirrorLR("R U R' U'")).toBe(alg);
-    const state = kit.solved.applyTransformation(kit.rightRotNormalize(kit.toT(alg)));
+    const state = forwardStateOf(kit, alg);
     expect(kit.outsideSolved(state, { allowFRSlot: true }), "does NOT work the FR slot").toBe(
       false,
     );
@@ -189,7 +193,7 @@ const TRIGGERS: Record<string, () => Promise<void>> = {
     const kit = await kit3();
     const alg = primaryAlg(caseById.get("beginner.niklas")!);
     // position-corners.mdx: "The bottom two layers come back untouched."
-    const state = kit.solved.applyTransformation(kit.rightRotNormalize(kit.toT(alg)));
+    const state = forwardStateOf(kit, alg);
     expect(kit.outsideSolved(state, { allowFRSlot: false }), "preserves the first two layers").toBe(
       true,
     );
@@ -198,7 +202,7 @@ const TRIGGERS: Record<string, () => Promise<void>> = {
     // and cycles the other three". Every U edge is left where it was, which is
     // what makes this the right tool at a step where the edges are already
     // aligned and a bare U turn would wreck them.
-    const squared = kit.solved.applyTransformation(kit.rightRotNormalize(kit.toT(`${alg} U`)));
+    const squared = forwardStateOf(kit, `${alg} U`);
     const moved = movedSlots(kit, squared);
     expect(moved.EDGES, "Niklas + U leaves every edge alone").toEqual([]);
     expect(moved.CORNERS.length, "Niklas + U moves exactly three corners").toBe(3);
@@ -224,14 +228,14 @@ const TRIGGERS: Record<string, () => Promise<void>> = {
     // big-cube behaviour — centres untouched, the FR group turned over, every
     // other group intact — is pinned in scripts/verify-l2e.mjs.
     const kit = await kit3();
-    const state = kit.solved.applyTransformation(kit.rightRotNormalize(kit.toT(alg)));
+    const state = forwardStateOf(kit, alg);
     expect(kit.outsideSolved(state, { allowFRSlot: true }), "only U layer + FR slot").toBe(true);
   },
 };
 
 /** Reflect a 3x3 algorithm through the M plane: R<->L, and every turn reverses. */
 function mirrorLR(alg: string): string {
-  const swap: Record<string, string> = { R: "L", L: "R", U: "U", D: "D", F: "F", B: "B" };
+  const swap: Record<string, string> = { R: "L", L: "R" };
   return alg
     .split(" ")
     .map((token) => {

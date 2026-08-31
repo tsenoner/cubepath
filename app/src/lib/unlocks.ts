@@ -1,19 +1,24 @@
 /**
- * Unlockable sets — case data that ships in the repo, verified and diagrammed,
- * but is deliberately not surfaced in the UI yet.
+ * Unlockable sets — case data that ships in the repo, verified, but
+ * deliberately not surfaced in the UI yet.
  *
  * ┌─ THE SWITCH ────────────────────────────────────────────────────────────┐
  * │ Flip a value in `UNLOCKED` below to `true` and the set reappears        │
  * │ everywhere at once: the trainer's set list, its pool and its counts,    │
- * │ the /reference sections, and the /case/<id> pages. That is the whole    │
- * │ change — there is no second place to edit.                              │
+ * │ the /reference sections, and the /case/<id> pages.                      │
  * └─────────────────────────────────────────────────────────────────────────┘
  *
  * Everything else in the app asks `isLocked()`; nothing re-derives the rule.
- * The data itself is untouched by this file — `src/data/extracted/*.json`,
- * `fullsets*.gen.ts` and the generated diagrams all keep every case, so
- * unlocking needs no regeneration and the algorithm tests keep verifying the
- * hidden algs exactly as before.
+ * The case DATA is untouched by this file — `src/data/extracted/*.json` and
+ * `fullsets*.gen.ts` keep every case, so the algorithm tests keep verifying
+ * the hidden algs exactly as before.
+ *
+ * THE DIAGRAMS ARE THE EXCEPTION, and it is the one second place to edit.
+ * The 61 SVGs for these sets were reachable from no page at all and are no
+ * longer generated, so an unlocked set renders through /reference's "no
+ * diagrams for this set yet" fallback until a diagram group is added back to
+ * `fullsets.render_big_sets` (see `TAUGHT_BIG_CUBE` there). Flipping a boolean
+ * here restores every other surface; it does not restore the pictures.
  */
 import type { CaseDef } from "../data/algs";
 

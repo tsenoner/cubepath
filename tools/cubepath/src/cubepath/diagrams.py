@@ -2450,16 +2450,18 @@ def _web_steps() -> list[StepDiagram]:
     # milestone on either ladder — it is where the two 2-look halves meet, so
     # the subject is the U face and everything under it is the dim tier.
     oll_done = _SECOND_LAYER | {("U", a, b) for a in range(3) for b in range(3)}
-    big = []
-    for n in (4, 5):
-        # Centres are the interior of each face at any order: everything but
-        # the outermost ring, which is corners and edges.
-        centres = {(f, a, b) for f in "UFR" for a in range(1, n - 1) for b in range(1, n - 1)}
-        big.append(
-            StepDiagram(
-                f"{n}x{n} centres", f"step_{n}{n}{n}_centres", centres, subject=centres, n=n
-            )
+
+    def centres(n: int) -> set[tuple[str, int, int]]:
+        """The interior of each visible face at any order: everything but the
+        outermost ring, which is corners and edges."""
+        return {(f, a, b) for f in "UFR" for a in range(1, n - 1) for b in range(1, n - 1)}
+
+    big = [
+        StepDiagram(
+            f"{n}x{n} centres", f"step_{n}{n}{n}_centres", centres(n), subject=centres(n), n=n
         )
+        for n in (4, 5)
+    ]
     # The edge flip's subject is the front-right edge pair — the piece it turns
     # over. On a 4x4 that is the two middle cells of F's rightmost column and of
     # R's frontmost column; both run off `n`, so the coordinates are arithmetic
@@ -2467,9 +2469,7 @@ def _web_steps() -> list[StepDiagram]:
     # outer turns so it cannot touch them); everything else is grey, because at
     # pairing time the method has not reached the corners.
     flip_n = 4
-    flip_centres = {
-        (f, a, b) for f in "UFR" for a in range(1, flip_n - 1) for b in range(1, flip_n - 1)
-    }
+    flip_centres = centres(flip_n)
     # Both halves sit at the LAST index of their face's `a` axis, and that is
     # not a coincidence to be simplified away: on F, `a` runs left-to-right so
     # `a = n-1` is the edge shared with R; on R, `a` runs back-to-front (see

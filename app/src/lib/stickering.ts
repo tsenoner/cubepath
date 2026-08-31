@@ -201,17 +201,6 @@ export async function hasHomeOrientation(puzzle: Puzzle, alg: string): Promise<b
 }
 
 /**
- * Which pieces the algorithm fixes, per orbit, in home-slot order — i.e. the
- * pieces that are NOT already solved in the state the player starts from,
- * taken in the standard frame (see `caseState`) so that an algorithm written
- * with a whole-cube rotation reports the pieces it really moves.
- *
- * `aspect` is the stage's, and it decides what "solved" means here: an
- * orientation stage asks only whether the piece is twisted, a permutation stage
- * only whether it is in the wrong slot. Without a stage (no ladder context) the
- * question is `both`, which is what shipped before.
- */
-/**
  * Cases whose real state is NOT `solved · alg⁻¹`, keyed by their algorithm.
  *
  * This is the 5x5 last-two-edges set, and it is the one place where "what the
@@ -234,15 +223,25 @@ export async function hasHomeOrientation(puzzle: Puzzle, alg: string): Promise<b
  * `contextForPlayer` already resolves cases by, and the 13 L2E strings collide
  * with nothing (tests/algs.spec.ts pins that triples are near-unique).
  */
-const HOLDS: Record<string, { orbit: string; slot: number; piece: number; orientation: number }[]> =
-  Object.fromEntries(
-    (L2E_RAW as { algs: string[]; displayed?: Delta[] }[]).flatMap((c) =>
-      c.displayed && c.algs[0] ? [[c.algs[0], c.displayed] as const] : [],
-    ),
-  );
-
 type Delta = { orbit: string; slot: number; piece: number; orientation: number };
 
+const HOLDS: Record<string, Delta[]> = Object.fromEntries(
+  (L2E_RAW as { algs: string[]; displayed?: Delta[] }[]).flatMap((c) =>
+    c.displayed && c.algs[0] ? [[c.algs[0], c.displayed] as const] : [],
+  ),
+);
+
+/**
+ * Which pieces the algorithm fixes, per orbit, in home-slot order — i.e. the
+ * pieces that are NOT already solved in the state the player starts from,
+ * taken in the standard frame (see `caseState`) so that an algorithm written
+ * with a whole-cube rotation reports the pieces it really moves.
+ *
+ * `aspect` is the stage's, and it decides what "solved" means here: an
+ * orientation stage asks only whether the piece is twisted, a permutation stage
+ * only whether it is in the wrong slot. Without a stage (no ladder context) the
+ * question is `both`, which is what shipped before.
+ */
 async function touchedSlots(
   puzzle: Puzzle,
   alg: string,
