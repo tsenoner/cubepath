@@ -1082,6 +1082,16 @@
     },
     {
       "kind": "exact",
+      "key": "444-centers",
+      "stage": "444-centers"
+    },
+    {
+      "kind": "exact",
+      "key": "555-centers",
+      "stage": "555-centers"
+    },
+    {
+      "kind": "exact",
       "key": "beginner-triggers",
       "stage": "f1l"
     },

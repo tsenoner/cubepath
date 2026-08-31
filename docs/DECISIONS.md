@@ -1116,3 +1116,55 @@ The abbreviation itself is gone from reader-facing prose. The card set already
 bans that class of shorthand — `glossary.py`'s `BANNED` maps "dedge" to "edge
 pair" for the same reason — and "L2E" was appearing unexpanded twice in a lesson
 body. Data and verifier filenames keep it, because there it is provenance.
+
+## Checked against J Perm's own tutorials (Aug 2026)
+
+The transcripts of J Perm's 4×4 and 5×5 beginner videos are in
+`docs/other_guides/jperm/` (git-ignored — not ours to redistribute). Three
+questions were checked against them directly rather than from memory.
+
+**Does Cubepath teach the 4×4 in his order?** No, and deliberately. His 4×4
+video is a **Yau** tutorial from the first minute: white centre, yellow centre,
+three cross dedges, last four centres, remaining dedges, 3×3, OLL parity, PLL
+parity. Cubepath teaches plain reduction (all centres, all dedges, 3×3, parity)
+and offers Yau as the upgrade in `444-yau-intro`, whose opening callout already
+says so in as many words. Plain reduction is the easier ladder — Yau's last-four-
+centres step has to preserve a partial cross, which is a constraint a first-time
+solver has no reason to carry — and his own 5×5 *beginner* video teaches plain
+reduction, so he is not consistent across the two either. Everything else lines
+up: bars for centres, storing with an unpaired dedge as the replacement, the
+2-then-3-2-3 rhythm, the flip for the last two, OLL parity before PLL parity.
+One gotcha of his is deliberately absent — the colour-ring check ("after blue
+goes orange") — because it only bites in Yau, where the side centres do not
+exist yet when you place a cross dedge. Under reduction the centres are already
+built, so you match colours to them.
+
+**Can the centre insert have a reference entry when it is not an algorithm?**
+Yes, and it now does — `444.center-insert` and `555.center-insert`. This was the
+last gap in the same complaint the rest of this section is about: /reference is
+the index of everything the course teaches, and half of every big-cube solve was
+missing from it because the technique had no algorithm to file under.
+
+Three options were weighed. Printing ONE instance as "the centre algorithm" was
+rejected — it is exactly the mistake the source warns against, and a learner who
+memorises `Rw U Rw'` is stuck the moment the piece is in another column.
+Randomising the shown instance ("a different example each visit") was rejected
+too: it makes the page unreproducible, unscreenshotable and untestable, and the
+randomness belongs in the trainer if anywhere. What shipped is a row that shows
+the SHAPE and several worked instances, each noted with what varies — the grab
+on one, the middle turn on another — so the constant and the variable are
+visible side by side rather than one being mistaken for the other.
+
+The instances were chosen by MEASUREMENT, not by taste. Every one disturbs
+exactly two faces' centres and returns the other four, on both cubes, and that
+is the pinned property. `M U M'` earns the separate 5×5 entry on the same
+evidence: it moves four `+` centre pieces and no `×` centres, which is precisely
+how it reaches the middle column that a two-wide grab cannot touch. No trainer
+set — practice for centres is correctly wired as a trainer NOTE ("scramble,
+solve all six centres, scramble again"), and a recall drill for something you
+aim would teach the wrong reflex.
+
+**Jargon is allowed now.** The site wrote plain phrases and glossed them inline;
+with a hover card on every first mention, `dedge` is the headword and `edge
+pair` the alias. The printed cards keep the ban (`glossary.py`'s `BANNED`),
+because paper has no hover — that split is the point, not an oversight.

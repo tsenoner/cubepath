@@ -200,6 +200,29 @@ the flip is seven outer turns legal on both big cubes. A `full` 3×3 case with n
 behavioural pin fails the build, so this cannot become a way in for an
 unverified algorithm.
 
+One goes further: **`444.center-insert` / `555.center-insert` are a TECHNIQUE**,
+and the only entries whose `algs` are worked INSTANCES rather than variants of
+one algorithm. J Perm says so while teaching it — *"it's not necessarily one
+algorithm, but this pattern will apply no matter which pieces you're trying to
+move into here"* — so presenting one instance as "the algorithm" would be the
+failure the technique is defined against. The row shows three, each `note`d with
+what varies. What is constant is the SHAPE (take a column away, do the turn you
+wanted, put the column back) and the property that makes it safe: the outer
+beats cancel, so **exactly two faces' centres are disturbed and the other four
+come home**. That is measured per instance on both cubes in
+`tests/algs.spec.ts`, not asserted in prose. The 5×5 entry exists separately
+because its middle column cannot be reached by a two-wide grab at all — `M U M'`
+is the one genuinely new move a 5×5 asks for.
+
+**Jargon is allowed now, because the glossary is hoverable.** The site used to
+write the plain phrase and gloss it inline ("edge pair (two edges glued into
+one; cubers write *dedge*)"). With a definition one hover away on every first
+mention, the word a learner will meet in every video is the one worth teaching,
+so `dedge` is the glossary headword and `edge pair` is an alias. **The printed
+cards still ban it** — `glossary.py`'s `BANNED` maps `dedge` → `edge pair`, and
+that is not an inconsistency: paper has no hover. Use the jargon on the site,
+the plain phrase on card stock.
+
 **Not every case in the data is a case in the UI.** `app/src/lib/unlocks.ts`
 holds one boolean per set that ships verified but is deliberately not surfaced,
 and exports the single predicate `isLocked(caseOrGroupKey)` that the trainer,

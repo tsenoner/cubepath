@@ -148,16 +148,20 @@ const SECTIONS: Section[] = [
   ),
   rows(
     "444-parity",
-    "4×4 parity",
-    "4×4 Parity",
-    "The edge flip you aim yourself, plus the two states a 3×3 can never produce — the whole of what " +
-      "a 4×4 adds to the method you already have.",
+    "4×4",
+    "4×4 Skills",
+    "The whole of what a 4×4 adds to the 3×3 you already solve: one technique you aim, one algorithm " +
+      "for pairing, and the two states a 3×3 can never produce.",
     // Course membership, not data membership: the two PLL-parity faces were
     // generated into "4x4pll-edges-only" alongside cases the course does not
     // teach, but the 4×4 lesson teaches both of them. The edge flip is a
     // curated entry with no set of its own — it is a mid-pairing tool, so it
     // belongs to no case list, which is exactly why it had no row anywhere.
-    [caseById.get("444.edge-flip")!, ...[...TAUGHT_444_CASES].map((id) => caseById.get(id)!)],
+    [
+      caseById.get("444.center-insert")!,
+      caseById.get("444.edge-flip")!,
+      ...[...TAUGHT_444_CASES].map((id) => caseById.get(id)!),
+    ],
   ),
   grid(
     "444-oll",
@@ -177,13 +181,17 @@ const SECTIONS: Section[] = [
   // tile showed its diagram and nothing else — no algorithm, no recognition
   // cue, and (before the set became drawable) not even a picture, just the
   // word "6". A row carries all three.
+  // The two things a 5x5 asks that a 4x4 does not, and the reason this is a
+  // section rather than one parity row: its centres have a middle column no
+  // two-wide grab can reach, and its parity is a near-twin of the 4x4's that
+  // does real damage if you fire the wrong one.
   rows(
     "555-parity",
-    "5×5 parity",
-    "5×5 Edge Parity",
-    "The one thing a 5×5 asks that a 4×4 does not. Everything else you already own — the flip above " +
-      "is the same seven moves on both cubes.",
-    gen((k) => k.phase === "555"),
+    "5×5",
+    "5×5 Skills",
+    "Two things a 5×5 asks that a 4×4 does not. Everything else — the flip, the pairing, the 3×3 " +
+      "stage — you already own from the section above.",
+    [caseById.get("555.center-insert")!, ...gen((k) => k.phase === "555")],
   ),
 ];
 

@@ -69,7 +69,7 @@ export const GLOSSARY: GlossGroup[] = [
         term: "edge",
         short: "A two-coloured piece between two corners. A 3×3 has twelve.",
         also: ["edges"],
-        see: ["centre", "corner", "edge pair"],
+        see: ["centre", "corner", "dedge"],
         href: "/learn/cube-anatomy/",
       },
       {
@@ -334,11 +334,19 @@ export const GLOSSARY: GlossGroup[] = [
         href: "/learn/444-yau-intro/",
       },
       {
-        term: "edge pair",
+        // The headword is the jargon, not the plain phrase, and that is a
+        // deliberate reversal: this site used to write "edge pair" everywhere
+        // and gloss it inline. With a hover card on every first mention, the
+        // word a learner will meet in every video and on every forum is the
+        // one worth teaching them — the definition is one hover away.
+        //
+        // The PRINTED CARDS still ban it (`glossary.py`'s BANNED maps dedge ->
+        // edge pair) and that is not an inconsistency: paper has no hover.
+        term: "dedge",
         short:
-          "Two or three edge pieces that behave as one edge once they are joined — what a big cube has instead of a single edge piece.",
-        long: "Cubers usually call this a dedge, short for double edge. This site says edge pair.",
-        also: ["edge pairs", "dedge", "dedges"],
+          "Short for double edge: the two or three pieces that behave as one edge on a big cube, once they are joined.",
+        long: "A 4×4 dedge is two wings; a 5×5's is two wings plus a midge, and it is often called an edge group there. Either way it is what a big cube has instead of a single edge piece — and joining all twelve of them is what reduction is.",
+        also: ["dedges", "edge pair", "edge pairs", "edge group", "edge groups"],
         see: ["wing", "midge", "reduction"],
         href: "/learn/444-edge-pairing/",
       },
@@ -346,7 +354,7 @@ export const GLOSSARY: GlossGroup[] = [
         term: "wing",
         short: "One of the two outer pieces of a big-cube edge pair. A 4×4 and a 5×5 both have 24.",
         also: ["wings"],
-        see: ["midge", "edge pair"],
+        see: ["midge", "dedge"],
         href: "/learn/444-edge-pairing/",
       },
       {
@@ -354,7 +362,7 @@ export const GLOSSARY: GlossGroup[] = [
         short:
           "The middle piece of a 5×5 edge group — a true edge piece, which is why a 5×5's last layer obeys 3×3 law.",
         also: ["midges"],
-        see: ["wing", "edge pair"],
+        see: ["wing", "dedge"],
         href: "/learn/555-centers-edges/",
       },
       {
@@ -369,7 +377,7 @@ export const GLOSSARY: GlossGroup[] = [
         short:
           "A state a 3×3 can never reach, but a big cube can — a flipped edge pair, or two edge pairs swapped. It needs its own algorithm.",
         long: "Parity is not a mistake you made. It arrives in about half of all solves, because a big cube's identical-looking pieces let you finish reduction in a position an odd number of swaps away from solved.",
-        see: ["reduction", "edge pair"],
+        see: ["reduction", "dedge"],
         href: "/learn/444-3x3-stage/",
       },
     ],

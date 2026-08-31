@@ -30,20 +30,19 @@ import Callout from "../../components/Callout.astro";
 </Callout>
 
 Plain reduction solves all centers, then all edges, then starts the 3×3 stage
-from zero. **Yau** uses the same skills — centers, **edge pair** (two edges glued into
-one, acting as a single 3×3 edge; cubers write *dedge*) pairing, parity — but
+from zero. **Yau** uses the same skills — centers, dedge pairing, parity — but
 reorders them so that when reduction ends, your cross is already done.
 
 ## The five steps
 
 1. **Two opposite centers** — build the white and yellow centers first. White
    is your cross color.
-2. **Three cross pairs** — pair three of the four white-cross edge pairs and
+2. **Three cross pairs** — pair three of the four white-cross dedges and
    store them around the white center.
 3. **Remaining four centers** — hold the white center and its three cross
-   edge pairs on the **left**, out of the way, and build the four side centers
+   dedges on the **left**, out of the way, and build the four side centers
    without disturbing them.
-4. **Last cross pair + remaining edges** — pair the fourth cross edge pair, then
+4. **Last cross pair + remaining edges** — pair the fourth cross dedge, then
    the other eight, keeping the cross on the left the entire time.
 5. **3×3 stage** — bring the cross to the bottom. It's already solved — go
    straight to the white corners. Parity works exactly as before.
@@ -54,12 +53,12 @@ reorders them so that when reduction ends, your cross is already done.
   cross pieces like everyone else. In Yau the cross was assembled as a side
   effect — the 3×3 stage starts one full step ahead.
 - **Fixed orientation.** Steps 3 and 4 happen in a single grip, cross on the
-  left. You always know where every center and edge pair is without rotating to
+  left. You always know where every center and dedge is without rotating to
   check — recognition and lookahead get dramatically better, and better
   lookahead is where big-cube speed lives.
 
 <Callout type="caution">
-  Don't switch too early. Building centers around protected cross edge pairs is
+  Don't switch too early. Building centers around protected cross dedges is
   genuinely awkward at first, and Yau will make you *slower* for a week or
   two. Stay on plain reduction until it's comfortable — around sub-2:30 —
   then make the jump.

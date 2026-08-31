@@ -269,6 +269,41 @@ describe("the method's own algorithms are pinned by what they do", () => {
     expect(unpinned, "a `full` 3x3 case with no invariant and no pin ships unverified").toEqual([]);
   });
 
+  /**
+   * The centre insert is not one algorithm — it is a shape, and its instances
+   * are worked examples. What makes the shape trustworthy is a property, so
+   * that is what is checked, on every instance of both cases: the outer beats
+   * CANCEL, so exactly two faces' centres are disturbed and the other four come
+   * back untouched. Without this the row is three strings a reader has to take
+   * on faith, and the sentence the lessons rest on ("the R, L, B and D centres
+   * come back untouched — measured") would be unbacked prose.
+   */
+  test("every centre-insert instance disturbs exactly two faces' centres", async () => {
+    for (const id of ["444.center-insert", "555.center-insert"]) {
+      const def = caseById.get(id)!;
+      const kpuzzle = await kpuzzleFor(def.puzzle);
+      const solved = kpuzzle.defaultPattern();
+      const centreOrbits = kpuzzle.definition.orbits
+        .map((o: { orbitName: string }) => o.orbitName)
+        .filter((name: string) => name.startsWith("CENTERS"));
+      for (const variant of def.algs) {
+        const after = solved.applyAlg(new Alg(variant.moves));
+        // Same-face centre pieces share a piece id, so comparing ids IS the
+        // visual comparison — a centre "moving" to an identical neighbour is
+        // not a disturbance a solver can see.
+        const faces = new Set<number>();
+        for (const orbit of centreOrbits) {
+          const home = solved.patternData[orbit]!.pieces;
+          const now = after.patternData[orbit]!.pieces;
+          for (let i = 0; i < home.length; i++) {
+            if (now[i] !== home[i]) faces.add(home[i]!);
+          }
+        }
+        expect(faces.size, `${id} / ${variant.moves} disturbs ${faces.size} centre faces`).toBe(2);
+      }
+    }
+  });
+
   test("the two 4x4 parity cases print the parity algorithms, byte for byte", () => {
     // The rename to "OLL Parity (4×4)" / "PLL Parity (4×4)" is only honest if
     // the algorithms really are the bare parity strings — JPerm's own names
@@ -948,9 +983,20 @@ describe("algorithms that carry a net whole-cube rotation", () => {
   for (const a of ["", "x", "x2", "x'", "z", "z'"])
     for (const b of ["", "y", "y2", "y'"]) ROTATION_ALGS.push([a, b].filter(Boolean).join(" "));
 
+  /**
+   * The two centre inserts are excluded, and not as a convenience: this test
+   * detects "the alg-inverse does not bring the centres home", which for these
+   * 27 is caused by a net whole-cube ROTATION. The centre inserts fail the same
+   * detector for a completely different reason — moving centre pieces is what
+   * they are FOR — so counting them here would merge two phenomena under one
+   * name. Their own property is pinned in the technique block above.
+   */
+  const CENTRE_TECHNIQUES = new Set(["444.center-insert", "555.center-insert"]);
+
   test("27 of the 185 cases have one, and they are these", async () => {
     const found: string[] = [];
     for (const def of ALL_CASES) {
+      if (CENTRE_TECHNIQUES.has(def.id)) continue;
       const kp = await kpuzzleFor(def.puzzle);
       const state = kp
         .defaultPattern()
@@ -1328,7 +1374,7 @@ describe("aspect-aware narrowing", () => {
 
 describe("the ladder is wired into every renderer", () => {
   test("contextForPlayer resolves the case an algorithm uniquely identifies", async () => {
-    // How /case/[...id] gets the ladder without restating it: 187 of the 189
+    // How /case/[...id] gets the ladder without restating it: 189 of the 191
     // cases are uniquely identified by (puzzle, stickering, algorithm).
     let resolved = 0;
     const unresolved: string[] = [];
@@ -1340,7 +1386,7 @@ describe("the ladder is wired into every renderer", () => {
         resolved++;
       } else unresolved.push(def.id);
     }
-    expect(resolved).toBe(187);
+    expect(resolved).toBe(189);
     // ...and the two it refuses are the pair that share `F R U R' U' F'` and
     // sit at DIFFERENT stages. Guessing between them is the yellow-cross bug.
     expect(unresolved.sort()).toEqual(["eo.line", "oll.45"]);
