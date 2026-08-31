@@ -11,6 +11,7 @@ Two tiers, so a reader can tell current from historical at a glance.
 | [`resources.md`](resources.md) | External method, algorithm and prior-art references. |
 | [`TODO.md`](TODO.md) | Open work only. Completed items move into `DECISIONS.md`. |
 | [`redesign-plan.html`](redesign-plan.html) | The presentation-layer plan from the 2026-08-27 audit: design system, case-presentation tiers, navigation, and the sequenced backlog. Open it in a browser. |
+| [`5x5-plan.html`](5x5-plan.html) | Why the 5×5 course is two algorithms and one technique, and why the other twelve L2E cases are locked. Still current except §07, which carries a banner: the 5×5 diagram blocker it sidestepped has since been solved. Open it in a browser. |
 | [`research/tech-brief.md`](research/tech-brief.md) | The M0 integration brief. Still live: `app/scripts/extract-algs.mjs` and `verify-l2e.mjs` pin their big-cube algorithm strings to its §8. |
 
 ## `archive/` — finished, kept for provenance

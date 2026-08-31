@@ -91,7 +91,10 @@ const ALL_TRAINER_GROUPS: TrainerGroup[] = [
     name: "4×4 PLL (parity-embedded)",
     member: (c) => c.group.startsWith("4x4pll-"),
   },
-  { key: "555-l2e", name: "5×5 edge parity", member: (c) => c.group === "555-l2e" },
+  // The key says parity, not "l2e", because that is what is IN it. The
+  // UNLOCK key stays `555-l2e-onelook`: that one names the SOURCE SET of 13
+  // SpeedCubeDB cases it hides, which really is called L2E.
+  { key: "555-parity", name: "5×5 edge parity", member: (c) => c.group === "555-parity" },
 ];
 
 /**

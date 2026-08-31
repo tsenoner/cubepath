@@ -1021,7 +1021,7 @@ export const RICH: Record<string, { recognition: string; alternates: AlgVariant[
     ]
   },
   "555.l2e-6": {
-    "recognition": "One edge group flipped, nothing else unsolved — hold it at UF",
+    "recognition": "The last edge group looks flipped: its two wings show the side colour on top and yellow on the side, the middle piece is right. Hold it at UF.",
     "alternates": [
       {
         "moves": "Rw' U2 3Rw U2 3Rw' F2 Rw2 U2 Rw U2 Rw' U2 F2 Rw2 F2"
@@ -1239,7 +1239,7 @@ export const RICH: Record<string, { recognition: string; alternates: AlgVariant[
     "alternates": []
   },
   "444.pll.pure-e": {
-    "recognition": "Two edge pairs swapped, opposite each other — the corners in the picture are a free U2",
+    "recognition": "Both last-layer edge pairs on one axis are swapped with the pair opposite them. The corners look shuffled here — that is a free U2, and the algorithm ignores it.",
     "alternates": []
   },
   "444.pll.adj-e": {
@@ -1326,4 +1326,298 @@ export const RICH: Record<string, { recognition: string; alternates: AlgVariant[
     "recognition": "Diagonal Corner Swap",
     "alternates": []
   }
+};
+
+/** One facelet-slot patch on the solved pattern. */
+export type StickerDelta = { orbit: string; slot: number; piece: number; orientation: number };
+
+/**
+ * Cases whose drawn state is NOT `solved · alg⁻¹` — the 5x5 L2E set — as the
+ * displayed hold the diagram is built from, keyed by primary algorithm.
+ */
+export const L2E_HOLDS: Record<string, StickerDelta[]> = {
+  "Rw' U' R' U R' F R F' Rw": [
+    {
+      "orbit": "EDGES",
+      "slot": 8,
+      "piece": 16,
+      "orientation": 0
+    },
+    {
+      "orbit": "EDGES",
+      "slot": 16,
+      "piece": 8,
+      "orientation": 0
+    },
+    {
+      "orbit": "EDGES2",
+      "slot": 11,
+      "piece": 11,
+      "orientation": 1
+    }
+  ],
+  "Lw U' R' U R' F R F' Lw'": [
+    {
+      "orbit": "EDGES",
+      "slot": 0,
+      "piece": 2,
+      "orientation": 0
+    },
+    {
+      "orbit": "EDGES",
+      "slot": 2,
+      "piece": 0,
+      "orientation": 0
+    },
+    {
+      "orbit": "EDGES2",
+      "slot": 11,
+      "piece": 11,
+      "orientation": 1
+    }
+  ],
+  "x' M' U' R' U R' F R F' M x": [
+    {
+      "orbit": "EDGES",
+      "slot": 0,
+      "piece": 16,
+      "orientation": 1
+    },
+    {
+      "orbit": "EDGES",
+      "slot": 16,
+      "piece": 0,
+      "orientation": 1
+    },
+    {
+      "orbit": "EDGES2",
+      "slot": 11,
+      "piece": 11,
+      "orientation": 1
+    }
+  ],
+  "Rw2 F2 U2 Rw2 U2 F2 Rw2": [
+    {
+      "orbit": "EDGES",
+      "slot": 0,
+      "piece": 2,
+      "orientation": 0
+    },
+    {
+      "orbit": "EDGES",
+      "slot": 2,
+      "piece": 0,
+      "orientation": 0
+    },
+    {
+      "orbit": "EDGES",
+      "slot": 8,
+      "piece": 16,
+      "orientation": 0
+    },
+    {
+      "orbit": "EDGES",
+      "slot": 16,
+      "piece": 8,
+      "orientation": 0
+    }
+  ],
+  "Rw2 B2 Rw' U2 Rw' U2' x' U2 Rw' U2' Rw U2 Rw' U2' Rw2 U2 x": [
+    {
+      "orbit": "EDGES",
+      "slot": 0,
+      "piece": 2,
+      "orientation": 0
+    },
+    {
+      "orbit": "EDGES",
+      "slot": 2,
+      "piece": 16,
+      "orientation": 1
+    },
+    {
+      "orbit": "EDGES",
+      "slot": 8,
+      "piece": 0,
+      "orientation": 1
+    },
+    {
+      "orbit": "EDGES",
+      "slot": 16,
+      "piece": 8,
+      "orientation": 0
+    }
+  ],
+  "Rw U2 x Rw U2 Rw U2 3Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'": [
+    {
+      "orbit": "EDGES",
+      "slot": 2,
+      "piece": 8,
+      "orientation": 1
+    },
+    {
+      "orbit": "EDGES",
+      "slot": 8,
+      "piece": 2,
+      "orientation": 1
+    }
+  ],
+  "y2 Rw U2 Rw U2' x U2 Rw U2' 3Rw' U2 Lw U2' Rw2": [
+    {
+      "orbit": "EDGES",
+      "slot": 2,
+      "piece": 16,
+      "orientation": 1
+    },
+    {
+      "orbit": "EDGES",
+      "slot": 16,
+      "piece": 2,
+      "orientation": 1
+    }
+  ],
+  "Lw2 F2 U2 Lw' U2 Lw2 F2 Lw' U2 Lw2 U2 F2 Lw' F2": [
+    {
+      "orbit": "EDGES",
+      "slot": 8,
+      "piece": 16,
+      "orientation": 0
+    },
+    {
+      "orbit": "EDGES",
+      "slot": 16,
+      "piece": 8,
+      "orientation": 0
+    }
+  ],
+  "B2 Rw' U2 Rw' U2' Rw B2 Rw U2 Rw U2' Rw' U2 Rw U2' Rw2": [
+    {
+      "orbit": "EDGES",
+      "slot": 0,
+      "piece": 2,
+      "orientation": 0
+    },
+    {
+      "orbit": "EDGES",
+      "slot": 2,
+      "piece": 0,
+      "orientation": 0
+    }
+  ],
+  "Rw' U2 Rw2 U2 Rw U2 Rw' U2 Rw U2 Rw2 U2 Rw'": [
+    {
+      "orbit": "EDGES",
+      "slot": 0,
+      "piece": 8,
+      "orientation": 1
+    },
+    {
+      "orbit": "EDGES",
+      "slot": 2,
+      "piece": 16,
+      "orientation": 1
+    },
+    {
+      "orbit": "EDGES",
+      "slot": 8,
+      "piece": 2,
+      "orientation": 1
+    },
+    {
+      "orbit": "EDGES",
+      "slot": 16,
+      "piece": 0,
+      "orientation": 1
+    }
+  ],
+  "Rw U2 Rw2 U2 Rw' U2 Rw U2 Rw' U2 Rw2 U2 Rw": [
+    {
+      "orbit": "EDGES",
+      "slot": 0,
+      "piece": 16,
+      "orientation": 1
+    },
+    {
+      "orbit": "EDGES",
+      "slot": 2,
+      "piece": 8,
+      "orientation": 1
+    },
+    {
+      "orbit": "EDGES",
+      "slot": 8,
+      "piece": 0,
+      "orientation": 1
+    },
+    {
+      "orbit": "EDGES",
+      "slot": 16,
+      "piece": 2,
+      "orientation": 1
+    }
+  ],
+  "Rw' U2 Rw U2 3Lw' U2 Rw U2 Rw U2' Rw' U2 Rw U2' Rw2 D2 F2 U2 D2": [
+    {
+      "orbit": "EDGES",
+      "slot": 0,
+      "piece": 8,
+      "orientation": 1
+    },
+    {
+      "orbit": "EDGES",
+      "slot": 8,
+      "piece": 0,
+      "orientation": 1
+    },
+    {
+      "orbit": "EDGES2",
+      "slot": 9,
+      "piece": 11,
+      "orientation": 0
+    },
+    {
+      "orbit": "EDGES2",
+      "slot": 11,
+      "piece": 9,
+      "orientation": 0
+    }
+  ],
+  "r U R' U' r2 U' R' U r2 U R' U' r'": [
+    {
+      "orbit": "EDGES",
+      "slot": 0,
+      "piece": 16,
+      "orientation": 1
+    },
+    {
+      "orbit": "EDGES",
+      "slot": 2,
+      "piece": 8,
+      "orientation": 1
+    },
+    {
+      "orbit": "EDGES",
+      "slot": 8,
+      "piece": 2,
+      "orientation": 1
+    },
+    {
+      "orbit": "EDGES",
+      "slot": 16,
+      "piece": 0,
+      "orientation": 1
+    },
+    {
+      "orbit": "EDGES2",
+      "slot": 9,
+      "piece": 11,
+      "orientation": 0
+    },
+    {
+      "orbit": "EDGES2",
+      "slot": 11,
+      "piece": 9,
+      "orientation": 0
+    }
+  ]
 };

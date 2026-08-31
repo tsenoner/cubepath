@@ -60,7 +60,7 @@ locally.
 
 | path | what lives there |
 | --- | --- |
-| `app/` | the Astro PWA — 25 MDX lessons, the trainer, the reference set |
+| `app/` | the Astro PWA — 25 MDX lessons, the trainer, the reference set, the glossary |
 | `tools/cubepath/` | build-time Python: simulator, diagrams, card set, logo |
 | `guide/` | `cubepath.md` + the pandoc/typst build for the PDF companion |
 | `docs/` | live reference; `docs/archive/` is finished work kept for provenance |
@@ -83,7 +83,7 @@ of these is therefore pinned by a test:
 | artifact | produced by | pinned by |
 | --- | --- | --- |
 | `app/public/cubepath.pdf` | `make build-guide` | `tests/test_guide.py` (input digest in `guide/pdf.stamp.json`) |
-| `app/public/diagrams/**` (221 SVGs) | `make diagrams` | `tests/test_diagrams.py` — generator match, and the guide's figure paths resolve |
+| `app/public/diagrams/**` (180 SVGs) | `make diagrams` | `tests/test_diagrams.py` — generator match, and the guide's figure paths resolve |
 | `app/public/cards/*.pdf`, `app/src/data/cards.json` | `make cards` | `tests/test_cards.py` |
 | `app/public/favicon.svg`, `app/public/icons/*.png` | `make logo` | `tests/test_logo.py` |
 | `app/src/data/fullsets*.gen.ts` | `node scripts/gen-cases.mjs` | `app/tests/algs.spec.ts` (kpuzzle) |
@@ -121,6 +121,25 @@ node scripts/gen-icons.mjs      # rasterize the PWA icon set from favicon.svg
 node scripts/gen-stickering.mjs # regenerate the twisty-player stickering masks
 ```
 
+Routes: `/` (course index), `/learn/<lesson>`, `/practice`, `/reference`,
+`/glossary`, `/case/<id>`, `/print` and the frozen card routes `/c0`–`/c3`.
+
+**`app/scripts/lib/kpuzzle-utils.mjs` is the scripts' shared kit**, and it
+holds what more than one of them needs: rotation enumeration and
+normalization, the aliasing-safe `unaliasedCopy` (cubing.js hands every
+same-length orbit ONE orientation array and `structuredClone` preserves that,
+which silently exported centre twists that did not exist), and the BIG-CUBE
+REDUCTION MODEL — `edgeSlots` / `makeArrangementKey` / `intactArrangements` /
+`permutationParity`. The model is order-generic on purpose:
+`verify-l2e.mjs` asks it about a 5×5 (with midges), `gen-case-states.mjs` asks
+it about a 4×4 (`midgeOrbit: null`). They used to state it separately, and the
+4×4 copy gates a SHIPPED diagram while the 5×5 copy gates the exported case
+data, so correcting either convention left the other on the old one. Both now
+run the same self-check: 12 edge positions, two wings each, 24 calibrated
+arrangements apiece. `kpuzzle-utils.d.mts` is hand-maintained beside it —
+adding an export to the `.mjs` alone type-errors, because the declaration file
+shadows it.
+
 **Everything under `app/scripts/` is type-checked** (`scripts/tsconfig.json`,
 `checkJs: true`) — it generates the shipped algorithm data and runs the F2L/L2E
 verifiers, so a type error there can silently weaken the verification it exists
@@ -140,8 +159,8 @@ something reasonable, so they are stated here rather than only in the diff.
 Do not add a `scroll-margin` to an anchored element: `scroll-padding` insets the
 scrollport and `scroll-margin` expands the target, so the two STACK and the
 element lands a full header lower than intended. `/reference` used to write the
-same `calc` on three elements and forgot `.tile`, which owns the anchor for 107
-of 120 tiles — the site's own "See it in the reference" link landed with zero
+same `calc` on three elements and forgot `.tile`, which owns the anchor for 106
+of 119 tiles — the site's own "See it in the reference" link landed with zero
 visible pixels. `Header.astro` measures and publishes `--hdr-h` on every route;
 `/reference` publishes `--toolbar-h` and is the only page that may.
 
@@ -190,10 +209,70 @@ repo that does not follow the derive-everything rule.
 
 Data flow: `src/data/extracted/*.json` (verified extractions) + `src/data/recognition.json`
 (hand-written cues) → `gen-cases.mjs` →
-`fullsets.gen.ts` (lean, ships to client) + `fullsets.rich.gen.ts` (recognition +
-alternates, build-time only) → merged with curated entries in `src/data/algs.ts`
+`fullsets.gen.ts` (lean, ships to client) + `fullsets.rich.gen.ts` (recognition,
+alternates and the 5×5 `L2E_HOLDS`, build-time only) → merged with curated entries in `src/data/algs.ts`
 (`ALL_CASES`). Never hand-edit generated files; never retype algorithms — every
-alg is kpuzzle-verified in `tests/algs.spec.ts`.
+alg is kpuzzle-verified in `tests/algs.spec.ts`. **The arrow runs one way**:
+`extracted/*.json` is the generator's INPUT, so nothing under `src/` may read
+it — `stickering.ts` did, for the L2E holds, and takes them from the RICH file
+now.
+
+**The glossary is generated into the lessons, not written into them.**
+`src/data/glossary.ts` holds every term the site uses; `scripts/rehype-glossary.mjs`
+rewrites the FIRST mention of each term in each lesson into a link to its entry
+on `/glossary`, carrying the one-sentence definition in `data-gloss` for the
+hover/focus card in `tokens.css`. No MDX file is edited and no JavaScript ships:
+it is a plain `<a>`, so it is focusable by construction and a touch reader — who
+never gets `:hover` — taps through to the full entry. Two things there are
+load-bearing and were both learned the hard way:
+
+- The plugin is registered as `markdown.processor: unified({ rehypePlugins })`.
+  `mdx({ rehypePlugins })` is deprecated and on this version SILENTLY DOES
+  NOTHING — the build warns once and emits pages with no glossary links at all.
+- The hover card is `display: none`, never `visibility: hidden`. A hidden
+  absolutely-positioned box still contributes to the document's scrollable
+  overflow, which pushed all 25 lesson pages 50px sideways at 375px.
+
+`tests/glossary.spec.ts` gates the two ways a glossary rots: every term must
+actually be used (in a lesson, in the guide, or on a printed card), and every
+term the CARD set glosses (`tools/cubepath/src/cubepath/glossary.py`) must be
+defined here too, so the paper and the site cannot teach different vocabularies.
+
+**Not every algorithm in the course is a case.** Four of them are TRIGGERS —
+`beginner.righty` (`R U R' U'`), `beginner.lefty`, `beginner.niklas` and
+`444.edge-flip` — and a trigger has no recognition state, which is what a case
+is. They shipped for a long time as bare `<AlgText>` in three or four lessons
+each, with no /reference row, no /case page, no 3D player and nothing verifying
+them. They are `CaseDef`s now, carrying `stickering: "full"` because there is no
+last-layer subset to mask, and the generic per-stickering invariant in
+`tests/algs.spec.ts` therefore has nothing to say about them. Each is pinned
+there by BEHAVIOUR instead — the claims its own lesson makes, checked: righty
+touches only the U layer and the FR slot and six of them are the identity, lefty
+is righty's literal mirror, Niklas plus one U moves three corners and no edge,
+the flip is seven outer turns legal on both big cubes. A `full` 3×3 case with no
+behavioural pin fails the build, so this cannot become a way in for an
+unverified algorithm.
+
+**Every visible case carries a picture**, and it is gated from both sides:
+`tests/algs.spec.ts` fails if a case `isLocked` does not hide has no `icon`, and
+`test_every_case_icon_resolves_to_a_shipped_diagram` fails if an icon path names
+a file the generator did not write. /reference is a page whose whole job is a
+picture per case, so a blind row is a visible hole.
+
+**Centres stay intuitive.** They get lesson figures and no case entry — the
+insert is a shape you aim (`Rw U Rw'` is one instance of it), not something to
+look up, and a reference row would present one instance as "the algorithm",
+which is the mistake the technique is defined against. This was tried and
+reverted; see docs/DECISIONS.md.
+
+**Jargon is allowed now, because the glossary is hoverable.** The site used to
+write the plain phrase and gloss it inline ("edge pair (two edges glued into
+one; cubers write *dedge*)"). With a definition one hover away on every first
+mention, the word a learner will meet in every video is the one worth teaching,
+so `dedge` is the glossary headword and `edge pair` is an alias. **The printed
+cards still ban it** — `glossary.py`'s `BANNED` maps `dedge` → `edge pair`, and
+that is not an inconsistency: paper has no hover. Use the jargon on the site,
+the plain phrase on card stock.
 
 **Not every case in the data is a case in the UI.** `app/src/lib/unlocks.ts`
 holds one boolean per set that ships verified but is deliberately not surfaced,
@@ -205,13 +284,20 @@ at all. Two sets are locked, 60 cases in total:
 - **`444-parity-embedded`** — the 48 parity-embedded 4×4 last-layer cases
   (`444.oll.*` / `444.pll.*` minus the two the course teaches).
 - **`555-l2e-onelook`** — twelve of the thirteen 5×5 last-two-edges cases.
-  `555.l2e-6` (edge parity) stays, and so does the `555-l2e` GROUP: a one-case
-  trainer set still drills the only recognition question a 5×5 asks.
+  `555.l2e-6` (edge parity) stays, and so does the group: a one-case trainer set
+  still drills the only recognition question a 5×5 asks. Note the two keys pull
+  in opposite directions on purpose — the UNLOCK key keeps "l2e" because it
+  names the source set it hides (SpeedCubeDB's L2E thirteen), while the GROUP is
+  keyed `555-parity` because that is what is left in it.
 
-Do not "fix" the gap by regenerating anything — the data, the diagrams and the
-algorithm tests all still cover every locked case; flipping the boolean in
-`UNLOCKED` restores every surface at once. `tests/unlocks.spec.ts` gates both
-states of both keys, including the unlocked ones. Why they are hidden:
+Do not "fix" the gap by regenerating anything — the data and the algorithm
+tests still cover every locked case, so flipping the boolean in `UNLOCKED`
+restores every surface. **Their DIAGRAMS are the one exception**: 61 SVGs for
+pages nobody could reach were deleted, so an unlocked set renders through
+/reference's "no diagrams for this set yet" fallback until a diagram group is
+added back to `fullsets.render_big_sets` — see `TAUGHT_BIG_CUBE` there.
+`tests/unlocks.spec.ts` gates both states of both keys, including the unlocked
+ones. Why they are hidden:
 docs/DECISIONS.md § "4×4 parity-embedded cases" and § "The 5×5 course is two
 algorithms and one technique".
 
@@ -231,8 +317,9 @@ rather than in the file.
 
 ## Build-time Python tooling (tools/cubepath/)
 
-One `uv` project, package `cubepath`, four entry points: the SVG diagram
-generator, the card set, the logo, and the cube simulator they all derive from.
+One `uv` project, package `cubepath`, three console entry points — the SVG
+diagram generator, the card set and the logo — over the cube simulator they all
+derive from. (`cubepath-cheatcards` is a deprecated alias for the card one.)
 The directory was `tools/diagrams/` until cards and the logo landed in it; it is
 named for the package now (`parents[N]` depths are unchanged, so no code moved).
 
@@ -248,7 +335,24 @@ named for the package now (`parents[N]` depths are unchanged, so no code moved).
 
 `tools/cubepath/src/cubepath/diagrams.py` defines the guide's 17 core cube diagrams as `CubeDiagram` dataclasses rendered to SVG using `svgwrite`. Case sticker data is **derived from algorithms** via `_derived_cross_case` / `_derived_oll_corner_case` / `_derived_pll_case` (OLL: yellow/grey masks; PLL: true colors). The entry point `cubepath-diagrams` writes to `app/public/diagrams/` — the one committed tree.
 
-Four case groups: `_oll_cross_cases()` (3), `_oll_corner_cases()` (8), `_pll_corner_cases()` (2), `_pll_edge_cases()` (4) — the 17 `all_cases()` returns. `fullsets.py` builds the rest from the app's extraction: 78 plan views (57 OLL + 21 PLL) into `oll-full/` and `pll-full/`, 41 isometric `SlotDiagram` pictures into `f2l/`, and 49 big-cube plan views (27 + 22) into `444-oll/` and `444-pll/` — those from the kpuzzle states in `case-states.json`, because `cube.py` cannot model a 4×4 and must not be taught to. 221 SVGs in all, and `tests/test_diagrams.py` pins that number: `EXPECTED_DIAGRAMS` is asserted against a full render, so a group added to `main()` and forgotten in the test (or the reverse) fails the build.
+Four case groups: `_oll_cross_cases()` (3), `_oll_corner_cases()` (8), `_pll_corner_cases()` (2), `_pll_edge_cases()` (4) — the 17 `all_cases()` returns. `fullsets.py` builds the rest from the app's extraction: 78 plan views (57 OLL + 21 PLL) into `oll-full/` and `pll-full/`, 41 isometric `SlotDiagram` pictures into `f2l/`, and **three** big-cube plan views into `444-parity/` and `555-parity/` — those from the kpuzzle states in `case-states.json`, because `cube.py` cannot model a 4×4 and must not be taught to. 180 SVGs in all, and `tests/test_diagrams.py` pins that number: `EXPECTED_DIAGRAMS` is asserted against a full render, so a group added to `main()` and forgotten in the test (or the reverse) fails the build.
+
+**The big cubes get parity and nothing else**, and that follows from the course
+rather than from the renderer. Cubepath teaches REDUCTION (Yau as the advanced
+variant), so a 4×4 or 5×5 becomes a 3×3 and the 3×3 sets above finish it; what
+is left over is two parity fixes on the 4×4 and one on the 5×5.
+`fullsets.TAUGHT_BIG_CUBE` is that list of three — `{case id: (source set,
+what it is)}` — and it SELECTS what gets drawn: `parity_cases()` and
+`l2e_cases()` take their ids from it through `taught_ids()`, so a wrong id is a
+render-time failure rather than a silently different picture. A test asserts it
+is the same list `unlocks.ts` calls taught and `gen-cases.mjs` gives an icon,
+and that the pictures it names are the ones `parity_cases()` actually produces.
+The 27 4×4 OLL, 22 4×4 PLL and 13 5×5 L2E cases are one-look optimisations locked out
+of the UI, so their 61 SVGs were reachable from no page at all; they are no
+longer generated, and `test_the_unshipped_big_cube_sets_stay_unshipped` fails if
+the trees come back. `big_oll_cases()` / `big_pll_cases()` still BUILD (they
+write nothing) — they are what the 4×4 half of the plan-view renderer is
+checked against, and the two shipped 4×4 diagrams come out of the same code.
 
 OLL cases have no arrows; PLL cases use `swaps` (bidirectional), `cycles` (directional) and
 `dashed_swaps` (the secondary edge movement in a corner PLL) arrow fields — hand-declared for layout but permutation-verified by tests.
@@ -475,12 +579,12 @@ project root. There is no copy step and no second tree:
 | `oll-full/` | 57 | the full OLL set (`fullsets.py`) |
 | `pll-full/` | 21 | the full PLL set (`fullsets.py`) |
 | `f2l/` | 41 | F2L slot-and-pair cases, 3D isometric (`SlotDiagram`) |
-| `444-oll/` | 27 | 4×4 OLL incl. parity (plan-view, from `case-states.json`) |
-| `444-pll/` | 22 | 4×4 PLL incl. parity (plan-view) |
+| `444-parity/` | 2 | 4×4 OLL parity (yellow mask) + PLL parity (colours + arrows) |
+| `555-parity/` | 1 | 5×5 edge parity (three-tier true colour) |
 | `notation/` | 17 | 3D isometric move notation diagrams, the overview, and its `overview_hub` backup |
-| `steps/` | 19 | 3D isometric step progress + case diagrams |
+| `steps/` | 24 | 3D isometric step progress + case diagrams, plus the 5 web-only ones (`_web_steps`): 4 course-index phase pictures and the `444.edge-flip` case icon |
 
-221 in total. `guide/cubepath.md` references 51 of them; the card set re-renders
+180 in total. `guide/cubepath.md` references 51 of them; the card set re-renders
 its own in `CARD` style rather than reusing these.
 
 ## Writing Philosophy

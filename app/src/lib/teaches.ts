@@ -69,8 +69,8 @@ async function build(): Promise<Maps> {
  * `practice.groups` uses — not on `CaseDef.group`, which is a recognition
  * grouping ("oll-fish-shape", "f2l-connected-pairs") in a different namespace
  * entirely. Passing the latter looked right and silently matched almost
- * nothing: 92 of the 125 case pages had no "Taught in" link, because the whole
- * of Full OLL, F2L and Full PLL fell through. The trainer's own `member`
+ * nothing: 92 of the then-125 case pages had no "Taught in" link, because the
+ * whole of Full OLL, F2L and Full PLL fell through. The trainer's own `member`
  * predicate is the mapping, so this is derived rather than a second table.
  */
 export async function teachingLesson(def: CaseDef): Promise<TeachingLesson | undefined> {

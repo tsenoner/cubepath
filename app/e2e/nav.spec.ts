@@ -136,7 +136,7 @@ test("the course index marks the phase you are in, and resumes into it", async (
 
 // ── Anchors land where they are aimed ────────────────────────────────
 // The round trip the site advertises: a case page's "See it in the reference".
-// 107 of the 120 tiles own such an anchor, and `.tile` was the one anchored
+// 106 of the 119 tiles own such an anchor, and `.tile` was the one anchored
 // element on the page with no clearance — measured ZERO visible pixels behind
 // 154px of sticky chrome, in Chromium and WebKit alike.
 for (const [caseId, kind] of [
@@ -414,8 +414,8 @@ test("the case-to-lesson back-link covers the full sets, not just the curated ca
     const html = await (await request.get(`/case/${id}/`)).text();
     if (/<a[^>]+href="\/learn\//.test(html)) withLesson += 1;
   }
-  // It was 33 of 125 while the fallback was keyed on CaseDef.group instead of
-  // the trainer group — the whole of Full OLL, F2L and Full PLL fell through.
+  // It was 33 of the then-125 while the fallback was keyed on CaseDef.group
+  // and not the trainer group — Full OLL, F2L and Full PLL all fell through.
   expect(withLesson, `${withLesson}/${ids.length} case pages name their lesson`).toBeGreaterThan(
     ids.length * 0.9,
   );

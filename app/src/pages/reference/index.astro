@@ -43,7 +43,15 @@ interface Section {
   title: string;
   /** Short form, for the jump bar. */
   nav: string;
+  /** Plain text. A single `{link}` token marks where `blurbLink` goes. */
   blurb?: string;
+  /**
+   * A cross-section link in the blurb: the case to point at, and the words to
+   * point with. The href is resolved through `anchorOf`, so the anchor rule
+   * lives in one place and a link to a case no visible section owns is a build
+   * error rather than a dead fragment.
+   */
+  blurbLink?: { caseId: string; text: string };
   kind: "rows" | "grid";
   items: CaseDef[];
   subs: Sub[];
@@ -80,11 +88,13 @@ const rows = (
   title: string,
   blurb?: string,
   items?: CaseDef[],
+  blurbLink?: { caseId: string; text: string },
 ): Section => ({
   id,
   nav,
   title,
   ...(blurb ? { blurb } : {}),
+  ...(blurbLink ? { blurbLink } : {}),
   kind: "rows",
   items: items ?? CASES.filter((k) => k.group === id),
   subs: [],
@@ -108,6 +118,17 @@ const grid = (
 });
 
 const SECTIONS: Section[] = [
+  rows(
+    "beginner-triggers",
+    "Triggers",
+    "The Beginner Method",
+    "Not cases — the three algorithms the beginner solve is built out of. Righty alone finishes the " +
+      "first two layers and untwists the last corners; Niklas puts the last four corners in their seats.",
+    // Course membership: two groups, one section. The triggers and the corner
+    // cycle sit at different stages of the ladder, but a reader looking up
+    // "the beginner algorithms" wants one list, not two.
+    CASES.filter((k) => k.group === "beginner-triggers" || k.group === "beginner-corner-cycle"),
+  ),
   rows(
     "cross-eo",
     "Cross",
@@ -140,13 +161,16 @@ const SECTIONS: Section[] = [
   ),
   rows(
     "444-parity",
-    "4×4 parity",
-    "4×4 Parity",
-    "The two states a 3×3 can never produce — and the whole of what a 4×4 last layer adds.",
+    "4×4",
+    "4×4 Skills",
+    "The whole of what a 4×4 adds to the 3×3 you already solve: one algorithm for pairing, and the " +
+      "two states a 3×3 can never produce. Centres are intuitive — there is nothing to look up.",
     // Course membership, not data membership: the two PLL-parity faces were
     // generated into "4x4pll-edges-only" alongside cases the course does not
-    // teach, but the 4×4 lesson teaches both of them.
-    [...TAUGHT_444_CASES].map((id) => caseById.get(id)!),
+    // teach, but the 4×4 lesson teaches both of them. The edge flip is a
+    // curated entry with no set of its own — it is a mid-pairing tool, so it
+    // belongs to no case list, which is exactly why it had no row anywhere.
+    [caseById.get("444.edge-flip")!, ...[...TAUGHT_444_CASES].map((id) => caseById.get(id)!)],
   ),
   grid(
     "444-oll",
@@ -162,12 +186,25 @@ const SECTIONS: Section[] = [
     gen((k) => k.group.startsWith("4x4pll-")),
     "Permutations that need the 4×4 parity algorithm folded into them.",
   ),
-  grid(
-    "555-l2e",
-    "5×5 L2E",
-    "5×5 Last Two Edges",
+  // A ROW, not a tile grid. Only one 5x5 case is unlocked, and a lone icon
+  // tile showed its diagram and nothing else — no algorithm, no recognition
+  // cue, and (before the set became drawable) not even a picture, just the
+  // word "6". A row carries all three.
+  // Two algorithms finish a 5×5 and only ONE of them is new, so the other is
+  // linked rather than repeated. A second row would have carried the flip's own
+  // `puzzle` with it — 4x4x4 — and opened a 4×4 player under a 5×5 heading; and
+  // the one-home rule at the top of this file has exactly one exception, the
+  // 2-look rows that re-present a case the full-set grids also carry, which is
+  // two different presentations rather than the same row twice.
+  rows(
+    "555-parity",
+    "5×5",
+    "5×5 Skills",
+    "Two algorithms finish a 5×5, and you already know one: {link} is the same seven outer " +
+      "turns on both cubes. This is the other one — the only thing a 5×5 asks that a 4×4 does " +
+      "not. Centres and pairing are technique, taught in the lessons.",
     gen((k) => k.phase === "555"),
-    "Pairing the last two edge triplets — the only 5×5 cases that are not already a 3×3 or 4×4 skill.",
+    { caseId: "444.edge-flip", text: "the edge flip" },
   ),
 ];
 
@@ -198,6 +235,42 @@ for (const s of VISIBLE) {
 /** The anchor for `id`, but only in the one section that owns it. */
 const anchorOf = (section: string, id: string) =>
   anchorOwner.get(id) === section ? id.replace(/\./g, "-") : undefined;
+
+/**
+ * A blurb, split around its optional cross-section link. Resolving the href
+ * through `anchorOf` (asking the section that OWNS the case) keeps the
+ * "#" + id-with-dots-as-dashes rule in one place; before this the 5×5 blurb
+ * was raw HTML with `#444-edge-flip` typed into it, which would have died
+ * silently if the anchor rule or the section order ever changed.
+ */
+type Blurb = { before: string; link: { href: string; text: string } | null; after: string };
+const BLURBS = new Map<string, Blurb>(
+  VISIBLE.flatMap((s): [string, Blurb][] => {
+    if (!s.blurb) return [];
+    if (!s.blurbLink) return [[s.id, { before: s.blurb, link: null, after: "" }]];
+    const { caseId, text } = s.blurbLink;
+    const owner = anchorOwner.get(caseId);
+    const anchor = owner ? anchorOf(owner, caseId) : undefined;
+    if (!anchor) {
+      throw new Error(
+        `/reference: the ${s.id} blurb links to ${caseId}, which no visible section owns`,
+      );
+    }
+    // The token is as load-bearing as the anchor: without this, a blurb that
+    // lost its `{link}` would silently append the link after the last full
+    // stop, and one that grew a second token would silently drop everything
+    // after it. Both read as prose a human wrote, which is why they have to
+    // fail the build rather than the eye.
+    const parts = s.blurb.split("{link}");
+    if (parts.length !== 2) {
+      throw new Error(
+        `/reference: the ${s.id} blurb carries ${parts.length - 1} "{link}" tokens, expected 1`,
+      );
+    }
+    const [before = "", after = ""] = parts;
+    return [[s.id, { before, link: { href: `#${anchor}`, text }, after }]];
+  }),
+);
 
 // ── Presentation helpers ─────────────────────────────────────────────
 /** "OLL 27" -> "27"; "Ba (4×4 PLL)" -> "Ba"; "T-Perm" -> "T". */
@@ -239,7 +312,7 @@ const sectionWords = (s: Section) => `${s.nav} ${setName(s.id)}`;
 // Distinct cases, not the sum of the sections: the 2-look rows deliberately
 // repeat ids the Full OLL / Full PLL grids also carry.
 const total = ALL_CASES.filter((k) => !isLocked(k)).length;
-// Rows and tiles actually rendered — 138 against `total`'s 125, because of that
+// Rows and tiles actually rendered — 142 against `total`'s 129, because of that
 // same deliberate double-listing. The filter counts DOM entries, so this is the
 // denominator it has to report against; using `total` there would let a query
 // claim more matches than there are cases.
@@ -262,7 +335,8 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
       /*
       Both numbers, and the reason they differ, because the page shows both and
       they used to sit two lines apart with nothing reconciling them: the lead
-      said "All 125 cases" and the filter said "138 cases". The 13 the course
+      said "All 125 cases" and the filter said "138 cases" (129 and 142 today).
+      The 13 the course
       teaches by name are listed twice on purpose — once in their own lesson
       section, once inside the full set.
     */
@@ -326,6 +400,7 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
         // the viewport. Not a labelled `region`: nine of them would restate the
         // nine h2s a screen reader already navigates by, under a jump bar that
         // already names every one.
+        const blurb = BLURBS.get(s.id);
         return (
           <section id={s.id} tabindex="-1" data-section>
             <h2>
@@ -334,7 +409,16 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
                 ({s.items.length})
               </span>
             </h2>
-            {s.blurb && <p class="lead">{s.blurb}</p>}
+            {/* Text plus an optional resolved link — never raw HTML. A section
+                sometimes has to point at a case whose home is another section;
+                see the 5×5 blurb and `BLURBS`. */}
+            {blurb && (
+              <p class="lead">
+                {blurb.before}
+                {blurb.link && <a href={blurb.link.href}>{blurb.link.text}</a>}
+                {blurb.after}
+              </p>
+            )}
             {/*
               Back into the course. A section id IS a trainer group key, and a
               lesson declares the groups it teaches, so this edge is derived
@@ -541,7 +625,7 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
     // "Filtering" means the query has a token, not that the field has
     // characters: a query of only punctuation ("---") normalizes to nothing and
     // matches everything, so treating it as a filter would teleport the reader
-    // to the top of the page and label the full list "138 of 138 shown".
+    // to the top of the page and label the full list "142 of 142 shown".
     const nowFiltering = normalize(raw) !== "";
 
     // Before apply(), not after: collapsing the document makes the browser
@@ -939,7 +1023,7 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
    * This page used to write `calc(--hdr-h + --toolbar-h + --space-3)` three
    * times — on `section`, on `.case-list .case-row[id]` and on `.full-group` —
    * and the one anchored element it forgot was `.tile`, which owns the anchor
-   * for 107 of the 120 tiles. So the round trip the site advertises (a case
+   * for 106 of the 119 tiles. So the round trip the site advertises (a case
    * page's "See it in the reference") landed the tile with ZERO visible pixels,
    * fully behind 154px of sticky chrome; measured in both Chromium and WebKit
    * at 390x844 on oll.40, pll.ga and f2l.12. The row-anchored oll.27, which had

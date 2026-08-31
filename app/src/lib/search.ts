@@ -4,8 +4,8 @@
  * components/CaseRow.astro) and those two copies had already drifted apart.
  *
  * WHY THIS EXISTS. The filter was `haystack.includes(needle)` over
- * `name + recognition + id`. Counted over the 138 entries the built page ships,
- * that returns nothing at all for the things a cuber actually types:
+ * `name + recognition + id`. Counted over the 138 entries the page shipped when
+ * this was written, that returns nothing at all for the things a cuber types:
  *
  *     "t perm"      0        "T-Perm"   2      <- the hyphen was load-bearing
  *     "u perm"      0        "4×4"      2      <- so was a × nobody can type
@@ -21,7 +21,7 @@
  * match every token of a multi-word query rather than the raw string.
  *
  * NOT the algorithm, though it was tempting and was tried. Adding the moves
- * makes `R U R'` match 136 of 138 cases, which is no more useful than the 0 it
+ * makes `R U R'` match 100 of the 142 entries, no more useful than the 0 it
  * returned before — and worse, every alg contains a word-initial "u" and "r",
  * so those tokens stop discriminating for every OTHER query too ("u perm" goes
  * back to matching all 25 perms). The field advertises "name, number or
@@ -86,7 +86,7 @@ function groupWords(group: string | undefined): string {
  * the punctuation, the dataset chose.
  *
  * The per-token rule is length-dependent, and every part of it was measured
- * against the 138 entries the page ships rather than reasoned about:
+ * against the 142 entries the page ships rather than reasoned about:
  *
  *   3+ chars   SUBSTRING. Anchoring these to a word start breaks the two
  *              commonest queries — "light" (35 hits, all inside "headlights"

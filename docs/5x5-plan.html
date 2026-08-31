@@ -440,6 +440,20 @@
       <span><b>Algorithms verified</b> on the cubing.js kpuzzle</span>
       
     </div>
+    <div class="note warn" style="margin-top:var(--s5)">
+      <b>§07 is superseded.</b> This document concluded &ldquo;do not build a 5&times;5 SVG
+      path&rdquo; and that &ldquo;the only gap left is a 62px tile icon on
+      <code>/reference/</code>&rdquo;. That gap turned out to be the visible one: the section
+      rendered a tile reading &ldquo;6&rdquo; &mdash; no picture, no algorithm, no recognition
+      cue. The blocker this document sidestepped has since been solved the way
+      <code>gen-case-states.mjs</code>&rsquo;s own KNOWN LIMIT comment prescribed:
+      <code>verify-l2e.mjs</code> exports the displayed hold it already round-trips, and the
+      5&times;5 parity case is drawn from it. The picture budget did not grow &mdash; it
+      <em>shrank</em>, because the same pass deleted the 61 unreachable 4&times;4/5&times;5
+      case-set diagrams. Everything else here still holds. See
+      <code>docs/DECISIONS.md</code> &sect; &ldquo;The reference gaps, the big-cube cut, and a
+      glossary&rdquo;.
+    </div>
   </header>
 
   <!-- ═══════════════════════════════════════════════════════════ -->

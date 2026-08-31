@@ -184,7 +184,7 @@ describe("filter over the real case list", () => {
   });
 
   it("does not search the algorithm, which would swamp every short token", () => {
-    // Deliberate: with the moves in the haystack "R U R'" matched 136 of 138,
+    // Deliberate: with the moves in the haystack "R U R'" matches 100 of 142,
     // and every alg's word-initial u and r stopped those tokens discriminating.
     const alg = HAYSTACKS.filter((h) => h.includes("r u r u")).length;
     expect(alg).toBe(0);

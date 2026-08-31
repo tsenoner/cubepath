@@ -403,3 +403,76 @@ h3 {
   border-color: var(--accent);
   color: var(--accent);
 }
+
+/*
+ * Glossary term, written into lesson prose by scripts/rehype-glossary.mjs.
+ * Global rather than scoped to Lesson.astro, because the markup is generated
+ * into the MDX body and an Astro-scoped rule cannot reach it.
+ *
+ * NO JAVASCRIPT, and the shape follows from that: it is a real <a> to the
+ * term's entry, so a keyboard reader focuses it like any link and a touch
+ * reader — who never gets :hover — taps through to the full definition rather
+ * than being handed nothing. The card is `content: attr(data-gloss)` on a
+ * pseudo-element, which is why the plugin emits the sentence as an attribute.
+ *
+ * Underline, not colour: the accent is the site's link colour and a lesson
+ * paragraph can hold four of these, which as blue text reads as a wall of
+ * links. A dotted rule under body-coloured text says "there is more here" in
+ * the register a dictionary uses.
+ */
+.gloss {
+  color: inherit;
+  text-decoration: none;
+  border-block-end: 1px dotted var(--faint);
+  /* The card is positioned against this, so the anchor has to be a containing
+     block — which `position: relative` alone makes it. It stays `inline`
+     (the default): `inline-block` would also make a multi-word term such as
+     "first two layers" or "adjacent corner swap" unbreakable, so a paragraph
+     could not wrap inside one and had to push the whole phrase to the next
+     line. A relatively positioned INLINE box is a valid containing block for
+     an absolutely positioned descendant — the box is the union of its own
+     fragments — so nothing is bought by promoting it. */
+  position: relative;
+}
+.gloss:hover {
+  border-block-end-color: var(--accent);
+  color: var(--accent);
+  text-decoration: none;
+}
+.gloss::after {
+  content: attr(data-gloss);
+  position: absolute;
+  inset-block-end: calc(100% + 8px);
+  inset-inline-start: 50%;
+  translate: -50% 0;
+  z-index: 20;
+  inline-size: max-content;
+  max-inline-size: min(30ch, calc(100vw - 2 * var(--shell-x, 16px)));
+  padding: var(--space-2) var(--space-3);
+  background: var(--card);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 18%);
+  font-size: var(--text-sm);
+  font-weight: 400;
+  font-style: normal;
+  line-height: 1.45;
+  text-align: start;
+  white-space: normal;
+  /* `display: none`, NOT `visibility: hidden`. A hidden box is still in
+     layout, and an absolutely positioned one still contributes to the
+     document's scrollable overflow — with `visibility` here every lesson page
+     scrolled 50px sideways at 375px, which e2e/regressions.spec.ts caught on
+     all 25 of them at once. Taking the box out of layout is the fix, and it
+     costs the fade (a transition needs two rendered states); a tooltip that
+     appears at once is the normal behaviour anyway. */
+  display: none;
+  /* Hidden from the pointer too: a card that intercepts the mouse flickers as
+     the pointer crosses its own tooltip. */
+  pointer-events: none;
+}
+.gloss:hover::after,
+.gloss:focus-visible::after {
+  display: block;
+}

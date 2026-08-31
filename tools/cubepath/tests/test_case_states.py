@@ -134,6 +134,10 @@ def test_case_ids_cover_the_extracted_sets_exactly() -> None:
         "4x4oll": len(jperm["4x4oll"]),
         "4x4pll": len(jperm["4x4pll"]),
         "555l2e": 13,
+        # The course's own OLL-parity picture. Not one of the 27: every case in
+        # JPerm's 4x4 OLL set has parity spliced into a last-layer algorithm,
+        # so none of them is bare parity, and `444.oll-parity` had no state.
+        "4x4parity": 1,
     }
     got: dict[str, int] = {}
     for case in _states()["cases"]:
@@ -178,18 +182,38 @@ def test_permutation_sets_are_fully_oriented() -> None:
             assert set(case["state"]["U"]) == {"U"}, case["id"]
 
 
-def test_the_5x5_l2e_states_are_flagged_as_raw() -> None:
-    """L2E is exported raw and is NOT yet drawable — the generator says so.
+def test_the_5x5_l2e_states_are_the_displayed_hold() -> None:
+    """L2E states are the hold a solver sees, not `alg⁻¹`.
 
-    An L2E algorithm is held partway through reduction, so its case state does
-    not present at UF/UB the way a diagram needs. The displayed pattern already
-    exists inside verify-l2e.mjs (check d) and has to be exported from there.
-    This test exists so the limitation cannot be forgotten by someone reading
-    only the JSON.
+    This used to assert the opposite — that the set was exported RAW and
+    flagged undrawable, because an L2E algorithm is held partway through
+    reduction and its raw case state does not present at UF/UB. verify-l2e.mjs
+    now exports the displayed pattern its own check (d) already round-trips,
+    so the set is drawable and this test pins what makes it drawable: the case
+    is confined to the two target groups and everything else is solved in
+    place. A regression here would draw thirteen plausible pictures of the
+    wrong cube.
     """
-    generator = _REPO / "app" / "scripts" / "gen-case-states.mjs"
-    assert "KNOWN LIMIT" in generator.read_text()
-    assert any(c["set"] == "555l2e" for c in _states()["cases"])
+    l2e = [c for c in _states()["cases"] if c["set"] == "555l2e"]
+    assert len(l2e) == 13
+    n = _states()["layouts"]["5x5x5"]["n"]
+    # The two target groups, as facelet positions: UF is U's last row and F's
+    # top row, UB is U's first row and B's top row — the middle n-2 cells of
+    # each, which is the group and not the corners beside it.
+    middles = range(1, n - 1)
+    allowed = {("U", i) for i in middles} | {("U", n * (n - 1) + i) for i in middles}
+    allowed |= {("F", i) for i in middles} | {("B", i) for i in middles}
+    for case in l2e:
+        assert case["derivation"] == "displayed", case["id"]
+        assert case["preRotation"] == "", case["id"]
+        off_target = {
+            (face, i)
+            for face, mask in case["mask"].items()
+            for i, ch in enumerate(mask)
+            if ch != "."
+            if (face, i) not in allowed
+        }
+        assert not off_target, f"{case['id']}: case content outside UF/UB at {sorted(off_target)}"
 
 
 # ── The cross-check: two independent cube models, one answer ──────────

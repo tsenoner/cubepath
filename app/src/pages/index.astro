@@ -38,62 +38,77 @@ const lessons = (await getCollection("lessons")).sort((a, b) => a.data.order - b
  * A picture per phase, from the generated diagram set — the phase cards were
  * eight identical boxes of links, and a cube is what this course is about.
  *
- * Each one is the cube state the phase leaves you in, drawn by the same
+ * Each one is the cube state the phase LEAVES YOU IN, drawn by the same
  * generator as the lesson diagrams, so nothing here is a stock illustration:
  * the beginner method ends solved, Phase 1.5 moves the first layer to the
- * bottom where it stays, CFOP's headline is the first two layers finished as
- * pairs. The two big-cube phases have no step diagram of their own — nothing
- * in the generator draws a 4×4 or a 5×5 — so they borrow the move that defines
- * each reduction: the wide turn, and the slice.
+ * bottom where it stays, Phase 3 finishes the top face, CFOP's headline is the
+ * first two layers done as pairs.
+ *
+ * Three of these were wrong, in ways only visible at the size they render at:
+ *
+ *  - 4×4 and 5×5 pointed at NOTATION diagrams — a 3×3 with a large black
+ *    "r (Rw)" or "M" printed across it. Wrong puzzle, a letter where a picture
+ *    belongs, and 155px of art squeezed into the same 96px box as 92px art, so
+ *    the cube inside came out visibly smaller than every other card's. They are
+ *    real 4×4 and 5×5 cubes now, mid-reduction — centres built, edges not yet
+ *    paired, which is what those phases actually teach.
+ *  - Basics pointed at `step_flip`, drawn for the moment before the first layer
+ *    exists, so three quarters of it is the not-reached grey. At 96px it read
+ *    as an empty card.
+ *  - Phase 3 pointed at the beginner ladder's step 6, which at this size is
+ *    indistinguishable from step 5 on the card above it.
+ *
+ * Every entry renders into the same BOX (see `ART_W`/`ART_H`), which is what
+ * stops a card from setting its own height — the bug this replaced was 155px
+ * art in a 96px box.
+ *
+ * The box is not the same as the cube. `step_anatomy` carries an arrow, and
+ * `render_step` pads an arrowed diagram by 6 rather than 4, so its viewBox is
+ * 95.5x105.4 against the other seven's 91.5x101.4 — letterboxed into a shared
+ * 92x101 it draws about 4% smaller. Left alone deliberately: the padding is
+ * there so the rotation arrow is not clipped, and equalising it would mean
+ * changing the pad for all 24 step diagrams, which the guide renders too.
  */
-const PHASE_ART: Record<string, { src: string; alt: string; w: number; h: number }> = {
+/**
+ * One box for every phase cube, so the eight cards line up. Structural
+ * rather than repeated per entry: the mismatch this replaced was 155px art
+ * rendered into a 96px box.
+ */
+const ART_W = 92;
+const ART_H = 101;
+
+const PHASE_ART: Record<string, { src: string; alt: string }> = {
   basics: {
-    src: "/diagrams/steps/step_flip.svg",
-    alt: "A cube with an arrow around it, turning the whole puzzle over",
-    w: 96,
-    h: 105,
+    src: "/diagrams/steps/step_anatomy.svg",
+    alt: "A solved cube with an arrow showing the whole puzzle turning",
   },
   "phase-1": {
     src: "/diagrams/steps/step_7_solved.svg",
     alt: "A fully solved cube",
-    w: 92,
-    h: 101,
   },
   "phase-1.5": {
     src: "/diagrams/steps/step_2_corners.svg",
     alt: "A cube with its whole bottom layer solved",
-    w: 92,
-    h: 101,
   },
   "phase-2": {
     src: "/diagrams/steps/step_4_ycross.svg",
     alt: "A cube showing a yellow cross on the top face",
-    w: 92,
-    h: 101,
   },
   "phase-3": {
-    src: "/diagrams/steps/step_6_ycorners_pos.svg",
-    alt: "A cube with every last-layer corner in its place, still twisted",
-    w: 92,
-    h: 101,
+    src: "/diagrams/steps/step_oll_done.svg",
+    alt: "A cube whose whole top face is yellow, its sides not yet matched",
   },
   "full-cfop": {
     src: "/diagrams/steps/step_3_edges.svg",
     alt: "A cube with its first two layers complete",
-    w: 92,
-    h: 101,
   },
   "444": {
-    src: "/diagrams/notation/move_rw.svg",
-    alt: "The wide r turn: two layers of the right-hand side rotating together",
-    w: 155,
-    h: 137,
+    src: "/diagrams/steps/step_444_centres.svg",
+    alt: "A 4×4 with its centres built and its edges not yet paired",
   },
   "555": {
-    src: "/diagrams/notation/move_m.svg",
-    alt: "The M slice: the middle layer rotating between the two outer ones",
-    w: 155,
-    h: 137,
+    src: "/diagrams/steps/step_555_centres.svg",
+    alt: "A 5×5 with its centres built and its edges not yet paired",
   },
 };
 
@@ -185,8 +200,8 @@ const firstHref = `/learn/${lessons[0]?.id}/`;
                 class="phase-art"
                 src={art.src}
                 alt={art.alt}
-                width={art.w}
-                height={art.h}
+                width={ART_W}
+                height={ART_H}
                 loading="lazy"
                 decoding="async"
               />

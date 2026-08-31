@@ -1,20 +1,25 @@
 ---
 /**
- * The site header: brand, the four destinations, the theme control, install.
+ * The site header: brand, the five destinations, the theme control, install.
  *
  * "Print" is a real destination now. The PDF guide and the printable card set
  * — two of the project's four deliverables, one of them literally printed on
  * card stock — used to be reachable only from a sentence inside the reference
  * page's lead paragraph.
+ *
+ * "Glossary" is here rather than buried in /reference because the lessons link
+ * into it a few hundred times: a reader who has followed one of those links
+ * needs a way back to the whole list without using the back button.
  */
 interface Props {
-  active?: "learn" | "practice" | "reference" | "print";
+  active?: "learn" | "practice" | "reference" | "glossary" | "print";
 }
 const { active } = Astro.props;
 const links = [
   { href: "/", label: "Learn", key: "learn" },
   { href: "/practice/", label: "Practice", key: "practice" },
   { href: "/reference/", label: "Reference", key: "reference" },
+  { href: "/glossary/", label: "Glossary", key: "glossary" },
   { href: "/print/", label: "Print", key: "print" },
 ];
 ---
@@ -299,6 +304,15 @@ const links = [
    * this size. It is not lost: the home page's "Take it offline" block carries
    * the same `data-install-slot` button, with the iOS instructions beside it,
    * and PwaShell surfaces every slot at once.
+   *
+   * A FIFTH destination (Glossary) then needed 377px, so below 375 every page
+   * scrolled sideways again and at exactly 375 the gate had no headroom left —
+   * one longer label or a different font metric and CI fails. Dropping a
+   * destination is not an option (each is a real surface), so the nav is a
+   * side-scrolling strip on a phone, the same idiom /reference's jump bar uses:
+   * `min-inline-size: 0` is what lets a flex item shrink below its content, and
+   * `overflow-x` is what e2e/regressions.spec.ts reads to tell a deliberate
+   * strip from a page that widened.
    */
   @media (max-width: 560px) {
     .bar {
@@ -310,9 +324,13 @@ const links = [
     }
     nav {
       gap: 12px;
+      min-inline-size: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
     }
     .navlink {
       font-size: 13px;
+      white-space: nowrap;
     }
     .theme {
       inline-size: 28px;

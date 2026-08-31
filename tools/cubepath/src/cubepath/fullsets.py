@@ -463,11 +463,23 @@ def _color_of_face() -> dict[str, str]:
     return dict(COLORS)
 
 
-def _states_of(set_name: str) -> list[dict[str, Any]]:
+def _states_of(set_name: str, ids: set[str] | None = None) -> list[dict[str, Any]]:
+    """Exported states of one set, optionally narrowed to named case ids.
+
+    `ids` is how the big-cube sets are drawn down to the three cases the course
+    teaches — see `TAUGHT_BIG_CUBE` — and it is checked rather than filtered
+    silently: a typo that matched nothing would quietly drop a diagram.
+    """
     cases = [c for c in case_states()["cases"] if c["set"] == set_name]
     if not cases:
         raise AssertionError(f"case-states.json carries no {set_name} cases")
-    return cases
+    if ids is None:
+        return cases
+    picked = [c for c in cases if c["id"] in ids]
+    missing = ids - {c["id"] for c in picked}
+    if missing:
+        raise AssertionError(f"{set_name} carries no case(s) {sorted(missing)}")
+    return picked
 
 
 def _case_order(case: dict[str, Any]) -> int:
@@ -494,7 +506,23 @@ def diagram_name(case_id: str) -> str:
     return case_id.replace(".", "_").replace("-", "_")
 
 
-def plan_oll_cases(set_name: str, category: str) -> list[CubeDiagram]:
+def _plan_identity(case: dict[str, Any], category: str) -> dict[str, Any]:
+    """The fields every plan view shares: filename, label, category, cube order.
+
+    Written once rather than three times (OLL / PLL / L2E) because the filename
+    rule and the label format are both pinned by `tests/test_diagrams.py` — and
+    the filename rule is re-implemented in JavaScript besides, so a third copy
+    here is a third place for the two languages to disagree.
+    """
+    return {
+        "name": diagram_name(case["id"]),
+        "label": f"{case['name']} — {case['group']}",
+        "category": category,
+        "n": _case_order(case),
+    }
+
+
+def plan_oll_cases(set_name: str, category: str, ids: set[str] | None = None) -> list[CubeDiagram]:
     """OLL diagrams for a whole set, straight from the exported states: yellow
     where the last layer is already oriented, grey where it is not.
 
@@ -506,14 +534,11 @@ def plan_oll_cases(set_name: str, category: str) -> list[CubeDiagram]:
     construction.
     """
     cases = []
-    for case in _states_of(set_name):
+    for case in _states_of(set_name, ids):
         u, sides = _case_plan_view(case)
         cases.append(
             CubeDiagram(
-                name=diagram_name(case["id"]),
-                label=f"{case['name']} — {case['group']}",
-                category=category,
-                n=_case_order(case),
+                **_plan_identity(case, category),
                 u_face=_yellow_mask(u),
                 top_side=_yellow_mask(sides["top"]),
                 right_side=_yellow_mask(sides["right"]),
@@ -524,22 +549,19 @@ def plan_oll_cases(set_name: str, category: str) -> list[CubeDiagram]:
     return cases
 
 
-def plan_pll_cases(set_name: str, category: str) -> list[CubeDiagram]:
+def plan_pll_cases(set_name: str, category: str, ids: set[str] | None = None) -> list[CubeDiagram]:
     """PLL diagrams for a whole set: true side colours, and arrows read off the
     real piece permutation — never declared, at either cube size. Parameterised
     for the same reason `plan_oll_cases` is."""
     cases = []
-    for case in _states_of(set_name):
+    for case in _states_of(set_name, ids):
         n = _case_order(case)
         u, sides = _case_plan_view(case)
         assert all(s == "Y" for s in u), f"{case['id']}: U face not oriented"
         swaps, cycles = _arrows_from_permutation(_plan_permutation(sides, n))
         cases.append(
             CubeDiagram(
-                name=diagram_name(case["id"]),
-                label=f"{case['name']} — {case['group']}",
-                category=category,
-                n=n,
+                **_plan_identity(case, category),
                 u_face=[dim(YELLOW)] * (n * n),
                 top_side=_colorize(sides["top"]),
                 right_side=_colorize(sides["right"]),
@@ -552,19 +574,173 @@ def plan_pll_cases(set_name: str, category: str) -> list[CubeDiagram]:
     return cases
 
 
+# ── The big cubes: three pictures, and only three ─────────────────────
+# THE COURSE TEACHES REDUCTION (and Yau as the advanced variant), which means a
+# big cube becomes a 3x3 and the 3x3 method finishes it. That is not a
+# simplification of what this repo ships — it is the whole shape of it, and it
+# decides what there is to draw.
+#
+# So there is no 4x4 OLL set and no 4x4 PLL set here, and no thirteen-case 5x5
+# L2E set. Those exist in the DATA — verified, and kept, because the parity
+# algorithms are located inside them by mechanism rather than retyped (see
+# gen-case-states.mjs) — but they are one-look optimisations for a solver who
+# already owns full OLL/PLL, they are locked out of the UI by
+# `app/src/lib/unlocks.ts`, and 61 SVGs that no page can reach are 61 SVGs that
+# can silently rot. They were generated once; they are not any more.
+#
+# What is left is exactly what a reduction solver must own beyond their 3x3:
+# two parity fixes on the 4x4 and one on the 5x5. `TAUGHT_BIG_CUBE` is that
+# list, and `tests/test_diagrams.py` asserts it is the same list `unlocks.ts`
+# calls taught — the two are written in different languages and must not drift.
+
+# case id -> (the exported set it is drawn FROM, what it is).
+# The source set is here rather than at the three call sites so this constant
+# actually SELECTS what gets rendered. It used to be prose with a variable
+# name: the renderers re-typed the same ids, and `test_diagrams.py` compared
+# this dict against gen-cases.mjs and unlocks.ts but never against the code
+# that picks the diagrams — so all three declared lists could agree while the
+# renderer drew something else.
+TAUGHT_BIG_CUBE = {
+    "444.oll-parity": ("4x4parity", "the flipped edge pair a 3x3 cannot produce"),
+    "444.pll.pure-e": ("4x4pll", "two edge pairs swapped across, with the corners a free U2"),
+    "555.l2e-6": ("555l2e", "the same flip one cube bigger — two wings, not one pair"),
+}
+
+
+def taught_ids(set_name: str) -> set[str]:
+    """The taught case ids drawn from one exported set. Empty is a bug, not a
+    valid answer — every set named in `TAUGHT_BIG_CUBE` has at least one."""
+    ids = {i for i, (source, _) in TAUGHT_BIG_CUBE.items() if source == set_name}
+    if not ids:
+        raise AssertionError(f"TAUGHT_BIG_CUBE names no case from {set_name}")
+    return ids
+
+
 def big_oll_cases() -> list[CubeDiagram]:
-    """The 27 4x4 OLL diagrams."""
-    return plan_oll_cases("4x4oll", "444_oll")
+    """The 27 4x4 OLL views. NOT RENDERED — see `TAUGHT_BIG_CUBE` above.
+
+    These build `CubeDiagram`s and write nothing. They stay because the 4x4
+    states they are built from still ship in `case-states.json` (the parity
+    algorithms are located inside those sets by mechanism), and because they
+    are what `tests/test_diagrams.py` checks the 4x4 half of the plan-view
+    renderer against: physically-possible cubes, the corner-twist law, arrows
+    read off the real permutation, no two cases drawing the same picture. The
+    two parity diagrams that DO ship come out of the same code and the same
+    states, so deleting these would be deleting the evidence for them.
+    """
+    return plan_oll_cases("4x4oll", "444_parity")
 
 
 def big_pll_cases() -> list[CubeDiagram]:
-    """The 22 4x4 PLL diagrams."""
-    return plan_pll_cases("4x4pll", "444_pll")
+    """The 22 4x4 PLL views. NOT RENDERED — see `big_oll_cases`."""
+    return plan_pll_cases("4x4pll", "444_parity")
+
+
+def parity_cases() -> list[CubeDiagram]:
+    """The three big-cube parity pictures, one per set idiom.
+
+    Each is drawn the way its own step is drawn everywhere else on the site,
+    and the three idioms differ because the three steps do:
+
+      * 4x4 OLL parity — the yellow/grey orientation mask. It happens during
+        OLL and asks OLL's question: is this facelet yellow yet? It is not one
+        of JPerm's 27 4x4 OLL cases, because every one of those has the parity
+        algorithm spliced into a last-layer algorithm and none of them is bare
+        parity; its state is built and gated in gen-case-states.mjs.
+      * 4x4 PLL parity — true side colours with arrows off the real
+        permutation, exactly like every PLL plan view, because it is one.
+      * 5x5 edge parity — three-tier true colour, because it happens during
+        PAIRING and neither last-layer idiom fits. See `l2e_cases`.
+    """
+    return (
+        plan_oll_cases("4x4parity", "444_parity", ids=taught_ids("4x4parity"))
+        + plan_pll_cases("4x4pll", "444_parity", ids=taught_ids("4x4pll"))
+        + l2e_cases()
+    )
+
+
+def l2e_cases() -> list[CubeDiagram]:
+    """The 5x5 edge-parity picture — the one 5x5 case the course teaches.
+
+    THE VIEW is the same last-layer plan view every other set uses, at n=5, and
+    that works because an L2E case is presented with both target groups on the
+    top layer (UF and UB). What made the 5x5 undrawable for so long was never
+    the renderer; it was that `alg⁻¹` is not a picture of an L2E case, because
+    the algorithm is written for a hold partway through reduction.
+    `verify-l2e.mjs` owns the reduction model, exports the displayed hold, and
+    `gen-case-states.mjs` turns it into facelets like anything else.
+
+    THE STICKERING is three-tier and TRUE COLOUR, which is neither of the two
+    idioms the last-layer sets use, for a reason that is about the method
+    rather than about taste:
+
+      * The OLL mask (yellow / not-yellow) would be a lie. This happens during
+        REDUCTION, before there is a last layer at all; nothing is being
+        oriented towards yellow, and the question the picture has to answer is
+        "do this group's three stickers show one colour" — which needs the
+        colours.
+      * The PLL treatment (U face dimmed flat, side bands in colour) would
+        erase the case. A flipped pair shows the SIDE colour on top; dimming
+        the U face to one tone deletes exactly the thing being recognised.
+
+    So: full colour on the facelets the case state says are not home — that is
+    the case, and it is read off the exported mask rather than declared. Dim on
+    everything the pairing has already finished. Grey on the corners, because
+    at this point the method genuinely has not reached them: reduction solves
+    corners in the 3x3 stage, afterwards. Same three tiers as everywhere else,
+    applied to the step this actually is.
+    """
+    cases = []
+    for case in _states_of("555l2e", taught_ids("555l2e")):
+        n = _case_order(case)
+        u, sides = _case_plan_view(case)
+        u_mask, side_masks = plan_view(case["mask"], n)
+        # A plan view's corners are the four corners of the U grid, and the two
+        # ends of every side band. Derived from n, so it holds at any order.
+        u_corners = {0, n - 1, n * (n - 1), n * n - 1}
+
+        cases.append(
+            CubeDiagram(
+                **_plan_identity(case, "555_parity"),
+                u_face=[
+                    _l2e_tier(colour, mask, i in u_corners)
+                    for i, (colour, mask) in enumerate(zip(u, u_mask, strict=True))
+                ],
+                top_side=_l2e_strip(sides["top"], side_masks["top"]),
+                right_side=_l2e_strip(sides["right"], side_masks["right"]),
+                bottom_side=_l2e_strip(sides["bottom"], side_masks["bottom"]),
+                left_side=_l2e_strip(sides["left"], side_masks["left"]),
+            )
+        )
+    return cases
+
+
+def _l2e_tier(colour_letter: str, mask: str, is_corner: bool) -> str:
+    """One facelet of an L2E plan view, in its tier.
+
+    `mask` is case-states.json's piece classification: "." home, "o" home but
+    turned, "x" a different piece. Anything but "." is the case.
+    """
+    if mask != ".":
+        return _SIM_COLOR[colour_letter]
+    return UNREACHED if is_corner else dim(_SIM_COLOR[colour_letter])
+
+
+def _l2e_strip(colours: list[str], masks: list[str]) -> list[str]:
+    """One side band of an L2E plan view. Its two ends are the band's corners,
+    derived from its own length so it holds at any order."""
+    last = len(colours) - 1
+    return [
+        _l2e_tier(colour, mask, i in (0, last))
+        for i, (colour, mask) in enumerate(zip(colours, masks, strict=True))
+    ]
 
 
 def render_big_sets(output_dir: Path) -> int:
+    """The three big-cube diagrams. Named `big_sets` for the call sites that
+    predate the cut; there is one set now, and it is the parity set."""
     count = 0
-    for case in big_oll_cases() + big_pll_cases():
+    for case in parity_cases():
         render(case, output_dir)
         count += 1
     return count

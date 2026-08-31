@@ -9,7 +9,7 @@ objectives:
   - "Name the three pieces of a 5×5 edge and say when it counts as paired."
   - "Run the freeslice loop, and flip a wing that faces the wrong way."
 prerequisites: ["444-edge-pairing"]
-algorithms: []
+algorithms: ["444.edge-flip"]
 practice:
   groups: []
   links:
@@ -83,6 +83,36 @@ make room.
   two-wide grab cannot reach at all: for that one, grab the middle slice with
   `M` instead.
 </Callout>
+
+Those three beats are the whole tool, and the only thing you choose is the
+grab: `Rw`, `2R`, `M` and `Lw'` all give the same shape, and which one you
+reach for is decided by the column your piece has to land in. That is
+searched rather than claimed — on a 5×5, **nothing shorter than three moves
+moves a piece between two centres while leaving the other four whole.**
+
+### The last bar: grab twice
+
+One grab always throws something out. Usually you do not care, because the
+target face is still half-built and the piece it displaced was going to move
+anyway. On the **last bar** you do care: the only thing left to displace is
+part of the bar you just finished.
+
+The answer is the same insert twice, in **two different layers** — and this is
+the pattern J Perm walks through move by move rather than naming, because
+there is no single string to name:
+
+1. Line the piece up on top, over the column it has to land in, and grab it
+   down.
+2. Turn the top so that what you just displaced sits over a **different**
+   column.
+3. Grab that column down too.
+4. Turn the top back, then undo both grabs — first one, then the other.
+
+The second grab is the whole trick. It parks the first grab's damage in a
+column that gets restored on the way back out, so both unfinished faces come
+back whole apart from the one piece you meant to move. Aim it the same way
+every time and it works for any piece, which is exactly why it is worth
+learning as a shape and not as a sequence.
 
 ## Edges: a midge and two wings
 
