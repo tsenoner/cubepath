@@ -41,7 +41,7 @@
 import { KPattern } from "cubing/kpuzzle";
 import type { KPuzzle } from "cubing/kpuzzle";
 
-import L2E_RAW from "../data/extracted/l2e-raw.json";
+import { L2E_HOLDS, type StickerDelta } from "../data/fullsets.rich.gen";
 import type { Puzzle, Stickering } from "../data/algs";
 import {
   ORBIT_KINDS,
@@ -216,20 +216,18 @@ export async function hasHomeOrientation(puzzle: Puzzle, alg: string): Promise<b
  * inverse puts it — there is no setup alg for a parity state — but the
  * highlight is computed from the DISPLAYED HOLD that `verify-l2e.mjs` exports
  * and the SVG diagram is drawn from, so those two groups come out DIM rather
- * than lit. Dim is the honest tier for them: at the pairing stage a group that
+ * than lit. It arrives here through `gen-cases.mjs` like every other piece of
+ * generated case data — `extracted/l2e-raw.json` is the GENERATOR's input, and
+ * this file reading it directly was a reach around the one thing that owns it. Dim is the honest tier for them: at the pairing stage a group that
  * is intact but displaced is finished, and the 3x3 stage places it.
  *
  * Keyed by algorithm because that is what `maskFor` is given — the same idiom
  * `contextForPlayer` already resolves cases by, and the 13 L2E strings collide
  * with nothing (tests/algs.spec.ts pins that triples are near-unique).
  */
-type Delta = { orbit: string; slot: number; piece: number; orientation: number };
+type Delta = StickerDelta;
 
-const HOLDS: Record<string, Delta[]> = Object.fromEntries(
-  (L2E_RAW as { algs: string[]; displayed?: Delta[] }[]).flatMap((c) =>
-    c.displayed && c.algs[0] ? [[c.algs[0], c.displayed] as const] : [],
-  ),
-);
+const HOLDS = L2E_HOLDS;
 
 /**
  * Which pieces the algorithm fixes, per orbit, in home-slot order — i.e. the

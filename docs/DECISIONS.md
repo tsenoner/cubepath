@@ -1234,3 +1234,14 @@ for `444.oll-parity` that it can never apply — that case is curated in
 `algs.ts`, which owns its icon — and the gate compared keys only. The row is
 marked key-only and the gate now compares the values, so the two copies of that
 literal cannot drift.
+
+**The displayed hold reaches the player through the generator.**
+`src/lib/stickering.ts` imported `extracted/l2e-raw.json` directly to build its
+L2E mask. That file is the GENERATOR's input side, so one fact — what the 5×5
+parity case actually looks like — had two consumers reading two
+representations, and the raw extraction was reachable from the app without
+passing through the one thing that owns it. `gen-cases.mjs` already read the
+file; it now emits `L2E_HOLDS` into `fullsets.rich.gen.ts` (build-time only,
+so nothing new ships to the client) and `stickering.ts` reads generated data
+like every other surface. The lean file is byte-identical and all 148 rendered
+stickering masks across the site are unchanged.

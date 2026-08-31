@@ -175,10 +175,13 @@ repo that does not follow the derive-everything rule.
 
 Data flow: `src/data/extracted/*.json` (verified extractions) + `src/data/recognition.json`
 (hand-written cues) → `gen-cases.mjs` →
-`fullsets.gen.ts` (lean, ships to client) + `fullsets.rich.gen.ts` (recognition +
-alternates, build-time only) → merged with curated entries in `src/data/algs.ts`
+`fullsets.gen.ts` (lean, ships to client) + `fullsets.rich.gen.ts` (recognition,
+alternates and the 5×5 `L2E_HOLDS`, build-time only) → merged with curated entries in `src/data/algs.ts`
 (`ALL_CASES`). Never hand-edit generated files; never retype algorithms — every
-alg is kpuzzle-verified in `tests/algs.spec.ts`.
+alg is kpuzzle-verified in `tests/algs.spec.ts`. **The arrow runs one way**:
+`extracted/*.json` is the generator's INPUT, so nothing under `src/` may read
+it — `stickering.ts` did, for the L2E holds, and takes them from the RICH file
+now.
 
 **The glossary is generated into the lessons, not written into them.**
 `src/data/glossary.ts` holds every term the site uses; `scripts/rehype-glossary.mjs`

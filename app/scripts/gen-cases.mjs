@@ -19,7 +19,9 @@ import { readFile, writeFile } from "node:fs/promises";
  * @typedef {{ name: string; group: string; prob?: number; algs: string[]; scrambles: string[] }} RawCase
  * @typedef {Record<"oll" | "pll" | "4x4oll" | "4x4pll", RawCase[]>} RawSets
  * @typedef {{ number: number; name: string; group: string; setup?: string; algs: string[] }} F2LCase
- * @typedef {{ slug: string; name: string; algs: string[] }} L2ECase
+ * @typedef {{ orbit: string; slot: number; piece: number; orientation: number }} StickerDelta
+ * @typedef {{ slug: string; name: string; algs: string[];
+ *             displayed?: StickerDelta[] }} L2ECase
  * @typedef {{ id: string; group: string; name: string; recognition: string; algs: string[];
  *   stickering: string; puzzle: string; phase: string; probability?: string; icon?: string }} CaseInput
  */
@@ -132,6 +134,21 @@ const cases = [];
 const scrambles = {};
 /** @type {Record<string, { recognition: string; alternates: { moves: string }[] }>} */
 const rich = {};
+
+/**
+ * The DISPLAYED HOLD of every L2E case that exports one, keyed by its primary
+ * algorithm — the state the diagram is drawn from, as a patch on solved.
+ *
+ * Emitted into the RICH file so the player's stickering reads GENERATED data
+ * like everything else. `src/lib/stickering.ts` used to import
+ * `extracted/l2e-raw.json` directly, which is the generator's INPUT side: one
+ * fact, two consumers, and `l2e-raw.json` reachable from the app without
+ * passing through here. Keyed by algorithm because that is what `maskFor` is
+ * handed (tests/algs.spec.ts pins that the alg strings are near-unique).
+ */
+const l2eHolds = Object.fromEntries(
+  l2e.flatMap((c) => (c.displayed && c.algs[0] ? [[c.algs[0], c.displayed]] : [])),
+);
 
 /** @param {CaseInput} input */
 function addCase({ id, icon, recognition: rec, algs, ...lean }) {
@@ -270,7 +287,15 @@ await writeFile(
   ) +
     `import type { AlgVariant } from "./algs";\n\n` +
     `export const RICH: Record<string, { recognition: string; alternates: AlgVariant[] }> = ` +
-    `${JSON.stringify(rich, null, 2)};\n`,
+    `${JSON.stringify(rich, null, 2)};\n\n` +
+    `/** One facelet-slot patch on the solved pattern. */\n` +
+    `export type StickerDelta = { orbit: string; slot: number; piece: number; orientation: number };\n\n` +
+    `/**\n` +
+    ` * Cases whose drawn state is NOT \`solved · alg⁻¹\` — the 5x5 L2E set — as the\n` +
+    ` * displayed hold the diagram is built from, keyed by primary algorithm.\n` +
+    ` */\n` +
+    `export const L2E_HOLDS: Record<string, StickerDelta[]> = ` +
+    `${JSON.stringify(l2eHolds, null, 2)};\n`,
 );
 
 console.log(
