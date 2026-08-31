@@ -457,7 +457,16 @@ const STAGE_OF_GROUP = [
   { kind: "exact", key: "2look-pll-corners", stage: "cp" },
   { kind: "exact", key: "2look-pll-edges", stage: "ep" },
   { kind: "exact", key: "444-parity", stage: "eo" },
-  { kind: "exact", key: "555-l2e", stage: "555-pairing" },
+  { kind: "exact", key: "555-parity", stage: "555-pairing" },
+  // The beginner method's own triggers. Righty and lefty are introduced to
+  // place the first-layer corners (`f1l`) and reused at every later step; the
+  // stage is where the reader MEETS them, which is what the tier model is
+  // about. Niklas positions the last-layer corners, so `cp` — and on the
+  // beginner ladder that is before orientation, which is exactly the case the
+  // two-ladder split exists for.
+  { kind: "exact", key: "beginner-triggers", stage: "f1l" },
+  { kind: "exact", key: "beginner-corner-cycle", stage: "cp" },
+  { kind: "exact", key: "bigcube-pairing", stage: "444-pairing" },
   { kind: "prefix", key: "f2l-", stage: "f2l" },
   { kind: "prefix", key: "oll-", stage: "oll" },
   { kind: "prefix", key: "pll-", stage: "pll" },

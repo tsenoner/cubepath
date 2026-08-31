@@ -19,7 +19,9 @@ import { readFile, writeFile } from "node:fs/promises";
  * @typedef {{ name: string; group: string; prob?: number; algs: string[]; scrambles: string[] }} RawCase
  * @typedef {Record<"oll" | "pll" | "4x4oll" | "4x4pll", RawCase[]>} RawSets
  * @typedef {{ number: number; name: string; group: string; setup?: string; algs: string[] }} F2LCase
- * @typedef {{ slug: string; name: string; algs: string[] }} L2ECase
+ * @typedef {{ orbit: string; slot: number; piece: number; orientation: number }} StickerDelta
+ * @typedef {{ slug: string; name: string; algs: string[];
+ *             displayed?: StickerDelta[] }} L2ECase
  * @typedef {{ id: string; group: string; name: string; recognition: string; algs: string[];
  *   stickering: string; puzzle: string; phase: string; probability?: string; icon?: string }} CaseInput
  */
@@ -49,6 +51,58 @@ const slug = (s) =>
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
+
+/**
+ * The big-cube cases the course TEACHES, and the diagram drawn for each.
+ *
+ * There are three, and that is the whole big-cube picture budget, because the
+ * course teaches REDUCTION: a 4x4 or 5x5 becomes a 3x3 and the 3x3 method
+ * finishes it. What is left over is parity — two fixes on the 4x4, one on the
+ * 5x5 — and nothing else needs a picture.
+ *
+ * The other 60 big-cube cases still ship as verified DATA (the parity
+ * algorithms are located inside those sets by mechanism rather than retyped),
+ * but they are one-look optimisations, `src/lib/unlocks.ts` keeps them out of
+ * every surface, and they carry no icon because no diagram is generated for
+ * them. `tools/cubepath/src/cubepath/fullsets.py` holds the same three ids as
+ * `TAUGHT_BIG_CUBE`, and a Python test asserts the two lists agree.
+ *
+ * Paths are written out rather than built from the id: three literals a reader
+ * can check against `ls app/public/diagrams` beat a string-surgery rule with
+ * three inputs, and test_diagrams.py resolves every one of them to a file.
+ * @type {Record<string, string>}
+ */
+const TAUGHT_BIG_CUBE = {
+  // KEY-ONLY. This generator never builds the id `444.oll-parity` — it emits
+  // `444.oll.<slug>`, `444.pll.<slug>` and `555.<slug>` — because OLL parity is
+  // a CURATED case, and src/data/algs.ts owns its icon. The row is here so the
+  // three-language gate can compare one list of ids; test_diagrams.py asserts
+  // this path against the curated one, so the two literals cannot drift.
+  "444.oll-parity": "/diagrams/444-parity/444_oll_parity.svg",
+  "444.pll.pure-e": "/diagrams/444-parity/444_pll_pure_e.svg",
+  "555.l2e-6": "/diagrams/555-parity/555_l2e_6.svg",
+};
+
+/**
+ * Case id -> the name to print, where the source's own label is an index or a
+ * set-internal code rather than a name a learner can use.
+ *
+ * Kept deliberately small. A case whose only identity IS its index ("L2E 11",
+ * "OLL 33") keeps that index — inventing names for cases nobody names is worse
+ * than an index. What is here is the two BIG-CUBE PARITY cases, and they earn
+ * it: they are the only two algorithms the 4x4 and 5x5 courses teach, every
+ * lesson and every cheat card calls them "OLL parity" and "PLL parity", and
+ * the source labels — SpeedCubeDB's positional "L2E 6", JPerm's set-internal
+ * "Pure-E" — name neither. `444.pll.pure-e`'s algorithm IS the bare PLL-parity
+ * string byte for byte (asserted in tests/algs.spec.ts against
+ * case-states.json's `parityAlgs`), and `555.l2e-6` carries J Perm's own
+ * 5x5 parity alg, so these are renames, not reclassifications.
+ * @type {Record<string, string>}
+ */
+const NAME_OVERRIDES = {
+  "555.l2e-6": "Edge Parity (5×5)",
+  "444.pll.pure-e": "PLL Parity (4×4)",
+};
 
 const MAX_SCRAMBLES = 5;
 
@@ -80,6 +134,21 @@ const cases = [];
 const scrambles = {};
 /** @type {Record<string, { recognition: string; alternates: { moves: string }[] }>} */
 const rich = {};
+
+/**
+ * The DISPLAYED HOLD of every L2E case that exports one, keyed by its primary
+ * algorithm — the state the diagram is drawn from, as a patch on solved.
+ *
+ * Emitted into the RICH file so the player's stickering reads GENERATED data
+ * like everything else. `src/lib/stickering.ts` used to import
+ * `extracted/l2e-raw.json` directly, which is the generator's INPUT side: one
+ * fact, two consumers, and `l2e-raw.json` reachable from the app without
+ * passing through here. Keyed by algorithm because that is what `maskFor` is
+ * handed (tests/algs.spec.ts pins that the alg strings are near-unique).
+ */
+const l2eHolds = Object.fromEntries(
+  l2e.flatMap((c) => (c.displayed && c.algs[0] ? [[c.algs[0], c.displayed]] : [])),
+);
 
 /** @param {CaseInput} input */
 function addCase({ id, icon, recognition: rec, algs, ...lean }) {
@@ -140,45 +209,35 @@ for (const c of f2l.f2l) {
 }
 
 for (const c of l2e) {
+  const id = `555.${c.slug}`;
   addCase({
-    id: `555.${c.slug}`,
-    group: "555-l2e",
-    name: c.name,
+    id,
+    group: "555-parity",
+    name: NAME_OVERRIDES[id] ?? c.name,
     // Every one of the 13 shared this hardcoded string and bypassed the
     // recognition.json lookup the other branches use, so /reference rendered
     // thirteen identically-labelled tiles that no learner could tell apart.
-    recognition: recognition[`555.${c.slug}`] ?? "Last two edges (5×5)",
+    recognition: recognition[id] ?? "Last two edges (5×5)",
     algs: c.algs,
     stickering: "full",
     puzzle: "5x5x5",
     phase: "555",
+    ...(TAUGHT_BIG_CUBE[id] ? { icon: TAUGHT_BIG_CUBE[id] } : {}),
   });
 }
 
-/**
- * Case id -> the diagram file the Python generator writes for it.
- * `diagram_name` in tools/cubepath/src/cubepath/fullsets.py builds the same
- * string from the same id; test_diagrams.py asserts every icon emitted here
- * resolves to a file that actually exists, because two independent filename
- * implementations that quietly disagree ship a broken image with both halves'
- * own gates green.
- * @param {string} dir
- * @param {string} id
- */
-const diagramIcon = (dir, id) => `/diagrams/${dir}/${id.replace(/[.-]/g, "_")}.svg`;
-
-/** @type {["4x4oll" | "4x4pll", string, string, string][]} */
+/** @type {["4x4oll" | "4x4pll", string, string][]} */
 const BIG_SETS = [
-  ["4x4oll", "444.oll", "444", "444-oll"],
-  ["4x4pll", "444.pll", "444", "444-pll"],
+  ["4x4oll", "444.oll", "444"],
+  ["4x4pll", "444.pll", "444"],
 ];
-for (const [setName, prefix, phase, diagramDir] of BIG_SETS) {
+for (const [setName, prefix, phase] of BIG_SETS) {
   for (const c of raw[setName]) {
     const id = `${prefix}.${slug(c.name)}`;
     addCase({
       id,
       group: `${setName}-${slug(c.group)}`,
-      name: `${c.name} (4×4 ${setName.includes("oll") ? "OLL" : "PLL"})`,
+      name: NAME_OVERRIDES[id] ?? `${c.name} (4×4 ${setName.includes("oll") ? "OLL" : "PLL"})`,
       // The extraction's group label ("Edges Only", "0 Corners") describes the
       // case, not the representative this repo draws for it — the case state is
       // a bare alg-inverse with no AUF normalisation, so a picture can carry a
@@ -190,7 +249,7 @@ for (const [setName, prefix, phase, diagramDir] of BIG_SETS) {
       stickering: "full",
       puzzle: "4x4x4",
       phase,
-      icon: diagramIcon(diagramDir, id),
+      ...(TAUGHT_BIG_CUBE[id] ? { icon: TAUGHT_BIG_CUBE[id] } : {}),
     });
     // NO trainer scrambles for the big-cube sets, deliberately. The extraction
     // ships scrambles for these cases, but every one of them is outer-layer
@@ -228,7 +287,15 @@ await writeFile(
   ) +
     `import type { AlgVariant } from "./algs";\n\n` +
     `export const RICH: Record<string, { recognition: string; alternates: AlgVariant[] }> = ` +
-    `${JSON.stringify(rich, null, 2)};\n`,
+    `${JSON.stringify(rich, null, 2)};\n\n` +
+    `/** One facelet-slot patch on the solved pattern. */\n` +
+    `export type StickerDelta = { orbit: string; slot: number; piece: number; orientation: number };\n\n` +
+    `/**\n` +
+    ` * Cases whose drawn state is NOT \`solved · alg⁻¹\` — the 5x5 L2E set — as the\n` +
+    ` * displayed hold the diagram is built from, keyed by primary algorithm.\n` +
+    ` */\n` +
+    `export const L2E_HOLDS: Record<string, StickerDelta[]> = ` +
+    `${JSON.stringify(l2eHolds, null, 2)};\n`,
 );
 
 console.log(

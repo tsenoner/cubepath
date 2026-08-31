@@ -45,7 +45,7 @@ cube. It's parity: run the fix, then continue as normal.
 
 On a 3×3, the yellow-cross stage always shows 0, 2, or 4 oriented edges —
 Dot, Hook, Line, or cross. On a 4×4 you can see **1 or 3**. An odd count is
-OLL parity: one edge pair is flipped in place, and no edge-orientation
+OLL parity: one dedge is flipped in place, and no edge-orientation
 algorithm will ever resolve it. Apply the fix the moment you count an odd
 number — before any other last-layer work — then build the yellow cross as
 usual.
@@ -62,7 +62,7 @@ usual.
 
 ## PLL parity: two pieces swapped
 
-The second parity surfaces at the very end: **two edge pairs swapped** — a
+The second parity surfaces at the very end: **two dedges swapped** — a
 2-swap that's impossible on a 3×3, which is why no PLL you know matches it.
 One algorithm handles it:
 

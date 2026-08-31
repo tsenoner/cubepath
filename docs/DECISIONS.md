@@ -964,3 +964,284 @@ the 3×3 would leave the site with two player palettes where it currently has
 one, which is less united, not more. So the players stay stock and the seam
 stays where CLAUDE.md already puts it: the shared artifact between the two
 renderers is stages.json's tier ASSIGNMENT, never the colours.
+
+## The reference gaps, the big-cube cut, and a glossary (Aug 2026)
+
+Six complaints, all from one look at `/reference`, plus two follow-ups. What
+follows is what each turned out to be, because in every case the visible symptom
+was downstream of a data or pipeline decision rather than of the page.
+
+**The 5×5 case showed a tile reading "6", with no picture and no algorithm.**
+Two separate causes. The section was a TILE GRID, which is right for 57 OLL
+cases and wrong for a set with one visible member — a lone tile carries a
+diagram and nothing else, so the algorithm and the recognition cue had nowhere
+to go. It is a `rows` section now, like the 4×4 parity section beside it. And
+the case genuinely had no diagram: `gen-case-states.mjs` carried a KNOWN LIMIT
+saying the 13 L2E states were "exported RAW and not yet drawable", because an
+L2E algorithm is written for a hold partway through reduction, so `alg⁻¹` is not
+a picture of the case — it leaves the target groups wherever that hold put them
+and rigidly cycles others. That comment also named the fix, and the fix is what
+was done: `verify-l2e.mjs` already BUILT the displayed pattern in its check (d)
+and round-tripped it, so it now exports it as `displayed` (a delta against
+solved), `gen-case-states.mjs` patches it onto the default pattern under a third
+`derivation`, and Python draws it. The result is the canonical parity picture —
+two wings showing the side colour on top, the midge right.
+
+A REAL BUG fell out of that. `verify-l2e.mjs` built its synthetic pattern with
+`structuredClone(solved.patternData)`, and cubing.js hands every orbit of the
+same length the SAME zero-filled orientation array — on a 5×5, EDGES, CENTERS
+and CENTERS2 are all 24 slots and all three are literally one array, which a
+clone faithfully preserves. So `synth.EDGES.orientation[i] = …` also wrote both
+centre orbits. It changed no check (centres are compared by piece, and CENTERS
+has numOrientations 1) and would have changed no picture; it became visible only
+when the pattern was exported, at which point every case claimed centre twists
+it does not have. `unaliasedCopy` fixes it and a self-check proves both halves —
+that cubing.js still aliases, and that the helper breaks it.
+
+**"Why do we not call the 4×4 PLL parity?"** Because the name came from JPerm's
+set, where the case is "Pure-E". Its algorithm IS the bare PLL-parity string
+byte for byte, so the case is renamed "PLL Parity (4×4)" through a deliberately
+tiny `NAME_OVERRIDES` map in `gen-cases.mjs` — two entries, both parity, both
+cross-checked in `tests/algs.spec.ts` against `case-states.json`'s own
+`parityAlgs`. Cases whose only identity is an index ("L2E 11", "OLL 33") keep
+the index; inventing names for cases nobody names is worse.
+
+**"Is the image correct with the arrows?"** Yes — verified against the kpuzzle
+state, facelet by facelet. The picture shows a diagonal corner swap plus a
+left–right edge-pair swap, which reads as more than parity, and that is honest
+rather than wrong: the algorithm `2R2 U2 2R2 Uw2 2R2 Uw2` contains `U2 Uw2 Uw2`,
+so it leaves the corners a U2 from home, and the case state is the state that
+algorithm solves. Nothing was changed in the diagram; the recognition cue was
+rewritten to say so in words.
+
+**4×4 OLL parity had no picture at all**, and could not have had one from the
+existing pipeline: every case in JPerm's 27-case 4×4 OLL set has the parity
+algorithm SPLICED INTO a last-layer algorithm, so not one of them is bare
+parity. It is built now, and NOT as `alg⁻¹` — that would draw a last layer with
+twisted corners in it, a state no solver meets and one the case's own
+recognition line contradicts. Parity is not a case an algorithm solves; it is a
+class the algorithm moves you out of. So the RECOGNITION state is constructed —
+the odd wing exchange that IS parity — with the orientation chosen by the
+picture (of the two candidates, exactly one reads as a flipped pair, asserted)
+and the result gated on wing PARITY: the built state must be odd, and the state
+after the algorithm must be even with every edge group intact. Deliberately not
+asserted: that the algorithm solves the cube, or even leaves the U face one
+colour. Measured, it leaves two edge pairs swapped and two corners twisted.
+
+**The beginner algorithms were nowhere.** `R U R' U'` is printed in three
+lessons, `L' U' L U` in two, Niklas in one, and the big-cube edge flip in two —
+and not one of them had a case, so none had a /reference row, a /case page, a 3D
+player, or anything verifying it. `gen-case-states.mjs` said so in as many
+words about the flip: "the one algorithm the big-cube course teaches that has no
+case of its own". They are cases now. The interesting part is the gate: a
+trigger has no recognition state, so none of the four stickering invariants
+applies, and rather than widen an invariant until it accepted them each is
+pinned by BEHAVIOUR — and the behaviour pinned is the claim its own lesson
+makes, so "six righty triggers in a row return the cube exactly to where it
+started" now fails the build if it stops being true.
+
+**The big-cube case sets are no longer drawn.** The course teaches reduction
+(Yau as the advanced variant), so a 4×4 or 5×5 becomes a 3×3 and the 3×3 sets
+finish it; the 27 4×4 OLL, 22 4×4 PLL and 13 5×5 L2E cases are one-look
+optimisations already locked out of every surface by `unlocks.ts`. Their 61 SVGs
+were therefore reachable from no page, which makes them the worst kind of
+artifact — committed, and unverifiable by looking. Deleted, and the trees are
+the gate. Their DATA stays: the parity algorithms are located inside those sets
+BY MECHANISM ("the one string that appears verbatim inside dozens of others"),
+so deleting the sets would break how the repo derives the algorithms it does
+teach. `big_oll_cases()` / `big_pll_cases()` also stay as unrendered builders,
+because they are what the 4×4 half of the plan-view renderer is checked
+against and the two shipped 4×4 diagrams come out of the same code.
+
+One consequence, stated because it weakens a property CLAUDE.md advertises:
+unlocking a set no longer restores every surface from one boolean. The cases
+come back with no icons, through /reference's existing "no diagrams for this set
+yet" fallback, until a group is added back to `render_big_sets`.
+
+**The course index showed a 3×3 with a letter on it for 4×4 and for 5×5.** The
+two big-cube phase cards pointed at NOTATION diagrams — `move_rw.svg` and
+`move_m.svg` — which are 3×3 cubes with a large black "r (Rw)" or "M" across
+them, and at 155px of art squeezed into a 96px box, so the cube inside came out
+smaller than every other card's. The isometric renderer takes a cube order now:
+the projection stays in a three-unit box and only the cell size changes, so a
+4×4 and a 5×5 sit at exactly the same size as a 3×3 beside them. Both cards show
+a real big cube mid-reduction — centres built, edges not yet paired — which is
+the phase's actual content, and a finished big cube would have been
+indistinguishable from a finished 3×3. Two more cards were wrong at that size
+and are fixed with them: Basics pointed at `step_flip`, three-quarters grey
+because it is drawn for the moment before the first layer exists; Phase 3
+pointed at the beginner ladder's step 6, indistinguishable from step 5 on the
+card above it.
+
+**A glossary, hoverable in place.** `src/data/glossary.ts` is the vocabulary;
+`scripts/rehype-glossary.mjs` rewrites the first mention of each term in each
+lesson into a link to its entry with the definition on it. A `<Term>` component
+was rejected: 25 files to edit, a judgement call at every occurrence, and markup
+that rots when a term is renamed. Two mechanical facts are worth writing down
+because both cost a debugging pass. `mdx({ rehypePlugins })` is deprecated and
+on this version SILENTLY DOES NOTHING — one build warning, then 25 pages with no
+links; `markdown.processor: unified({ rehypePlugins })` is the current API and
+MDX inherits it. And the hover card must be `display: none`, not
+`visibility: hidden`: a hidden absolutely-positioned box still contributes to
+scrollable overflow, and every lesson page scrolled 50px sideways at 375px until
+it was taken out of layout — caught by `e2e/regressions.spec.ts` on all 25 at
+once, which is exactly the test earning its keep.
+
+**The 5×5 parity player used to disagree with its diagram — fixed by the MASK,
+not by the state.** `/case/555.l2e-6/`'s player starts from `solved · alg⁻¹`,
+and running an L2E algorithm backwards turns its SIDE EFFECTS into apparent
+parts of the case: measured, the UL and UR groups and two corners, exactly the
+two swaps the lesson names a paragraph away. So the player lit three edge groups
+where the diagram showed one.
+
+The first instinct was to fix the STATE — derive a setup sequence so the player
+starts where the diagram is drawn. That is a solver problem (the hold is a
+parity state, unreachable by the algorithm itself) and it was not needed. The
+mask is the layer that decides what a picture is ABOUT, and it was deriving its
+highlight from `solved · alg⁻¹` like every other case. Pointing it at the
+exported hold instead lights the flipped pair and dims everything else, so the
+player and the SVG now emphasise the same thing. The two side-effect groups are
+still physically displaced in the player — they have to be, the algorithm has to
+undo them — but they read as DIM, which is the honest tier: at the pairing stage
+a group that is intact but displaced is finished, and the 3×3 stage places it.
+
+Worth stating as a general lesson: when a picture emphasises the wrong thing,
+the mask is usually the layer to fix, not the state.
+
+**Naming, after the fact: "L2E" named a set the course does not teach.** The
+group key, the trainer set and the reference section were all called `555-l2e`,
+inherited from the data source — `l2e-raw.json` is SpeedCubeDB's L2E set — and
+twelve of those thirteen cases are locked, so the name pointed at content that
+is not there. Three different things had been given one name, and they are
+separated now:
+
+- the STEP of the solve is "the last two edges", which is universal in reduction
+  and is what the lesson is about — its title is now "5×5: Last Two Edges and
+  Parity", matching the sibling "4×4: The 3×3 Stage and Parity";
+- the SOURCE SET of thirteen is L2E, and keeps that name everywhere it is the
+  subject: `l2e-raw.json`, `verify-l2e.mjs`, the case ids `555.l2e-N`, and the
+  unlock key `555-l2e-onelook`, which names precisely the set it hides;
+- what the COURSE TEACHES is 5×5 edge parity, so the group key is `555-parity`
+  (symmetric with `444-parity`), and so are the trainer set, the reference
+  section and the case.
+
+The abbreviation itself is gone from reader-facing prose. The card set already
+bans that class of shorthand — `glossary.py`'s `BANNED` maps "dedge" to "edge
+pair" for the same reason — and "L2E" was appearing unexpanded twice in a lesson
+body. Data and verifier filenames keep it, because there it is provenance.
+
+## Checked against J Perm's own tutorials (Aug 2026)
+
+The transcripts of J Perm's 4×4 and 5×5 beginner videos are in
+`docs/other_guides/jperm/` (git-ignored — not ours to redistribute). Three
+questions were checked against them directly rather than from memory.
+
+**Does Cubepath teach the 4×4 in his order?** No, and deliberately. His 4×4
+video is a **Yau** tutorial from the first minute: white centre, yellow centre,
+three cross dedges, last four centres, remaining dedges, 3×3, OLL parity, PLL
+parity. Cubepath teaches plain reduction (all centres, all dedges, 3×3, parity)
+and offers Yau as the upgrade in `444-yau-intro`, whose opening callout already
+says so in as many words. Plain reduction is the easier ladder — Yau's last-four-
+centres step has to preserve a partial cross, which is a constraint a first-time
+solver has no reason to carry — and his own 5×5 *beginner* video teaches plain
+reduction, so he is not consistent across the two either. Everything else lines
+up: bars for centres, storing with an unpaired dedge as the replacement, the
+2-then-3-2-3 rhythm, the flip for the last two, OLL parity before PLL parity.
+One gotcha of his is deliberately absent — the colour-ring check ("after blue
+goes orange") — because it only bites in Yau, where the side centres do not
+exist yet when you place a cross dedge. Under reduction the centres are already
+built, so you match colours to them.
+
+**Can the centre insert have a reference entry when it is not an algorithm?**
+It was given one — `444.center-insert` / `555.center-insert`, showing the shape
+plus several worked instances — and then REVERTED, on the user's call: *"this
+center insert should be intuitive and not get a separate reference."* That is
+the right call and the reasoning is worth keeping. Printing one instance as "the
+centre algorithm" is the mistake the technique is defined against; showing three
+instead fixes the accuracy but not the premise, because the thing still is not
+lookup material. Centres are aimed, not recalled, and the lessons already teach
+them with a worked figure and an explicit "there is no algorithm on this page".
+A reference row would have been a well-built answer to a question nobody asked.
+
+Randomising the shown instance ("a different example each visit") was rejected
+before that, and separately: it makes a page unreproducible, unscreenshotable
+and untestable, and the randomness belongs in the trainer if anywhere.
+
+What the request actually meant was the centre SWAP — moving one of the nine
+centre pieces from one centre to another, the trick J Perm walks through at 3:08
+of the 5×5 video. A first attempt at answering it offered
+`2R U 2R' U 2R U2 2R'` (Sune with the inner slice), which does swap exactly one
+centre piece between two centres on both cubes — but it is not the thing in the
+video, and it was rejected on that ground.
+
+Searching the kpuzzle settled what the video's pattern can and cannot be. Over
+every alternating slice/U sequence up to five moves, **nothing shorter than
+three moves moves a piece between two centres while leaving the other four
+whole**, and at three moves every solution is the same conjugate with a
+different grab — `Rw U Rw'`, `2R U 2R'`, `M' U M`, `2L' U 2L`. So the insert
+already in the lesson IS the tool, and the only choice is the grab.
+
+Which explains why J Perm's version is longer and why he refuses to name it:
+his is the same insert **twice, in two different layers**. Its purpose is to
+preserve PARTIAL progress on the target face — the last bar, where the only
+thing left to displace is what you just built — and that is a property of a
+half-built centre, so it cannot be measured against a solved cube at all. That
+is the real reason it is a pattern and not an algorithm, and it is now written
+into `555-centers-edges.mdx` in his beats. No reference entry, per the same
+call as the insert: centres are aimed, not looked up.
+
+**Jargon is allowed now.** The site wrote plain phrases and glossed them inline;
+with a hover card on every first mention, `dedge` is the headword and `edge
+pair` the alias. The printed cards keep the ban (`glossary.py`'s `BANNED`),
+because paper has no hover — that split is the point, not an oversight.
+
+## The big-cube reduction model is stated once, and `TAUGHT_BIG_CUBE` selects
+
+Two clean-up decisions from the same pass, both about a fact that was written
+down twice and could therefore be corrected in one place only.
+
+**`verify-l2e.mjs` and `gen-case-states.mjs` had separate reduction models.**
+Where the edge positions are, whether one still holds a whole edge, and whether
+the wing permutation is odd — three statements, written twice in two styles.
+The comments admitted it ("this is `verify-l2e.mjs`'s calibration, here because
+the 4x4 needs the same statement the 5x5 already gets"), which is the tell: a
+copy that knows it is a copy is still a copy. It matters because the two halves
+gate different things — the 4×4 copy gates a SHIPPED diagram, the 5×5 copy
+gates the exported case data — so a correction to either convention left the
+other on the old one, silently. The model now lives in
+`app/scripts/lib/kpuzzle-utils.mjs`, order-generic, with the midge orbit a
+parameter (`midgeOrbit: null` is how a 4×4 says it has none). Both callers run
+the same self-check: 12 edge positions, two wings each, 24 calibrated
+arrangements apiece — a check the 4×4 side did not have before.
+
+Accepted because it is verifiable rather than argued: `case-states.json` and
+`l2e-raw.json` both regenerate byte-identical, and every ✓ line the verifier
+prints is unchanged.
+
+**`fullsets.TAUGHT_BIG_CUBE` was a comment with a variable name.** CLAUDE.md
+called it "that list of three", but nothing read it except a test: the
+renderers re-typed the same ids (`ids={"444.pll.pure-e"}`,
+`_states_of("555l2e", {"555.l2e-6"})`), and the cross-language test compared
+the dict against `gen-cases.mjs` and `unlocks.ts` but never against the code
+that picks the diagrams. All three declared lists could agree while the
+renderer drew something else. Each entry now carries the exported set its case
+comes from, `parity_cases()`/`l2e_cases()` derive their ids through
+`taught_ids()`, and the test compares the constant against what
+`parity_cases()` actually produces. A typo is now a render-time failure.
+
+Related, same pass: `gen-cases.mjs`'s copy of the table carries an icon path
+for `444.oll-parity` that it can never apply — that case is curated in
+`algs.ts`, which owns its icon — and the gate compared keys only. The row is
+marked key-only and the gate now compares the values, so the two copies of that
+literal cannot drift.
+
+**The displayed hold reaches the player through the generator.**
+`src/lib/stickering.ts` imported `extracted/l2e-raw.json` directly to build its
+L2E mask. That file is the GENERATOR's input side, so one fact — what the 5×5
+parity case actually looks like — had two consumers reading two
+representations, and the raw extraction was reachable from the app without
+passing through the one thing that owns it. `gen-cases.mjs` already read the
+file; it now emits `L2E_HOLDS` into `fullsets.rich.gen.ts` (build-time only,
+so nothing new ships to the client) and `stickering.ts` reads generated data
+like every other surface. The lean file is byte-identical and all 148 rendered
+stickering masks across the site are unchanged.

@@ -1,8 +1,8 @@
 # cubepath — build-time Python tooling
 
-One `uv` project, package `cubepath`, four entry points. It was called
-`tools/diagrams/` until the card set and the logo generator landed here too;
-the directory now matches the package name.
+One `uv` project, package `cubepath`, three entry points (plus a deprecated
+alias for the card one). It was called `tools/diagrams/` until the card set and
+the logo generator landed here too; the directory now matches the package name.
 
 Everything published — every algorithm, every diagram, every line on a card —
 is **derived** from `algs.py` through the simulator. Nothing here re-types a
@@ -16,7 +16,7 @@ stops matching its generator.
 | `algs.py` | canonical algorithm data — the single source of truth |
 | `cube.py` | minimal 3×3 simulator; verifies algorithms and derives diagram states |
 | `diagrams.py` | SVG generator for the guide's core case/step/notation figures |
-| `fullsets.py` | the full 57-OLL / 21-PLL SVG sets, from the app's verified extraction |
+| `fullsets.py` | the full 57-OLL / 21-PLL SVG sets and the 41 F2L pictures, from the app's verified extraction; also `TAUGHT_BIG_CUBE`, which selects the three big-cube parity views |
 | `notation.py` | algorithm → printable chunks |
 | `cards.py` | what each card *says* — the deck table and the four cards' content |
 | `cheatcards.py` | card imposition, build gates, CLI, `manifest.json` |
@@ -29,13 +29,14 @@ stops matching its generator.
 ## Commands
 
 ```bash
-uv run cubepath-diagrams   # SVGs -> guide/figures/generated/ (make diagrams also syncs into the app)
+uv run cubepath-diagrams   # 180 SVGs -> app/public/diagrams/, the one committed tree
 uv run cubepath-cards      # card set -> guide/build/cards/ (needs typst + poppler)
 uv run cubepath-logo       # favicon.svg -> app/public/
 uv run pytest tests/
 uv run ruff check src/ tests/
 uv run ruff format src/ tests/
+uv run mypy                # strict over src/; paths come from pyproject.toml
 ```
 
-`make check-py` from the repo root runs the ruff and pytest lines above; that
-is what CI runs and what the pre-push hook gates on.
+`make check-py` from the repo root runs all four of those (lint, format check,
+mypy, pytest); that is what CI runs and what the pre-push hook gates on.

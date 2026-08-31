@@ -1,19 +1,29 @@
 /**
- * Unlockable sets — case data that ships in the repo, verified and diagrammed,
- * but is deliberately not surfaced in the UI yet.
+ * Unlockable sets — case data that ships in the repo, verified, but
+ * deliberately not surfaced in the UI yet.
  *
  * ┌─ THE SWITCH ────────────────────────────────────────────────────────────┐
  * │ Flip a value in `UNLOCKED` below to `true` and the set reappears        │
  * │ everywhere at once: the trainer's set list, its pool and its counts,    │
- * │ the /reference sections, and the /case/<id> pages. That is the whole    │
- * │ change — there is no second place to edit.                              │
+ * │ the /reference sections, and the /case/<id> pages. Its DIAGRAMS have to │
+ * │ be regenerated first — see below; the build fails without them.         │
  * └─────────────────────────────────────────────────────────────────────────┘
  *
  * Everything else in the app asks `isLocked()`; nothing re-derives the rule.
- * The data itself is untouched by this file — `src/data/extracted/*.json`,
- * `fullsets*.gen.ts` and the generated diagrams all keep every case, so
- * unlocking needs no regeneration and the algorithm tests keep verifying the
- * hidden algs exactly as before.
+ * The case DATA is untouched by this file — `src/data/extracted/*.json` and
+ * `fullsets*.gen.ts` keep every case, so the algorithm tests keep verifying
+ * the hidden algs exactly as before.
+ *
+ * THE DIAGRAMS ARE THE EXCEPTION, and it is the one second place to edit.
+ * The 61 SVGs for these sets were reachable from no page at all and are no
+ * longer generated, so an unlocked set has no picture until a diagram group is
+ * added back to `fullsets.render_big_sets` (see `TAUGHT_BIG_CUBE` there).
+ * Flipping a boolean here restores every other surface; it does not restore
+ * the pictures — and the pictures are GATED, so this is not a cosmetic gap:
+ * `tests/algs.spec.ts` § "every case a reader can reach has a picture" fails
+ * the build for every newly visible case that has no `icon`. Unlocking a set
+ * is therefore two edits, in this order: regenerate its diagrams, then flip
+ * the boolean. `make check` tells you if you did it the other way round.
  */
 import type { CaseDef } from "../data/algs";
 
@@ -118,7 +128,10 @@ const UNLOCKABLES: readonly Unlockable[] = [
      *
      * The GROUP stays visible: a one-case trainer set is genuinely useful
      * here, because it drills the only recognition question a 5x5 asks — is
-     * this parity, or not?
+     * this parity, or not? It is keyed `555-parity`, not `555-l2e`, because
+     * that is what is left in it once these twelve are hidden. THIS key keeps
+     * "l2e" on purpose: it names the SOURCE SET it hides, which really is
+     * SpeedCubeDB's L2E set of thirteen.
      */
     reason:
       "one-look last-two-edges cases — a speed refinement; the course finishes L2E with " +

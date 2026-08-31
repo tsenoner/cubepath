@@ -1870,7 +1870,7 @@ export const GENERATED_CASES: CaseDef[] = [
   },
   {
     "id": "555.l2e-1",
-    "group": "555-l2e",
+    "group": "555-parity",
     "name": "L2E 1",
     "stickering": "full",
     "puzzle": "5x5x5",
@@ -1884,7 +1884,7 @@ export const GENERATED_CASES: CaseDef[] = [
   },
   {
     "id": "555.l2e-2",
-    "group": "555-l2e",
+    "group": "555-parity",
     "name": "L2E 2",
     "stickering": "full",
     "puzzle": "5x5x5",
@@ -1898,7 +1898,7 @@ export const GENERATED_CASES: CaseDef[] = [
   },
   {
     "id": "555.l2e-3",
-    "group": "555-l2e",
+    "group": "555-parity",
     "name": "L2E 3",
     "stickering": "full",
     "puzzle": "5x5x5",
@@ -1912,7 +1912,7 @@ export const GENERATED_CASES: CaseDef[] = [
   },
   {
     "id": "555.l2e-4",
-    "group": "555-l2e",
+    "group": "555-parity",
     "name": "L2E 4",
     "stickering": "full",
     "puzzle": "5x5x5",
@@ -1926,7 +1926,7 @@ export const GENERATED_CASES: CaseDef[] = [
   },
   {
     "id": "555.l2e-5",
-    "group": "555-l2e",
+    "group": "555-parity",
     "name": "L2E 5",
     "stickering": "full",
     "puzzle": "5x5x5",
@@ -1940,8 +1940,8 @@ export const GENERATED_CASES: CaseDef[] = [
   },
   {
     "id": "555.l2e-6",
-    "group": "555-l2e",
-    "name": "L2E 6",
+    "group": "555-parity",
+    "name": "Edge Parity (5×5)",
     "stickering": "full",
     "puzzle": "5x5x5",
     "phase": "555",
@@ -1950,11 +1950,12 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "Rw U2 x Rw U2 Rw U2 3Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'",
         "primary": true
       }
-    ]
+    ],
+    "icon": "/diagrams/555-parity/555_l2e_6.svg"
   },
   {
     "id": "555.l2e-7",
-    "group": "555-l2e",
+    "group": "555-parity",
     "name": "L2E 7",
     "stickering": "full",
     "puzzle": "5x5x5",
@@ -1968,7 +1969,7 @@ export const GENERATED_CASES: CaseDef[] = [
   },
   {
     "id": "555.l2e-8",
-    "group": "555-l2e",
+    "group": "555-parity",
     "name": "L2E 8",
     "stickering": "full",
     "puzzle": "5x5x5",
@@ -1982,7 +1983,7 @@ export const GENERATED_CASES: CaseDef[] = [
   },
   {
     "id": "555.l2e-9",
-    "group": "555-l2e",
+    "group": "555-parity",
     "name": "L2E 9",
     "stickering": "full",
     "puzzle": "5x5x5",
@@ -1996,7 +1997,7 @@ export const GENERATED_CASES: CaseDef[] = [
   },
   {
     "id": "555.l2e-10",
-    "group": "555-l2e",
+    "group": "555-parity",
     "name": "L2E 10",
     "stickering": "full",
     "puzzle": "5x5x5",
@@ -2010,7 +2011,7 @@ export const GENERATED_CASES: CaseDef[] = [
   },
   {
     "id": "555.l2e-11",
-    "group": "555-l2e",
+    "group": "555-parity",
     "name": "L2E 11",
     "stickering": "full",
     "puzzle": "5x5x5",
@@ -2024,7 +2025,7 @@ export const GENERATED_CASES: CaseDef[] = [
   },
   {
     "id": "555.l2e-12",
-    "group": "555-l2e",
+    "group": "555-parity",
     "name": "L2E 12",
     "stickering": "full",
     "puzzle": "5x5x5",
@@ -2038,7 +2039,7 @@ export const GENERATED_CASES: CaseDef[] = [
   },
   {
     "id": "555.l2e-13",
-    "group": "555-l2e",
+    "group": "555-parity",
     "name": "L2E 13",
     "stickering": "full",
     "puzzle": "5x5x5",
@@ -2062,8 +2063,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "R U2 R' U' Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' F R' F' R",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-oll/444_oll_solved.svg"
+    ]
   },
   {
     "id": "444.oll.u-f",
@@ -2077,8 +2077,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-oll/444_oll_u_f.svg"
+    ]
   },
   {
     "id": "444.oll.u-r",
@@ -2092,8 +2091,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' U' R U R' U R U2 R'",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-oll/444_oll_u_r.svg"
+    ]
   },
   {
     "id": "444.oll.u-l",
@@ -2107,8 +2105,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' R U2 R' U' R U' R'",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-oll/444_oll_u_l.svg"
+    ]
   },
   {
     "id": "444.oll.u-b",
@@ -2122,8 +2119,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "m Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' m'",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-oll/444_oll_u_b.svg"
+    ]
   },
   {
     "id": "444.oll.t-f",
@@ -2137,8 +2133,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "R U R' U' R Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' R' U R U' R'",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-oll/444_oll_t_f.svg"
+    ]
   },
   {
     "id": "444.oll.t-r",
@@ -2152,8 +2147,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' R U R' U' R' F R F'",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-oll/444_oll_t_r.svg"
+    ]
   },
   {
     "id": "444.oll.t-l",
@@ -2167,8 +2161,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "F R U' R' U' R U R' F' Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-oll/444_oll_t_l.svg"
+    ]
   },
   {
     "id": "444.oll.t-b",
@@ -2182,8 +2175,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' U R U2 (R2 U' R2 U' R2) U2 R",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-oll/444_oll_t_b.svg"
+    ]
   },
   {
     "id": "444.oll.l-fr",
@@ -2197,8 +2189,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "R' U' R Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' R' U R",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-oll/444_oll_l_fr.svg"
+    ]
   },
   {
     "id": "444.oll.l-fl",
@@ -2212,8 +2203,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "L U L' Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' L U' L'",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-oll/444_oll_l_fl.svg"
+    ]
   },
   {
     "id": "444.oll.l-br",
@@ -2227,8 +2217,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' U R' U2 R U R' U R",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-oll/444_oll_l_br.svg"
+    ]
   },
   {
     "id": "444.oll.l-bl",
@@ -2242,8 +2231,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' R' U' R U' R' U2 R",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-oll/444_oll_l_bl.svg"
+    ]
   },
   {
     "id": "444.oll.sune-fr",
@@ -2257,8 +2245,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "m' U R U' 3Rw' Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' U R U2 R'",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-oll/444_oll_sune_fr.svg"
+    ]
   },
   {
     "id": "444.oll.sune-fl",
@@ -2272,8 +2259,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' R U R' U R U2 R'",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-oll/444_oll_sune_fl.svg"
+    ]
   },
   {
     "id": "444.oll.sune-br",
@@ -2287,8 +2273,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "L F' L' F Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' L' U L",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-oll/444_oll_sune_br.svg"
+    ]
   },
   {
     "id": "444.oll.sune-bl",
@@ -2302,8 +2287,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "F' L' U' L U F Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-oll/444_oll_sune_bl.svg"
+    ]
   },
   {
     "id": "444.oll.antisune-fr",
@@ -2317,8 +2301,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' U' R U2 R' U' R U' R'",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-oll/444_oll_antisune_fr.svg"
+    ]
   },
   {
     "id": "444.oll.antisune-fl",
@@ -2332,8 +2315,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' R U2 (R2 U' R2 U' R2) U2 R",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-oll/444_oll_antisune_fl.svg"
+    ]
   },
   {
     "id": "444.oll.antisune-br",
@@ -2347,8 +2329,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "F R U R' U' F' Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw'",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-oll/444_oll_antisune_br.svg"
+    ]
   },
   {
     "id": "444.oll.antisune-bl",
@@ -2362,8 +2343,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "R' F R F' Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' R U' R'",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-oll/444_oll_antisune_bl.svg"
+    ]
   },
   {
     "id": "444.oll.h-fb",
@@ -2377,8 +2357,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' R2 D' R U2 R' D R U2 R",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-oll/444_oll_h_fb.svg"
+    ]
   },
   {
     "id": "444.oll.h-lr",
@@ -2392,8 +2371,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' R U R' U R U' R' U R U2 R'",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-oll/444_oll_h_lr.svg"
+    ]
   },
   {
     "id": "444.oll.pi-f",
@@ -2407,8 +2385,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' U' R U2 (R2 U' R2 U' R2) U2 R",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-oll/444_oll_pi_f.svg"
+    ]
   },
   {
     "id": "444.oll.pi-r",
@@ -2422,8 +2399,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' U R' U' R U' R' U2 R",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-oll/444_oll_pi_r.svg"
+    ]
   },
   {
     "id": "444.oll.pi-l",
@@ -2437,8 +2413,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' R' U2 R U R' U R",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-oll/444_oll_pi_l.svg"
+    ]
   },
   {
     "id": "444.oll.pi-b",
@@ -2452,13 +2427,12 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "Rw U2 x Rw U2 Rw U2 Rw' U2 Lw U2 Rw' U2 Rw U2 Rw' U2 Rw' U' 3Rw U R' U' 3Rw' F R F'",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-oll/444_oll_pi_b.svg"
+    ]
   },
   {
     "id": "444.pll.pure-e",
     "group": "4x4pll-edges-only",
-    "name": "Pure-E (4×4 PLL)",
+    "name": "PLL Parity (4×4)",
     "stickering": "full",
     "puzzle": "4x4x4",
     "phase": "444",
@@ -2468,7 +2442,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "primary": true
       }
     ],
-    "icon": "/diagrams/444-pll/444_pll_pure_e.svg"
+    "icon": "/diagrams/444-parity/444_pll_pure_e.svg"
   },
   {
     "id": "444.pll.adj-e",
@@ -2482,8 +2456,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "R U R' U' 2R2 U2 2R2 Uw2 2R2 Uw2 U' R U' R'",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-pll/444_pll_adj_e.svg"
+    ]
   },
   {
     "id": "444.pll.o-plus",
@@ -2497,8 +2470,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "m' U' m2 U' m2 U' m' U2 m2 2R2 U2 2R2 Uw2 2R2 Uw2",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-pll/444_pll_o_plus.svg"
+    ]
   },
   {
     "id": "444.pll.o-minus",
@@ -2512,8 +2484,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "m' U' m2 U' m2 U' m' U2 m2 U' 2R2 U2 2R2 Uw2 2R2 Uw2",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-pll/444_pll_o_minus.svg"
+    ]
   },
   {
     "id": "444.pll.w",
@@ -2527,8 +2498,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "R U' R U R U R U' R' U' R2 2R2 U2 2R2 Uw2 2R2 Uw2",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-pll/444_pll_w.svg"
+    ]
   },
   {
     "id": "444.pll.ba",
@@ -2542,8 +2512,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "2R2 U2 2R2 Uw2 2R2 Uw2 U R U R' F' R U R' U' R' F R2 U' R'",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-pll/444_pll_ba.svg"
+    ]
   },
   {
     "id": "444.pll.bb",
@@ -2557,8 +2526,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "R U R' U' R' F R2 U' R' 2R2 U2 2R2 Uw2 2R2 Uw2 U R U R' F'",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-pll/444_pll_bb.svg"
+    ]
   },
   {
     "id": "444.pll.ca",
@@ -2572,8 +2540,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "2R2 U2 2R2 Uw2 2R2 Uw2 U R' U2 R U2 R' F R U R' U' R' F' R2",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-pll/444_pll_ca.svg"
+    ]
   },
   {
     "id": "444.pll.cb",
@@ -2587,8 +2554,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "2R2 U2 2R2 Uw2 2R2 Uw2 R U R' F' R U2 R' U2 R' F R U R U2 R'",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-pll/444_pll_cb.svg"
+    ]
   },
   {
     "id": "444.pll.da",
@@ -2602,8 +2568,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "R' U L' U2 R U' R' U2 R L U' 2R2 U2 2R2 Uw2 2R2 Uw2",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-pll/444_pll_da.svg"
+    ]
   },
   {
     "id": "444.pll.db",
@@ -2617,8 +2582,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "R U R' F' R U R' U' R' F R2 U' R' 2R2 U2 2R2 Uw2 2R2 Uw2",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-pll/444_pll_db.svg"
+    ]
   },
   {
     "id": "444.pll.pa",
@@ -2632,8 +2596,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "R U R' F' R U R' U' R' F R2 U' R' U' 2R2 U2 2R2 Uw2 2R2 Uw2",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-pll/444_pll_pa.svg"
+    ]
   },
   {
     "id": "444.pll.pb",
@@ -2647,8 +2610,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "2R2 U2 2R2 Uw2 2R2 Uw2 R U R' F' R U R' U' R' F R2 U' R'",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-pll/444_pll_pb.svg"
+    ]
   },
   {
     "id": "444.pll.ka",
@@ -2662,8 +2624,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "2R2 U2 2R2 Uw2 2R2 Uw2 x R2 D2 R U R' D2 R U' R",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-pll/444_pll_ka.svg"
+    ]
   },
   {
     "id": "444.pll.kb",
@@ -2677,8 +2638,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "2R2 U2 2R2 Uw2 2R2 Uw2 U x R' U R' D2 R U' R' D2 R2",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-pll/444_pll_kb.svg"
+    ]
   },
   {
     "id": "444.pll.q",
@@ -2692,8 +2652,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "x' R U' R' D R U R' D' R U R' D R U' R' D' x U 2R2 U2 2R2 Uw2 2R2 Uw2",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-pll/444_pll_q.svg"
+    ]
   },
   {
     "id": "444.pll.sa",
@@ -2707,8 +2666,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "F R U' R' U' R U R' F' R U R' U' R' F R F' U' 2R2 U2 2R2 Uw2 2R2 Uw2",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-pll/444_pll_sa.svg"
+    ]
   },
   {
     "id": "444.pll.sb",
@@ -2722,8 +2680,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "F R U' R' U' R U R' F' R U R' U' R' F R F' 2R2 U2 2R2 Uw2 2R2 Uw2",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-pll/444_pll_sb.svg"
+    ]
   },
   {
     "id": "444.pll.x",
@@ -2737,8 +2694,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "x' R U' R' D R U R' D' R U R' D R U' R' D' x 2R2 U2 2R2 Uw2 2R2 Uw2",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-pll/444_pll_x.svg"
+    ]
   },
   {
     "id": "444.pll.m",
@@ -2752,8 +2708,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "R U R' U' R' F R2 U' R' U' R U R' F' 2R2 U2 2R2 Uw2 2R2 Uw2",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-pll/444_pll_m.svg"
+    ]
   },
   {
     "id": "444.pll.adj-c",
@@ -2767,8 +2722,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "R U R' U' R' F R2 U' R' U' R U R' F' U' 2R2 U2 2R2 Uw2 2R2 Uw2",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-pll/444_pll_adj_c.svg"
+    ]
   },
   {
     "id": "444.pll.diag-c",
@@ -2782,8 +2736,7 @@ export const GENERATED_CASES: CaseDef[] = [
         "moves": "F R U' R' U' R U R' F' U' 2R2 U2 2R2 Uw2 2R2 Uw2 U' R U R' U' R' F R F'",
         "primary": true
       }
-    ],
-    "icon": "/diagrams/444-pll/444_pll_diag_c.svg"
+    ]
   }
 ];
 

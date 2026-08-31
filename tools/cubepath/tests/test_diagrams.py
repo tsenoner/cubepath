@@ -47,6 +47,7 @@ from cubepath.diagrams import (
     UNREACHED,
     WHITE,
     YELLOW,
+    CubeDiagram,
     _align_edge_cases,
     _arrow_pos,
     _corner_case_steps,
@@ -66,6 +67,7 @@ from cubepath.diagrams import (
     _restyle,
     _ring_basis,
     _step_cases,
+    _web_steps,
     all_cases,
     all_steps,
     delta_e,
@@ -88,6 +90,7 @@ from cubepath.diagrams import (
 )
 from cubepath.fullsets import (
     _plan_permutation,
+    _states_of,
     big_oll_cases,
     big_pll_cases,
     card_pll_cases,
@@ -95,6 +98,8 @@ from cubepath.fullsets import (
     f2l_cases,
     full_oll_cases,
     full_pll_cases,
+    l2e_cases,
+    parity_cases,
     plan_oll_cases,
     plan_pll_cases,
     render_big_sets,
@@ -786,7 +791,7 @@ _SVG_DIRS = tuple(sorted(p.name for p in _APP_SVG.iterdir() if p.is_dir()))
 # generator that silently stopped emitting a whole group would drop it from
 # both and still pass. The pin is cross-checked against the generators' own
 # inventories below, so a deliberate change fails in exactly one obvious place.
-EXPECTED_DIAGRAMS = 221
+EXPECTED_DIAGRAMS = 180
 
 
 def _render_everything(out: Path) -> None:
@@ -801,7 +806,7 @@ def _render_everything(out: Path) -> None:
         render_notation(move, out)
     for layout in (OVERVIEW_HUB, OVERVIEW_PINS):
         render_overview(out, layout=layout)
-    for step in all_steps():
+    for step in [*all_steps(), *_web_steps()]:
         render_step(step, out)
 
 
@@ -811,11 +816,11 @@ def test_the_pinned_diagram_count_matches_the_generators() -> None:
         + len(full_oll_cases())
         + len(full_pll_cases())
         + len(f2l_cases())
-        + len(big_oll_cases())
-        + len(big_pll_cases())
+        + len(parity_cases())
         + len(_notation_moves())
         + 2  # the overview, in both its layouts
         + len(all_steps())
+        + len(_web_steps())
     )
     assert inventory == EXPECTED_DIAGRAMS, (
         f"the generators now produce {inventory} diagrams; if that is intended, "
@@ -1224,9 +1229,22 @@ _TIERED_STEPS = {
     "corner_cycle",
     "align_adjacent",
     "align_diagonal",
+    "step_oll_done",
+    # The edge flip's picture: the centres are built (dim, and seven outer turns
+    # cannot touch them) and the pair being turned over is the subject.
+    "step_444_flip",
 }
-# The three with nothing earlier to preserve — see `_step_cases`.
-_FLAT_STEPS = {"step_1_cross", "step_flip", "step_7_solved"}
+# Nothing earlier to preserve — see `_step_cases` for the first three, and
+# `_web_steps` for the last three: a course-index card whose whole subject is
+# "this is a 4x4" has no earlier step to dim.
+_FLAT_STEPS = {
+    "step_1_cross",
+    "step_flip",
+    "step_7_solved",
+    "step_anatomy",
+    "step_444_centres",
+    "step_555_centres",
+}
 
 
 def test_every_shipped_step_diagram_draws_the_tier_its_lesson_needs() -> None:
@@ -1254,6 +1272,14 @@ def test_the_hero_image_separates_the_cross_from_the_corners() -> None:
         assert delta_e(face, dim(face)) >= DIM_TARGET_DE - 0.5
 
 
+def _dir_of(subdir: str, count: int) -> list[Path]:
+    """Every SVG in one shipped group, with its size pinned — so a group that
+    silently shrank fails here rather than passing an empty loop."""
+    svgs = sorted((_APP_SVG / subdir).glob("*.svg"))
+    assert len(svgs) == count, f"{subdir}: {len(svgs)} diagrams, expected {count}"
+    return svgs
+
+
 def test_no_diagram_ever_carries_both_greys() -> None:
     """The tonal split is only worth anything if the two never share a file —
     otherwise a reader has to tell two claims apart inside one picture."""
@@ -1269,13 +1295,16 @@ def test_the_oll_plan_views_are_untouched_two_tier_pictures() -> None:
     """Item 3 of the brief, pinned: an OLL diagram has no earlier-solved region
     in frame, so it must keep exactly yellow + the orientation mask and must not
     grow a dim tier."""
-    for subdir, count in (("oll", 11), ("oll-full", 57), ("444-oll", 27)):
-        svgs = sorted((_APP_SVG / subdir).glob("*.svg"))
-        assert len(svgs) == count, f"{subdir}: {len(svgs)} diagrams"
-        for svg in svgs:
-            assert _fills(svg.read_text()) <= {YELLOW, UNORIENTED, WHITE}, (
-                f"{svg.name}: an OLL plan view grew a tier it does not need"
-            )
+    # Directories, plus one FILE: `444-parity/` holds one OLL-style picture and
+    # one PLL-style one, so it cannot be globbed as either.
+    svgs = [
+        *(p for subdir, count in (("oll", 11), ("oll-full", 57)) for p in _dir_of(subdir, count)),
+        _APP_SVG / "444-parity" / "444_oll_parity.svg",
+    ]
+    for svg in svgs:
+        assert _fills(svg.read_text()) <= {YELLOW, UNORIENTED, WHITE}, (
+            f"{svg.name}: an OLL plan view grew a tier it does not need"
+        )
 
 
 def test_every_shipped_pll_plan_view_dims_the_oll_face() -> None:
@@ -1283,9 +1312,13 @@ def test_every_shipped_pll_plan_view_dims_the_oll_face() -> None:
     dim tier — while the side bands are what the step permutes. Before this,
     49 files carried zero dim and zero grey: every sticker full saturation."""
     quiet = dim(YELLOW).upper()
-    for subdir, count, n in (("pll", 6, 3), ("pll-full", 21, 3), ("444-pll", 22, 4)):
-        svgs = sorted((_APP_SVG / subdir).glob("*.svg"))
-        assert len(svgs) == count, f"{subdir}: {len(svgs)} diagrams"
+    groups: list[tuple[list[Path], int]] = [
+        (_dir_of("pll", 6), 3),
+        (_dir_of("pll-full", 21), 3),
+        # One FILE, not a directory: the 4x4 parity pair splits across idioms.
+        ([_APP_SVG / "444-parity" / "444_pll_pure_e.svg"], 4),
+    ]
+    for svgs, n in groups:
         for svg in svgs:
             text = svg.read_text()
             fills = _fills(text)
@@ -1332,13 +1365,23 @@ def test_every_shipped_f2l_diagram_marks_its_slot() -> None:
 # gates green, which is exactly the failure this repo pins everywhere else.
 
 _GENERATED_TS = _REPO / "app" / "src" / "data" / "fullsets.gen.ts"
+# Curated cases declare their icon by hand. `444.oll-parity` is one: every case
+# in JPerm's 4x4 OLL set has parity spliced into a last-layer algorithm, so the
+# bare parity case is not in the extraction and cannot be a generated entry.
+# A curated icon pointing at a file nobody wrote breaks exactly the same way a
+# generated one does, so both files are searched wherever icons are checked.
+_CURATED_TS = _REPO / "app" / "src" / "data" / "algs.ts"
 
 
-def test_every_generated_case_icon_resolves_to_a_shipped_diagram() -> None:
-    icons = re.findall(r'"?icon"?:\s*"([^"]+)"', _GENERATED_TS.read_text())
-    assert icons, "no icon paths in fullsets.gen.ts — did gen-cases.mjs stop emitting them?"
+def _declared_icons() -> str:
+    return _GENERATED_TS.read_text() + _CURATED_TS.read_text()
+
+
+def test_every_case_icon_resolves_to_a_shipped_diagram() -> None:
+    icons = re.findall(r'"?icon"?:\s*"([^"]+)"', _declared_icons())
+    assert icons, "no icon paths at all — did gen-cases.mjs stop emitting them?"
     missing = [i for i in icons if not (_APP_SVG.parent / i.lstrip("/")).is_file()]
-    assert not missing, f"gen-cases.mjs points at diagrams that do not exist: {missing}"
+    assert not missing, f"the app points at diagrams that do not exist: {missing}"
 
 
 def test_the_f2l_set_is_fully_iconed() -> None:
@@ -1360,7 +1403,22 @@ def test_the_f2l_set_is_fully_iconed() -> None:
 # 3x3 diagrams exactly, that every 4x4 picture is a physically possible cube,
 # and that its arrows and its JPerm label agree with its own drawn colours.
 
-_BIG_SETS = (("444-oll", big_oll_cases, 27), ("444-pll", big_pll_cases, 22))
+
+def _444_parity_cases() -> list[CubeDiagram]:
+    """The two 4x4 pictures `parity_cases()` produces — the third is the 5x5.
+    Everything 4x4 that reaches the tree."""
+    return [c for c in parity_cases() if c.n == 4]
+
+
+# The 4x4 views the renderer is checked against. `big_oll_cases`/`big_pll_cases`
+# write nothing (the course teaches reduction — see fullsets.TAUGHT_BIG_CUBE);
+# only `444_parity_cases` reaches the tree, which is why it is the only entry
+# with a directory beside it.
+_BIG_SETS = (
+    ("4x4 OLL (not shipped)", big_oll_cases, 27),
+    ("4x4 PLL (not shipped)", big_pll_cases, 22),
+    ("444-parity", _444_parity_cases, 2),
+)
 
 
 def test_the_four_by_four_sets_are_complete_and_four_wide() -> None:
@@ -1729,26 +1787,126 @@ def test_every_four_by_four_picture_is_distinct() -> None:
 def test_every_shipped_four_by_four_diagram_is_present_and_four_wide() -> None:
     """Asserted over the shipped tree: a 4x4 diagram that silently regressed to
     a 3x3 grid would still be a valid, themed, plausible SVG."""
-    for subdir, builder, expected in _BIG_SETS:
-        svgs = sorted((_APP_SVG / subdir).glob("*.svg"))
-        assert len(svgs) == expected, f"{subdir}: {len(svgs)} diagrams, expected {expected}"
-        assert {p.stem for p in svgs} == {c.name for c in builder()}
-        for svg in svgs:
-            content = svg.read_text()
-            # 16 U cells + 4 bands of 4 + the plate.
-            assert content.count("<rect") == 33, f"{svg.name}: not a 4x4 grid"
-            assert 'viewBox="0 0 234 234"' in content, f"{svg.name}: wrong viewBox"
+    svgs = sorted((_APP_SVG / "444-parity").glob("*.svg"))
+    assert {p.stem for p in svgs} == {c.name for c in _444_parity_cases()}
+    for svg in svgs:
+        content = svg.read_text()
+        # 16 U cells + 4 bands of 4 + the plate.
+        assert content.count("<rect") == 33, f"{svg.name}: not a 4x4 grid"
+        assert 'viewBox="0 0 234 234"' in content, f"{svg.name}: wrong viewBox"
+
+
+def test_the_unshipped_big_cube_sets_stay_unshipped() -> None:
+    """The course teaches REDUCTION, so a big cube becomes a 3x3 and the 3x3
+    sets finish it. The 27 4x4 OLL, 22 4x4 PLL and 13 5x5 L2E cases are
+    one-look optimisations locked out of the UI, and 61 SVGs no page can reach
+    are 61 SVGs that rot unnoticed. They were generated once; a call added back
+    to `render_big_sets` would recreate the trees, so the trees are the gate."""
+    for gone in ("444-oll", "444-pll", "555-l2e"):
+        assert not (_APP_SVG / gone).exists(), f"{gone}/ is back — see fullsets.TAUGHT_BIG_CUBE"
+    assert {c.name for c in parity_cases()} == {
+        "444_oll_parity",
+        "444_pll_pure_e",
+        "555_l2e_6",
+    }
 
 
 def test_the_four_by_four_sets_are_fully_iconed() -> None:
     """The same filename contract the F2L set has: gen-cases.mjs builds each
     icon path by string surgery on the case id, and this generator builds the
     filename the same way. Nothing but a test makes the two agree."""
-    text = _GENERATED_TS.read_text()
-    for subdir, builder, expected in _BIG_SETS:
-        icons = re.findall(rf'"/diagrams/{subdir}/([a-z0-9_]+\.svg)"', text)
-        assert len(icons) == expected, f"{subdir}: the app carries {len(icons)} icons"
-        assert sorted(icons) == sorted(f"{c.name}.svg" for c in builder())
+    text = _declared_icons()
+    icons = re.findall(r'"/diagrams/444-parity/([a-z0-9_]+\.svg)"', text)
+    assert sorted(icons) == sorted(f"{c.name}.svg" for c in _444_parity_cases())
+
+
+def test_the_5x5_parity_picture_is_drawn_and_iconed() -> None:
+    """The 5x5 had NO diagram at all — /reference rendered its one unlocked
+    case as a text tile reading "6". One picture now, not thirteen: the course
+    teaches reduction, so edge parity is the only 5x5 case it teaches."""
+    cases = l2e_cases()
+    assert len(cases) == 1
+    icons = re.findall(r'"/diagrams/555-parity/([a-z0-9_]+\.svg)"', _declared_icons())
+    assert sorted(icons) == sorted(f"{c.name}.svg" for c in cases)
+    for case in cases:
+        assert case.n == 5, f"{case.name}: drawn as a {case.n}x{case.n}"
+        assert len(case.u_face) == 25
+        for strip in (case.top_side, case.right_side, case.bottom_side, case.left_side):
+            assert len(strip) == 5
+
+
+def test_the_l2e_plan_view_is_three_tier_and_never_the_oll_mask() -> None:
+    """L2E happens during reduction, before there is a last layer — the
+    yellow/not-yellow mask would be answering a question the step does not ask,
+    and dimming the U face flat (the PLL treatment) would delete the case,
+    because a flipped pair shows the SIDE colour on top."""
+    for svg in _dir_of("555-parity", 1):
+        fills = _fills(svg.read_text())
+        assert UNORIENTED not in fills, f"{svg.name}: an L2E view used the orientation mask"
+        assert UNREACHED in fills, f"{svg.name}: the unreached corners are not greyed"
+        # Full colour somewhere — the case — and dim somewhere: what pairing
+        # already finished. A picture with only one of the two is not a step.
+        assert fills & {YELLOW, RED, GREEN, ORANGE, BLUE}, f"{svg.name}: nothing in full colour"
+        assert any(dim(c).upper() in fills for c in (YELLOW, RED, GREEN, ORANGE, BLUE)), (
+            f"{svg.name}: nothing dimmed — the already-paired groups are shouting"
+        )
+
+
+def test_the_three_taught_big_cube_cases_are_the_same_three_everywhere() -> None:
+    """One list, written in three languages, and nothing but this makes them
+    agree: Python decides what is DRAWN, gen-cases.mjs decides what carries an
+    ICON, and unlocks.ts decides what the UI SHOWS. A case that fell out of one
+    of the three would ship as a row with a broken image, or a picture nobody
+    can reach — both of which have happened here before."""
+    from cubepath.fullsets import TAUGHT_BIG_CUBE
+
+    # Python: the constant now SELECTS what parity_cases() renders (each entry
+    # names the exported set its case is drawn from), so this compares the
+    # declared list against the pictures actually produced rather than against
+    # a second hand-written union of the same ids.
+    assert {diagram_name(i) for i in TAUGHT_BIG_CUBE} == {c.name for c in parity_cases()}
+    for case_id, (source, why) in TAUGHT_BIG_CUBE.items():
+        assert case_id in {c["id"] for c in _states_of(source)}, f"{case_id} not in {source}"
+        assert why.strip(), f"{case_id}: no description"
+
+    # gen-cases.mjs: the ids its icon table carries.
+    gen = (_REPO / "app" / "scripts" / "gen-cases.mjs").read_text()
+    table = re.search(r"const TAUGHT_BIG_CUBE = \{(.*?)\};", gen, re.S)
+    assert table, "gen-cases.mjs no longer declares TAUGHT_BIG_CUBE"
+    icons = dict(re.findall(r'"([\w.-]+)":\s*"(/diagrams/[^"]+)"', table.group(1)))
+    assert set(icons) == set(TAUGHT_BIG_CUBE)
+
+    # ...and the VALUES have to be live too. `444.oll-parity` is the one id the
+    # generator cannot build (it is curated in algs.ts, which carries its own
+    # icon), so its path here is a second copy of that literal. Compare them, or
+    # renaming the SVG in one file would leave the other silently wrong.
+    curated = _CURATED_TS.read_text()
+    compared = 0
+    for case_id, icon in icons.items():
+        block = re.search(rf'id:\s*"{re.escape(case_id)}",\s*\n\s*icon:\s*"([^"]+)"', curated)
+        if not block:
+            continue  # generated ids carry no curated literal to compare against
+        compared += 1
+        assert block.group(1) == icon, (
+            f"{case_id}: algs.ts says {block.group(1)}, gen-cases.mjs says {icon}"
+        )
+    # ...and the skip above must never become the whole loop. Exactly one id is
+    # curated (`444.oll-parity`); if a reformat of algs.ts moved `icon:` off the
+    # line after `id:`, every match would fail and this cross-check would pass
+    # by comparing nothing at all — which is the failure it exists to prevent.
+    assert compared == 1, (
+        f"{compared} curated icon literals matched in algs.ts, expected 1 — the "
+        f"comparison is not running"
+    )
+
+    # unlocks.ts: the ids it keeps visible while the one-look sets are locked.
+    unlocks = (_REPO / "app" / "src" / "lib" / "unlocks.ts").read_text()
+    taught = set()
+    for name in ("TAUGHT_444_CASES", "TAUGHT_555_CASES"):
+        block = re.search(rf"{name}[^=]*=\s*new Set\(\[(.*?)\]\)", unlocks, re.S)
+        assert block, f"unlocks.ts no longer declares {name} as a plain literal"
+        taught |= set(re.findall(r'"([\w.-]+)"', block.group(1)))
+    assert taught == set(TAUGHT_BIG_CUBE)
 
 
 def test_the_diagram_filename_rule_is_a_pure_function_of_the_case_id() -> None:
@@ -1765,18 +1923,19 @@ def test_a_diagram_cannot_disagree_with_its_own_cube_order() -> None:
     from cubepath.diagrams import CubeDiagram
 
     with pytest.raises(ValueError, match="U facelets"):
-        CubeDiagram(name="x", label="x", category="444_oll", u_face=[YELLOW] * 9, n=4)
+        CubeDiagram(name="x", label="x", category="444_parity", u_face=[YELLOW] * 9, n=4)
     with pytest.raises(ValueError, match="has 3 cells"):
         CubeDiagram(
             name="x",
             label="x",
-            category="444_oll",
+            category="444_parity",
             u_face=[YELLOW] * 16,
             top_side=[YELLOW] * 3,
             n=4,
         )
     # An unstated band still fills to the right width for the cube it is on.
-    assert CubeDiagram(name="x", label="x", category="444_oll", u_face=[YELLOW] * 16, n=4).left_side
+    bare = CubeDiagram(name="x", label="x", category="444_parity", u_face=[YELLOW] * 16, n=4)
+    assert bare.left_side
 
 
 def test_an_unknown_category_cannot_be_written_to_the_tree_root() -> None:
@@ -1785,8 +1944,11 @@ def test_an_unknown_category_cannot_be_written_to_the_tree_root() -> None:
     subdirectories) would never have shipped it."""
     from cubepath.diagrams import _case_subdir
 
+    # Deliberately a category no cube has. This test used to name "555_l2e",
+    # which stopped being unknown the moment the 5x5 set became drawable — a
+    # negative test aimed at a real value passes for the wrong reason.
     with pytest.raises(ValueError, match="unknown diagram category"):
-        _case_subdir("555_l2e")
+        _case_subdir("666_never")
 
 
 def test_edge_anchors_sit_at_the_centre_of_the_edge_not_a_cell() -> None:

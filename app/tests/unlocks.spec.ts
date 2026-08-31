@@ -46,7 +46,7 @@ const ALL_SET_KEYS = [
   "full-pll",
   "444-parity",
   ...LOCKED_SET_KEYS,
-  "555-l2e",
+  "555-parity",
 ];
 
 const lockedCases = () => ALL_CASES.filter((k) => isLocked(k));
@@ -194,10 +194,10 @@ describe("555-l2e-onelook, locked", () => {
   test("the group stays visible with one case — the only question a 5×5 asks", () => {
     locked(() => {
       // Deliberately NOT hidden: a one-case set still drills "is this parity?".
-      expect(visibleKeys()).toContain("555-l2e");
-      expect(groupSize("555-l2e")).toBe(1);
-      expect(poolFor(["555-l2e"]).map((c) => c.id)).toEqual([...TAUGHT_555_CASES]);
-      const set = trainerSets().find((s) => s.key === "555-l2e")!;
+      expect(visibleKeys()).toContain("555-parity");
+      expect(groupSize("555-parity")).toBe(1);
+      expect(poolFor(["555-parity"]).map((c) => c.id)).toEqual([...TAUGHT_555_CASES]);
+      const set = trainerSets().find((s) => s.key === "555-parity")!;
       expect(set.name).toBe("5×5 edge parity");
     });
   });
@@ -221,9 +221,9 @@ describe("555-l2e-onelook, locked", () => {
 
   test("unlocking restores all 13", () => {
     unlocked(() => {
-      expect(groupSize("555-l2e")).toBe(13);
-      expect(poolFor(["555-l2e"]).length).toBe(13);
-      for (const c of poolFor(["555-l2e"])) {
+      expect(groupSize("555-parity")).toBe(13);
+      expect(poolFor(["555-parity"]).length).toBe(13);
+      for (const c of poolFor(["555-parity"])) {
         expect(c.puzzle, c.id).toBe("5x5x5");
         expect(
           c.algs.some((a) => a.primary),

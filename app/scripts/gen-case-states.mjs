@@ -53,12 +53,19 @@
  * {
  *   "id": "oll.1",            // the id gen-cases.mjs gives the same case
  *   "puzzle": "3x3x3",
- *   "set": "oll",             // oll | pll | f2l | 4x4oll | 4x4pll | 555l2e
+ *   "set": "oll",             // oll | pll | f2l | 4x4oll | 4x4pll | 555l2e | 4x4parity
  *   "name": "OLL 1",
  *   "group": "Dot",
  *   "alg": "R U2 R' ...",     // verbatim from the extraction; never retyped
- *   "derivation": "inverse",  // "inverse": state = alg applied backwards to solved
- *                             // "setup":   state = the pinned setup applied forwards
+ *   "derivation": "inverse",  // "inverse":     state = alg applied backwards to solved
+ *                             // "setup":       state = the pinned setup applied forwards
+ *                             // "displayed":   state = solved, patched with the
+ *                             //   drawable pattern the verifier exported (5x5 L2E)
+ *                             // "recognition": state = built from the cube's own
+ *                             //   laws to be what a SOLVER sees, because `alg⁻¹` is
+ *                             //   not that state (4x4 OLL parity — see
+ *                             //   `flippedPairState`). The algorithm named beside it
+ *                             //   moves you OUT of this class; it does not solve it.
  *   "preRotation": "",        // whole-cube rotation applied to cancel the alg's
  *                             // net rotation; "" when the alg has none
  *   "state": {"U":"YYYYYYYYY","L":"BBB...", ...},
@@ -87,32 +94,42 @@
  * because the piece genuinely is not home — L2E tolerance for that is a
  * property of the solve method, not of the cube state.
  *
- * KNOWN LIMIT — the 5x5 L2E set is exported RAW, and is not yet drawable.
- * For every last-layer set (OLL, PLL, 4x4 OLL, 4x4 PLL) the exported state is
- * the case as a solver sees it: D solved, every side row below the top row
- * solved, the case confined to the last layer. The 13 `555l2e` states are not
- * like that. An L2E algorithm is written for a hold partway through reduction,
- * so `alg⁻¹` with the centres rotated home leaves the two target edge groups
- * wherever that hold put them (l2e-1 lands them on R and B, not UF/UB) and
- * leaves the rigidly-cycled non-target groups displaced.
+ * WHY THE 5x5 L2E SET HAS A THIRD DERIVATION — and why it is not "inverse".
+ * For every last-layer set (OLL, PLL, 4x4 OLL, 4x4 PLL) the case as a solver
+ * sees it IS `alg⁻¹` applied to solved: D solved, every side row below the top
+ * row solved, the case confined to the last layer. The 13 `555l2e` states are
+ * not like that. An L2E algorithm is written for a hold partway through
+ * reduction, so `alg⁻¹` with the centres rotated home leaves the two target
+ * edge groups wherever that hold put them (l2e-1 lands them on R and B, not
+ * UF/UB) and leaves the rigidly-cycled non-target groups displaced. Those
+ * states were exported raw and marked not drawable for exactly that reason.
  *
- * The pattern a 5x5 L2E DIAGRAM needs already exists: verify-l2e.mjs check (d)
- * builds it — "synthetic pattern with the ten non-target groups + corners
- * solved in place and only the target slots taken from S", targets at UF/UB.
- * The right fix is for verify-l2e.mjs to write that pattern into l2e-raw.json,
- * which this script would then convert to facelets like any other case.
- * Re-deriving the target-slot detection here would be a second copy of the
- * reduction model verify-l2e.mjs already owns. Do not draw 5x5 L2E from these
- * states until that export lands.
+ * They are drawable now. `verify-l2e.mjs` owns the reduction model that says
+ * which two slots are the case, and its check (d) already built and
+ * round-tripped the displayed pattern — ten non-target groups plus the corners
+ * solved in place, only UF and UB taken from the case state. It now EXPORTS
+ * that pattern as `displayed`, a delta against solved, and this script patches
+ * it onto the kpuzzle's default pattern (`derivation: "displayed"`) and
+ * converts to facelets like any other case. Re-deriving target-slot detection
+ * here would have been a second copy of a model that already exists, which is
+ * why the fix went there and not here.
  *
  * Usage: node scripts/gen-case-states.mjs
  */
 import { readFile, writeFile } from "node:fs/promises";
 
 import { Alg } from "cubing/alg";
+import { KPattern } from "cubing/kpuzzle";
 import { puzzles } from "cubing/puzzles";
 
-import { makeKit } from "./lib/kpuzzle-utils.mjs";
+import {
+  edgeSlots,
+  intactArrangements,
+  makeArrangementKey,
+  makeKit,
+  permutationParity,
+  unaliasedCopy,
+} from "./lib/kpuzzle-utils.mjs";
 
 /**
  * The types are written here rather than inferred: `checkJs` runs over this
@@ -122,8 +139,11 @@ import { makeKit } from "./lib/kpuzzle-utils.mjs";
  * @typedef {{ orbit: string; slot: number; ori: number; x: number; y: number; fill: string }} Sticker
  * @typedef {{ cells: Sticker[]; box: { x0: number; x1: number; y0: number; y1: number } }} FaceGrid
  * @typedef {any} KPuzzle a cubing.js KPuzzle
- * @typedef {any} KPattern a cubing.js KPattern
- * @typedef {{ ROTATION_T: any[]; centersSolved: (pattern: KPattern) => boolean }} Kit
+ * NOTE: `KPattern` is NOT aliased to `any` here — the real class is imported
+ * above (patchedState constructs one), and a typedef of the same name would
+ * collide with the import.
+ * @typedef {{ ROTATION_T: any[]; centersSolved: (pattern: KPattern) => boolean;
+ *             toT: (s: string) => any; rightRotNormalize: (t: any) => any }} Kit
  * @typedef {{ puzzleId: string; kpuzzle: KPuzzle; n: number;
  *             faces: Record<string, FaceGrid>; solved: KPattern }} Model
  * @typedef {{ face: string; index: number }} Address
@@ -589,6 +609,173 @@ function setupState(model, kit, setup) {
 }
 
 /**
+ * The state a verifier has already worked out and exported, as a patch on the
+ * solved pattern. No rotation search: the exporting verifier owns the hold, so
+ * the pattern arrives already presented the way the reader is told to hold it.
+ *
+ * This is how the 5x5 L2E set is drawn. An L2E algorithm is written for a hold
+ * partway through reduction, so `alg⁻¹` is NOT a picture of the case — it
+ * leaves the two target groups wherever that hold put them and rigidly cycles
+ * groups a solver would not call part of the case. `verify-l2e.mjs` owns the
+ * reduction model that says which two slots are the case, and check (d) there
+ * already round-trips exactly this pattern, so it exports it rather than have
+ * a second copy of that model live here.
+ *
+ * @param {Model} model
+ * @param {Kit} kit
+ * @param {Delta[]} deltas
+ */
+function patchedState(model, kit, deltas) {
+  const data = unaliasedCopy(model.solved.patternData);
+  for (const d of deltas) {
+    const orbit = data[d.orbit];
+    if (!orbit) throw new Error(`displayed state names unknown orbit ${d.orbit}`);
+    if (d.slot < 0 || d.slot >= orbit.pieces.length) {
+      throw new Error(`displayed state names slot ${d.slot} outside ${d.orbit}`);
+    }
+    orbit.pieces[d.slot] = d.piece;
+    orbit.orientation[d.slot] = d.orientation;
+  }
+  const pattern = new KPattern(model.kpuzzle, data);
+  // The export is a reduction state, so its centres are already home; a
+  // pre-rotation would mean the exporter and this file disagree about the hold.
+  if (!kit.centersSolved(pattern)) {
+    throw new Error("displayed state does not have its centres home");
+  }
+  return { pattern, preRotation: "" };
+}
+
+/**
+ * The 4x4's edge model, from the SHARED derivation verify-l2e.mjs uses for the
+ * 5x5: where the edge positions are, and which arrangements of one still count
+ * as an intact group. A 4x4 has no midge orbit, which is all `midgeOrbit: null`
+ * says — the rest of the statement is identical at both orders, and it used to
+ * be written out twice.
+ * @param {Model} model @param {Kit} kit
+ */
+function edgeModel(model, kit) {
+  const opts = { wingOrbit: "EDGES", midgeOrbit: null };
+  const slots = edgeSlots(model.solved, kit.toT, opts);
+  const arrKey = makeArrangementKey(slots, opts);
+  const valid = intactArrangements(model.solved, kit.ROTATION_T, slots, arrKey);
+  // The same self-check verify-l2e.mjs runs on its own derivation: a cube has
+  // 12 edge positions, a big-cube position holds two wings, and each is
+  // realized by exactly the 24 rotations. An empty or half-built model would
+  // otherwise make every check below pass by having nothing to check.
+  const sigs = Object.keys(slots);
+  if (sigs.length !== 12) {
+    throw new Error(`${model.puzzleId}: ${sigs.length} edge positions derived, expected 12`);
+  }
+  for (const sig of sigs) {
+    if (slots[sig].wings.length !== 2) {
+      throw new Error(`${model.puzzleId}: ${sig} has ${slots[sig].wings.length} wings, expected 2`);
+    }
+    if (valid[sig].size !== 24) {
+      throw new Error(`${model.puzzleId}: ${valid[sig].size} arrangements at ${sig}, expected 24`);
+    }
+  }
+  return { slots, arrKey, valid };
+}
+
+/**
+ * The RECOGNITION state of big-cube OLL parity: the last layer fully oriented,
+ * with one edge pair flipped in place.
+ *
+ * Why this is built rather than derived from `alg⁻¹` like every other case.
+ * `alg⁻¹` answers "what state does this algorithm solve", and for parity that
+ * is the wrong question: J Perm's OLL-parity algorithm is not pure — measured,
+ * it also swaps two edge pairs and two corners — so `alg⁻¹` draws a last layer
+ * with twisted corners in it, a state no solver ever meets and one the case's
+ * own recognition line ("a single flipped edge pair") flatly contradicts.
+ * Parity is not a case an algorithm solves; it is a class the algorithm moves
+ * you out of, which is exactly why it needs its own construction.
+ *
+ * Nothing here is hand-placed. The UF wings come out of layer-move algebra,
+ * the swap is the odd wing exchange that IS parity, and the orientation is
+ * CHOSEN BY THE PICTURE rather than guessed: of the two candidate exchanges,
+ * exactly one shows the pair flipped — side colour on top, top colour on the
+ * side — and that is asserted, not assumed. The result is gated twice: the
+ * facelets must read as a flipped pair, and the algorithm must remove the
+ * parity (every edge group intact, the U face uniform).
+ *
+ * @param {Model} model
+ * @param {Kit} kit
+ * @param {string} alg the parity algorithm this state is drawn beside
+ */
+function flippedPairState(model, kit, alg) {
+  const { slots, arrKey, valid } = edgeModel(model, kit);
+  const wings = slots["FU"]?.wings ?? [];
+  if (wings.length !== 2) {
+    throw new Error(`${model.puzzleId}: UF is ${wings.length} wing slots, expected 2`);
+  }
+  const [a, b] = /** @type {[number, number]} */ (wings);
+  const solved = model.solved.patternData;
+  const uFace = model.faces["U"];
+  const fFace = model.faces["F"];
+  if (!uFace || !fFace) throw new Error(`${model.puzzleId}: no U/F face grid`);
+
+  /** @type {KPattern[]} */
+  const flipped = [];
+  for (const ori of [0, 1]) {
+    const data = unaliasedCopy(solved);
+    data.EDGES.pieces[a] = solved.EDGES.pieces[b];
+    data.EDGES.pieces[b] = solved.EDGES.pieces[a];
+    data.EDGES.orientation[a] = ori;
+    data.EDGES.orientation[b] = ori;
+    const pattern = new KPattern(model.kpuzzle, data);
+    // "Flipped" is a claim about the PICTURE, so read it off the facelets: the
+    // pair's two stickers on U must show F's colour, and its two on F must
+    // show U's. `sourceIndex` is the same facelet map every state is written
+    // through, so this cannot disagree with what gets drawn.
+    const shown = sourceIndex(model, pattern);
+    const onU = (shown["U"] ?? []).filter((_, i) => uFace.cells[i]?.orbit === "EDGES");
+    const onF = (shown["F"] ?? []).filter((_, i) => fFace.cells[i]?.orbit === "EDGES");
+    const uRow = onU.slice(-2); // U's front-row wings, in row-major order
+    const fRow = onF.slice(0, 2); // F's top-row wings
+    if (uRow.every((s) => s.face === "F") && fRow.every((s) => s.face === "U")) {
+      flipped.push(pattern);
+    }
+  }
+  if (flipped.length !== 1) {
+    throw new Error(
+      `${model.puzzleId}: ${flipped.length} of 2 candidate wing exchanges read as a flipped ` +
+        `pair at UF, expected exactly 1`,
+    );
+  }
+  const pattern = /** @type {KPattern} */ (flipped[0]);
+
+  // The algorithm must REMOVE the parity — and "removed" is a precise thing,
+  // so it is asserted precisely rather than eyeballed. Two claims:
+  //
+  //  1. WING PARITY. Every outer turn is EVEN on the wings, so a reduced cube
+  //     is even; parity is the odd class, and no amount of pairing crosses
+  //     between them. The state built above must be ODD (that is what makes it
+  //     parity at all) and the state after the algorithm must be EVEN. This is
+  //     the same invariant verify-l2e.mjs pins for the 5x5 and the one the
+  //     lesson's "one swap left over" sentence rests on.
+  //  2. INTACT GROUPS. Every edge slot still holds two wings of one edge, so
+  //     the reduction survived.
+  //
+  // What is NOT asserted, deliberately: that the cube is solved, or even that
+  // the U face is one colour. Measured, this algorithm leaves two edge pairs
+  // swapped AND two corners twisted — you finish OLL after firing it, which is
+  // why parity is a class you leave rather than a case an algorithm solves.
+  const after = pattern.applyTransformation(kit.rightRotNormalize(kit.toT(alg)));
+  if (permutationParity(pattern, model.solved, "EDGES") !== 1) {
+    throw new Error(`${model.puzzleId}: the built flipped-pair state is not odd on wings`);
+  }
+  if (permutationParity(after, model.solved, "EDGES") !== 0) {
+    throw new Error(`${model.puzzleId}: ${alg} does not clear the wing parity it exists to clear`);
+  }
+  for (const sig of Object.keys(slots)) {
+    if (!valid[sig].has(arrKey(after, sig))) {
+      throw new Error(`${model.puzzleId}: ${alg} leaves a broken edge group at ${sig}`);
+    }
+  }
+  return { pattern, preRotation: "" };
+}
+
+/**
  * The rotation strings, in the order `makeKit` enumerates them.
  * @type {string[]}
  */
@@ -617,11 +804,13 @@ const f2l = await read("f2l-raw.json");
 const l2e = await read("l2e-raw.json");
 
 /**
+ * @typedef {{ orbit: string; slot: number; piece: number; orientation: number }} Delta
  * @typedef {{ name?: string; number?: number; slug?: string; group?: string;
- *             setup?: string; algs?: string[] }} Row
+ *             setup?: string; algs?: string[]; displayed?: Delta[] }} Row
  * @typedef {{ set: string; puzzle: string; rows: Row[]; id: (row: Row) => string;
  *             name: (row: Row) => string; group?: (row: Row) => string;
- *             setup?: (row: Row) => string | undefined }} Source
+ *             setup?: (row: Row) => string | undefined;
+ *             displayed?: (row: Row) => Delta[] | undefined }} Source
  */
 
 /**
@@ -671,7 +860,9 @@ const SOURCES = [
     rows: l2e,
     id: (c) => `555.${c.slug}`,
     name: (c) => c.name ?? "",
-    group: (_row) => "555-l2e",
+    group: (_row) => "555-parity",
+    // Not `inverse` — see the header. verify-l2e.mjs exports the drawable hold.
+    displayed: (c) => c.displayed,
   },
 ];
 
@@ -713,15 +904,21 @@ for (const source of SOURCES) {
     if (seen.has(id)) throw new Error(`gen-case-states: duplicate case id ${id}`);
     seen.add(id);
     const setup = source.setup?.(row);
+    const displayed = source.displayed?.(row);
     const alg = row.algs?.[0];
-    if (!setup && typeof alg !== "string") {
+    if (typeof alg !== "string" && !setup) {
       throw new Error(`gen-case-states: ${id} has no algorithm to derive from`);
+    }
+    if (source.displayed && !displayed) {
+      throw new Error(`gen-case-states: ${id} carries no exported drawable state`);
     }
     let derived;
     try {
-      derived = setup
-        ? setupState(model, kit, setup)
-        : inverseState(model, kit, /** @type {string} */ (alg));
+      derived = displayed
+        ? patchedState(model, kit, displayed)
+        : setup
+          ? setupState(model, kit, setup)
+          : inverseState(model, kit, /** @type {string} */ (alg));
     } catch (e) {
       throw new Error(`gen-case-states: ${id}: ${e instanceof Error ? e.message : String(e)}`, {
         cause: e,
@@ -733,8 +930,10 @@ for (const source of SOURCES) {
       set: source.set,
       name: source.name(row),
       group: source.group ? source.group(row) : (row.group ?? ""),
+      // A displayed case still names the algorithm that solves it — the state
+      // is a hold, and the alg is what the picture beside it must be solved by.
       alg: setup ?? alg,
-      derivation: setup ? "setup" : "inverse",
+      derivation: displayed ? "displayed" : setup ? "setup" : "inverse",
       preRotation: derived.preRotation,
       state: faceletState(model, derived.pattern),
       mask: faceletMask(model, derived.pattern),
@@ -891,6 +1090,43 @@ const parityAlgs = {
   // retype — and adding a second one-entry map would be worse.
   "edge-flip": edgeFlip,
 };
+
+// ---------------------------------------------------------------------------
+// The course's own parity cases.
+//
+// The 4x4 lesson teaches two algorithms, and only one of them had a picture.
+// PLL parity does, because the bare parity string is also a case in JPerm's
+// 4x4 PLL set (`444.pll.pure-e` — its algorithm IS `4x4-pll-parity`, byte for
+// byte). OLL parity does not: every one of the 27 `4x4oll` cases has the
+// parity algorithm SPLICED INTO a last-layer algorithm, so none of them is the
+// bare parity case, and `444.oll-parity` — the curated CaseDef the lesson and
+// the trainer both point at — had no state here and therefore no diagram.
+//
+// Derived from the parity algorithm this file already locates by mechanism, so
+// nothing is retyped. The picture is the state the SOLVER MEETS, not the state
+// the algorithm solves — those come apart here, and `flippedPairState` is where
+// the difference is argued and gated. The app asserts the curated CaseDef
+// prints the same string (tests/algs.spec.ts).
+// ---------------------------------------------------------------------------
+{
+  const { model, kit } = puzzleKit("4x4x4");
+  const id = "444.oll-parity";
+  if (seen.has(id)) throw new Error(`gen-case-states: duplicate case id ${id}`);
+  seen.add(id);
+  const derived = flippedPairState(model, kit, oll4.alg);
+  cases.push({
+    id,
+    puzzle: "4x4x4",
+    set: "4x4parity",
+    name: "OLL Parity (4×4)",
+    group: "444-parity",
+    alg: oll4.alg,
+    derivation: "recognition",
+    preRotation: derived.preRotation,
+    state: faceletState(model, derived.pattern),
+    mask: faceletMask(model, derived.pattern),
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Emit. Key order is written explicitly, and every array keeps its source

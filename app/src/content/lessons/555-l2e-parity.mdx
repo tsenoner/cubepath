@@ -1,5 +1,5 @@
 ---
-title: "5×5: Last Two Edges"
+title: "5×5: Last Two Edges and Parity"
 description: "The final two edge groups have no spare slot to freeslice into — slice, flip, slice back finishes them, and the only parity a 5×5 has lives here."
 phase: "555"
 order: 350
@@ -9,9 +9,9 @@ objectives:
   - "Recognise 5×5 edge parity and know why it is legal here but impossible on a 3×3."
   - "Keep the 5×5 parity algorithm separate from its 4×4 near-twin."
 prerequisites: ["555-centers-edges"]
-algorithms: ["555.l2e-6"]
+algorithms: ["444.edge-flip", "555.l2e-6"]
 practice:
-  groups: ["555-l2e"]
+  groups: ["555-parity"]
   note: "One case, and it is the only recognition question a 5×5 asks: is this parity, or not? Drill it until you answer without thinking — you meet it in half your solves."
 ---
 
@@ -36,7 +36,8 @@ the slice back:
 
 <Callout type="tip">
   You supply the slice, so the same seven moves work anywhere on either big
-  cube. That is the whole difference between this and a memorised L2E case: a
+  cube. That is the whole difference between this and a memorised last-two-edges
+  case: a
   case bakes the slice in at a fixed width and applies to one position, while
   this you aim.
 </Callout>
@@ -97,7 +98,8 @@ A 5×5 has a true fixed center piece on every face, so the color scheme is
 anchored absolutely and its midges obey 3×3 permutation law. Every last
 layer you meet is a genuine 3×3 last layer, solvable by the algorithms you
 already own — the flipped-looking edge above is the only surprise a 5×5 can
-throw, and it lives here in L2E rather than at the end of your solve.
+throw, and it lives here while you pair the edges rather than at the end of
+your solve.
 
 ## You're done learning
 
