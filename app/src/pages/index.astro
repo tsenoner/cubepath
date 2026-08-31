@@ -53,8 +53,16 @@ const lessons = (await getCollection("lessons")).sort((a, b) => a.data.order - b
  *  - Phase 3 pointed at the beginner ladder's step 6, which at this size is
  *    indistinguishable from step 5 on the card above it.
  *
- * Every entry renders into the same box (see `ART_W`/`ART_H`), so the eight
- * cubes are the same size on the page.
+ * Every entry renders into the same BOX (see `ART_W`/`ART_H`), which is what
+ * stops a card from setting its own height — the bug this replaced was 155px
+ * art in a 96px box.
+ *
+ * The box is not the same as the cube. `step_anatomy` carries an arrow, and
+ * `render_step` pads an arrowed diagram by 6 rather than 4, so its viewBox is
+ * 95.5x105.4 against the other seven's 91.5x101.4 — letterboxed into a shared
+ * 92x101 it draws about 4% smaller. Left alone deliberately: the padding is
+ * there so the rotation arrow is not clipped, and equalising it would mean
+ * changing the pad for all 24 step diagrams, which the guide renders too.
  */
 /**
  * One box for every phase cube, so the eight cards line up. Structural

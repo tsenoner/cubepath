@@ -83,7 +83,7 @@ of these is therefore pinned by a test:
 | artifact | produced by | pinned by |
 | --- | --- | --- |
 | `app/public/cubepath.pdf` | `make build-guide` | `tests/test_guide.py` (input digest in `guide/pdf.stamp.json`) |
-| `app/public/diagrams/**` (179 SVGs) | `make diagrams` | `tests/test_diagrams.py` — generator match, and the guide's figure paths resolve |
+| `app/public/diagrams/**` (180 SVGs) | `make diagrams` | `tests/test_diagrams.py` — generator match, and the guide's figure paths resolve |
 | `app/public/cards/*.pdf`, `app/src/data/cards.json` | `make cards` | `tests/test_cards.py` |
 | `app/public/favicon.svg`, `app/public/icons/*.png` | `make logo` | `tests/test_logo.py` |
 | `app/src/data/fullsets*.gen.ts` | `node scripts/gen-cases.mjs` | `app/tests/algs.spec.ts` (kpuzzle) |
@@ -300,7 +300,7 @@ named for the package now (`parents[N]` depths are unchanged, so no code moved).
 
 `tools/cubepath/src/cubepath/diagrams.py` defines the guide's 17 core cube diagrams as `CubeDiagram` dataclasses rendered to SVG using `svgwrite`. Case sticker data is **derived from algorithms** via `_derived_cross_case` / `_derived_oll_corner_case` / `_derived_pll_case` (OLL: yellow/grey masks; PLL: true colors). The entry point `cubepath-diagrams` writes to `app/public/diagrams/` — the one committed tree.
 
-Four case groups: `_oll_cross_cases()` (3), `_oll_corner_cases()` (8), `_pll_corner_cases()` (2), `_pll_edge_cases()` (4) — the 17 `all_cases()` returns. `fullsets.py` builds the rest from the app's extraction: 78 plan views (57 OLL + 21 PLL) into `oll-full/` and `pll-full/`, 41 isometric `SlotDiagram` pictures into `f2l/`, and **three** big-cube plan views into `444-parity/` and `555-parity/` — those from the kpuzzle states in `case-states.json`, because `cube.py` cannot model a 4×4 and must not be taught to. 179 SVGs in all, and `tests/test_diagrams.py` pins that number: `EXPECTED_DIAGRAMS` is asserted against a full render, so a group added to `main()` and forgotten in the test (or the reverse) fails the build.
+Four case groups: `_oll_cross_cases()` (3), `_oll_corner_cases()` (8), `_pll_corner_cases()` (2), `_pll_edge_cases()` (4) — the 17 `all_cases()` returns. `fullsets.py` builds the rest from the app's extraction: 78 plan views (57 OLL + 21 PLL) into `oll-full/` and `pll-full/`, 41 isometric `SlotDiagram` pictures into `f2l/`, and **three** big-cube plan views into `444-parity/` and `555-parity/` — those from the kpuzzle states in `case-states.json`, because `cube.py` cannot model a 4×4 and must not be taught to. 180 SVGs in all, and `tests/test_diagrams.py` pins that number: `EXPECTED_DIAGRAMS` is asserted against a full render, so a group added to `main()` and forgotten in the test (or the reverse) fails the build.
 
 **The big cubes get parity and nothing else**, and that follows from the course
 rather than from the renderer. Cubepath teaches REDUCTION (Yau as the advanced
@@ -547,9 +547,9 @@ project root. There is no copy step and no second tree:
 | `444-parity/` | 2 | 4×4 OLL parity (yellow mask) + PLL parity (colours + arrows) |
 | `555-parity/` | 1 | 5×5 edge parity (three-tier true colour) |
 | `notation/` | 17 | 3D isometric move notation diagrams, the overview, and its `overview_hub` backup |
-| `steps/` | 23 | 3D isometric step progress + case diagrams, plus 4 course-index phase pictures |
+| `steps/` | 24 | 3D isometric step progress + case diagrams, plus the 5 web-only ones (`_web_steps`): 4 course-index phase pictures and the `444.edge-flip` case icon |
 
-179 in total. `guide/cubepath.md` references 51 of them; the card set re-renders
+180 in total. `guide/cubepath.md` references 51 of them; the card set re-renders
 its own in `CARD` style rather than reusing these.
 
 ## Writing Philosophy

@@ -253,7 +253,18 @@ const BLURBS = new Map<string, Blurb>(
         `/reference: the ${s.id} blurb links to ${caseId}, which no visible section owns`,
       );
     }
-    const [before = "", after = ""] = s.blurb.split("{link}");
+    // The token is as load-bearing as the anchor: without this, a blurb that
+    // lost its `{link}` would silently append the link after the last full
+    // stop, and one that grew a second token would silently drop everything
+    // after it. Both read as prose a human wrote, which is why they have to
+    // fail the build rather than the eye.
+    const parts = s.blurb.split("{link}");
+    if (parts.length !== 2) {
+      throw new Error(
+        `/reference: the ${s.id} blurb carries ${parts.length - 1} "{link}" tokens, expected 1`,
+      );
+    }
+    const [before = "", after = ""] = parts;
     return [[s.id, { before, link: { href: `#${anchor}`, text }, after }]];
   }),
 );

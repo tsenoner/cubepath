@@ -1881,12 +1881,23 @@ def test_the_three_taught_big_cube_cases_are_the_same_three_everywhere() -> None
     # icon), so its path here is a second copy of that literal. Compare them, or
     # renaming the SVG in one file would leave the other silently wrong.
     curated = _CURATED_TS.read_text()
+    compared = 0
     for case_id, icon in icons.items():
         block = re.search(rf'id:\s*"{re.escape(case_id)}",\s*\n\s*icon:\s*"([^"]+)"', curated)
-        if block:
-            assert block.group(1) == icon, (
-                f"{case_id}: algs.ts says {block.group(1)}, gen-cases.mjs says {icon}"
-            )
+        if not block:
+            continue  # generated ids carry no curated literal to compare against
+        compared += 1
+        assert block.group(1) == icon, (
+            f"{case_id}: algs.ts says {block.group(1)}, gen-cases.mjs says {icon}"
+        )
+    # ...and the skip above must never become the whole loop. Exactly one id is
+    # curated (`444.oll-parity`); if a reformat of algs.ts moved `icon:` off the
+    # line after `id:`, every match would fail and this cross-check would pass
+    # by comparing nothing at all — which is the failure it exists to prevent.
+    assert compared == 1, (
+        f"{compared} curated icon literals matched in algs.ts, expected 1 — the "
+        f"comparison is not running"
+    )
 
     # unlocks.ts: the ids it keeps visible while the one-look sets are locked.
     unlocks = (_REPO / "app" / "src" / "lib" / "unlocks.ts").read_text()

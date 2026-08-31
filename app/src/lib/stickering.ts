@@ -200,8 +200,10 @@ export async function hasHomeOrientation(puzzle: Puzzle, alg: string): Promise<b
   return homeState(await kpuzzleFor(puzzle), puzzle, alg) !== undefined;
 }
 
-/**
- * Cases whose real state is NOT `solved · alg⁻¹`, keyed by their algorithm.
+/*
+ * L2E_HOLDS: cases whose real state is NOT `solved · alg⁻¹`, keyed by their
+ * algorithm. A plain block comment, not a doc comment, because it describes
+ * the imported table rather than the next declaration.
  *
  * This is the 5x5 last-two-edges set, and it is the one place where "what the
  * algorithm fixes" and "what the case IS" come apart. An L2E algorithm is
@@ -218,16 +220,17 @@ export async function hasHomeOrientation(puzzle: Puzzle, alg: string): Promise<b
  * and the SVG diagram is drawn from, so those two groups come out DIM rather
  * than lit. It arrives here through `gen-cases.mjs` like every other piece of
  * generated case data — `extracted/l2e-raw.json` is the GENERATOR's input, and
- * this file reading it directly was a reach around the one thing that owns it. Dim is the honest tier for them: at the pairing stage a group that
- * is intact but displaced is finished, and the 3x3 stage places it.
+ * this file reading it directly was a reach around the one thing that owns it.
+ * Dim is the honest tier for them: at the pairing stage a group that is intact
+ * but displaced is finished, and the 3x3 stage places it.
  *
  * Keyed by algorithm because that is what `maskFor` is given — the same idiom
- * `contextForPlayer` already resolves cases by, and the 13 L2E strings collide
- * with nothing (tests/algs.spec.ts pins that triples are near-unique).
+ * `contextForPlayer` already resolves cases by. The lookup is GATED ON THE
+ * PUZZLE as well, because the key alone does not carry one: the slot indices in
+ * a hold are 5x5 orbit slots, so a 3x3 or 4x4 case that ever printed the same
+ * string would silently be patched with them. Nothing pins alg strings unique
+ * across puzzles — tests/algs.spec.ts pins the (puzzle, stickering, alg) TRIPLE.
  */
-type Delta = StickerDelta;
-
-const HOLDS = L2E_HOLDS;
 
 /**
  * Which pieces the algorithm fixes, per orbit, in home-slot order — i.e. the
@@ -247,7 +250,7 @@ async function touchedSlots(
 ): Promise<Record<string, boolean[]>> {
   const kp = await kpuzzleFor(puzzle);
   const solved = kp.defaultPattern();
-  const hold = HOLDS[alg];
+  const hold = puzzle === "5x5x5" ? L2E_HOLDS[alg] : undefined;
   const state = hold ? patched(solved, hold) : caseState(kp, puzzle, alg);
   const out: Record<string, boolean[]> = {};
   for (const { orbitName } of kp.definition.orbits) {
@@ -265,7 +268,7 @@ async function touchedSlots(
 }
 
 /** The solved pattern with an exported hold patched over it. */
-function patched(solved: KPattern, hold: Delta[]): KPattern {
+function patched(solved: KPattern, hold: StickerDelta[]): KPattern {
   // Per-orbit copies, never `structuredClone`: cubing.js hands every orbit of
   // the same length ONE zero-filled orientation array, and a clone preserves
   // that aliasing — see `unaliasedCopy` in scripts/verify-l2e.mjs for the bug
@@ -277,6 +280,12 @@ function patched(solved: KPattern, hold: Delta[]): KPattern {
   for (const d of hold) {
     const orbit = data[d.orbit];
     if (!orbit) throw new Error(`stickering: hold names unknown orbit ${d.orbit}`);
+    // Bounds, checked the same way gen-case-states.mjs's `patchedState` checks
+    // them: an out-of-range slot does not throw on its own, it GROWS the orbit
+    // array and hands cubing.js a pattern with more pieces than the puzzle has.
+    if (d.slot < 0 || d.slot >= orbit.pieces.length) {
+      throw new Error(`stickering: hold names slot ${d.slot} outside ${d.orbit}`);
+    }
     orbit.pieces[d.slot] = d.piece;
     orbit.orientation[d.slot] = d.orientation;
   }

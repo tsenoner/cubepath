@@ -53,14 +53,19 @@
  * {
  *   "id": "oll.1",            // the id gen-cases.mjs gives the same case
  *   "puzzle": "3x3x3",
- *   "set": "oll",             // oll | pll | f2l | 4x4oll | 4x4pll | 555l2e
+ *   "set": "oll",             // oll | pll | f2l | 4x4oll | 4x4pll | 555l2e | 4x4parity
  *   "name": "OLL 1",
  *   "group": "Dot",
  *   "alg": "R U2 R' ...",     // verbatim from the extraction; never retyped
- *   "derivation": "inverse",  // "inverse":   state = alg applied backwards to solved
- *                             // "setup":     state = the pinned setup applied forwards
- *                             // "displayed": state = solved, patched with the
+ *   "derivation": "inverse",  // "inverse":     state = alg applied backwards to solved
+ *                             // "setup":       state = the pinned setup applied forwards
+ *                             // "displayed":   state = solved, patched with the
  *                             //   drawable pattern the verifier exported (5x5 L2E)
+ *                             // "recognition": state = built from the cube's own
+ *                             //   laws to be what a SOLVER sees, because `alg⁻¹` is
+ *                             //   not that state (4x4 OLL parity — see
+ *                             //   `flippedPairState`). The algorithm named beside it
+ *                             //   moves you OUT of this class; it does not solve it.
  *   "preRotation": "",        // whole-cube rotation applied to cancel the alg's
  *                             // net rotation; "" when the alg has none
  *   "state": {"U":"YYYYYYYYY","L":"BBB...", ...},
@@ -1098,8 +1103,10 @@ const parityAlgs = {
 // the trainer both point at — had no state here and therefore no diagram.
 //
 // Derived from the parity algorithm this file already locates by mechanism, so
-// nothing is retyped and the picture is the state that algorithm solves. The
-// app asserts the curated CaseDef prints the same string (tests/algs.spec.ts).
+// nothing is retyped. The picture is the state the SOLVER MEETS, not the state
+// the algorithm solves — those come apart here, and `flippedPairState` is where
+// the difference is argued and gated. The app asserts the curated CaseDef
+// prints the same string (tests/algs.spec.ts).
 // ---------------------------------------------------------------------------
 {
   const { model, kit } = puzzleKit("4x4x4");

@@ -5,7 +5,8 @@
  * ┌─ THE SWITCH ────────────────────────────────────────────────────────────┐
  * │ Flip a value in `UNLOCKED` below to `true` and the set reappears        │
  * │ everywhere at once: the trainer's set list, its pool and its counts,    │
- * │ the /reference sections, and the /case/<id> pages.                      │
+ * │ the /reference sections, and the /case/<id> pages. Its DIAGRAMS have to │
+ * │ be regenerated first — see below; the build fails without them.         │
  * └─────────────────────────────────────────────────────────────────────────┘
  *
  * Everything else in the app asks `isLocked()`; nothing re-derives the rule.
@@ -15,10 +16,14 @@
  *
  * THE DIAGRAMS ARE THE EXCEPTION, and it is the one second place to edit.
  * The 61 SVGs for these sets were reachable from no page at all and are no
- * longer generated, so an unlocked set renders through /reference's "no
- * diagrams for this set yet" fallback until a diagram group is added back to
- * `fullsets.render_big_sets` (see `TAUGHT_BIG_CUBE` there). Flipping a boolean
- * here restores every other surface; it does not restore the pictures.
+ * longer generated, so an unlocked set has no picture until a diagram group is
+ * added back to `fullsets.render_big_sets` (see `TAUGHT_BIG_CUBE` there).
+ * Flipping a boolean here restores every other surface; it does not restore
+ * the pictures — and the pictures are GATED, so this is not a cosmetic gap:
+ * `tests/algs.spec.ts` § "every case a reader can reach has a picture" fails
+ * the build for every newly visible case that has no `icon`. Unlocking a set
+ * is therefore two edits, in this order: regenerate its diagrams, then flip
+ * the boolean. `make check` tells you if you did it the other way round.
  */
 import type { CaseDef } from "../data/algs";
 
