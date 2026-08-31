@@ -21,6 +21,7 @@
 import { getCollection } from "astro:content";
 import Base from "./Base.astro";
 import Header from "../components/Header.astro";
+import JumpBar from "../components/JumpBar.astro";
 import Page from "../components/Page.astro";
 import ProgressBar from "../components/ProgressBar.astro";
 import LessonMeta from "../components/LessonMeta.astro";
@@ -49,10 +50,22 @@ interface Props {
   prerequisites: string[];
   algorithms: string[];
   practice: Practice;
+  /** Astro's own `render().headings`, passed through by learn/[...slug].astro. */
+  headings?: { depth: number; slug: string; text: string }[];
 }
 
-const { id, title, description, phase, minutes, objectives, prerequisites, algorithms, practice } =
-  Astro.props;
+const {
+  id,
+  title,
+  description,
+  phase,
+  minutes,
+  objectives,
+  prerequisites,
+  algorithms,
+  practice,
+  headings = [],
+} = Astro.props;
 
 const all = (await getCollection("lessons")).sort((a, b) => a.data.order - b.data.order);
 const byId = new Map(all.map((l) => [l.id, l]));
@@ -102,10 +115,40 @@ const taught = algorithms.map((a) => caseById.get(a)!);
 /** The rest of this phase — a lesson could reach two others before this. */
 const siblings = all.filter((l) => l.data.phase === phase);
 const inPhase = siblings.findIndex((l) => l.id === id) + 1;
+
+/**
+ * The outline for the jump bar: this page's own landmarks, in document order.
+ *
+ * The LAYOUT's three headings bracket the body's, and including them is what
+ * makes the bar universal rather than conditional. Body headings alone would
+ * have given three lessons fewer than three chips, and a navigation aid that
+ * appears on 22 of 25 pages is a rule the reader has to learn; "What you'll
+ * learn" (all 25) and "Practice" (all 25) mean every lesson gets at least
+ * three, so the bar is simply always there.
+ *
+ * Depth 2 only. The deepest lesson has 16 headings and a chip strip that lists
+ * every h3 stops being a summary — `full-oll-overview` alone would contribute
+ * nine of them, all subdivisions of two h2s already in the list.
+ *
+ * `headings` is Astro's own, so the slugs here are the ids actually emitted
+ * into the page rather than a second slugging of the same text. Six shipped
+ * heading ids begin with a digit ("1-build-the-white-cross…"): those are legal
+ * URL fragments and ILLEGAL `querySelector` arguments, which is the same trap
+ * `phaseAnchor()` exists for one level up. Nothing here may look them up with
+ * a selector.
+ */
+const outline = [
+  { id: "objectives-heading", label: "Overview" },
+  ...headings.filter((h) => h.depth === 2).map((h) => ({ id: h.slug, label: h.text })),
+  ...(taught.length > 0 ? [{ id: "taught-heading", label: "Cases" }] : []),
+  { id: "practice-heading", label: "Practice" },
+];
 ---
 
 <Base title={`${title} — Cubepath`} description={description}>
-  <Header active="learn" />
+  <Header active="learn">
+    <JumpBar slot="pagenav" items={outline} label="On this page" />
+  </Header>
   <Page>
     <div class="lesson-head">
       {

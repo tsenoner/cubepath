@@ -185,6 +185,19 @@ const links = [
     </button>
     <button data-install-slot hidden class="install">Install</button>
   </div>
+  {
+    /*
+    A second ROW INSIDE the sticky box, not a second sticky element. The
+    ResizeObserver below observes `.site-header` and publishes its offsetHeight
+    as --hdr-h, so anything added here is measured for free, on every route,
+    through every growth — and `html { scroll-padding-block-start }` in
+    tokens.css already clears whatever --hdr-h says. A separate sticky bar
+    would need its own variable, its own observer and its own place in that
+    calc, which is how /reference ended up with --toolbar-h written in three
+    places and forgotten in a fourth.
+  */
+  }
+  <slot name="pagenav" />
 </header>
 
 <style>

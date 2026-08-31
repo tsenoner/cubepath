@@ -1,0 +1,113 @@
+---
+/**
+ * An in-page jump bar: one chip per landmark on the page you are already on.
+ *
+ * WHY THIS EXISTS. Every long surface on this site had the same defect and
+ * solved it a different number of times. The course index got a phase jump bar
+ * and /reference got a section one; a LESSON got nothing, and a lesson is
+ * 9,743px — 11.5 phone screens — at its longest. Measured on the built site: at
+ * y=4,800 in that lesson the only links on screen were the five header
+ * destinations. The breadcrumb sits at y=73 and the next navigation of any kind
+ * is the phase-sibling list at y=9,173, so the middle ~70% of a long lesson was
+ * a navigational dead zone.
+ *
+ * The addresses already existed. All 25 lessons carry >= 4 headings, 180
+ * headings in all, and EVERY ONE of them already has an `id` — Astro's
+ * rehype-heading-ids pass emits them and nothing pointed at any of them. That
+ * is the same defect the course index had one level up (it shipped nine ids and
+ * not one was a phase), and this is the same fix applied one level down.
+ *
+ * WHY A CHIP STRIP AND NOT A DRAWER. Published guidance is against hiding
+ * navigation behind a disclosure when it can be visible, and against
+ * side-scrolling strips for HETEROGENEOUS destinations — but explicitly allows
+ * one for a homogeneous, predictably-ordered set that shows a visible cutoff
+ * cue. A document-ordered list of one page's own headings behind the 16px mask
+ * below is exactly that case.
+ *
+ * NO SCROLL-SPY HERE, DELIBERATELY. /reference's spy is gated against a real
+ * regression — `scrollIntoView` walks EVERY ancestor scrolling box including
+ * the document, which scrolled the page backwards 52px at every section
+ * boundary — and that machinery is worth sharing rather than re-deriving. This
+ * component ships as plain anchors and no JavaScript until that extraction
+ * happens, because a bar that merely works is worth more than a bar that also
+ * highlights and might re-introduce the bug.
+ */
+interface Item {
+  /** The `id` of the element this chip lands on. Must exist on the page. */
+  id: string;
+  label: string;
+}
+interface Props {
+  items: Item[];
+  /** Names the nav for a screen reader — "On this page", "Sections". */
+  label: string;
+}
+const { items, label } = Astro.props;
+---
+
+{
+  items.length > 0 && (
+    <nav class="pagenav" aria-label={label}>
+      {items.map((it) => (
+        <a class="chip" href={`#${it.id}`}>
+          {it.label}
+        </a>
+      ))}
+    </nav>
+  )
+}
+
+<style>
+  /*
+   * Wraps at >=561px, scrolls at phone widths — the same idiom /reference's
+   * jump bar uses, so the two bars behave identically rather than being two
+   * inventions the reader has to learn separately.
+   */
+  .pagenav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    max-width: var(--shell-max);
+    margin: 0 auto;
+    padding: 0 var(--shell-x) var(--space-2);
+  }
+  .chip {
+    display: inline-block;
+    padding: 4px 10px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: var(--text-xs);
+    line-height: 1.6;
+    color: var(--ink-soft);
+    white-space: nowrap;
+    text-decoration: none;
+  }
+  .chip:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    text-decoration: none;
+  }
+  @media (max-width: 560px) {
+    .pagenav {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+      /* The cutoff cue: the strip visibly fades where it continues, so the
+         chips off-screen read as off-screen rather than as absent. */
+      mask-image: linear-gradient(to right, #000 calc(100% - 16px), transparent);
+    }
+    .pagenav::-webkit-scrollbar {
+      display: none;
+    }
+  }
+  /*
+   * A landscape phone is 390px TALL. Two stacked sticky rows there is most of
+   * the screen, so the whole header stops sticking rather than this row
+   * silently costing a reader two thirds of their viewport.
+   */
+  @media (max-height: 500px) {
+    .pagenav {
+      display: none;
+    }
+  }
+</style>

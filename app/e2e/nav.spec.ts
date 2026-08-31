@@ -462,3 +462,72 @@ test("a glossary term lands clear of the sticky header, not a header lower", asy
     ).toBeLessThan(bottom + 48);
   }
 });
+
+// ── Every lesson can be navigated from inside itself ─────────────────
+// Driven from the sitemap, so lesson 26 is covered the day it ships.
+//
+// The defect: 25 of 25 lessons carry >= 4 headings, 180 in all, and every one
+// already had an `id` — yet nothing pointed at any of them. Measured on the
+// longest lesson (9,743px, 11.5 phone screens): at y=4,800 the only links on
+// screen were the five header destinations, because the breadcrumb sits at
+// y=73 and the next navigation is the pager at y=9,402.
+test("every lesson carries an outline whose every chip resolves and lands clear", async ({
+  page,
+  baseURL,
+}) => {
+  await page.setViewportSize(PHONE);
+  // From the SITEMAP, the way stickering.spec.ts enumerates case pages:
+  // `astro:content` is a build-time module and cannot be imported here, and a
+  // hand-written list of 25 slugs is exactly the staleness this suite exists
+  // to catch.
+  const sitemap = await (await page.request.get(`${baseURL}/sitemap-0.xml`)).text();
+  const slugs = [...sitemap.matchAll(/<loc>[^<]*\/learn\/([^/<]+)\/?<\/loc>/g)].map((m) => m[1]!);
+  expect(slugs.length, "the sitemap must list the lessons").toBeGreaterThan(20);
+
+  for (const slug of slugs) {
+    await page.goto(`/learn/${slug}/`);
+    const chips = page.locator(".pagenav .chip");
+    const n = await chips.count();
+    // Universal, not conditional: the layout's own "What you'll learn" and
+    // "Practice" headings bracket the body's, so no lesson can fall below three.
+    expect(n, `${slug} must carry an outline`).toBeGreaterThanOrEqual(3);
+
+    const ids = await chips.evaluateAll((els) =>
+      els.map((e) => (e as HTMLAnchorElement).getAttribute("href")!.slice(1)),
+    );
+    // getElementById, never querySelector("#"+id): six shipped heading ids
+    // begin with a digit, which are legal fragments and illegal selectors.
+    const missing = await page.evaluate(
+      (list) => list.filter((id) => !document.getElementById(id)),
+      ids,
+    );
+    expect(missing, `${slug}: chips point at ids that do not exist`).toEqual([]);
+  }
+});
+
+test("a lesson outline chip lands its heading clear of the two-row header", async ({ page }) => {
+  await page.setViewportSize(PHONE);
+  // The longest lesson, and the one with the most chips.
+  await page.goto("/learn/full-oll-overview/");
+  const ids = await page
+    .locator(".pagenav .chip")
+    .evaluateAll((els) => els.map((e) => (e as HTMLAnchorElement).getAttribute("href")!.slice(1)));
+  expect(ids.length).toBeGreaterThan(3);
+  for (const id of ids) {
+    await page.goto(`/learn/full-oll-overview/#${id}`);
+    await page.waitForTimeout(200);
+    const top = await page.locator(`[id="${id}"]`).evaluate((el) => el.getBoundingClientRect().top);
+    expect(top, `#${id} landed under the sticky header`).toBeGreaterThanOrEqual(
+      await chromeBottom(page),
+    );
+  }
+});
+
+// The bar must NOT be a completion writer. Crediting a lesson for jumping to
+// its own Practice heading would mark it done and hide it from Resume forever —
+// the same trap `white-cross.mdx` pointing at /print already documents.
+test("no outline chip is tagged as a lesson-completion exit", async ({ page }) => {
+  await page.goto("/learn/two-look-oll/");
+  expect(await page.locator(".pagenav .chip[data-lesson-advance]").count()).toBe(0);
+  expect(await page.locator(".pagenav .chip[data-lesson-next]").count()).toBe(0);
+});
