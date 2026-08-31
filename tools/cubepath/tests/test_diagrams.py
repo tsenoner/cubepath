@@ -61,13 +61,13 @@ from cubepath.diagrams import (
     _orient_corner_case,
     _orient_corner_cases_15,
     _ov_needs_halo,
-    _phase_art,
     _pin_exit,
     _pll_corner_cases,
     _pll_edge_cases,
     _restyle,
     _ring_basis,
     _step_cases,
+    _web_steps,
     all_cases,
     all_steps,
     delta_e,
@@ -791,7 +791,7 @@ _SVG_DIRS = tuple(sorted(p.name for p in _APP_SVG.iterdir() if p.is_dir()))
 # generator that silently stopped emitting a whole group would drop it from
 # both and still pass. The pin is cross-checked against the generators' own
 # inventories below, so a deliberate change fails in exactly one obvious place.
-EXPECTED_DIAGRAMS = 179
+EXPECTED_DIAGRAMS = 180
 
 
 def _render_everything(out: Path) -> None:
@@ -806,7 +806,7 @@ def _render_everything(out: Path) -> None:
         render_notation(move, out)
     for layout in (OVERVIEW_HUB, OVERVIEW_PINS):
         render_overview(out, layout=layout)
-    for step in [*all_steps(), *_phase_art()]:
+    for step in [*all_steps(), *_web_steps()]:
         render_step(step, out)
 
 
@@ -820,7 +820,7 @@ def test_the_pinned_diagram_count_matches_the_generators() -> None:
         + len(_notation_moves())
         + 2  # the overview, in both its layouts
         + len(all_steps())
-        + len(_phase_art())
+        + len(_web_steps())
     )
     assert inventory == EXPECTED_DIAGRAMS, (
         f"the generators now produce {inventory} diagrams; if that is intended, "
@@ -1230,9 +1230,12 @@ _TIERED_STEPS = {
     "align_adjacent",
     "align_diagonal",
     "step_oll_done",
+    # The edge flip's picture: the centres are built (dim, and seven outer turns
+    # cannot touch them) and the pair being turned over is the subject.
+    "step_444_flip",
 }
 # Nothing earlier to preserve — see `_step_cases` for the first three, and
-# `_phase_art` for the last three: a course-index card whose whole subject is
+# `_web_steps` for the last three: a course-index card whose whole subject is
 # "this is a 4x4" has no earlier step to dim.
 _FLAT_STEPS = {
     "step_1_cross",

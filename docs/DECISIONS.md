@@ -1140,29 +1140,28 @@ exist yet when you place a cross dedge. Under reduction the centres are already
 built, so you match colours to them.
 
 **Can the centre insert have a reference entry when it is not an algorithm?**
-Yes, and it now does — `444.center-insert` and `555.center-insert`. This was the
-last gap in the same complaint the rest of this section is about: /reference is
-the index of everything the course teaches, and half of every big-cube solve was
-missing from it because the technique had no algorithm to file under.
+It was given one — `444.center-insert` / `555.center-insert`, showing the shape
+plus several worked instances — and then REVERTED, on the user's call: *"this
+center insert should be intuitive and not get a separate reference."* That is
+the right call and the reasoning is worth keeping. Printing one instance as "the
+centre algorithm" is the mistake the technique is defined against; showing three
+instead fixes the accuracy but not the premise, because the thing still is not
+lookup material. Centres are aimed, not recalled, and the lessons already teach
+them with a worked figure and an explicit "there is no algorithm on this page".
+A reference row would have been a well-built answer to a question nobody asked.
 
-Three options were weighed. Printing ONE instance as "the centre algorithm" was
-rejected — it is exactly the mistake the source warns against, and a learner who
-memorises `Rw U Rw'` is stuck the moment the piece is in another column.
 Randomising the shown instance ("a different example each visit") was rejected
-too: it makes the page unreproducible, unscreenshotable and untestable, and the
-randomness belongs in the trainer if anywhere. What shipped is a row that shows
-the SHAPE and several worked instances, each noted with what varies — the grab
-on one, the middle turn on another — so the constant and the variable are
-visible side by side rather than one being mistaken for the other.
+before that, and separately: it makes a page unreproducible, unscreenshotable
+and untestable, and the randomness belongs in the trainer if anywhere.
 
-The instances were chosen by MEASUREMENT, not by taste. Every one disturbs
-exactly two faces' centres and returns the other four, on both cubes, and that
-is the pinned property. `M U M'` earns the separate 5×5 entry on the same
-evidence: it moves four `+` centre pieces and no `×` centres, which is precisely
-how it reaches the middle column that a two-wide grab cannot touch. No trainer
-set — practice for centres is correctly wired as a trainer NOTE ("scramble,
-solve all six centres, scramble again"), and a recall drill for something you
-aim would teach the wrong reflex.
+What the request actually meant was the centre SWAP — moving one of the nine
+centre pieces from one centre to another, which is a different thing from the
+insert and is genuinely not intuitive. Measured while investigating and recorded
+here because it is the useful part: **`2R U 2R' U 2R U2 2R'` — Sune with the
+inner slice in place of `R` — swaps exactly one centre piece between two
+centres, identically on a 4×4 and a 5×5**, disturbing five wings and no corners
+or midges. It costs no new muscle memory, because the reader already owns Sune
+from Phase 2. Whether it is taught is open.
 
 **Jargon is allowed now.** The site wrote plain phrases and glossed them inline;
 with a hover card on every first mention, `dedge` is the headword and `edge

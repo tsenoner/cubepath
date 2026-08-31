@@ -2415,12 +2415,17 @@ def render_overview(
     return filepath
 
 
-def _phase_art() -> list[StepDiagram]:
-    """Four pictures the COURSE INDEX needs and no lesson does.
+def _web_steps() -> list[StepDiagram]:
+    """Step pictures the WEB needs and neither the guide nor a card does.
 
     DELIBERATELY NOT IN `all_steps()`. That list is what the guide and the CARD
     SET render, and a card is 85.6mm of paper — nothing belongs on it that no
     lesson teaches. `main()` renders this group into the web tree only.
+
+    Two jobs. Four are course-index art, one per phase that had nothing honest
+    to point at. The fifth is a CASE ICON: `444.edge-flip` was the one entry on
+    /reference with no picture beside it, which on a page whose whole job is a
+    picture per case is the gap that shows.
 
     The index shows one cube per phase, and it is the only place on the site
     that has to say what a phase gets you before you have read a word of it.
@@ -2455,7 +2460,31 @@ def _phase_art() -> list[StepDiagram]:
                 f"{n}x{n} centres", f"step_{n}{n}{n}_centres", centres, subject=centres, n=n
             )
         )
+    # The edge flip's subject is the front-right edge pair — the piece it turns
+    # over. On a 4x4 that is the two middle cells of F's rightmost column and of
+    # R's frontmost column; both run off `n`, so the coordinates are arithmetic
+    # rather than a table. Centres are dim (built already, and the flip is seven
+    # outer turns so it cannot touch them); everything else is grey, because at
+    # pairing time the method has not reached the corners.
+    flip_n = 4
+    flip_centres = {
+        (f, a, b) for f in "UFR" for a in range(1, flip_n - 1) for b in range(1, flip_n - 1)
+    }
+    # Both halves sit at the LAST index of their face's `a` axis, and that is
+    # not a coincidence to be simplified away: on F, `a` runs left-to-right so
+    # `a = n-1` is the edge shared with R; on R, `a` runs back-to-front (see
+    # `_n_rect_corners`, where R's quad puts `a` on the z axis) so `a = n-1` is
+    # the same shared edge seen from the other side. Using 0 for R highlights
+    # the column at the BACK of the cube, which is invisible.
+    flip_pair = {(face, flip_n - 1, b) for face in ("F", "R") for b in range(1, flip_n - 1)}
     return [
+        StepDiagram(
+            "Edge flip",
+            "step_444_flip",
+            flip_centres | flip_pair,
+            subject=flip_pair,
+            n=flip_n,
+        ),
         # Basics: a whole cube, and a move. The index used to point this phase
         # at `step_flip`, whose cube is three-quarters grey because it is drawn
         # for the moment BEFORE the first layer exists — at 96px that reads as
@@ -2522,7 +2551,7 @@ def main() -> None:
         print(f"  {render_overview(output_dir, layout=layout).relative_to(output_dir)}")
         total += 1
 
-    for step in [*all_steps(), *_phase_art()]:
+    for step in [*all_steps(), *_web_steps()]:
         path = render_step(step, output_dir)
         print(f"  {path.relative_to(output_dir)}")
         total += 1

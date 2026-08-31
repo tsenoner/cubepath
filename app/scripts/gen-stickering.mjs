@@ -458,10 +458,6 @@ const STAGE_OF_GROUP = [
   { kind: "exact", key: "2look-pll-edges", stage: "ep" },
   { kind: "exact", key: "444-parity", stage: "eo" },
   { kind: "exact", key: "555-parity", stage: "555-pairing" },
-  // The centre insert. Its group key IS its stage key — the technique is
-  // the centres step, so there is nothing to map.
-  { kind: "exact", key: "444-centers", stage: "444-centers" },
-  { kind: "exact", key: "555-centers", stage: "555-centers" },
   // The beginner method's own triggers. Righty and lefty are introduced to
   // place the first-layer corners (`f1l`) and reused at every later step; the
   // stage is where the reader MEETS them, which is what the tier model is

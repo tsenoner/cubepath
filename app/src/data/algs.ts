@@ -306,60 +306,9 @@ export const CASES: CaseDef[] = [
   },
 
   // ── Big cubes ──────────────────────────────────────────────────────
-  // The centre insert is a TECHNIQUE, and the only entry on this site whose
-  // `algs` are worked INSTANCES rather than variants of one algorithm. J Perm
-  // says so in as many words while teaching it — "make sure you remember this
-  // whole pattern, it's not necessarily one algorithm, but this pattern will
-  // apply no matter which pieces you're trying to move into here" — and the
-  // lessons already frame it that way. What it did not have was anywhere to be
-  // LOOKED UP: /reference is the index of everything the course teaches, and
-  // half of every big-cube solve was missing from it.
-  //
-  // Presenting one instance as "the algorithm" would be the failure mode the
-  // technique is defined against, so the row shows three, each with a note
-  // saying what varies. What is constant is the SHAPE — take a column away, do
-  // the turn you wanted, put the column back — and the property that makes it
-  // safe: the outer beats cancel, so exactly two faces' centres are disturbed
-  // and the other four come home. That is measured, not asserted in prose;
-  // tests/algs.spec.ts pins it for every instance on both cubes.
-  {
-    id: "444.center-insert",
-    icon: "/diagrams/steps/step_444_centres.svg",
-    group: "444-centers",
-    name: "The centre insert",
-    recognition:
-      "Not one algorithm — a shape you aim. Take a column away, turn the top to line up what you " +
-      "need, put the column back: everything the grab moved except the piece you wanted comes home",
-    algs: [
-      { moves: "Rw U Rw'", primary: true, note: "The grab, the turn, the grab back" },
-      {
-        moves: "Rw U' Rw'",
-        note: "Same grab — the middle turn is whichever one you actually want",
-      },
-      { moves: "Lw' U Lw", note: "The mirrored grab, when the piece has to land on the left" },
-    ],
-    stickering: "full",
-    puzzle: "4x4x4",
-    phase: "444",
-  },
-  {
-    id: "555.center-insert",
-    icon: "/diagrams/steps/step_555_centres.svg",
-    group: "555-centers",
-    name: "The centre insert — middle-column grab",
-    recognition:
-      "The one thing a 5×5 centre asks that a 4×4 does not: its middle column cannot be reached by " +
-      "a two-wide grab at all, so grab the middle slice instead. Same three beats",
-    algs: [
-      { moves: "M U M'", primary: true, note: "The middle-slice grab — 5×5 only" },
-      { moves: "Rw U Rw'", note: "The two-wide grab, exactly as on a 4×4" },
-    ],
-    stickering: "full",
-    puzzle: "5x5x5",
-    phase: "555",
-  },
   {
     id: "444.edge-flip",
+    icon: "/diagrams/steps/step_444_flip.svg",
     group: "bigcube-pairing",
     name: "The edge flip",
     recognition:
