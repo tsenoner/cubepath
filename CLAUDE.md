@@ -283,8 +283,9 @@ rather than in the file.
 
 ## Build-time Python tooling (tools/cubepath/)
 
-One `uv` project, package `cubepath`, four entry points: the SVG diagram
-generator, the card set, the logo, and the cube simulator they all derive from.
+One `uv` project, package `cubepath`, three console entry points — the SVG
+diagram generator, the card set and the logo — over the cube simulator they all
+derive from. (`cubepath-cheatcards` is a deprecated alias for the card one.)
 The directory was `tools/diagrams/` until cards and the logo landed in it; it is
 named for the package now (`parents[N]` depths are unchanged, so no code moved).
 
