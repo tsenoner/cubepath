@@ -78,7 +78,14 @@ import { Alg } from "cubing/alg";
 import { KPattern } from "cubing/kpuzzle";
 import { puzzles } from "cubing/puzzles";
 
-import { makeKit, unaliasedCopy } from "./lib/kpuzzle-utils.mjs";
+import {
+  edgeSlots,
+  intactArrangements,
+  makeArrangementKey,
+  makeKit,
+  permutationParity,
+  unaliasedCopy,
+} from "./lib/kpuzzle-utils.mjs";
 
 // ---------------------------------------------------------------------------
 // Pinned data — SCDB 5x5 L2E, algs in page order (top-voted first).
@@ -287,27 +294,12 @@ function rotNormalize(t) {
 }
 
 // --- empirical slot/orbit derivation ----------------------------------------
-const FACES = ["U", "D", "L", "R", "F", "B"];
-const faceP = Object.fromEntries(
-  FACES.map((f) => [f, solved.applyTransformation(T(f)).patternData]),
-);
-/** @type {Record<string, { wings: number[]; midge: number }>} */
-const SLOTS = {}; // signature ("FU", "BR", …) -> { wings: [i, i], midge: i }
-for (const orbit of ["EDGES", "EDGES2"]) {
-  const s = solved.patternData[orbit];
-  for (let i = 0; i < s.pieces.length; i++) {
-    const sig = FACES.filter(
-      (f) =>
-        faceP[f][orbit].pieces[i] !== s.pieces[i] ||
-        faceP[f][orbit].orientation[i] !== s.orientation[i],
-    )
-      .sort()
-      .join("");
-    SLOTS[sig] ??= { wings: [], midge: -1 };
-    if (orbit === "EDGES") SLOTS[sig].wings.push(i);
-    else SLOTS[sig].midge = i;
-  }
-}
+// Derived, not tabulated — and derived by the SHARED model, because
+// gen-case-states.mjs needs the same three statements for the 4x4 and the two
+// copies drifted apart the moment either convention was corrected.
+const EDGE_ORBITS = { wingOrbit: "EDGES", midgeOrbit: "EDGES2" };
+/** signature ("FU", "BR", …) -> { wings: [i, i], midge: i } */
+const SLOTS = edgeSlots(solved, T, EDGE_ORBITS);
 const SLOT_NAMES = Object.keys(SLOTS);
 const TARGETS = ["FU", "BU"]; // UF + UB, the SCDB/Sarah L2E presentation
 const TARGET_PIECES = {
@@ -315,32 +307,13 @@ const TARGET_PIECES = {
   EDGES2: new Set(TARGETS.map((t) => SLOTS[t].midge)),
 };
 
-/**
- * Content of one edge slot (2 wing stickers + midge, with orientations).
- * @param {import("cubing/kpuzzle").KPattern} p
- * @param {string} slot
- */
-const arrKey = (p, slot) => {
-  const { wings, midge } = SLOTS[slot];
-  const E = p.patternData.EDGES;
-  const M = p.patternData.EDGES2;
-  return JSON.stringify([
-    wings.map((i) => [E.pieces[i], E.orientation[i]]),
-    M.pieces[midge],
-    M.orientation[midge],
-  ]);
-};
+/** Content of one edge slot (2 wing stickers + midge, with orientations). */
+const arrKey = makeArrangementKey(SLOTS, EDGE_ORBITS);
 
 // Calibrate every valid intact-group arrangement per slot from the 24
 // rotations: each ordered (source slot, dest slot) pair is realized by exactly
 // two rotations — the direct and the whole-group-flipped placement.
-/** @type {Record<string, Set<string>>} */
-const VALID = {};
-for (const slot of SLOT_NAMES) VALID[slot] = new Set();
-for (const r of ROTATION_T) {
-  const p = solved.applyTransformation(r);
-  for (const slot of SLOT_NAMES) VALID[slot].add(arrKey(p, slot));
-}
+const VALID = intactArrangements(solved, ROTATION_T, SLOTS, arrKey);
 
 /**
  * The DISPLAYED case, as a patch on the solved pattern.
@@ -811,26 +784,8 @@ if (classToSlug.size !== 13) {
 // application of the parity algorithm clears every odd case. So the only thing
 // standing between a learner and a finished 5x5 is the one algorithm they have.
 {
-  const src = solved.patternData.EDGES.pieces;
   /** @param {import("cubing/kpuzzle").KPattern} pattern */
-  const parityOf = (pattern) => {
-    const now = pattern.patternData.EDGES.pieces;
-    const to = now.map((v) => src.indexOf(v));
-    const seen = new Array(to.length).fill(false);
-    let t = 0;
-    for (let i = 0; i < to.length; i++) {
-      if (seen[i]) continue;
-      let j = i;
-      let len = 0;
-      while (!seen[j]) {
-        seen[j] = true;
-        j = to[j];
-        len++;
-      }
-      t += len - 1;
-    }
-    return t % 2;
-  };
+  const parityOf = (pattern) => permutationParity(pattern, solved, "EDGES");
   /** @param {string} alg */
   const stateOf = (alg) => solved.applyTransformation(T(alg).invert());
 

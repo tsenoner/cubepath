@@ -45,3 +45,42 @@ export declare function makeSlotKit(kpuzzle: KPuzzle, kit?: Kit): SlotKit;
 export declare function unaliasedCopy(
   data: Record<string, { pieces: number[]; orientation: number[] }>,
 ): Record<string, { pieces: number[]; orientation: number[] }>;
+
+/** One edge position: its wing slots, and its midge slot (-1 where there is none). */
+export interface EdgeSlot {
+  wings: number[];
+  midge: number;
+}
+
+export interface EdgeOrbitOpts {
+  wingOrbit?: string;
+  midgeOrbit?: string | null;
+}
+
+/** Every edge position, keyed by the two faces that move it ("FU", "BR", …). */
+export declare function edgeSlots(
+  solved: KPattern,
+  toT: (s: string) => KTransformation,
+  opts?: EdgeOrbitOpts,
+): Record<string, EdgeSlot>;
+
+/** The content of one edge position, as a comparable key. */
+export declare function makeArrangementKey(
+  slots: Record<string, EdgeSlot>,
+  opts?: EdgeOrbitOpts,
+): (pattern: KPattern, signature: string) => string;
+
+/** Every arrangement that is an intact edge group, calibrated from the 24 rotations. */
+export declare function intactArrangements(
+  solved: KPattern,
+  ROTATION_T: KTransformation[],
+  slots: Record<string, EdgeSlot>,
+  arrKey: (pattern: KPattern, signature: string) => string,
+): Record<string, Set<string>>;
+
+/** Permutation parity of one orbit: 0 even, 1 odd. */
+export declare function permutationParity(
+  pattern: KPattern,
+  solved: KPattern,
+  orbit?: string,
+): number;

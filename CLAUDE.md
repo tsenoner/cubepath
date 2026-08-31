@@ -124,6 +124,22 @@ node scripts/gen-stickering.mjs # regenerate the twisty-player stickering masks
 Routes: `/` (course index), `/learn/<lesson>`, `/practice`, `/reference`,
 `/glossary`, `/case/<id>`, `/print` and the frozen card routes `/c0`–`/c3`.
 
+**`app/scripts/lib/kpuzzle-utils.mjs` is the scripts' shared kit**, and it
+holds what more than one of them needs: rotation enumeration and
+normalization, the aliasing-safe `unaliasedCopy` (cubing.js hands every
+same-length orbit ONE orientation array and `structuredClone` preserves that,
+which silently exported centre twists that did not exist), and the BIG-CUBE
+REDUCTION MODEL — `edgeSlots` / `makeArrangementKey` / `intactArrangements` /
+`permutationParity`. The model is order-generic on purpose:
+`verify-l2e.mjs` asks it about a 5×5 (with midges), `gen-case-states.mjs` asks
+it about a 4×4 (`midgeOrbit: null`). They used to state it separately, and the
+4×4 copy gates a SHIPPED diagram while the 5×5 copy gates the exported case
+data, so correcting either convention left the other on the old one. Both now
+run the same self-check: 12 edge positions, two wings each, 24 calibrated
+arrangements apiece. `kpuzzle-utils.d.mts` is hand-maintained beside it —
+adding an export to the `.mjs` alone type-errors, because the declaration file
+shadows it.
+
 **Everything under `app/scripts/` is type-checked** (`scripts/tsconfig.json`,
 `checkJs: true`) — it generates the shipped algorithm data and runs the F2L/L2E
 verifiers, so a type error there can silently weaken the verification it exists
@@ -287,9 +303,13 @@ Four case groups: `_oll_cross_cases()` (3), `_oll_corner_cases()` (8), `_pll_cor
 rather than from the renderer. Cubepath teaches REDUCTION (Yau as the advanced
 variant), so a 4×4 or 5×5 becomes a 3×3 and the 3×3 sets above finish it; what
 is left over is two parity fixes on the 4×4 and one on the 5×5.
-`fullsets.TAUGHT_BIG_CUBE` is that list of three, and a test asserts it is the
-same list `unlocks.ts` calls taught and `gen-cases.mjs` gives an icon. The 27
-4×4 OLL, 22 4×4 PLL and 13 5×5 L2E cases are one-look optimisations locked out
+`fullsets.TAUGHT_BIG_CUBE` is that list of three — `{case id: (source set,
+what it is)}` — and it SELECTS what gets drawn: `parity_cases()` and
+`l2e_cases()` take their ids from it through `taught_ids()`, so a wrong id is a
+render-time failure rather than a silently different picture. A test asserts it
+is the same list `unlocks.ts` calls taught and `gen-cases.mjs` gives an icon,
+and that the pictures it names are the ones `parity_cases()` actually produces.
+The 27 4×4 OLL, 22 4×4 PLL and 13 5×5 L2E cases are one-look optimisations locked out
 of the UI, so their 61 SVGs were reachable from no page at all; they are no
 longer generated, and `test_the_unshipped_big_cube_sets_stay_unshipped` fails if
 the trees come back. `big_oll_cases()` / `big_pll_cases()` still BUILD (they

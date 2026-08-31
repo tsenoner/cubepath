@@ -1860,10 +1860,14 @@ def test_the_three_taught_big_cube_cases_are_the_same_three_everywhere() -> None
     can reach — both of which have happened here before."""
     from cubepath.fullsets import TAUGHT_BIG_CUBE
 
-    assert set(TAUGHT_BIG_CUBE) == {c["id"] for c in _states_of("4x4parity")} | {
-        "444.pll.pure-e",
-        "555.l2e-6",
-    }
+    # Python: the constant now SELECTS what parity_cases() renders (each entry
+    # names the exported set its case is drawn from), so this compares the
+    # declared list against the pictures actually produced rather than against
+    # a second hand-written union of the same ids.
+    assert {diagram_name(i) for i in TAUGHT_BIG_CUBE} == {c.name for c in parity_cases()}
+    for case_id, (source, why) in TAUGHT_BIG_CUBE.items():
+        assert case_id in {c["id"] for c in _states_of(source)}, f"{case_id} not in {source}"
+        assert why.strip(), f"{case_id}: no description"
 
     # gen-cases.mjs: the ids its icon table carries.
     gen = (_REPO / "app" / "scripts" / "gen-cases.mjs").read_text()

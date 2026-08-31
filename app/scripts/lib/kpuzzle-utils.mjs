@@ -178,3 +178,124 @@ export function unaliasedCopy(data) {
   }
   return out;
 }
+
+// ── The big-cube reduction model ────────────────────────────────────────────
+// verify-l2e.mjs (5x5) and gen-case-states.mjs (4x4) both need to say the same
+// three things about a reduced cube: where the edge positions are, whether a
+// position still holds one whole edge, and whether the wing permutation is odd.
+// They said them twice, in two styles, and the 4x4 copy gates a SHIPPED diagram
+// while the 5x5 copy gates the exported case data — so a correction to either
+// convention silently left the other on the old one. One statement now, with
+// the order and the orbit names as parameters.
+
+/** The six face turns, as move strings. */
+const EDGE_FACES = ["U", "D", "L", "R", "F", "B"];
+
+/**
+ * Every edge POSITION of a cube, keyed by the two faces that move it.
+ *
+ * Derived, never tabulated: turn each face on a solved cube and note which
+ * slots it disturbed, so a slot moved by exactly F and U is a UF slot at ANY
+ * order. A 4x4/5x5 position holds two wings; a 5x5 also has a midge (`EDGES2`),
+ * and `midgeOrbit: null` is how a 4x4 says it has none.
+ *
+ * @param {any} solved the puzzle's default pattern
+ * @param {(s: string) => any} toT
+ * @param {{ wingOrbit?: string; midgeOrbit?: string | null }} [opts]
+ * @returns {Record<string, { wings: number[]; midge: number }>} signature -> slots
+ */
+export function edgeSlots(solved, toT, { wingOrbit = "EDGES", midgeOrbit = null } = {}) {
+  const turned = Object.fromEntries(
+    EDGE_FACES.map((f) => [f, solved.applyTransformation(toT(f)).patternData]),
+  );
+  /** @type {Record<string, { wings: number[]; midge: number }>} */
+  const slots = {};
+  for (const orbit of midgeOrbit ? [wingOrbit, midgeOrbit] : [wingOrbit]) {
+    const home = solved.patternData[orbit];
+    for (let i = 0; i < home.pieces.length; i++) {
+      const sig = EDGE_FACES.filter(
+        (f) =>
+          turned[f][orbit].pieces[i] !== home.pieces[i] ||
+          turned[f][orbit].orientation[i] !== home.orientation[i],
+      )
+        .sort()
+        .join("");
+      slots[sig] ??= { wings: [], midge: -1 };
+      if (orbit === wingOrbit) slots[sig].wings.push(i);
+      else slots[sig].midge = i;
+    }
+  }
+  return slots;
+}
+
+/**
+ * The content of one edge position — both wing stickers with their
+ * orientations, plus the midge where there is one — as a comparable key.
+ *
+ * @param {Record<string, { wings: number[]; midge: number }>} slots
+ * @param {{ wingOrbit?: string; midgeOrbit?: string | null }} [opts]
+ * @returns {(pattern: any, signature: string) => string}
+ */
+export function makeArrangementKey(slots, { wingOrbit = "EDGES", midgeOrbit = null } = {}) {
+  return (pattern, signature) => {
+    const { wings, midge } = slots[signature];
+    const w = pattern.patternData[wingOrbit];
+    const parts = [wings.map((i) => [w.pieces[i], w.orientation[i]])];
+    if (midgeOrbit) {
+      const m = pattern.patternData[midgeOrbit];
+      parts.push(m.pieces[midge], m.orientation[midge]);
+    }
+    return JSON.stringify(parts);
+  };
+}
+
+/**
+ * Every arrangement of every edge position that is an INTACT group, calibrated
+ * from the 24 whole-cube rotations rather than declared.
+ *
+ * A group carried to another position, or turned over as a unit, is still
+ * intact; a position whose two wings belong to different edges is not. This is
+ * the property that means "the reduction survived" — and on the 4x4 it is what
+ * "the parity is gone" is checked with.
+ *
+ * @param {any} solved
+ * @param {any[]} ROTATION_T
+ * @param {Record<string, { wings: number[]; midge: number }>} slots
+ * @param {(pattern: any, signature: string) => string} arrKey
+ * @returns {Record<string, Set<string>>} signature -> the arrangements it may hold
+ */
+export function intactArrangements(solved, ROTATION_T, slots, arrKey) {
+  /** @type {Record<string, Set<string>>} */
+  const valid = {};
+  for (const sig of Object.keys(slots)) valid[sig] = new Set();
+  for (const r of ROTATION_T) {
+    const p = solved.applyTransformation(r);
+    for (const sig of Object.keys(slots)) valid[sig].add(arrKey(p, sig));
+  }
+  return valid;
+}
+
+/**
+ * Permutation parity of one orbit: 0 even, 1 odd.
+ *
+ * A permutation of n elements in c cycles is even iff n - c is even. Read
+ * against `solved`'s own piece ids rather than assuming they are 0..n-1, so it
+ * does not depend on how cubing.js happens to number an orbit.
+ *
+ * @param {any} pattern
+ * @param {any} solved
+ * @param {string} [orbit]
+ * @returns {number} 0 (even) or 1 (odd)
+ */
+export function permutationParity(pattern, solved, orbit = "EDGES") {
+  const home = solved.patternData[orbit].pieces;
+  const to = pattern.patternData[orbit].pieces.map((/** @type {number} */ v) => home.indexOf(v));
+  const seen = new Array(to.length).fill(false);
+  let cycles = 0;
+  for (let i = 0; i < to.length; i++) {
+    if (seen[i]) continue;
+    cycles++;
+    for (let j = i; !seen[j]; j = to[j]) seen[j] = true;
+  }
+  return (to.length - cycles) % 2;
+}

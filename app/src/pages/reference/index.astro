@@ -40,8 +40,15 @@ interface Section {
   title: string;
   /** Short form, for the jump bar. */
   nav: string;
-  /** Rendered as HTML — may carry a link. Authored here, never from data. */
+  /** Plain text. A single `{link}` token marks where `blurbLink` goes. */
   blurb?: string;
+  /**
+   * A cross-section link in the blurb: the case to point at, and the words to
+   * point with. The href is resolved through `anchorOf`, so the anchor rule
+   * lives in one place and a link to a case no visible section owns is a build
+   * error rather than a dead fragment.
+   */
+  blurbLink?: { caseId: string; text: string };
   kind: "rows" | "grid";
   items: CaseDef[];
   subs: Sub[];
@@ -78,11 +85,13 @@ const rows = (
   title: string,
   blurb?: string,
   items?: CaseDef[],
+  blurbLink?: { caseId: string; text: string },
 ): Section => ({
   id,
   nav,
   title,
   ...(blurb ? { blurb } : {}),
+  ...(blurbLink ? { blurbLink } : {}),
   kind: "rows",
   items: items ?? CASES.filter((k) => k.group === id),
   subs: [],
@@ -188,11 +197,11 @@ const SECTIONS: Section[] = [
     "555-parity",
     "5×5",
     "5×5 Skills",
-    'Two algorithms finish a 5×5, and you already know one: <a href="#444-edge-flip">the edge ' +
-      "flip</a> is the same seven outer turns on both cubes. This is the other one — the only " +
-      "thing a 5×5 asks that a 4×4 does not. Centres and pairing are technique, taught in the " +
-      "lessons.",
+    "Two algorithms finish a 5×5, and you already know one: {link} is the same seven outer " +
+      "turns on both cubes. This is the other one — the only thing a 5×5 asks that a 4×4 does " +
+      "not. Centres and pairing are technique, taught in the lessons.",
     gen((k) => k.phase === "555"),
+    { caseId: "444.edge-flip", text: "the edge flip" },
   ),
 ];
 
@@ -223,6 +232,31 @@ for (const s of VISIBLE) {
 /** The anchor for `id`, but only in the one section that owns it. */
 const anchorOf = (section: string, id: string) =>
   anchorOwner.get(id) === section ? id.replace(/\./g, "-") : undefined;
+
+/**
+ * A blurb, split around its optional cross-section link. Resolving the href
+ * through `anchorOf` (asking the section that OWNS the case) keeps the
+ * "#" + id-with-dots-as-dashes rule in one place; before this the 5×5 blurb
+ * was raw HTML with `#444-edge-flip` typed into it, which would have died
+ * silently if the anchor rule or the section order ever changed.
+ */
+type Blurb = { before: string; link: { href: string; text: string } | null; after: string };
+const BLURBS = new Map<string, Blurb>(
+  VISIBLE.flatMap((s): [string, Blurb][] => {
+    if (!s.blurb) return [];
+    if (!s.blurbLink) return [[s.id, { before: s.blurb, link: null, after: "" }]];
+    const { caseId, text } = s.blurbLink;
+    const owner = anchorOwner.get(caseId);
+    const anchor = owner ? anchorOf(owner, caseId) : undefined;
+    if (!anchor) {
+      throw new Error(
+        `/reference: the ${s.id} blurb links to ${caseId}, which no visible section owns`,
+      );
+    }
+    const [before = "", after = ""] = s.blurb.split("{link}");
+    return [[s.id, { before, link: { href: `#${anchor}`, text }, after }]];
+  }),
+);
 
 // ── Presentation helpers ─────────────────────────────────────────────
 /** "OLL 27" -> "27"; "Ba (4×4 PLL)" -> "Ba"; "T-Perm" -> "T". */
@@ -292,15 +326,22 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
     {
       VISIBLE.map((s) => {
         const hasIcons = s.items.some((k) => k.icon);
+        const blurb = BLURBS.get(s.id);
         return (
           <section id={s.id} data-section>
             <h2>
               {s.title} <span class="n">({s.items.length})</span>
             </h2>
-            {/* HTML, not text: a section sometimes has to point at a case whose
-                home is another section — see the 5×5 blurb. Authored constants
-                only, never anything from data. */}
-            {s.blurb && <p class="lead" set:html={s.blurb} />}
+            {/* Text plus an optional resolved link — never raw HTML. A section
+                sometimes has to point at a case whose home is another section;
+                see the 5×5 blurb and `BLURBS`. */}
+            {blurb && (
+              <p class="lead">
+                {blurb.before}
+                {blurb.link && <a href={blurb.link.href}>{blurb.link.text}</a>}
+                {blurb.after}
+              </p>
+            )}
             {s.kind === "rows" ? (
               <div class="case-list card">
                 {s.items.map((k) => {

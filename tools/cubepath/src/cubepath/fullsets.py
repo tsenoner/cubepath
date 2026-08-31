@@ -506,7 +506,23 @@ def diagram_name(case_id: str) -> str:
     return case_id.replace(".", "_").replace("-", "_")
 
 
-def plan_oll_cases(set_name: str, category: str) -> list[CubeDiagram]:
+def _plan_identity(case: dict[str, Any], category: str) -> dict[str, Any]:
+    """The fields every plan view shares: filename, label, category, cube order.
+
+    Written once rather than three times (OLL / PLL / L2E) because the filename
+    rule and the label format are both pinned by `tests/test_diagrams.py` — and
+    the filename rule is re-implemented in JavaScript besides, so a third copy
+    here is a third place for the two languages to disagree.
+    """
+    return {
+        "name": diagram_name(case["id"]),
+        "label": f"{case['name']} — {case['group']}",
+        "category": category,
+        "n": _case_order(case),
+    }
+
+
+def plan_oll_cases(set_name: str, category: str, ids: set[str] | None = None) -> list[CubeDiagram]:
     """OLL diagrams for a whole set, straight from the exported states: yellow
     where the last layer is already oriented, grey where it is not.
 
@@ -518,14 +534,11 @@ def plan_oll_cases(set_name: str, category: str) -> list[CubeDiagram]:
     construction.
     """
     cases = []
-    for case in _states_of(set_name):
+    for case in _states_of(set_name, ids):
         u, sides = _case_plan_view(case)
         cases.append(
             CubeDiagram(
-                name=diagram_name(case["id"]),
-                label=f"{case['name']} — {case['group']}",
-                category=category,
-                n=_case_order(case),
+                **_plan_identity(case, category),
                 u_face=_yellow_mask(u),
                 top_side=_yellow_mask(sides["top"]),
                 right_side=_yellow_mask(sides["right"]),
@@ -548,10 +561,7 @@ def plan_pll_cases(set_name: str, category: str, ids: set[str] | None = None) ->
         swaps, cycles = _arrows_from_permutation(_plan_permutation(sides, n))
         cases.append(
             CubeDiagram(
-                name=diagram_name(case["id"]),
-                label=f"{case['name']} — {case['group']}",
-                category=category,
-                n=n,
+                **_plan_identity(case, category),
                 u_face=[dim(YELLOW)] * (n * n),
                 top_side=_colorize(sides["top"]),
                 right_side=_colorize(sides["right"]),
@@ -583,11 +593,27 @@ def plan_pll_cases(set_name: str, category: str, ids: set[str] | None = None) ->
 # list, and `tests/test_diagrams.py` asserts it is the same list `unlocks.ts`
 # calls taught — the two are written in different languages and must not drift.
 
+# case id -> (the exported set it is drawn FROM, what it is).
+# The source set is here rather than at the three call sites so this constant
+# actually SELECTS what gets rendered. It used to be prose with a variable
+# name: the renderers re-typed the same ids, and `test_diagrams.py` compared
+# this dict against gen-cases.mjs and unlocks.ts but never against the code
+# that picks the diagrams — so all three declared lists could agree while the
+# renderer drew something else.
 TAUGHT_BIG_CUBE = {
-    "444.oll-parity": "the flipped edge pair a 3x3 cannot produce",
-    "444.pll.pure-e": "two edge pairs swapped across, with the corners a free U2",
-    "555.l2e-6": "the same flip one cube bigger — two wings, not one pair",
+    "444.oll-parity": ("4x4parity", "the flipped edge pair a 3x3 cannot produce"),
+    "444.pll.pure-e": ("4x4pll", "two edge pairs swapped across, with the corners a free U2"),
+    "555.l2e-6": ("555l2e", "the same flip one cube bigger — two wings, not one pair"),
 }
+
+
+def taught_ids(set_name: str) -> set[str]:
+    """The taught case ids drawn from one exported set. Empty is a bug, not a
+    valid answer — every set named in `TAUGHT_BIG_CUBE` has at least one."""
+    ids = {i for i, (source, _) in TAUGHT_BIG_CUBE.items() if source == set_name}
+    if not ids:
+        raise AssertionError(f"TAUGHT_BIG_CUBE names no case from {set_name}")
+    return ids
 
 
 def big_oll_cases() -> list[CubeDiagram]:
@@ -627,8 +653,8 @@ def parity_cases() -> list[CubeDiagram]:
         PAIRING and neither last-layer idiom fits. See `l2e_cases`.
     """
     return (
-        plan_oll_cases("4x4parity", "444_parity")
-        + plan_pll_cases("4x4pll", "444_parity", ids={"444.pll.pure-e"})
+        plan_oll_cases("4x4parity", "444_parity", ids=taught_ids("4x4parity"))
+        + plan_pll_cases("4x4pll", "444_parity", ids=taught_ids("4x4pll"))
         + l2e_cases()
     )
 
@@ -665,7 +691,7 @@ def l2e_cases() -> list[CubeDiagram]:
     applied to the step this actually is.
     """
     cases = []
-    for case in _states_of("555l2e", {"555.l2e-6"}):
+    for case in _states_of("555l2e", taught_ids("555l2e")):
         n = _case_order(case)
         u, sides = _case_plan_view(case)
         u_mask, side_masks = plan_view(case["mask"], n)
@@ -675,10 +701,7 @@ def l2e_cases() -> list[CubeDiagram]:
 
         cases.append(
             CubeDiagram(
-                name=diagram_name(case["id"]),
-                label=f"{case['name']} — {case['group']}",
-                category="555_parity",
-                n=n,
+                **_plan_identity(case, "555_parity"),
                 u_face=[
                     _l2e_tier(colour, mask, i in u_corners)
                     for i, (colour, mask) in enumerate(zip(u, u_mask, strict=True))

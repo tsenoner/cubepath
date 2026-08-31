@@ -117,7 +117,14 @@ import { Alg } from "cubing/alg";
 import { KPattern } from "cubing/kpuzzle";
 import { puzzles } from "cubing/puzzles";
 
-import { makeKit, unaliasedCopy } from "./lib/kpuzzle-utils.mjs";
+import {
+  edgeSlots,
+  intactArrangements,
+  makeArrangementKey,
+  makeKit,
+  permutationParity,
+  unaliasedCopy,
+} from "./lib/kpuzzle-utils.mjs";
 
 /**
  * The types are written here rather than inferred: `checkJs` runs over this
@@ -634,93 +641,35 @@ function patchedState(model, kit, deltas) {
 }
 
 /**
- * The wing slots of one edge position, and the faces that move it.
- *
- * Derived, never tabulated: turn each face on a solved cube and record which
- * slots it disturbed. A slot moved by exactly F and U is a UF wing, on a cube
- * of any order. Same derivation `verify-l2e.mjs` uses for its 12 slots.
- *
- * @param {Model} model
- * @param {string} signature two face letters, sorted, e.g. "FU"
- * @returns {number[]} the EDGES slots at that position (2 wings on 4x4/5x5)
+ * The 4x4's edge model, from the SHARED derivation verify-l2e.mjs uses for the
+ * 5x5: where the edge positions are, and which arrangements of one still count
+ * as an intact group. A 4x4 has no midge orbit, which is all `midgeOrbit: null`
+ * says — the rest of the statement is identical at both orders, and it used to
+ * be written out twice.
+ * @param {Model} model @param {Kit} kit
  */
-function wingSlots(model, signature) {
-  const solved = model.solved.patternData;
-  /** @type {Record<string, any>} */
-  const turned = {};
-  for (const face of FACES) turned[face] = model.solved.applyAlg(new Alg(face)).patternData;
-  /** @type {number[]} */
-  const out = [];
-  for (let i = 0; i < solved.EDGES.pieces.length; i++) {
-    const sig = FACES.filter(
-      (f) =>
-        turned[f].EDGES.pieces[i] !== solved.EDGES.pieces[i] ||
-        turned[f].EDGES.orientation[i] !== solved.EDGES.orientation[i],
-    )
-      .sort()
-      .join("");
-    if (sig === signature) out.push(i);
+function edgeModel(model, kit) {
+  const opts = { wingOrbit: "EDGES", midgeOrbit: null };
+  const slots = edgeSlots(model.solved, kit.toT, opts);
+  const arrKey = makeArrangementKey(slots, opts);
+  const valid = intactArrangements(model.solved, kit.ROTATION_T, slots, arrKey);
+  // The same self-check verify-l2e.mjs runs on its own derivation: a cube has
+  // 12 edge positions, a big-cube position holds two wings, and each is
+  // realized by exactly the 24 rotations. An empty or half-built model would
+  // otherwise make every check below pass by having nothing to check.
+  const sigs = Object.keys(slots);
+  if (sigs.length !== 12) {
+    throw new Error(`${model.puzzleId}: ${sigs.length} edge positions derived, expected 12`);
   }
-  return out;
-}
-
-/**
- * Every arrangement of one edge slot that is an INTACT group, calibrated from
- * the 24 whole-cube rotations rather than declared. A group that has been
- * carried to another slot, or turned over as a unit, is still intact; a group
- * whose two wings belong to different edges is not. This is the property that
- * says "the parity is gone", and it is `verify-l2e.mjs`'s calibration, here
- * because the 4x4 needs the same statement the 5x5 already gets.
- *
- * @param {Model} model
- * @param {Kit} kit
- */
-function intactArrangements(model, kit) {
-  const slots = [...model.solved.patternData.EDGES.pieces.keys()];
-  /** @param {KPattern} p */
-  const key = (p) => (/** @type {number} */ i) =>
-    `${p.patternData.EDGES.pieces[i]}:${p.patternData.EDGES.orientation[i]}`;
-  /** @type {Map<number, Set<string>>} */
-  const valid = new Map(slots.map((i) => [i, new Set()]));
-  // A wing slot's partner is the other slot of the same edge position, so an
-  // arrangement is a PAIR: the two wings have to agree about which edge they
-  // are, which a per-slot set alone cannot say.
-  /** @type {Map<number, number>} */
-  const partner = new Map();
-  for (const face of FACES) {
-    for (const other of FACES) {
-      if (face >= other) continue;
-      const pair = wingSlots(model, [face, other].sort().join(""));
-      if (pair.length === 2) {
-        partner.set(/** @type {number} */ (pair[0]), /** @type {number} */ (pair[1]));
-        partner.set(/** @type {number} */ (pair[1]), /** @type {number} */ (pair[0]));
-      }
+  for (const sig of sigs) {
+    if (slots[sig].wings.length !== 2) {
+      throw new Error(`${model.puzzleId}: ${sig} has ${slots[sig].wings.length} wings, expected 2`);
+    }
+    if (valid[sig].size !== 24) {
+      throw new Error(`${model.puzzleId}: ${valid[sig].size} arrangements at ${sig}, expected 24`);
     }
   }
-  for (const r of kit.ROTATION_T) {
-    const p = model.solved.applyTransformation(r);
-    const k = key(p);
-    for (const [i, j] of partner) valid.get(i)?.add(`${k(i)}|${k(j)}`);
-  }
-  return { valid, partner, key };
-}
-
-/**
- * Permutation parity of the wing orbit: 0 even, 1 odd. Cycle-counted, so it
- * needs no move model — a permutation of n elements in c cycles is even iff
- * n - c is even.
- * @param {KPattern} pattern
- */
-function wingParity(pattern) {
-  const pieces = /** @type {number[]} */ (pattern.patternData.EDGES.pieces);
-  const seen = new Array(pieces.length).fill(false);
-  let cycles = 0;
-  for (let i = 0; i < pieces.length; i++) {
-    if (seen[i]) continue;
-    cycles++;
-    for (let j = i; !seen[j]; j = /** @type {number} */ (pieces[j])) seen[j] = true;
-  }
-  return (pieces.length - cycles) % 2;
+  return { slots, arrKey, valid };
 }
 
 /**
@@ -749,7 +698,8 @@ function wingParity(pattern) {
  * @param {string} alg the parity algorithm this state is drawn beside
  */
 function flippedPairState(model, kit, alg) {
-  const wings = wingSlots(model, "FU");
+  const { slots, arrKey, valid } = edgeModel(model, kit);
+  const wings = slots["FU"]?.wings ?? [];
   if (wings.length !== 2) {
     throw new Error(`${model.puzzleId}: UF is ${wings.length} wing slots, expected 2`);
   }
@@ -806,17 +756,15 @@ function flippedPairState(model, kit, alg) {
   // swapped AND two corners twisted — you finish OLL after firing it, which is
   // why parity is a class you leave rather than a case an algorithm solves.
   const after = pattern.applyTransformation(kit.rightRotNormalize(kit.toT(alg)));
-  if (wingParity(pattern) !== 1) {
+  if (permutationParity(pattern, model.solved, "EDGES") !== 1) {
     throw new Error(`${model.puzzleId}: the built flipped-pair state is not odd on wings`);
   }
-  if (wingParity(after) !== 0) {
+  if (permutationParity(after, model.solved, "EDGES") !== 0) {
     throw new Error(`${model.puzzleId}: ${alg} does not clear the wing parity it exists to clear`);
   }
-  const { valid, partner, key } = intactArrangements(model, kit);
-  const k = key(after);
-  for (const [i, j] of partner) {
-    if (!valid.get(i)?.has(`${k(i)}|${k(j)}`)) {
-      throw new Error(`${model.puzzleId}: ${alg} leaves a broken edge group at wing slot ${i}`);
+  for (const sig of Object.keys(slots)) {
+    if (!valid[sig].has(arrKey(after, sig))) {
+      throw new Error(`${model.puzzleId}: ${alg} leaves a broken edge group at ${sig}`);
     }
   }
   return { pattern, preRotation: "" };

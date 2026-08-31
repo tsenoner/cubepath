@@ -1194,3 +1194,43 @@ call as the insert: centres are aimed, not looked up.
 with a hover card on every first mention, `dedge` is the headword and `edge
 pair` the alias. The printed cards keep the ban (`glossary.py`'s `BANNED`),
 because paper has no hover — that split is the point, not an oversight.
+
+## The big-cube reduction model is stated once, and `TAUGHT_BIG_CUBE` selects
+
+Two clean-up decisions from the same pass, both about a fact that was written
+down twice and could therefore be corrected in one place only.
+
+**`verify-l2e.mjs` and `gen-case-states.mjs` had separate reduction models.**
+Where the edge positions are, whether one still holds a whole edge, and whether
+the wing permutation is odd — three statements, written twice in two styles.
+The comments admitted it ("this is `verify-l2e.mjs`'s calibration, here because
+the 4x4 needs the same statement the 5x5 already gets"), which is the tell: a
+copy that knows it is a copy is still a copy. It matters because the two halves
+gate different things — the 4×4 copy gates a SHIPPED diagram, the 5×5 copy
+gates the exported case data — so a correction to either convention left the
+other on the old one, silently. The model now lives in
+`app/scripts/lib/kpuzzle-utils.mjs`, order-generic, with the midge orbit a
+parameter (`midgeOrbit: null` is how a 4×4 says it has none). Both callers run
+the same self-check: 12 edge positions, two wings each, 24 calibrated
+arrangements apiece — a check the 4×4 side did not have before.
+
+Accepted because it is verifiable rather than argued: `case-states.json` and
+`l2e-raw.json` both regenerate byte-identical, and every ✓ line the verifier
+prints is unchanged.
+
+**`fullsets.TAUGHT_BIG_CUBE` was a comment with a variable name.** CLAUDE.md
+called it "that list of three", but nothing read it except a test: the
+renderers re-typed the same ids (`ids={"444.pll.pure-e"}`,
+`_states_of("555l2e", {"555.l2e-6"})`), and the cross-language test compared
+the dict against `gen-cases.mjs` and `unlocks.ts` but never against the code
+that picks the diagrams. All three declared lists could agree while the
+renderer drew something else. Each entry now carries the exported set its case
+comes from, `parity_cases()`/`l2e_cases()` derive their ids through
+`taught_ids()`, and the test compares the constant against what
+`parity_cases()` actually produces. A typo is now a render-time failure.
+
+Related, same pass: `gen-cases.mjs`'s copy of the table carries an icon path
+for `444.oll-parity` that it can never apply — that case is curated in
+`algs.ts`, which owns its icon — and the gate compared keys only. The row is
+marked key-only and the gate now compares the values, so the two copies of that
+literal cannot drift.
