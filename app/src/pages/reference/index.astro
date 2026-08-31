@@ -366,7 +366,22 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
           /* Rendered non-empty so the sticky toolbar is its final height from
             first paint, and so clearing the filter announces the way back. */
         }
-        <p class="hint count" role="status" data-ref-count>{listed} cases</p>
+        {
+          /*
+          Two children, one status region. The VISIBLE half stays short and
+          bounded because `.count` is `white-space: nowrap` inside a
+          `display: grid` toolbar, so whatever it holds sets the grid column's
+          min-content width: writing the 93-character zero-result sentence here
+          stretched the page to 872px on a 375px phone. The guidance still
+          reaches a screen reader from the `.sr-only` half — which is inside
+          the same `role="status"`, so it is one announcement, not two — and it
+          is already on screen in the `.noresults` panel below.
+        */
+        }
+        <p class="hint count" role="status" data-ref-status>
+          <span data-ref-count>{listed} cases</span><span class="sr-only" data-ref-count-detail
+          ></span>
+        </p>
       </div>
       <nav class="jump" aria-label="Sections">
         {
@@ -504,6 +519,7 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
   // did on /practice.
   const search = document.querySelector<HTMLInputElement>("[data-ref-search]");
   const countOut = document.querySelector<HTMLElement>("[data-ref-count]");
+  const countDetail = document.querySelector<HTMLElement>("[data-ref-count-detail]");
   const noResults = document.querySelector<HTMLElement>("[data-ref-empty]");
   const entries = [...document.querySelectorAll<HTMLElement>("[data-search]")];
   const subs = [...document.querySelectorAll<HTMLElement>("[data-sub]")];
@@ -545,15 +561,20 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
     }
     if (noResults) noResults.hidden = shown > 0;
     if (countOut) {
+      // Short and bounded — this one is visible, and `.count` is nowrap inside
+      // a grid, so a long string here becomes horizontal page scroll.
+      countOut.textContent =
+        normalize(needle) === "" ? `${TOTAL} cases` : `${shown} of ${TOTAL} shown`;
+    }
+    if (countDetail) {
       // The zero case carries the way out, not just the count: the visible
       // EmptyState panel says "try a case name, a number, or a cue" and a
-      // screen reader was hearing only "0 matches" as the page emptied.
-      countOut.textContent =
-        normalize(needle) === ""
-          ? `${TOTAL} cases`
-          : shown === 0
-            ? "No case matches that — try a case name, a number, or a word from a recognition cue."
-            : `${shown} of ${TOTAL} shown`;
+      // screen reader was hearing only "0 matches" as the page emptied. It
+      // lives in the sr-only sibling so it cannot affect layout.
+      countDetail.textContent =
+        shown === 0 && normalize(needle) !== ""
+          ? " — no case matches that. Try a case name, a number, or a word from a recognition cue."
+          : "";
     }
   }
 
@@ -938,6 +959,29 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
     padding: var(--space-3) 0;
     background: var(--paper);
     border-block-end: 1px solid var(--line);
+    /*
+     * CLIP, and specifically `clip` rather than `hidden`.
+     *
+     * `.jump` deliberately bleeds ±16px past this toolbar to reach the screen
+     * edges, and below 561px it is a nowrap strip whose ten chips measure
+     * 901px against a 375px box. It scrolls that overflow itself
+     * (`overflow-x: auto`), but the overflow was still reported up the tree:
+     * this toolbar's scrollable width is 856px against its own 343px box in
+     * EVERY state, and when a query emptied the sections the document
+     * inherited it — measured 872px of horizontal scroll on a 375px phone,
+     * 2.3 screens wide, on the site's most-used control.
+     *
+     * `hidden` is the wrong tool: it would make the block axis a scroll
+     * container too, and this element is `position: sticky`. `clip` clips one
+     * axis and leaves the other visible, so the strip keeps scrolling, the
+     * bleed survives, and the bar keeps sticking.
+     *
+     * Idle was always 375px, which is why the 375px sweep in
+     * e2e/regressions.spec.ts never saw this: it loads each route and never
+     * types into it.
+     */
+    overflow-x: clip;
+    overflow-clip-margin: var(--space-4);
   }
   .controls {
     display: flex;

@@ -297,6 +297,28 @@ test.describe("mobile regressions — 375px, both themes", () => {
           )
           .toBeLessThanOrEqual(a.innerWidth);
 
+        // (1b) …and it must still hold once the page is USED, not just loaded.
+        // The sweep above only ever loaded routes idle, and that is exactly how
+        // 872px of horizontal scroll shipped on /reference: the page was 375px
+        // until you typed, and a query that emptied every section exposed the
+        // toolbar's 856px scrollable width to the document. A control that only
+        // misbehaves once touched is still a shipped defect.
+        const search = page.locator("[data-ref-search]");
+        if (await search.count()) {
+          for (const query of ["zzzzznomatch", "sune"]) {
+            await search.fill(query);
+            const used = await audit(page);
+            expect
+              .soft(
+                used.scrollWidth,
+                `${where}: after typing "${query}" the page scrolls horizontally — ` +
+                  `scrollWidth ${used.scrollWidth} > clientWidth ${used.clientWidth}.`,
+              )
+              .toBeLessThanOrEqual(used.clientWidth);
+          }
+          await search.fill("");
+        }
+
         // (2) No visible <img> without a working src.
         expect
           .soft(

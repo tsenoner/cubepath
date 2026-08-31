@@ -162,9 +162,19 @@ const searchText = (e: (typeof GLOSS_ENTRIES)[number]) =>
   .noresults {
     margin-block: var(--space-5);
   }
+  /*
+   * No scroll-margin here or on `.entry`, and that is load-bearing rather than
+   * tidying. tokens.css states the sticky clearance ONCE, as
+   * `html { scroll-padding-block-start }`. scroll-padding insets the
+   * scrollport and scroll-margin expands the target, so the two STACK — the
+   * exact failure CLAUDE.md names and /reference was already fixed for. This
+   * page kept two of them (`section`, and `.entry`'s
+   * `calc(--hdr-h + --space-4)`), and it is the destination of every glossary
+   * link the lessons auto-generate, so the site's commonest anchor jump landed
+   * a header lower than intended. Measured: 65px low on `.entry`.
+   */
   section {
     margin-block-start: var(--space-7);
-    scroll-margin-block-start: var(--space-6);
   }
   h2 {
     margin-block-end: var(--space-2);
@@ -175,8 +185,6 @@ const searchText = (e: (typeof GLOSS_ENTRIES)[number]) =>
   .entry {
     padding-block: var(--space-4);
     border-block-start: 1px solid var(--line);
-    /* An anchor jump lands under the sticky site header. */
-    scroll-margin-block-start: calc(var(--hdr-h, 47px) + var(--space-4));
   }
   .entry:target {
     background: var(--accent-soft);

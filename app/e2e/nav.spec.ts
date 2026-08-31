@@ -175,7 +175,17 @@ test("the filter matches what a cuber types, and says what it found", async ({ p
   expect(await shown().count()).toBeLessThanOrEqual(2);
 
   await search.fill("zzzzqqq");
-  await expect(page.locator("[data-ref-count]")).toContainText("try a case name");
+  // Asserted on the whole `role="status"` region, not on the visible span: the
+  // announcement is what this gate is about, and the guidance sentence now
+  // lives in an `.sr-only` sibling inside that same region. It had to move —
+  // the visible span is `white-space: nowrap` inside a grid, so putting a
+  // 93-character sentence in it made /reference 872px wide on a 375px phone.
+  // Both halves are still announced together, and the visible count stays
+  // bounded.
+  await expect(page.locator("[data-ref-status]")).toContainText(/try a case name/i);
+  // Pattern, not a literal: the entry count moves whenever a set is taught or
+  // locked, and a hardcoded total here would go stale silently.
+  await expect(page.locator("[data-ref-count]")).toHaveText(/^0 of \d+ shown$/);
 });
 
 test("filtering keeps the reader with the results, and clearing puts them back", async ({
@@ -419,4 +429,36 @@ test("the case-to-lesson back-link covers the full sets, not just the curated ca
   expect(withLesson, `${withLesson}/${ids.length} case pages name their lesson`).toBeGreaterThan(
     ids.length * 0.9,
   );
+});
+
+// ── The glossary is an anchor destination too ────────────────────────
+// The lessons auto-link the first mention of every term, so `/glossary/#<term>`
+// is the site's commonest anchor jump by a wide margin. It was also the one
+// anchored page still writing its own `scroll-margin`: tokens.css already
+// insets the scrollport with `html { scroll-padding-block-start }`, and
+// scroll-margin EXPANDS the target, so the two stacked and every definition
+// landed ~65px lower than aimed — the exact failure CLAUDE.md names and
+// /reference was already fixed for. Driven from the page's own entries so a
+// new term is covered the day it ships.
+test("a glossary term lands clear of the sticky header, not a header lower", async ({ page }) => {
+  await page.setViewportSize(PHONE);
+  await page.goto("/glossary/");
+  const ids = (await page.locator(".entry[id]").evaluateAll((els) => els.map((e) => e.id))).slice(
+    0,
+    5,
+  );
+  expect(ids.length, "the glossary must render addressable entries").toBeGreaterThan(0);
+  for (const id of ids) {
+    await page.goto(`/glossary/#${id}`);
+    await page.waitForTimeout(400);
+    const top = await page.locator(`[id="${id}"]`).evaluate((el) => el.getBoundingClientRect().top);
+    const bottom = await chromeBottom(page);
+    expect(top, `#${id} must not sit under the header`).toBeGreaterThanOrEqual(bottom);
+    // …and not a whole header BELOW it either, which is what stacking looked
+    // like: clearance is one --space-3 gap, so allow a small tolerance only.
+    expect(
+      top,
+      `#${id} landed ${Math.round(top - bottom)}px below the chrome — anchors stacked`,
+    ).toBeLessThan(bottom + 48);
+  }
 });

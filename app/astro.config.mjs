@@ -102,6 +102,21 @@ export default defineConfig({
         globPatterns: ["**/*.{css,js,html,svg,png,ico,txt,json,webmanifest,woff2,wasm,pdf}"],
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
         navigateFallback: null,
+        // `group` is why the offline promise was only three-quarters true.
+        // Every lesson's filled primary button is `/practice/?group=<key>` —
+        // 16 of them across 12 lessons — and a precache lookup matches on the
+        // FULL url, query string included. Workbox strips only `utm_*` and
+        // `fbclid` by default, so `?group=` missed `practice/index.html`, and
+        // with `navigateFallback: null` there is nothing behind that miss: the
+        // button died in airplane mode. Worse quietly — that same element is
+        // tagged `data-lesson-advance`, so it is one of the TWO writers of
+        // lesson completion, and an offline reader taking the lesson's own
+        // call to action earned no credit for the lesson.
+        //
+        // The option REPLACES the default rather than extending it, so both
+        // Workbox defaults are re-listed here on purpose. Deleting either one
+        // silently un-fixes a case this does not otherwise mention.
+        ignoreURLParametersMatching: [/^utm_/, /^fbclid$/, /^group$/],
       },
       experimental: { directoryAndTrailingSlashHandler: true },
       devOptions: { enabled: false },
