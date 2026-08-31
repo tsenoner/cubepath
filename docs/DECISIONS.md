@@ -1067,8 +1067,11 @@ the accessibility tree, so a first visit still does not read "0 of 25".
 
 The tile status line is reserved rather than revealed, because the moment that
 shift costs you is coming **Back** from a case page, when the browser has already
-restored your scroll offset against the shorter layout. Measured after: CLS 0 on
-a first visit, 0.0002 for a returning reader, 0.0217 on `/reference`.
+restored your scroll offset against the shorter layout. Measured after: the
+course index is CLS 0 on a first visit and 0.0002 for a returning reader.
+`/reference` measures 0.0217, which is the same number it measured BEFORE the
+change — it was never the page with the shift problem, and reserving the status
+line fixes a Back-restore jump that CLS does not score.
 
 Costs, stated plainly: `/reference` is ~650px longer on a phone for everyone, and
 its toolbar is 23px taller at idle — though it already grew to 125px the moment
@@ -1176,3 +1179,42 @@ Recorded so nobody re-fixes them. A cold deep link into `/reference` lands
 correctly: the CSS fallbacks were right. And the browser's scroll clamping after
 a filter is harmless on its own. The stale `--toolbar-h` was the real fault
 behind both suspicions.
+
+### Three traps this change fell into first
+
+An adversarial review pass over the finished diff found these; each is a thing
+that looked obviously right and was measurably wrong, so each is worth naming.
+
+**`scrollIntoView` on an element inside sticky chrome scrolls the DOCUMENT.**
+The scroll-spy nudged the current jump chip into view along the phone strip with
+`chip.scrollIntoView({ block: "nearest", inline: "nearest" })`. But
+`scrollIntoView` walks *every* ancestor scrolling box and the last one is the
+document — and the chip lives in the sticky toolbar, whose rendered box sits
+above the optimal viewing region that this very change established in
+`html { scroll-padding-block-start }`. So the browser judged the chip out of
+view and scrolled the page up to reveal it; because the toolbar is sticky the
+chip never moved, so it never converged. Measured **−52px at every section
+boundary** in Chromium and WebKit alike, all the way down a 9,000px page. The
+two halves — the global scroll-padding and the spy — were each correct alone.
+Setting `scrollLeft` on the strip touches no ancestor and is now the only way
+this page moves a chip.
+
+**A set's own size leaked into its members' search text.** Adding the trainer's
+name to the haystack is what makes the 5×5 case findable as "edge parity" — but
+the trainer names them "Full OLL (57)", "F2L (41)", "Full PLL (all 21)", so the
+count went into all 57 members' haystacks and searching **"57" returned the
+whole OLL set** instead of OLL 57. The OLL cases are named by number, so that is
+the query the set is most likely to be searched by. `trainer.setName()` strips
+the parenthetical, and `groupLabel()` — which already did the same strip
+privately — now goes through it too.
+
+**`CaseDef.group` and a trainer group key are different namespaces.** The
+case → lesson fallback was keyed on `def.group`, which is a recognition grouping
+("oll-fish-shape"), while `practice.groups` speaks in trainer keys ("full-oll").
+It type-checked, it looked right, and it silently matched almost nothing:
+**92 of the 125 case pages had no "Taught in" link**, because the whole of Full
+OLL, F2L and Full PLL fell through. The trainer's own `member` predicate is the
+bridge, so the lookup is derived rather than a second table.
+
+All three are now gated in `nav.spec.ts` — including one test that simply
+scrolls `/reference` to the bottom and asserts the page never moved backwards.

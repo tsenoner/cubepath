@@ -4,7 +4,7 @@ import { CASES, caseById, type CaseDef } from "../src/data/algs";
 import { GENERATED_CASES } from "../src/data/fullsets.gen";
 import { RICH } from "../src/data/fullsets.rich.gen";
 import { filter, haystackFor, matches, normalize } from "../src/lib/search";
-import { TRAINER_GROUPS } from "../src/lib/trainer";
+import { setName } from "../src/lib/trainer";
 import { TAUGHT_444_CASES, isLocked } from "../src/lib/unlocks";
 
 /**
@@ -33,8 +33,11 @@ const NAV: Record<string, string> = {
   "444-parity": "4×4 parity",
   "555-l2e": "5×5 L2E",
 };
-const extraFor = (group: string): string =>
-  `${NAV[group] ?? ""} ${TRAINER_GROUPS.find((g) => g.key === group)?.name ?? ""}`;
+// Exactly what reference/index.astro's sectionWords() builds — via setName, so
+// the parenthetical size is stripped here for the same reason it is stripped
+// there. Re-typing the names would let this test pass against a corpus the page
+// never renders.
+const extraFor = (group: string): string => `${NAV[group] ?? ""} ${setName(group)}`;
 
 /**
  * The page's haystacks, built the way the page builds them.
@@ -167,6 +170,17 @@ describe("filter over the real case list", () => {
     // not, and "t" stays specific instead of matching every t-word in a cue.
     expect(hits("u perm")).toBeGreaterThan(0);
     expect(hits("t perm")).toBeLessThan(hits("perm"));
+  });
+
+  it("does not let a set's own size become a searchable token", () => {
+    // The trainer calls them "Full OLL (57)", "F2L (41)", "Full PLL (all 21)".
+    // Feeding those names verbatim put the count into every member's haystack,
+    // so "57" matched all 57 OLL cases instead of OLL 57 — and the OLL cases are
+    // named by number, which makes that the query the set is most searched by.
+    expect(found("57")).toContain("oll.57");
+    expect(hits("57")).toBeLessThanOrEqual(4);
+    expect(hits("41")).toBeLessThanOrEqual(4);
+    expect(hits("21")).toBeLessThanOrEqual(6);
   });
 
   it("does not search the algorithm, which would swamp every short token", () => {

@@ -123,7 +123,7 @@ const firstHref = `/learn/${lessons[0]?.id}/`;
       </p>
       {
         /*
-        The button's LABEL is fixed and its destination is not.
+        The button's label is SHORT and BOUNDED, and its destination is not.
 
         It used to be rewritten to `Resume: <lesson title>`, which grew it from
         129px to 358px, pushed "All algorithms" 72px down and moved the whole
@@ -131,7 +131,9 @@ const firstHref = `/learn/${lessons[0]?.id}/`;
         site's front door, about 20ms after paint. On a phone the second button
         slid out from under a thumb that was already moving toward it. The
         variable-length part now goes on a line below, whose box the server
-        reserves, so nothing above it can move.
+        reserves, so nothing above it can move. The one other label it can take
+        — "Course complete — go practice" — is a fixed string that wraps to at
+        most two lines, not a 40-character lesson title.
       */
       }
       <div class="cta">
@@ -287,7 +289,11 @@ const firstHref = `/learn/${lessons[0]?.id}/`;
   }
   .resume-title {
     /* Reserved from first paint, so writing into it moves nothing below. */
-    min-block-size: 1lh;
+    /* One line of --text-sm at the body's 1.55 line-height. Built from tokens
+       rather than `1lh`: the unit is recent enough that an older browser would
+       drop the declaration silently, and a silently-dropped reservation brings
+       the layout shift straight back. */
+    min-block-size: calc(var(--text-sm) * 1.55);
     margin-block-start: var(--space-2);
   }
   .course-bar {

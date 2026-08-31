@@ -95,7 +95,7 @@ const refAnchor = `/reference/#${def.id.replace(/\./g, "-")}`;
  * cannot disagree with the forward link the lesson itself renders. Until this
  * existed nothing on /case, /reference or /practice led back into the course.
  */
-const taughtIn = await teachingLesson(def.id, def.group);
+const taughtIn = await teachingLesson(def);
 ---
 
 <Base title={`${def.name} — Cubepath`} description={recognition}>

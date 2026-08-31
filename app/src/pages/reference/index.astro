@@ -11,7 +11,7 @@ import { RICH } from "../../data/fullsets.rich.gen";
 import { caseIcon } from "../../data/icons";
 import { haystackFor } from "../../lib/search";
 import { lessonForGroup, type TeachingLesson } from "../../lib/teaches";
-import { TRAINER_GROUPS } from "../../lib/trainer";
+import { setName } from "../../lib/trainer";
 import { TAUGHT_444_CASES, isLocked } from "../../lib/unlocks";
 
 /**
@@ -234,8 +234,7 @@ const searchText = (k: CaseDef, nav: string) =>
  * every cuber alive call it edge parity. Without this, typing "parity" finds
  * the 4×4 cases and reasonably suggests the 5×5 one is not on the site.
  */
-const sectionWords = (s: Section) =>
-  `${s.nav} ${TRAINER_GROUPS.find((g) => g.key === s.id)?.name ?? ""}`;
+const sectionWords = (s: Section) => `${s.nav} ${setName(s.id)}`;
 
 // Distinct cases, not the sum of the sections: the 2-look rows deliberately
 // repeat ids the Full OLL / Full PLL grids also carry.
@@ -259,10 +258,23 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
   <Header active="reference" />
   <Page measure="app">
     <h1>Algorithm Reference</h1>
+    {
+      /*
+      Both numbers, and the reason they differ, because the page shows both and
+      they used to sit two lines apart with nothing reconciling them: the lead
+      said "All 125 cases" and the filter said "138 cases". The 13 the course
+      teaches by name are listed twice on purpose — once in their own lesson
+      section, once inside the full set.
+    */
+    }
     <p class="lead">
       All {total} cases this site teaches, each machine-verified against a cube simulator before it ships.
-      Tap a case to play it in 3D. Prefer paper? <a href="/cubepath.pdf">Download the PDF guide</a> or
-      the <a href="/print">printable card set</a> — three progression cards plus an annex.
+      Tap a case to play it in 3D — the {listed - total} the course teaches by name appear twice, once
+      in their lesson's section and once in the full set. Prefer paper?{" "}
+      <a href="/cubepath.pdf">Download the PDF guide</a> or the <a href="/print"
+        >printable card set</a
+      >
+      — three progression cards plus an annex.
     </p>
 
     <div class="toolbar">
@@ -398,7 +410,7 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
 
 <script>
   import { allProgress, getDB, type CaseStatus } from "../../lib/db";
-  import { filter } from "../../lib/search";
+  import { filter, normalize } from "../../lib/search";
 
   // ── Filter ─────────────────────────────────────────────────────────
   // Static-build friendly and offline-safe: everything it matches on is
@@ -453,7 +465,7 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
       // EmptyState panel says "try a case name, a number, or a cue" and a
       // screen reader was hearing only "0 matches" as the page emptied.
       countOut.textContent =
-        needle === ""
+        normalize(needle) === ""
           ? `${TOTAL} cases`
           : shown === 0
             ? "No case matches that — try a case name, a number, or a word from a recognition cue."
@@ -526,7 +538,11 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
 
   function applyAndKeepPlace(raw: string): void {
     const wasFiltering = savedY !== null;
-    const nowFiltering = raw.trim() !== "";
+    // "Filtering" means the query has a token, not that the field has
+    // characters: a query of only punctuation ("---") normalizes to nothing and
+    // matches everything, so treating it as a filter would teleport the reader
+    // to the top of the page and label the full list "138 of 138 shown".
+    const nowFiltering = normalize(raw) !== "";
 
     // Before apply(), not after: collapsing the document makes the browser
     // clamp scrollY, and that clamp fires a scroll event of its own. It is a
@@ -626,25 +642,55 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
       passive: true,
     });
 
+    /**
+     * Bring a chip into view along the STRIP, and only the strip.
+     *
+     * Emphatically not `chip.scrollIntoView()`, which was the first attempt and
+     * is a trap here. scrollIntoView walks every ancestor scrolling box and the
+     * last one is the document; the chip lives in the sticky toolbar, whose
+     * rendered box sits ABOVE the optimal viewing region that this page's own
+     * `html { scroll-padding-block-start }` establishes — so the browser judged
+     * the chip out of view and scrolled the DOCUMENT up to "reveal" it. Because
+     * the toolbar is sticky the chip never moved, so it never converged: the
+     * page jerked 52px backwards at every section boundary, all the way down.
+     * Measured at -52px in both Chromium and WebKit.
+     *
+     * Setting `scrollLeft` touches no ancestor, and is a no-op at >=561px where
+     * the strip does not overflow and every chip is already visible.
+     */
+    function revealChip(chip: HTMLElement): void {
+      if (jumpBar === null || jumpBar.scrollWidth <= jumpBar.clientWidth) return;
+      const bar = jumpBar.getBoundingClientRect();
+      const box = chip.getBoundingClientRect();
+      const pad = 8;
+      if (box.left < bar.left) jumpBar.scrollLeft += box.left - bar.left - pad;
+      else if (box.right > bar.right) jumpBar.scrollLeft += box.right - bar.right + pad;
+    }
+
     const spy = new IntersectionObserver(
       (records) => {
-        const hit = records.find((r) => r.isIntersecting);
-        if (!hit) return;
-        const chip = chipFor.get(hit.target.id);
+        // Clear BEFORE the early return. A filter that empties the page makes
+        // every section `display: none`, so nothing intersects and an early
+        // return would strand `aria-current="location"` on a chip that
+        // `apply()` has just marked aria-disabled and "no matches" — announced
+        // as both the place you are and a place you cannot go.
         for (const j of jumps) {
           j.classList.remove("here");
           j.removeAttribute("aria-current");
         }
+        const hit = records.find((r) => r.isIntersecting);
+        if (!hit) return;
+        const chip = chipFor.get(hit.target.id);
         // Never mark a chip the filter has disabled as the place you are.
         if (!chip || chip.classList.contains("off")) return;
         chip.classList.add("here");
         chip.setAttribute("aria-current", "location");
-        if (performance.now() > panneduntil) {
-          chip.scrollIntoView({ block: "nearest", inline: "nearest" });
-        }
+        if (performance.now() > panneduntil) revealChip(chip);
       },
       // Top edge at the bottom of the sticky chrome, bottom edge 55% up the
       // viewport: the current section is the one occupying the band you read.
+      // Measured once: the chrome changes height by at most the ~20px the
+      // filter count adds, which moves the band's edge by less than a section.
       { rootMargin: `-${Math.round(chromeHeight())}px 0px -55% 0px` },
     );
     for (const s of sections) spy.observe(s);
@@ -773,13 +819,15 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
    * second sticky bar. Astro bundles page CSS per route, so this loads nowhere
    * else.
    *
-   * 136px is the tallest the toolbar gets (600-860px, three wrapped rows), not
-   * the commonest. A fallback that under-clears buries the heading you
-   * navigated to; one that over-clears costs whitespace for the few hundred
-   * milliseconds before the ResizeObserver writes the measured value.
+   * Measured across the breakpoints: 128px at 320-560, 139px at 600-860 (the
+   * controls have wrapped but the progress bar is back), 104px at 1024+. The
+   * fallback is the MAXIMUM, not the commonest: one that under-clears buries
+   * the heading you navigated to, while one that over-clears costs a little
+   * whitespace for the few hundred milliseconds before the ResizeObserver
+   * writes the measured value.
    */
   :root {
-    --toolbar-h: 136px;
+    --toolbar-h: 139px;
   }
 </style>
 
@@ -986,19 +1034,16 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
    * grows underneath it. The honest cost of reserving is that /reference is
    * ~650px longer on a phone for everyone, first-time readers included.
    *
-   * `1lh` is the element's own line box, not a raw px value a token names.
+   * The reservation is built from tokens (--text-xs at the body's 1.55
+   * line-height), not from `1lh`: that unit is recent enough that an older
+   * browser drops the declaration silently, and a silently-dropped reservation
+   * brings the shift straight back.
    */
   .tile-status {
     font-size: var(--text-xs);
     font-weight: 600;
     color: var(--accent);
-    min-block-size: 1lh;
-  }
-  /* Coming back from a case page lands on a tile among forty near-identical
-     ones; :target says which. .tile already sets border-color for :hover and
-     [data-status], so this restates nothing. */
-  .tile:target {
-    border-color: var(--accent);
+    min-block-size: calc(var(--text-xs) * 1.55);
   }
   .tile[data-status="learned"] {
     border-color: var(--ok);
@@ -1011,6 +1056,14 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
   }
   .tile[data-status="due"] .tile-status {
     color: var(--warn);
+  }
+
+  /* Coming back from a case page lands on a tile among forty near-identical
+     ones; :target says which. LAST, deliberately: it has the same specificity
+     as .tile[data-status="learned"] above, so source order is the only thing
+     that lets the reader see where they landed on a case they have studied. */
+  .tile:target {
+    border-color: var(--accent);
   }
 
   @media (max-width: 560px) {

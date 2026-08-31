@@ -32,9 +32,10 @@
  * Fold a string to the alphabet a reader types.
  *
  * `×`→`x` (the dataset writes "4×4 PLL", a keyboard writes "4x4"); apostrophes
- * are dropped rather than spaced, so `R'` and `R` share a token and typing
- * `r u r` finds `R U R' U'`; everything else non-alphanumeric collapses to a
- * single space, which is what makes "T-Perm" and "t perm" the same two tokens.
+ * are dropped rather than spaced, so `R'` and `R` fold to one token; everything
+ * else non-alphanumeric collapses to a single space, which is what makes
+ * "T-Perm" and "t perm" the same two tokens. (That apostrophe rule is for names
+ * and cues — the algorithm is deliberately not in the haystack; see below.)
  */
 export function normalize(s: string): string {
   return s
@@ -88,15 +89,15 @@ function groupWords(group: string | undefined): string {
  * against the 138 entries the page ships rather than reasoned about:
  *
  *   3+ chars   SUBSTRING. Anchoring these to a word start breaks the two
- *              commonest queries — "light" (29 hits, every one inside
- *              "headlights") and "perm" (25, inside "T-Perm") — because
+ *              commonest queries — "light" (35 hits, all inside "headlights"
+ *              or "lightning") and "perm" (25, inside "T-Perm") — because
  *              recognition cues are English prose and a reader remembers a
  *              fragment, not a lemma.
  *   1-2 chars  WHOLE WORD when `loose` is false, word START when it is. Plain
  *              substring here is a disaster ("t" is inside almost everything,
  *              so "t perm" matched all 25 perms); but word-start alone is still
  *              too generous, because it also catches the "the", "two" and "top"
- *              in the cues, which is what took "t perm" to 22.
+ *              in the cues, which is what took "t perm" to 22 measured hits.
  *
  * The two short-token rules disagree about which case they serve, which is why
  * `filter` below runs them in order rather than picking one. "t perm" wants

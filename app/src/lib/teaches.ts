@@ -19,6 +19,9 @@
  */
 import { getCollection } from "astro:content";
 
+import type { CaseDef } from "../data/algs";
+import { TRAINER_GROUPS } from "./trainer";
+
 export interface TeachingLesson {
   /** Content-collection id, i.e. the slug in /learn/<slug>/. */
   id: string;
@@ -61,14 +64,21 @@ async function build(): Promise<Maps> {
 
 /**
  * The lesson that teaches this case, or undefined if the course never names it.
- * `group` is the case's own group key, used as the fallback edge.
+ *
+ * The fallback edge is keyed on the TRAINER group, which is the namespace
+ * `practice.groups` uses — not on `CaseDef.group`, which is a recognition
+ * grouping ("oll-fish-shape", "f2l-connected-pairs") in a different namespace
+ * entirely. Passing the latter looked right and silently matched almost
+ * nothing: 92 of the 125 case pages had no "Taught in" link, because the whole
+ * of Full OLL, F2L and Full PLL fell through. The trainer's own `member`
+ * predicate is the mapping, so this is derived rather than a second table.
  */
-export async function teachingLesson(
-  caseId: string,
-  group: string,
-): Promise<TeachingLesson | undefined> {
+export async function teachingLesson(def: CaseDef): Promise<TeachingLesson | undefined> {
   const { byCase, byGroup } = await build();
-  return byCase.get(caseId) ?? byGroup.get(group);
+  const exact = byCase.get(def.id);
+  if (exact) return exact;
+  const group = TRAINER_GROUPS.find((g) => g.member(def));
+  return group ? byGroup.get(group.key) : undefined;
 }
 
 /**

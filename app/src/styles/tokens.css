@@ -162,6 +162,15 @@
   --hdr-h: 55px;
 }
 
+/* The bar is shorter once the wordmark drops out. Without this the pre-JS
+   fallback leaves /reference's sticky toolbar parked 6px below the header, with
+   a strip of the page scrolling through the gap until the script runs. */
+@media (max-width: 560px) {
+  :root {
+    --hdr-h: 49px;
+  }
+}
+
 /* One rule instead of a scroll-margin per anchored element. scroll-padding
    covers fragment navigation, sequential focus and scrollIntoView alike, so
    Shift-Tab stops parking the focused element behind the sticky bars. */

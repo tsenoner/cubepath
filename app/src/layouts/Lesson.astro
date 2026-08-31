@@ -27,7 +27,6 @@ import LessonMeta from "../components/LessonMeta.astro";
 import { phaseAnchor, phaseName } from "../data/phases";
 import { caseById } from "../data/algs";
 import { TRAINER_GROUPS } from "../lib/trainer";
-import { isLocked } from "../lib/unlocks";
 
 interface PracticeLink {
   href: string;
@@ -82,14 +81,19 @@ const prereqs = prerequisites.map((p) => byId.get(p)!);
 /**
  * A trainer group key is ALSO a /reference section id — the two lists are the
  * same eleven strings — so a lesson can link to the set it teaches without a
- * line of new data. `isLocked` is the guard: `444-oll` and `444-pll` are real
- * trainer groups whose reference sections are deliberately dropped, and linking
- * to them would be a dead fragment.
+ * line of new data. Locked sets cannot reach here: TRAINER_GROUPS is already
+ * filtered through `isLocked`, and the validation loop above throws on a lesson
+ * that names a group outside it, so `444-oll` and `444-pll` fail the build
+ * rather than shipping a dead fragment.
  */
 const drills = practice.groups.map((key) => ({
   key,
   name: TRAINER_GROUPS.find((g) => g.key === key)!.name,
-  reference: isLocked(key) ? null : `/reference/#${key}`,
+  // No isLocked() guard here: TRAINER_GROUPS is already filtered by it, and the
+  // loop above throws on a lesson naming a group that is not in it — so a
+  // locked group cannot reach this line, and a guard would be dead code
+  // claiming to protect against something that already fails the build.
+  reference: `/reference/#${key}`,
 }));
 
 /** The cases this lesson teaches, as pages. Build-validated above. */
@@ -158,12 +162,14 @@ const inPhase = siblings.findIndex((l) => l.id === id) + 1;
 
     {
       /*
-      The *write* half of the course progress layer. db.ts has a `lessons`
-      store and index.astro reads it for the per-phase bars, the ✓ marks and
-      the "Resume: <lesson>" CTA — but nothing called markLessonComplete(), so
-      every phase bar read 0/N forever and Resume never appeared. `position` is
-      off: the "Step N of M" bar above already says that. Renders nothing and
-      occupies no space until the lesson has actually been completed.
+      The *write* half of the course progress layer, and the reason the ✓ marks,
+      the per-phase bars and the Resume CTA on index.astro have anything to
+      read. It has two writers — the [data-lesson-end] sentinel below, and the
+      exits tagged data-lesson-advance — because for a long time the pager click
+      was the only one, and a reader who left by this page's own filled "Drill"
+      button was never credited. `position` is off: the phase bar above already
+      says where they are. Renders nothing and occupies no space until the
+      lesson has actually been completed.
     */
     }
     <LessonMeta id={id} />

@@ -116,7 +116,20 @@ export const TRAINER_GROUPS: readonly TrainerGroup[] = trainerGroups();
  */
 export function groupLabel(def: CaseDef): string {
   const g = trainerGroups().find((t) => t.member(def));
-  return g ? g.name.replace(/\s*\([^)]*\)\s*$/, "") : def.group;
+  return g ? setName(g.key) : def.group;
+}
+
+/**
+ * A set's name without its parenthetical size — "Full OLL (57)" -> "Full OLL".
+ *
+ * The count has to come off wherever the name is reused as TEXT, and /reference
+ * found the sharpest reason: it feeds these names to the case filter, and the
+ * "(57)" put that digit in all 57 members' haystacks, so searching "57" matched
+ * the whole set instead of OLL 57.
+ */
+export function setName(key: string): string {
+  const g = trainerGroups().find((t) => t.key === key);
+  return (g?.name ?? key).replace(/\s*\([^)]*\)\s*$/, "");
 }
 
 /** Members of a visible set, minus anything `isLocked` hides inside it. */

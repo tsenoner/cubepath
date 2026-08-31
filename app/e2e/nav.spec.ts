@@ -329,3 +329,94 @@ test("tapping a lesson's description opens the lesson", async ({ page }) => {
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
   await expect(page).toHaveURL(/\/learn\//);
 });
+
+// ── The spy must not fight the reader ────────────────────────────────
+// chip.scrollIntoView() walked every ancestor scroller and moved the DOCUMENT,
+// because the chip sits inside the sticky toolbar, above the optimal viewing
+// region html's scroll-padding establishes. The page jerked back 52px at every
+// section boundary, in Chromium and WebKit alike, and never converged.
+for (const vp of [
+  { width: 1280, height: 900, name: "desktop" },
+  { width: 390, height: 844, name: "phone" },
+]) {
+  test(`scrolling down /reference never moves the page backwards (${vp.name})`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: vp.width, height: vp.height });
+    await page.goto("/reference/");
+    await page.waitForTimeout(600);
+    const backward = await page.evaluate(async () => {
+      const jumps: number[][] = [];
+      for (let i = 0; i < 300; i++) {
+        const before = window.scrollY;
+        window.scrollBy(0, 25);
+        await new Promise((r) => setTimeout(r, 8));
+        const after = window.scrollY;
+        if (after < before) jumps.push([before, after]);
+      }
+      return jumps;
+    });
+    expect(
+      backward.slice(0, 5),
+      "something is scrolling the document up while the reader scrolls down",
+    ).toEqual([]);
+  });
+}
+
+// ── The set's own size must not leak into its members' haystacks ─────
+// The trainer names the sets "Full OLL (57)", "F2L (41)", "Full PLL (all 21)".
+// Feeding those names to the filter verbatim put the count in all 57 members'
+// haystacks, so searching "57" matched the whole set instead of OLL 57.
+test("a number query finds the case with that number, not its whole set", async ({ page }) => {
+  await page.goto("/reference/");
+  const search = page.locator("[data-ref-search]");
+  const shown = () => page.locator("[data-search]:not([hidden])");
+  for (const [q, ceiling] of [
+    ["57", 4],
+    ["41", 4],
+    ["21", 6],
+  ] as const) {
+    await search.fill(q);
+    const n = await shown().count();
+    expect(n, `"${q}" must not return a whole set`).toBeLessThanOrEqual(ceiling);
+    expect(n, `"${q}" must still find its own case`).toBeGreaterThan(0);
+  }
+});
+
+// ── A chip cannot be both "you are here" and "you cannot go here" ────
+test("an empty filter result leaves no chip marked as the current location", async ({ page }) => {
+  await page.setViewportSize(PHONE);
+  await page.goto("/reference/");
+  await page.waitForTimeout(400);
+  await page.evaluate(() => window.scrollTo(0, 5000));
+  await page.waitForTimeout(400);
+  await page.locator("[data-ref-search]").fill("zzzzqqq");
+  await page.waitForTimeout(500);
+  const bad = await page.evaluate(
+    () => document.querySelectorAll('.jump .chip[aria-current][aria-disabled="true"]').length,
+  );
+  expect(bad, "a disabled chip must not also be aria-current").toBe(0);
+});
+
+// ── Every case page should be able to name the lesson that teaches it ─
+test("the case-to-lesson back-link covers the full sets, not just the curated cases", async ({
+  page,
+  request,
+}) => {
+  await page.goto("/reference/");
+  const ids = await page.evaluate(() => [
+    ...new Set(
+      [...document.querySelectorAll("[data-case]")].map((e) => (e as HTMLElement).dataset.case!),
+    ),
+  ]);
+  let withLesson = 0;
+  for (const id of ids) {
+    const html = await (await request.get(`/case/${id}/`)).text();
+    if (/<a[^>]+href="\/learn\//.test(html)) withLesson += 1;
+  }
+  // It was 33 of 125 while the fallback was keyed on CaseDef.group instead of
+  // the trainer group — the whole of Full OLL, F2L and Full PLL fell through.
+  expect(withLesson, `${withLesson}/${ids.length} case pages name their lesson`).toBeGreaterThan(
+    ids.length * 0.9,
+  );
+});
