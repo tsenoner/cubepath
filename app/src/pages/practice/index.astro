@@ -133,6 +133,20 @@ const OPEN_AT_MOST = 12;
               <div>
                 <p class="case-name" id="case-name"></p>
                 <p id="case-alg"></p>
+                {
+                  /*
+                  The way OUT. Every other surface points into the trainer — all
+                  25 lessons and all 129 case pages link here — and until this
+                  link the trainer pointed nowhere: `main` held zero <a>
+                  elements, so a reader who drilled a case, failed it and wanted
+                  to study it had no route except the browser's back button.
+                  One hop is enough: the case page already carries the teaching
+                  lesson, the reference row and the 3D player, so linking there
+                  buys all three without shipping a case->lesson map to the
+                  client (lib/teaches.ts is build-time only by rule).
+                */
+                }
+                <p class="case-out"><a id="case-link" href="/">Open the full case page →</a></p>
               </div>
             </div>
             <p class="hint">Space starts and stops the timer · works in airplane mode</p>
@@ -156,6 +170,11 @@ const OPEN_AT_MOST = 12;
             <button class="btn btn--primary" id="reveal-btn" type="button">Reveal algorithm</button>
             <div id="review-answer" hidden>
               <p id="review-alg" class="review-alg"></p>
+              {
+                /* Same way out as the drill stage — a failed review is exactly
+                  the moment a reader wants the case page. */
+              }
+              <p class="case-out"><a id="review-link" href="/">Open the full case page →</a></p>
               <div class="chip-row center" id="grade-row">
                 <button class="btn grade grade--again" data-grade="1" type="button"
                   >Again <small></small></button
@@ -205,6 +224,16 @@ const OPEN_AT_MOST = 12;
                     <span class="set-name">{s.name}</span>
                     <span class="set-count hint">{s.cases.length}</span>
                   </summary>
+                  {/*
+                    A trainer group key IS a /reference section id — the same
+                    strings — so this edge costs no new data. It sits OUTSIDE
+                    the <summary>: a link inside a summary is a control inside a
+                    control, which axe fails the build on, and this repo already
+                    made that mistake once on /reference's rows.
+                  */}
+                  <p class="set-out">
+                    <a href={`/reference/#${s.key}`}>See this set in the reference →</a>
+                  </p>
                   {s.cases.map((c) =>
                     caseIcon(c.id) ? (
                       <button class="status-row" data-case={c.id} type="button">
@@ -433,6 +462,7 @@ const OPEN_AT_MOST = 12;
     $("case-reveal").hidden = true;
     setCaseImage($<HTMLImageElement>("case-img"), $("case-no-diagram"), def);
     $("case-name").textContent = def.name;
+    $<HTMLAnchorElement>("case-link").href = `/case/${def.id}/`;
     $("case-alg").innerHTML = "";
     const algSpan = document.createElement("span");
     algSpan.className = "alg";
@@ -558,6 +588,7 @@ const OPEN_AT_MOST = 12;
     if (!def) return;
     setCaseImage($<HTMLImageElement>("review-img"), $("review-no-diagram"), def);
     $("review-name").textContent = def.name;
+    $<HTMLAnchorElement>("review-link").href = `/case/${def.id}/`;
     $("review-answer").hidden = true;
     $("reveal-btn").hidden = false;
     const labels = await previewIntervals(def.id, new Date());
@@ -961,6 +992,15 @@ const OPEN_AT_MOST = 12;
   }
   .set-name {
     flex-grow: 1;
+  }
+  .case-out,
+  .set-out {
+    margin-block-start: var(--space-2);
+    font-size: var(--text-sm);
+  }
+  .set-out {
+    margin-block: 0 var(--space-2);
+    padding-inline-start: var(--space-3);
   }
   .status-row {
     display: flex;

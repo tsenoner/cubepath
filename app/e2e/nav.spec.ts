@@ -531,3 +531,35 @@ test("no outline chip is tagged as a lesson-completion exit", async ({ page }) =
   expect(await page.locator(".pagenav .chip[data-lesson-advance]").count()).toBe(0);
   expect(await page.locator(".pagenav .chip[data-lesson-next]").count()).toBe(0);
 });
+
+// ── The trainer is not a sink ────────────────────────────────────────
+// Every other surface points INTO /practice — all 25 lessons and all 129 case
+// pages — and /practice pointed nowhere: `main` held ZERO <a> elements. A
+// reader who drilled a case, failed it and wanted to study it had no route out
+// except the browser's back button.
+test("the trainer links back out to the reference and to the case it is drilling", async ({
+  page,
+}) => {
+  await page.goto("/practice/");
+
+  // Every set names its reference section. A trainer group key IS a section id,
+  // so a dead fragment here means the two lists have drifted apart.
+  const frags = await page
+    .locator('main a[href^="/reference/#"]')
+    .evaluateAll((els) => els.map((e) => (e as HTMLAnchorElement).getAttribute("href")!));
+  expect(frags.length, "each drillable set must name its reference section").toBeGreaterThan(0);
+  await page.goto("/reference/");
+  const dead = await page.evaluate(
+    (list) => list.filter((h) => !document.getElementById(h.split("#")[1]!)),
+    frags,
+  );
+  expect(dead, "trainer -> reference fragments that resolve to nothing").toEqual([]);
+
+  // …and the case being drilled can be opened.
+  await page.goto("/practice/");
+  await page.getByRole("button", { name: "Show case" }).click();
+  const href = await page.locator("#case-link").getAttribute("href");
+  expect(href, "the drilled case must be reachable").toMatch(/^\/case\/.+\/$/);
+  const res = await page.goto(href!);
+  expect(res?.status(), `${href} must be a real page`).toBe(200);
+});
