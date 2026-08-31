@@ -1155,13 +1155,27 @@ before that, and separately: it makes a page unreproducible, unscreenshotable
 and untestable, and the randomness belongs in the trainer if anywhere.
 
 What the request actually meant was the centre SWAP — moving one of the nine
-centre pieces from one centre to another, which is a different thing from the
-insert and is genuinely not intuitive. Measured while investigating and recorded
-here because it is the useful part: **`2R U 2R' U 2R U2 2R'` — Sune with the
-inner slice in place of `R` — swaps exactly one centre piece between two
-centres, identically on a 4×4 and a 5×5**, disturbing five wings and no corners
-or midges. It costs no new muscle memory, because the reader already owns Sune
-from Phase 2. Whether it is taught is open.
+centre pieces from one centre to another, the trick J Perm walks through at 3:08
+of the 5×5 video. A first attempt at answering it offered
+`2R U 2R' U 2R U2 2R'` (Sune with the inner slice), which does swap exactly one
+centre piece between two centres on both cubes — but it is not the thing in the
+video, and it was rejected on that ground.
+
+Searching the kpuzzle settled what the video's pattern can and cannot be. Over
+every alternating slice/U sequence up to five moves, **nothing shorter than
+three moves moves a piece between two centres while leaving the other four
+whole**, and at three moves every solution is the same conjugate with a
+different grab — `Rw U Rw'`, `2R U 2R'`, `M' U M`, `2L' U 2L`. So the insert
+already in the lesson IS the tool, and the only choice is the grab.
+
+Which explains why J Perm's version is longer and why he refuses to name it:
+his is the same insert **twice, in two different layers**. Its purpose is to
+preserve PARTIAL progress on the target face — the last bar, where the only
+thing left to displace is what you just built — and that is a property of a
+half-built centre, so it cannot be measured against a solved cube at all. That
+is the real reason it is a pattern and not an algorithm, and it is now written
+into `555-centers-edges.mdx` in his beats. No reference entry, per the same
+call as the insert: centres are aimed, not looked up.
 
 **Jargon is allowed now.** The site wrote plain phrases and glossed them inline;
 with a hover card on every first mention, `dedge` is the headword and `edge
