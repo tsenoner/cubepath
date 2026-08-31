@@ -1190,9 +1190,18 @@ describe("the rendered mask attribute", () => {
     // The 5x5 row is the case the course TEACHES. It used to be 555.l2e-1,
     // which is now locked behind UNLOCKED["555-l2e-onelook"] — a mask assertion
     // is only worth having on a surface a learner can actually reach.
+    //
+    // EXACTLY TWO LIT WINGS, and nothing else. This row used to carry eight lit
+    // wings and two lit midges, because the highlight was derived from
+    // `solved · alg⁻¹` — and running an L2E algorithm backwards turns its SIDE
+    // EFFECTS (it swaps the UL and UR groups, and two corners) into apparent
+    // parts of the case. The mask is derived from the exported hold now, so it
+    // lights the flipped pair and dims the rest, which is what the SVG beside
+    // it draws and what the lesson says the case is. The midges are dim on
+    // purpose: "the middle piece is right" IS the recognition cue.
     [
       "555.l2e-6",
-      "EDGES:DDDDDDDDDD-DDD-DDD-D---D,EDGES2:-DD-DDDDDDDD,CORNERS:IIIIIIII," +
+      "EDGES:DDDDDDDDDDDDDD-DDDDDD-DD,EDGES2:DDDDDDDDDDDD,CORNERS:IIIIIIII," +
         "CENTERS:DDDDDDDDDDDDDDDDDDDDDDDD,CENTERS2:DDDDDDDDDDDDDDDDDDDDDDDD,CENTERS3:DDDDDD",
     ],
   ];

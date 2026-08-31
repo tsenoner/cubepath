@@ -38,8 +38,10 @@
  *    Testing both, regardless of the stage, highlighted a piece whose relevant
  *    aspect was already correct on 53 of the 81 orientation/permutation cases.
  */
-import type { KPattern, KPuzzle } from "cubing/kpuzzle";
+import { KPattern } from "cubing/kpuzzle";
+import type { KPuzzle } from "cubing/kpuzzle";
 
+import L2E_RAW from "../data/extracted/l2e-raw.json";
 import type { Puzzle, Stickering } from "../data/algs";
 import {
   ORBIT_KINDS,
@@ -209,6 +211,38 @@ export async function hasHomeOrientation(puzzle: Puzzle, alg: string): Promise<b
  * only whether it is in the wrong slot. Without a stage (no ladder context) the
  * question is `both`, which is what shipped before.
  */
+/**
+ * Cases whose real state is NOT `solved · alg⁻¹`, keyed by their algorithm.
+ *
+ * This is the 5x5 last-two-edges set, and it is the one place where "what the
+ * algorithm fixes" and "what the case IS" come apart. An L2E algorithm is
+ * written for a hold partway through reduction, so running it backwards from a
+ * solved cube produces a legal state one algorithm from solved — but not the
+ * position a solver meets. For `555.l2e-6` the backwards run lights the UF
+ * group (the case) AND the UL and UR groups, because swapping those two is a
+ * SIDE EFFECT the algorithm has on the way, and running backwards turns a side
+ * effect into a precondition. The lesson names both swaps a paragraph away.
+ *
+ * The mask is what fixes it. The player still starts where the algorithm's
+ * inverse puts it — there is no setup alg for a parity state — but the
+ * highlight is computed from the DISPLAYED HOLD that `verify-l2e.mjs` exports
+ * and the SVG diagram is drawn from, so those two groups come out DIM rather
+ * than lit. Dim is the honest tier for them: at the pairing stage a group that
+ * is intact but displaced is finished, and the 3x3 stage places it.
+ *
+ * Keyed by algorithm because that is what `maskFor` is given — the same idiom
+ * `contextForPlayer` already resolves cases by, and the 13 L2E strings collide
+ * with nothing (tests/algs.spec.ts pins that triples are near-unique).
+ */
+const HOLDS: Record<string, { orbit: string; slot: number; piece: number; orientation: number }[]> =
+  Object.fromEntries(
+    (L2E_RAW as { algs: string[]; displayed?: Delta[] }[]).flatMap((c) =>
+      c.displayed && c.algs[0] ? [[c.algs[0], c.displayed] as const] : [],
+    ),
+  );
+
+type Delta = { orbit: string; slot: number; piece: number; orientation: number };
+
 async function touchedSlots(
   puzzle: Puzzle,
   alg: string,
@@ -216,7 +250,8 @@ async function touchedSlots(
 ): Promise<Record<string, boolean[]>> {
   const kp = await kpuzzleFor(puzzle);
   const solved = kp.defaultPattern();
-  const state = caseState(kp, puzzle, alg);
+  const hold = HOLDS[alg];
+  const state = hold ? patched(solved, hold) : caseState(kp, puzzle, alg);
   const out: Record<string, boolean[]> = {};
   for (const { orbitName } of kp.definition.orbits) {
     const d = state.patternData[orbitName]!;
@@ -230,6 +265,25 @@ async function touchedSlots(
     });
   }
   return out;
+}
+
+/** The solved pattern with an exported hold patched over it. */
+function patched(solved: KPattern, hold: Delta[]): KPattern {
+  // Per-orbit copies, never `structuredClone`: cubing.js hands every orbit of
+  // the same length ONE zero-filled orientation array, and a clone preserves
+  // that aliasing — see `unaliasedCopy` in scripts/verify-l2e.mjs for the bug
+  // it caused there.
+  const data: Record<string, { pieces: number[]; orientation: number[] }> = {};
+  for (const [orbit, o] of Object.entries(solved.patternData)) {
+    data[orbit] = { pieces: [...o.pieces], orientation: [...o.orientation] };
+  }
+  for (const d of hold) {
+    const orbit = data[d.orbit];
+    if (!orbit) throw new Error(`stickering: hold names unknown orbit ${d.orbit}`);
+    orbit.pieces[d.slot] = d.piece;
+    orbit.orientation[d.slot] = d.orientation;
+  }
+  return new KPattern(solved.kpuzzle, data);
 }
 
 const cache = new Map<string, Promise<string | undefined>>();

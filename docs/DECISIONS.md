@@ -1087,13 +1087,26 @@ scrollable overflow, and every lesson page scrolled 50px sideways at 375px until
 it was taken out of layout — caught by `e2e/regressions.spec.ts` on all 25 at
 once, which is exactly the test earning its keep.
 
-**Known limit, not fixed: the 5×5 parity player disagrees with its diagram.**
-The `/case/555.l2e-6/` player starts from `solved · alg⁻¹`, so it shows three
-extra displaced edge groups the diagram does not — the same reason the states
-were undrawable in the first place, surfacing in the one place that still
-derives its state from the algorithm alone. Fixing it needs a derived setup
-sequence for a hold the algorithm cannot reach on its own, which is a solver
-problem rather than a rendering one.
+**The 5×5 parity player used to disagree with its diagram — fixed by the MASK,
+not by the state.** `/case/555.l2e-6/`'s player starts from `solved · alg⁻¹`,
+and running an L2E algorithm backwards turns its SIDE EFFECTS into apparent
+parts of the case: measured, the UL and UR groups and two corners, exactly the
+two swaps the lesson names a paragraph away. So the player lit three edge groups
+where the diagram showed one.
+
+The first instinct was to fix the STATE — derive a setup sequence so the player
+starts where the diagram is drawn. That is a solver problem (the hold is a
+parity state, unreachable by the algorithm itself) and it was not needed. The
+mask is the layer that decides what a picture is ABOUT, and it was deriving its
+highlight from `solved · alg⁻¹` like every other case. Pointing it at the
+exported hold instead lights the flipped pair and dims everything else, so the
+player and the SVG now emphasise the same thing. The two side-effect groups are
+still physically displaced in the player — they have to be, the algorithm has to
+undo them — but they read as DIM, which is the honest tier: at the pairing stage
+a group that is intact but displaced is finished, and the 3×3 stage places it.
+
+Worth stating as a general lesson: when a picture emphasises the wrong thing,
+the mask is usually the layer to fix, not the state.
 
 **Naming, after the fact: "L2E" named a set the course does not teach.** The
 group key, the trainer set and the reference section were all called `555-l2e`,
