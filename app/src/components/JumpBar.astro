@@ -111,6 +111,21 @@ const { items, label } = Astro.props;
     color: var(--accent);
     font-weight: 600;
   }
+  /*
+   * A different question, so a different mark. On the course index `.here` is
+   * the phase you have scrolled to; `.resume` is the phase your PROGRESS is in,
+   * which is where the hero button would take you. They are usually different
+   * chips, and a reader wants both — "where I am looking" and "where I left
+   * off". The dot is not colour alone.
+   */
+  .chip.resume::before {
+    content: "•";
+    margin-inline-end: 4px;
+    color: var(--accent);
+  }
+  .chip.resume {
+    border-color: var(--accent);
+  }
   @media (max-width: 560px) {
     .pagenav {
       flex-wrap: nowrap;

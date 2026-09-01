@@ -567,8 +567,14 @@ const firstHref = `/learn/${lessons[0]?.id}/`;
       const jump = key
         ? document.querySelector<HTMLElement>(`[data-phase-jump="${CSS.escape(key)}"]`)
         : null;
-      jump?.classList.add("here");
-      jump?.setAttribute("aria-current", "true");
+      // `resume`, not `here`. Two different questions get asked of this bar and
+      // they have different answers: `here` is which phase you have SCROLLED to
+      // and is owned by the shared scroll-spy in lib/jumpbar.ts, while this is
+      // which phase your PROGRESS is in — the one the hero would resume into.
+      // They are usually different chips. Marking both with one class meant the
+      // spy cleared this on its first callback.
+      jump?.classList.add("resume");
+      jump?.setAttribute("data-resume-phase", "true");
     }
   }
 

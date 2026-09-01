@@ -131,10 +131,12 @@ test("the course index marks the phase you are in, and resumes into it", async (
   const current = page.locator('[data-phase][data-state="current"]');
   await expect(current).toHaveCount(1);
   await expect(current.locator("[data-here]")).toBeVisible();
-  // `.pagenav`, not `.phase-jump`: the bar moved into the header's second row,
-  // so it survives the hero scrolling off a 5,208px page instead of being
-  // stranded at y=359. Same assertion, same behaviour, new home.
-  await expect(page.locator(".pagenav .chip.here")).toHaveCount(1);
+  // `.resume`, not `.here`. The bar moved into the header's second row (so it
+  // survives the hero scrolling off a 5,208px page instead of being stranded at
+  // y=359), and it now answers TWO questions with two marks: `.here` is the
+  // phase you have scrolled to, owned by the shared scroll-spy, and `.resume`
+  // is the phase your progress is in. This assertion is about progress.
+  await expect(page.locator(".pagenav .chip.resume")).toHaveCount(1);
 });
 
 // ── Anchors land where they are aimed ────────────────────────────────
