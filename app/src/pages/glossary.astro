@@ -10,9 +10,11 @@
  */
 import Base from "../layouts/Base.astro";
 import Header from "../components/Header.astro";
+import JumpBar from "../components/JumpBar.astro";
 import Page from "../components/Page.astro";
 import EmptyState from "../components/EmptyState.astro";
 import { GLOSSARY, GLOSS_ENTRIES, glossByTerm, glossSlug } from "../data/glossary";
+import { normalize } from "../lib/search";
 
 // A cross-reference to a term that does not exist would be a dead anchor on a
 // page whose whole job is definitions. Fail the build instead.
@@ -24,16 +26,42 @@ for (const entry of GLOSS_ENTRIES) {
   }
 }
 
-/** Name + definition + variants, lowercased — what the filter matches on. */
+/**
+ * Name + definition + variants, folded — what the filter matches on.
+ *
+ * `normalize`, not `.toLowerCase()`. This page's data contains 12 `×`
+ * characters and plenty of hyphens, so the raw-substring filter it used to
+ * carry returned nothing for "4x4" and nothing for any two-word query — the
+ * measured miss table at the top of lib/search.ts, on the page every
+ * auto-linked term in all 25 lessons points at.
+ */
 const searchText = (e: (typeof GLOSS_ENTRIES)[number]) =>
-  `${e.term} ${(e.also ?? []).join(" ")} ${e.short} ${e.long ?? ""}`.toLowerCase();
+  normalize(`${e.term} ${(e.also ?? []).join(" ")} ${e.short} ${e.long ?? ""}`);
 ---
 
 <Base
   title="Glossary — Cubepath"
   description="Every cubing term this course uses, defined in one sentence each."
 >
-  <Header active="glossary" />
+  {
+    /*
+    The second-longest page on the site — 8,687px, 10.3 phone screens — and it
+    had no in-page navigation of any kind. It is also the page the lessons send
+    readers to most: every first mention of every term across 25 lessons is an
+    auto-generated link into one of these five groups. Landing on a definition
+    and then wanting a neighbouring one meant scrolling.
+
+    Derived from GLOSSARY itself through the same `glossSlug` the sections use,
+    so a sixth group gets a chip by existing.
+  */
+  }
+  <Header active="glossary">
+    <JumpBar
+      slot="pagenav"
+      label="Glossary groups"
+      items={GLOSSARY.map((group) => ({ id: glossSlug(group.title), label: group.title }))}
+    />
+  </Header>
   <Page>
     <h1>Glossary</h1>
     <p class="lead">
@@ -100,28 +128,49 @@ const searchText = (e: (typeof GLOSS_ENTRIES)[number]) =>
 </Base>
 
 <script>
-  // Same shape as /reference's filter and for the same reasons: everything it
-  // matches on is already in the DOM as `data-search`, so there is no index to
-  // fetch and it works offline. `hidden` is what tokens.css backs with
+  import { filter, normalize } from "../lib/search";
+  import { markEmptySections } from "../lib/jumpbar";
+
+  // The same MATCHER as /reference's filter, not merely the same shape:
+  // token-wise, punctuation-folded, strict-then-widen. Everything it matches on
+  // is already in the DOM as `data-search`, so there is no index to fetch and it
+  // works offline. `hidden` is what tokens.css backs with
   // `display: none !important`.
   const search = document.querySelector<HTMLInputElement>("[data-gloss-search]");
   const countOut = document.querySelector<HTMLElement>("[data-gloss-count]");
   const noResults = document.querySelector<HTMLElement>("[data-gloss-empty]");
   const entries = [...document.querySelectorAll<HTMLElement>("[data-search]")];
   const groups = [...document.querySelectorAll<HTMLElement>("[data-gloss-group]")];
+  const pagenav = document.querySelector<HTMLElement>(".pagenav");
+
+  const haystacks = entries.map((el) => el.dataset.search ?? "");
 
   function apply(raw: string): void {
-    const needle = raw.trim().toLowerCase();
+    const needle = raw.trim();
+    // One pass over the whole list: the strict/loose decision is a property of
+    // the query against the corpus, not of a single entry.
+    const hits = filter(haystacks, needle);
     let shown = 0;
-    for (const el of entries) {
-      const hit = needle === "" || (el.dataset.search ?? "").includes(needle);
+    for (const [i, el] of entries.entries()) {
+      const hit = hits[i] ?? true;
       el.hidden = !hit;
       if (hit) shown += 1;
     }
     for (const group of groups) group.hidden = !group.querySelector("[data-search]:not([hidden])");
+    // The outline must agree with the page: a chip over a group this query
+    // emptied is a link that rewrites the fragment and moves nothing. Shared
+    // with /reference rather than re-derived — the fix lived in that page's
+    // script, which is exactly why this page shipped without it.
+    if (pagenav) markEmptySections(pagenav);
     if (noResults) noResults.hidden = shown > 0;
     if (countOut) {
-      countOut.textContent = needle === "" ? "" : `${shown} ${shown === 1 ? "term" : "terms"}`;
+      // "Filtering" means the query has a TOKEN, not that the field has
+      // characters. A query of only punctuation ("---") normalizes to nothing
+      // and matches everything, so testing the raw string labelled the whole
+      // unfiltered list "142 terms" as if it were a result set. /reference asks
+      // the same question the same way.
+      countOut.textContent =
+        normalize(needle) === "" ? "" : `${shown} ${shown === 1 ? "term" : "terms"}`;
     }
   }
 
@@ -149,6 +198,15 @@ const searchText = (e: (typeof GLOSS_ENTRIES)[number]) =>
     min-inline-size: 0;
     max-inline-size: 30rem;
     font: inherit;
+    /*
+     * AFTER `font: inherit`, which is a shorthand and resets font-size — order
+     * is load-bearing. Mobile Safari force-zooms the viewport when a focused
+     * text input is under 16px and never zooms back; body copy here is 15px, so
+     * this control was over the line. /reference's filter says the same thing
+     * for the same reason; the gate in e2e/nav.spec.ts now sweeps every route
+     * that ships an input rather than a hand-typed three.
+     */
+    font-size: var(--text-lg);
     color: var(--ink);
     background: var(--card);
     border: 1px solid var(--line);
@@ -162,9 +220,19 @@ const searchText = (e: (typeof GLOSS_ENTRIES)[number]) =>
   .noresults {
     margin-block: var(--space-5);
   }
+  /*
+   * No scroll-margin here or on `.entry`, and that is load-bearing rather than
+   * tidying. tokens.css states the sticky clearance ONCE, as
+   * `html { scroll-padding-block-start }`. scroll-padding insets the
+   * scrollport and scroll-margin expands the target, so the two STACK — the
+   * exact failure CLAUDE.md names and /reference was already fixed for. This
+   * page kept two of them (`section`, and `.entry`'s
+   * `calc(--hdr-h + --space-4)`), and it is the destination of every glossary
+   * link the lessons auto-generate, so the site's commonest anchor jump landed
+   * a header lower than intended. Measured: 65px low on `.entry`.
+   */
   section {
     margin-block-start: var(--space-7);
-    scroll-margin-block-start: var(--space-6);
   }
   h2 {
     margin-block-end: var(--space-2);
@@ -175,8 +243,6 @@ const searchText = (e: (typeof GLOSS_ENTRIES)[number]) =>
   .entry {
     padding-block: var(--space-4);
     border-block-start: 1px solid var(--line);
-    /* An anchor jump lands under the sticky site header. */
-    scroll-margin-block-start: calc(var(--hdr-h, 47px) + var(--space-4));
   }
   .entry:target {
     background: var(--accent-soft);

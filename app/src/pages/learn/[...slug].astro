@@ -11,9 +11,14 @@ export async function getStaticPaths() {
 }
 
 const { lesson } = Astro.props;
-const { Content } = await render(lesson);
+// `headings` is Astro's own heading list for this page, and it was being thrown
+// away here. It is the outline the jump bar is built from — the ids are already
+// in the HTML (rehype-heading-ids runs AFTER the custom rehype plugins this
+// project registers, so the glossary pass does not displace it), and until now
+// nothing pointed at a single one of the 180 of them.
+const { Content, headings } = await render(lesson);
 ---
 
-<Lesson id={lesson.id} {...lesson.data}>
+<Lesson id={lesson.id} {...lesson.data} headings={headings}>
   <Content />
 </Lesson>

@@ -10,8 +10,10 @@ import { ALL_CASES, CURATED_IDS, primaryAlg, type CaseDef } from "../../data/alg
 import { CASE_SCRAMBLES } from "../../data/fullsets.gen";
 import { RICH } from "../../data/fullsets.rich.gen";
 import { caseIcon } from "../../data/icons";
+import { caseAnchor, referenceHref } from "../../data/refsections";
 import { TAUGHT_444_CASES, isLocked } from "../../lib/unlocks";
 import { contextForCase } from "../../lib/ladders";
+import { teachingLesson } from "../../lib/teaches";
 
 /**
  * Locked cases get no page. They are reachable from nothing — not the
@@ -98,17 +100,40 @@ const here = siblings.findIndex((k) => k.id === def.id);
 const prev = here > 0 ? siblings[here - 1] : undefined;
 const next = here >= 0 && here < siblings.length - 1 ? siblings[here + 1] : undefined;
 
-/** The case's anchor in the reference list — see pages/reference/index.astro. */
-const refAnchor = `/reference/#${def.id.replace(/\./g, "-")}`;
+/** The case's anchor in the reference list. Both ends of the link derive it. */
+const refAnchor = referenceHref(caseAnchor(def.id));
+
+/**
+ * The lesson that teaches this case. Derived from lesson frontmatter, so it
+ * cannot disagree with the forward link the lesson itself renders. Until this
+ * existed nothing on /case, /reference or /practice led back into the course.
+ */
+const taughtIn = await teachingLesson(def);
 ---
 
 <Base title={`${def.name} — Cubepath`} description={recognition}>
   <Header active="reference" />
   <Page>
+    {
+      /*
+      The crumb goes to the case's own place in the reference, not to the top
+      of it: landing on a 9,000px index having lost the row you came from is
+      the whole complaint. `.tile` clears the sticky bars now (tokens.css sets
+      the clearance once as html scroll-padding), so the anchor lands.
+    */
+    }
     <nav class="crumbs" aria-label="Breadcrumb">
-      <a href="/reference/">Reference</a>
+      <a href={refAnchor}>Reference</a>
       <span aria-hidden="true">›</span>
       <span>{def.name}</span>
+      {
+        taughtIn && (
+          <>
+            <span aria-hidden="true">·</span>
+            <a href={taughtIn.href}>Taught in: {taughtIn.title}</a>
+          </>
+        )
+      }
     </nav>
 
     {

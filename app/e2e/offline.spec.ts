@@ -50,6 +50,27 @@ test("offline: whole course works in airplane mode after first visit", async ({
   });
   expect(shot).toMatch(/^data:image\/png;base64,/);
 
+  // EVERY query-string link a lesson offers must survive airplane mode, and the
+  // list is DERIVED from the page rather than typed here. A precache lookup
+  // matches on the full URL, so a query param the service worker is not told to
+  // ignore is simply a different, uncached URL — and with `navigateFallback:
+  // null` there is nothing behind the miss. This shipped: all 16
+  // `/practice/?group=` buttons, the filled primary call to action on 12
+  // lessons, were dead offline, and because that element also carries
+  // `data-lesson-advance` an offline reader taking it earned no lesson credit.
+  // The bare `/practice/` visit below is why the suite stayed green.
+  const queryLinks = await page
+    .locator('main a[href*="?"]')
+    .evaluateAll((els) =>
+      [...new Set(els.map((e) => (e as HTMLAnchorElement).getAttribute("href")!))].filter(Boolean),
+    );
+  expect(queryLinks.length).toBeGreaterThan(0);
+  for (const href of queryLinks) {
+    const res = await page.goto(href);
+    expect(res?.ok(), `${href} must resolve offline`).toBe(true);
+    await expect(page.locator("h1")).toBeVisible({ timeout: 15_000 });
+  }
+
   // Fresh WCA scrambles generate offline on a page never visited before.
   await page.goto("/practice/");
   await page.getByRole("button", { name: "Full solve" }).click();

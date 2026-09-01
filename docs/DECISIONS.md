@@ -609,7 +609,7 @@ parity-embedded case sets", which are not there any more. (It never carried
 so the change broke no anchor; a whole-site crawl of the built output finds
 zero dead links and zero dead fragments in both flag states.)
 
-**Locked cases get no `/case/` page.** 138 case pages build instead of 185.
+**Locked cases get no `/case/` page.** 129 case pages build instead of 189.
 Building the 47 would have recreated the defect this repo was already pulled up
 on — case pages reachable from nowhere — and here they would also have been
 listed in the sitemap and precached into every visitor's service worker
@@ -653,7 +653,8 @@ renderer calls something else gates nothing. Everything asserted about tiering
 now reads either the rendered `experimental-stickering-mask-orbits` attribute
 (`tests/algs.spec.ts`, via the Astro container) or the shipped HTML in a browser
 (`e2e/stickering.spec.ts`, page list taken from the sitemap so it is every route
-the build publishes). `e2e/stickering.spec.ts` checks all 138 built case pages.
+the build publishes). `e2e/stickering.spec.ts` checks every built case page
+(129 of them), the count derived from the same unlock predicate the build uses.
 
 **The same class of bug, one level down.** A case state is a PRE-state
 (`solved · alg⁻¹`), so a net whole-cube rotation the algorithm carries sits on
@@ -1245,3 +1246,374 @@ file; it now emits `L2E_HOLDS` into `fullsets.rich.gen.ts` (build-time only,
 so nothing new ships to the client) and `stickering.ts` reads generated data
 like every other surface. The lean file is byte-identical and all 148 rendered
 stickering masks across the site are unchanged.
+
+## Navigating /learn and /reference (2026-08-30)
+
+Both surfaces were well built and hard to move around in, and the diagnosis was
+the same on each: the page had no way to be addressed, and the layer that knew
+where the reader was spent that knowledge on something they could not see.
+
+Every number below was measured against the real build at 390×844. The gates
+are `app/e2e/nav.spec.ts` (21 cases) and `app/tests/search.spec.ts` (12).
+
+### The clearance is stated once, not per element
+
+`/reference` wrote `calc(--hdr-h + --toolbar-h + --space-3)` three times — on
+`section`, on an anchored `.case-row`, on `.full-group` — and the one anchored
+element it forgot was **`.tile`**, which owns the anchor for 106 of the 119
+tiles. The round trip the site advertises (a case page's "See it in the
+reference") therefore landed the tile with **zero visible pixels**, entirely
+behind 154px of sticky chrome. Confirmed in Chromium and WebKit on `oll.40`,
+`pll.ga` and `f2l.12`; the row-anchored `oll.27`, which had the rule, landed
+correctly at 125px visible.
+
+The fix is not a fourth copy. `tokens.css` now states it once as
+`html { scroll-padding-block-start }`, so a tile, a row, a section and a
+subgroup clear the bars by construction — and so does a **focus move**, which no
+`scroll-margin` ever covered. `Header.astro` publishes the measured `--hdr-h` on
+every route (it is the thing being measured, and it ships everywhere);
+`/reference` publishes only its own `--toolbar-h`, whose pre-JS fallback is the
+one global style that page carries. Adding a `scroll-margin` back would stack on
+the padding and double the clearance.
+
+`--toolbar-h` was also measured once and re-measured only on `resize`, while the
+toolbar grows three ways that are not resizes: the progress bar unhides for a
+reader with saved progress, the match count appears on the first keystroke, and
+the webfont settles. A `ResizeObserver` covers all three. The count renders
+non-empty at build time as well, so the bar is one height in every state.
+
+### The course index had no addresses
+
+The built home page shipped nine ids and not one was a phase or a lesson, so
+nothing on the site could point at a phase across 5,100px of ladder — not a
+lesson breadcrumb, not a printed card, not a bookmark. Hence also the inert
+breadcrumb: its phase segment was plain text because there was nowhere to link.
+
+`phaseAnchor()` in `data/phases.ts` derives the id, and the prefix and the
+de-dotting are load-bearing rather than decorative: `444` and `phase-1.5` are
+legal ids and legal URL fragments, but `#444` and `#phase-1.5` are not legal
+`querySelector` arguments. Deriving it means the index that writes the id and
+the breadcrumb that links to it cannot disagree.
+
+The jump bar is **static, not sticky**. A second sticky bar costs ~45px of an
+844px phone viewport permanently, and unlike `/reference`'s toolbar this one
+would carry shortcuts and nothing else.
+
+### One destination, one name
+
+"/" was "Learn" in the header, "3×3 course" in every lesson breadcrumb, and
+"Speedcubing from zero" in its own h1 — and on the six 4×4/5×5 lessons the crumb
+read "3×3 course › 4×4", mis-describing the page's own container, which is the
+single job a breadcrumb has. It is "Learn" everywhere now, following the
+precedent `case/[...id].astro` set by naming its parent "Reference".
+
+### Completion had one writer, and it was the wrong one
+
+`markLessonComplete` was bound only to the pager's Next link — the app's sole
+call site. Every lesson ends with a Practice card whose filled primary button
+says "Drill …", which is what the lesson itself tells the reader to do, and
+taking it recorded nothing. `index.astro` returns early when the store is empty,
+so for that reader the ✓ marks, all eight phase bars and the Resume CTA stayed
+dark **forever**.
+
+There are two writers now: an IntersectionObserver on a sentinel between the
+body and the Practice card, and the exits tagged `data-lesson-advance`.
+Deliberately not every link in that card — `white-cross.mdx` puts `/print` in
+`practice.links`, and crediting a lesson because the reader went to fetch the
+card set would hide it from Resume permanently.
+
+The observer is gated on the reader having scrolled at least once, and on a 2s
+dwell: a short lesson can render with the sentinel already in view, and
+arriving-and-leaving is not reading. `markLessonComplete` is idempotent and
+preserves the original `completedAt`, so the two writers racing is harmless.
+
+**A ✓ means "you reached the end", not "you certified you were done."** It drives
+Resume and the phase bars, whose job is *where do I go next*, not *what did I
+finish* — and an explicit "Mark complete" button is one more load-bearing control
+the reader has no reason to know about, which is the defect being fixed rather
+than a cure for it.
+
+The course bar now counts **ladder rows, not store rows**: `done.size` counts
+what IndexedDB holds, which after a lesson is renamed or retired includes slugs
+the ladder no longer shows, and the bar would read 26/25.
+
+### Nothing moves after paint
+
+The hero button was rewritten to `Resume: <lesson title>`, growing it 129px →
+358px, pushing "All algorithms" down 72px and moving the ladder 126px — **CLS
+0.107**, past the Core Web Vitals threshold, on the site's front door, ~20ms
+after paint, under a thumb already reaching for the second button. The label is
+fixed now and the title goes on a line the server reserves. The course bar uses
+`visibility` rather than `hidden` for the same reason, which also keeps it out of
+the accessibility tree, so a first visit still does not read "0 of 25".
+
+The tile status line is reserved rather than revealed, because the moment that
+shift costs you is coming **Back** from a case page, when the browser has already
+restored your scroll offset against the shorter layout. Measured after: the
+course index is CLS 0 on a first visit and 0.0002 for a returning reader.
+`/reference` measures 0.0217, which is the same number it measured BEFORE the
+change — it was never the page with the shift problem, and reserving the status
+line fixes a Back-restore jump that CLS does not score.
+
+Costs, stated plainly: `/reference` is ~650px longer on a phone for everyone, and
+its toolbar is 23px taller at idle — though it already grew to 125px the moment
+you typed, so the reader who filters pays 3px.
+
+### The filter could not be typed at
+
+It was `.includes()` over `name + recognition + id`, so the hyphen and the
+multiplication sign were load-bearing. Counted over the 138 entries the page
+shipped at the time: `"t perm"` 0, `"u perm"` 0, `"anti sune"` 0, `"4x4"` 0,
+`"5x5"` 0, `"awkward"` 0 (though "Awkward Shape (4)" is a heading on the page),
+and `"parity"` found one of the three parity cases the site teaches — so a reader
+reasonably concluded the 5×5 case was not on the site.
+
+`lib/search.ts` folds that punctuation, widens the haystack to the words the page
+itself puts on screen, and ANDs the tokens of a multi-word query. Short tokens
+run **strict first and widen only if nothing hits**, because the two rules serve
+different cases and neither serves both: `"t perm"` wants whole-word (`pll.t`
+normalizes to "pll t"), `"u perm"` wants word-start (the cases are Ua and Ub).
+Now: t perm 2, u perm 2, anti sune 1, 4x4 3, 5x5 2, awkward 4, parity **4**,
+while "perm" 25 and "light" 35 keep their substring reach. (The 4×4/5×5/parity
+counts each pick up `444.edge-flip` as well, the trigger #5 turned into a case:
+it is legal on both big cubes and the pairing section says so.)
+
+The **algorithm is not in the haystack**, and that is a decision rather than an
+omission. With the moves in it, `"R U R'"` matches 100 of 142 — no more useful
+than the 0 it returned before — and every alg's word-initial `u` and `r` stops
+those tokens discriminating for every other query. The field advertises "name,
+number or recognition cue"; it now searches exactly that, well.
+
+The section's **trainer group name** is in the haystack alongside its jump label,
+and one case earns the line: `555.l2e-6` is called "L2E 6" and cued "One edge
+group flipped", so the word "parity" appears nowhere in the case — though the
+lesson, the trainer and every cuber call it edge parity.
+
+Filtering also never scrolled: from y=6000 the document collapsed 9344px →
+1368px, the browser clamped, and the top match sat 32px **above** the viewport
+while the toolbar reported "4 matches". Two measurements were needed to fix it,
+and both contradict the obvious implementation. `toolbar.offsetTop` reports
+**5997** when the sticky bar is stuck rather than its ~250px flow position, so a
+guard built on it can never fire — the target is computed from the first match
+instead. And the restore cannot compare scroll offsets, because clearing the
+filter grows the document and Chrome's **scroll anchoring** moves the viewport
+first (266 → 2189) before any of our code runs; it watches the scroll event and
+discounts the clamp the keystroke itself caused.
+
+### The two surfaces now link to each other
+
+The course linked outward and nothing linked back: from `/reference`, `/case` or
+`/practice` there was no route into the lesson that teaches what you are looking
+at. Three edges, all **derived from lesson frontmatter** so the directions cannot
+disagree:
+
+- A lesson renders its own `algorithms` array — 37 case ids across 8 lessons,
+  build-validated against `caseById` on every build since the array existed, and
+  rendered **nowhere** until now.
+- A lesson links to the `/reference` section for each set it drills. A trainer
+  group key **is** a reference section id — the two lists are the same eleven
+  strings — so this costs no new data. `isLocked` is the guard: `444-oll` and
+  `444-pll` are real trainer groups whose sections are deliberately dropped.
+- `lib/teaches.ts` inverts both maps at build time, so a case page and a
+  reference section can say which lesson teaches them. First lesson in course
+  order wins: a case introduced in Phase 3 and recapped in Full CFOP should send
+  the reader where it was taught.
+
+A case page's breadcrumb also goes to its own row in the reference rather than to
+the top of a 9,000px index.
+
+### Smaller, and each one gated
+
+- The skip link targeted a `<main>` with no `tabindex`. Chrome papers over that
+  by moving the sequential-focus starting point, but `activeElement` stays on
+  `<body>`, and WebKit does not paper over it at all — so on iOS Safari with
+  VoiceOver the site's only bypass block did nothing, on every one of 25 lessons.
+- The filter input was 15px, so Mobile Safari force-zoomed the page on focus and
+  never zoomed back. `--text-lg` (17px), in the base rule rather than the phone
+  block, because iPadOS zooms identically at 768–1024px where that block never
+  applies. The gate is general: no text input on any swept route may be under
+  16px.
+- The active header link was a colour change with no `aria-current`. It is
+  `"page"` only when the URL matches; on the 25 lesson routes `active` is "learn"
+  but the href is "/", where `"page"` would be literally false.
+- A jump chip whose section the filter emptied stayed a live link pointing at a
+  `display: none` element — a tap rewrote the fragment and moved nothing, while
+  the CSS comment claimed it "stays reachable". Now `aria-disabled`, out of the
+  tab order and out of the pointer's reach. It is **not** recoloured to
+  `--faint`: once the chip is `aria-disabled` the WCAG 1.4.3
+  inactive-component exception applies, and `--faint` against `--soft` is a
+  *less* perceptible difference than the existing 0.45 opacity.
+- Only the top 23px of each 63.5px ladder row was tappable. A transparent
+  `::after` on the link makes the whole row the target; the cost, accepted
+  knowingly, is selection and long-press on the description.
+- `/case/444.pll.pure-e` was built, precached and sitemapped with no inbound link
+  anywhere: it renders only as a `CaseRow`, and rows had no link to their own
+  page. The link lives in the disclosure **body**, not the `<summary>` — a link
+  inside a summary is a control inside a control, which axe flags
+  `nested-interactive` (serious) and `e2e/a11y.spec.ts` fails the build on. The
+  first attempt did exactly that and was caught by the gate.
+- `CaseRow`'s icon is `alt=""`. The name is the next thing in the summary, so a
+  described icon made every row announce "Line, case diagram, Line, …" before the
+  recognition cue that tells the rows apart. The description is not lost — the
+  same image is the player's poster, where `posterAlt` is its only label.
+
+### Two that were not defects
+
+Recorded so nobody re-fixes them. A cold deep link into `/reference` lands
+correctly: the CSS fallbacks were right. And the browser's scroll clamping after
+a filter is harmless on its own. The stale `--toolbar-h` was the real fault
+behind both suspicions.
+
+### Three traps this change fell into first
+
+An adversarial review pass over the finished diff found these; each is a thing
+that looked obviously right and was measurably wrong, so each is worth naming.
+
+**`scrollIntoView` on an element inside sticky chrome scrolls the DOCUMENT.**
+The scroll-spy nudged the current jump chip into view along the phone strip with
+`chip.scrollIntoView({ block: "nearest", inline: "nearest" })`. But
+`scrollIntoView` walks *every* ancestor scrolling box and the last one is the
+document — and the chip lives in the sticky toolbar, whose rendered box sits
+above the optimal viewing region that this very change established in
+`html { scroll-padding-block-start }`. So the browser judged the chip out of
+view and scrolled the page up to reveal it; because the toolbar is sticky the
+chip never moved, so it never converged. Measured **−52px at every section
+boundary** in Chromium and WebKit alike, all the way down a 9,000px page. The
+two halves — the global scroll-padding and the spy — were each correct alone.
+Setting `scrollLeft` on the strip touches no ancestor and is now the only way
+this page moves a chip.
+
+**A set's own size leaked into its members' search text.** Adding the trainer's
+name to the haystack is what makes the 5×5 case findable as "edge parity" — but
+the trainer names them "Full OLL (57)", "F2L (41)", "Full PLL (all 21)", so the
+count went into all 57 members' haystacks and searching **"57" returned the
+whole OLL set** instead of OLL 57. The OLL cases are named by number, so that is
+the query the set is most likely to be searched by. `trainer.setName()` strips
+the parenthetical, and `groupLabel()` — which already did the same strip
+privately — now goes through it too.
+
+**`CaseDef.group` and a trainer group key are different namespaces.** The
+case → lesson fallback was keyed on `def.group`, which is a recognition grouping
+("oll-fish-shape"), while `practice.groups` speaks in trainer keys ("full-oll").
+It type-checked, it looked right, and it silently matched almost nothing:
+**92 of the then-125 case pages had no "Taught in" link**, because all of Full
+OLL, F2L and Full PLL fell through. The trainer's own `member` predicate is the
+bridge, so the lookup is derived rather than a second table.
+
+All three are now gated in `nav.spec.ts` — including one test that simply
+scrolls `/reference` to the bottom and asserts the page never moved backwards.
+
+## The navigation is vertical now, and there is one sticky box (2026-09-01)
+
+A second wayfinding pass, after "the navigation is still very clumsy". The
+previous one fixed the LATERAL graph — page to page — and it worked: case page
+→ teaching lesson 129/129, case → its reference row 129/129, case → /practice
+129/129, lesson → /practice 25/25. So the complaint was not a broken link
+graph.
+
+**Every page is 6–14 phone screens tall and offers no way to move WITHIN it.**
+Measured at 390×844: `/` 5,248px (6.2 screens), a long lesson 9,743px (11.5),
+`/reference` 11,625px (13.8). At y=4,800 in that lesson the only links on
+screen were the five header destinations — the breadcrumb sits at y=73 and the
+next navigation of any kind is the pager at y=9,402, so the middle ~70% of
+every long lesson was a dead zone.
+
+The decisive measurement: **25 of 25 lessons carry ≥4 headings, 180 in all,
+every one already has an `id`, and zero had a table of contents.** That is the
+same defect the previous pass fixed one level up (the index shipped nine ids,
+not one a phase); it was fixed for phases and never for headings. `render()`
+returns those headings and `learn/[...slug].astro` was throwing them away.
+
+**One bar, one slot, one sticky box.** `Header.astro` gained a `pagenav` slot
+rendering a second ROW INSIDE `.site-header`. Because its ResizeObserver
+watches the whole header box, anything in that slot is measured into `--hdr-h`
+for free and `tokens.css`'s single `scroll-padding-block-start` clears it with
+no edit. `/reference`'s separate sticky toolbar — with its own `--toolbar-h`,
+its own observer and a hand-maintained pre-JS fallback — moved into the same
+slot; `--toolbar-h` is deleted and the clearance is one term. That
+consolidation had to be measured twice: moving the markup alone kept the
+toolbar's `position: sticky` and its 16/24px margins, which had been collapsing
+outside the header, giving 217px of chrome against the 177px two separate bars
+used. Stripping what the header already provides lands it at 160px, so it
+returns 17px.
+
+**Which surfaces get a bar is a measurement, not a convention.** `/` (6.2
+screens), `/glossary` (10.3), `/reference` (13.8) and every lesson do.
+`/practice` is 1.1 screens and `/print` is 2.5 — a bar there is chrome with
+nothing to navigate. Both absences are gated with a height ceiling, so if
+either grows the decision gets revisited rather than silently inherited.
+
+**On wide screens the outline moves into the margin.** The measurement that
+settles the recurring "why is the desktop column so narrow" question: the text
+line is 612px on the prose routes AND on `/reference`; `/practice`, the widest
+box, has the narrowest text at 558px. The site holds line length constant
+everywhere, which is right at 68ch ≈ 72 characters. So the answer to 390px of
+empty margin per side is not longer lines — it is to put the outline there. At
+≥1100px it becomes a fixed column anchored to the centre line, 24px clear of
+the prose at every width. It is also FREE: leaving the header's flow drops
+`--hdr-h` from 167px to 55px, so the sidebar gains a full-height column and
+gives back 112px of vertical chrome.
+
+**The spy is shared, not copied.** `src/lib/jumpbar.ts` is /reference's
+scroll-spy MOVED — the extraction shipped as its own step and the six gated
+/reference tests passed with zero edits, which is the only way to know a move
+was faithful. It encodes two regressions this repo actually shipped:
+`scrollIntoView` walks every ancestor scrolling box including the document
+(−52px per section boundary), and the observer must clear its marking BEFORE
+the early return, or a filter that empties the page strands `aria-current` on a
+chip that is simultaneously `aria-disabled`. Generalised twice for the outline:
+`revealChip` handles both axes (strip below 561px, column above 1100px), and
+`focusTarget` adds `tabindex="-1"` on demand, because an `<h2>` is not
+focusable and a jump that leaves focus on the chip is half a jump.
+
+Wiring it to the course index exposed a genuine collision: that page had two
+writers of `.here` — progress ("the phase you would resume into") and scroll
+("the phase you are looking at"). Different questions, usually different
+answers, so they are different marks now: `.here` belongs to the spy on every
+surface, `.resume` is progress.
+
+### Four shipped defects the audit found before it proposed anything
+
+- **The offline promise was three-quarters true.** Every lesson's filled
+  primary
+button is `/practice/?group=<key>` — 16 across 12 lessons — and a Workbox
+precache lookup matches the FULL url. Workbox strips only `utm_*`/`fbclid` by
+default and `navigateFallback` is null, so the button died in airplane mode on
+a PWA whose whole pitch is airplane mode. Worse quietly: that element carries
+`data-lesson-advance`, so an offline reader taking the lesson's own call to
+action earned no credit. `e2e/offline.spec.ts` missed it by one query string —
+it visited `/practice/` bare — and derives the list now.
+- **`/glossary` stacked its own anchors.** Two `scroll-margin`s against the
+  global `scroll-padding` — the pattern CLAUDE.md names and /reference was
+already fixed for — on the destination of every auto-linked term. 65px low.
+- **`/reference` scrolled sideways once used.** 872px on a 375px phone, 2.3
+  screens, whenever a query emptied the sections. The 375px sweep only ever
+LOADED routes; it types now. The `overflow-x: clip` that fixes it belongs on
+the one sticky box, not on the toolbar — when the toolbar stopped being
+outermost the overflow simply escaped through the header and the gate caught it
+on the first run.
+- **`/practice` was a sink.** 0 `<a>` elements in `main`: everything pointed
+  into the trainer and nothing out, so a reader who failed a drill could not
+reach the lesson. Three derived edges added. The 138 tracker rows were NOT
+converted — they look inert and are not; a delegated listener cycles each
+case's status and seeds its FSRS card.
+
+### Also corrected
+
+`tests/search.spec.ts` carried a hand-typed section-label map under a comment
+claiming it was derived "so this cannot claim a label the page does not
+actually render". It was re-typed and had drifted four ways: a dead `555-l2e`
+key, no `beginner-triggers`, no `full-pll`, and "4×4 parity" for a chip reading
+"4×4". Since those labels are fed into every case's search haystack, that is a
+wrong search index rather than a cosmetic slip. `src/data/refsections.ts` is
+now the one source, the page derives its chips from it, and a test checks the
+registry against the rendered page.
+
+`/sw.js` 404'd noisily in dev forever. The PWA plugin generates no worker in
+dev, but any browser that has loaded a production build or an `astro preview`
+on localhost still has the real one registered and re-fetches its script
+indefinitely. Dev now answers with a worker that clears caches and unregisters
+itself — which also removes the stale PRECACHE, the half that silently serves
+an old build's assets. A dev-server middleware (`apply: "serve"`), not a
+`src/pages/sw.js` route, which would have overwritten the real Workbox worker
+at build time.

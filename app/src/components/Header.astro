@@ -123,10 +123,27 @@ const links = [
       </svg>
       <span class="wordmark">cubepath</span>
     </a>
-    <nav aria-label="Main">
+    <nav class="no-scrollbar" aria-label="Main">
+      {
+        /*
+        The active link was a colour change and nothing else, so a screen
+        reader's link list showed four identical nav items on every route.
+
+        "page" only when this really IS the page: `active` is "learn" on all 25
+        lesson routes, whose href is "/", and claiming aria-current="page"
+        there would be literally false. "true" is the correct weaker claim —
+        this is the section you are in.
+      */
+      }
       {
         links.map((l) => (
-          <a href={l.href} class:list={["navlink", { active: l.key === active }]}>
+          <a
+            href={l.href}
+            class:list={["navlink", { active: l.key === active }]}
+            aria-current={
+              l.key === active ? (Astro.url.pathname === l.href ? "page" : "true") : undefined
+            }
+          >
             {l.label}
           </a>
         ))
@@ -168,6 +185,19 @@ const links = [
     </button>
     <button data-install-slot hidden class="install">Install</button>
   </div>
+  {
+    /*
+    A second ROW INSIDE the sticky box, not a second sticky element. The
+    ResizeObserver below observes `.site-header` and publishes its offsetHeight
+    as --hdr-h, so anything added here is measured for free, on every route,
+    through every growth — and `html { scroll-padding-block-start }` in
+    tokens.css already clears whatever --hdr-h says. A separate sticky bar
+    would need its own variable, its own observer and its own place in that
+    calc, which is how /reference ended up with --toolbar-h written in three
+    places and forgotten in a fourth.
+  */
+  }
+  <slot name="pagenav" />
 </header>
 
 <style>
@@ -179,6 +209,21 @@ const links = [
     position: sticky;
     top: 0;
     z-index: 10;
+    /*
+     * The one sticky box clips its own overflow, so nothing a page puts in the
+     * `pagenav` slot can widen the document. /reference's section strip bleeds
+     * past its row to reach the screen edges and measures 901px of chips
+     * against a 375px box; it scrolls that itself, but the overflow still
+     * propagated up and made the page 872px wide — 2.3 screens — as soon as a
+     * query emptied the sections. Clipping here rather than on each slot's
+     * contents means a future bar cannot reintroduce it.
+     *
+     * `clip`, never `hidden`: `hidden` makes the block axis a scroll container
+     * too, and this element is `position: sticky`. `clip` takes one axis and
+     * leaves the other alone. The margin lets a focus ring breathe.
+     */
+    overflow-x: clip;
+    overflow-clip-margin: var(--space-2);
   }
   .bar {
     display: flex;
@@ -309,7 +354,6 @@ const links = [
       gap: 12px;
       min-inline-size: 0;
       overflow-x: auto;
-      scrollbar-width: none;
     }
     .navlink {
       font-size: 13px;
@@ -409,6 +453,28 @@ const links = [
   }
 
   apply(stored(), false);
+
+  /*
+   * Publish the bar's real height as --hdr-h, on every route.
+   *
+   * tokens.css turns that into `html { scroll-padding-block-start }`, which is
+   * what makes a fragment link, a focus move and a scrollIntoView clear the
+   * sticky header instead of landing behind it. This lives here rather than in
+   * a page because the header is the thing being measured and it ships
+   * everywhere — including the optional second row, since this observes the
+   * whole `.site-header` box rather than just `.bar`.
+   *
+   * A ResizeObserver, not a resize listener: the bar also changes height when
+   * the webfont settles and when the Install button appears, neither of which
+   * is a window resize.
+   */
+  const bar = document.querySelector<HTMLElement>(".site-header");
+  if (bar) {
+    const measureHeader = (): void =>
+      document.documentElement.style.setProperty("--hdr-h", `${Math.round(bar.offsetHeight)}px`);
+    measureHeader();
+    new ResizeObserver(() => requestAnimationFrame(measureHeader)).observe(bar);
+  }
 
   for (const btn of document.querySelectorAll<HTMLElement>("[data-theme-toggle]")) {
     btn.addEventListener("click", () => {

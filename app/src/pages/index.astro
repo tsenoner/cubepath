@@ -7,25 +7,31 @@
  * pointed at lesson one on your twentieth visit as surely as on your first.
  * It read as a table of contents because that is all it was.
  *
- * Three things change that, and all three are driven from the `lessons` store
- * in lib/db.ts, written by LessonMeta.astro when a lesson's pager is followed:
+ * Four things change that, and all four are driven from the `lessons` store in
+ * lib/db.ts, which LessonMeta.astro writes when a reader reaches the end of a
+ * lesson or leaves it by a link that means "done here":
  *
  *   - a progress bar per phase, and one for the course,
  *   - a ✓ against every lesson you have finished,
- *   - a hero button that becomes "Resume: <lesson>" the moment there is
- *     anything to resume.
+ *   - a hero button that becomes "Resume lesson" the moment there is anything
+ *     to resume, with the lesson's name on the reserved line beneath it,
+ *   - a "Continue here" marker on the phase you are actually in, and on its
+ *     jump chip — because the hero scrolls off the top of a 5,100px page and
+ *     the ladder then answers "where am I" with nothing at all.
  *
  * All of it is applied client-side, after paint, from IndexedDB. The HTML
  * Astro emits is the honest zero-progress state, so the static build is
  * unaffected, the page is correct with JavaScript off, and there is nothing to
- * hydrate.
+ * hydrate. Every box a client script writes into is reserved by the server, so
+ * nothing on this page moves after paint.
  */
 import { getCollection } from "astro:content";
 import Base from "../layouts/Base.astro";
 import Header from "../components/Header.astro";
+import JumpBar from "../components/JumpBar.astro";
 import Page from "../components/Page.astro";
 import ProgressBar from "../components/ProgressBar.astro";
-import { PHASES } from "../data/phases";
+import { PHASES, phaseAnchor } from "../data/phases";
 
 const lessons = (await getCollection("lessons")).sort((a, b) => a.data.order - b.data.order);
 
@@ -107,17 +113,43 @@ const PHASE_ART: Record<string, { src: string; alt: string }> = {
   },
 };
 
-const groups = PHASES.map((phase) => ({
-  phase,
-  art: PHASE_ART[phase.key],
-  items: lessons.filter((l) => l.data.phase === phase.key),
-})).filter((g) => g.items.length > 0);
+const groups = PHASES.map((phase) => {
+  const items = lessons.filter((l) => l.data.phase === phase.key);
+  return {
+    phase,
+    art: PHASE_ART[phase.key],
+    items,
+    // Build-time arithmetic over a field the Zod schema guarantees is on every
+    // lesson, so it cannot render blank.
+    minutes: items.reduce((n, l) => n + l.data.minutes, 0),
+  };
+}).filter((g) => g.items.length > 0);
 
 const firstHref = `/learn/${lessons[0]?.id}/`;
 ---
 
 <Base title="Cubepath — speedcubing from zero">
-  <Header active="learn" />
+  {
+    /*
+    The phase bar lives in the HEADER now, not in the page body.
+
+    It was static — deliberately, on the reasoning that "a second sticky bar
+    costs ~45px of an 844px phone viewport permanently". That premise is gone:
+    the bar is a second ROW INSIDE `.site-header`, which the existing
+    ResizeObserver already measures into --hdr-h, so there is no second sticky
+    element and no second variable. What the old arrangement actually cost was
+    reachability — measured at y=359 on a 5,248px page, so the only way to
+    reach a phase was to already be in the first of 6.2 screens, which is the
+    one screen where you can see the phases anyway.
+  */
+  }
+  <Header active="learn">
+    <JumpBar
+      slot="pagenav"
+      label="Course phases"
+      items={groups.map(({ phase }) => ({ id: phaseAnchor(phase.key), label: phase.nav }))}
+    />
+  </Header>
   <Page>
     <section class="hero">
       <h1>Speedcubing from zero.</h1>
@@ -125,20 +157,42 @@ const firstHref = `/learn/${lessons[0]?.id}/`;
         One unbroken ladder from your first solve to full CFOP — every algorithm machine-verified,
         every case interactive in 3D. Free, offline, no account.
       </p>
+      {
+        /*
+        The button's label is SHORT and BOUNDED, and its destination is not.
+
+        It used to be rewritten to `Resume: <lesson title>`, which grew it from
+        129px to 358px, pushed "All algorithms" 72px down and moved the whole
+        ladder 126px — CLS 0.106, past the Core Web Vitals threshold, on the
+        site's front door, about 20ms after paint. On a phone the second button
+        slid out from under a thumb that was already moving toward it. The
+        variable-length part now goes on a line below, whose box the server
+        reserves, so nothing above it can move. The one other label it can take
+        — "Course complete — go practice" — is a fixed string that wraps to at
+        most two lines, not a 40-character lesson title.
+      */
+      }
       <div class="cta">
         <a class="btn btn--primary" id="hero-cta" href={firstHref} data-hero-cta>Start learning</a>
         <a class="btn btn--accent" href="/reference/">All algorithms</a>
       </div>
-      {/* Hidden until there is progress: "0 of 25" on a first visit is noise. */}
-      <div class="course-bar" hidden data-course-bar>
+      <p class="hint resume-title" data-resume-title></p>
+      {
+        /*
+        `visibility`, not `hidden`: the box is reserved from first paint so
+        revealing it moves nothing, while a first-time visitor still does not
+        read "0 of 25", which is noise rather than information.
+      */
+      }
+      <div class="course-bar" data-empty data-course-bar>
         <ProgressBar value={0} max={lessons.length} label="Course" />
       </div>
     </section>
 
-    <ol class="ladder">
+    <ol class="ladder" role="list">
       {
-        groups.map(({ phase, art, items }) => (
-          <li class="phase card" data-phase>
+        groups.map(({ phase, art, items, minutes }) => (
+          <li class="phase card" id={phaseAnchor(phase.key)} data-phase={phase.key}>
             {art && (
               <img
                 class="phase-art"
@@ -151,12 +205,28 @@ const firstHref = `/learn/${lessons[0]?.id}/`;
               />
             )}
             <div class="phase-body">
-              <h2>{phase.name}</h2>
-              <p class="hint blurb">{phase.blurb}</p>
+              <h2>
+                {phase.name}
+                {/* Written after paint when this is the phase you are in. */}
+                <span class="chip here-chip" hidden data-here>
+                  Continue here
+                </span>
+              </h2>
+              {/*
+                What the phase COSTS. `minutes` is required on all 25 lessons
+                and was rendered only inside a lesson — so the index, the one
+                place a reader chooses a phase, threw it away. With twenty
+                minutes free you could not tell that Phase 2 is one 14-minute
+                lesson and Full CFOP is five totalling 74.
+              */}
+              <p class="hint blurb">
+                {phase.blurb} · {items.length}
+                {items.length === 1 ? " lesson" : " lessons"} · ≈{minutes} min
+              </p>
               <div class="phase-bar">
                 <ProgressBar value={0} max={items.length} label={`${phase.name} lessons`} />
               </div>
-              <ol class="lessons">
+              <ol class="lessons" role="list">
                 {items.map((l) => (
                   <li data-lesson-slug={l.id}>
                     <a href={`/learn/${l.id}/`}>{l.data.title}</a>
@@ -188,7 +258,8 @@ const firstHref = `/learn/${lessons[0]?.id}/`;
         Everything here works in airplane mode once the page has been visited. For paper, pocket and
         home screen:
       </p>
-      <ul class="deliverables">
+      {/* role="list": list-style:none strips "list, 3 items" in WebKit. */}
+      <ul class="deliverables" role="list">
         <li>
           <a href="/cubepath.pdf">The PDF guide</a>
           <span class="desc">The whole method as one printable document, diagrams included.</span>
@@ -229,9 +300,23 @@ const firstHref = `/learn/${lessons[0]?.id}/`;
     gap: var(--space-3);
     margin-top: var(--space-4);
   }
+  .resume-title {
+    /* Reserved from first paint, so writing into it moves nothing below. */
+    /* One line of --text-sm at the body's 1.55 line-height. Built from tokens
+       rather than `1lh`: the unit is recent enough that an older browser would
+       drop the declaration silently, and a silently-dropped reservation brings
+       the layout shift straight back. */
+    min-block-size: calc(var(--text-sm) * 1.55);
+    margin-block-start: var(--space-2);
+  }
   .course-bar {
     max-width: 22rem;
     margin-top: var(--space-5);
+  }
+  /* Not [hidden]: the box has to keep its space. visibility also keeps it out
+     of the accessibility tree, so a first visit still does not read "0 of 25". */
+  .course-bar[data-empty] {
+    visibility: hidden;
   }
 
   .ladder {
@@ -258,6 +343,21 @@ const firstHref = `/learn/${lessons[0]?.id}/`;
     inline-size: 96px;
     block-size: auto;
     object-fit: contain;
+  }
+  /*
+   * You are here. The script already knew which phase this was — it computes
+   * the first unfinished row to retarget the hero button — and spent that
+   * knowledge only on the button, which scrolls off the top of a 5,100px page.
+   * A rule plus a word, never colour alone.
+   */
+  .phase[data-state="current"] {
+    box-shadow: inset 3px 0 0 var(--accent);
+  }
+  .here-chip {
+    margin-inline-start: var(--space-3);
+    vertical-align: middle;
+    font-family: var(--font-body);
+    white-space: nowrap;
   }
   .phase-body {
     display: grid;
@@ -304,6 +404,19 @@ const firstHref = `/learn/${lessons[0]?.id}/`;
   .lessons a {
     font-weight: 600;
     grid-column: 1;
+  }
+  /*
+   * The whole row is the tap target, not the 23px line of the title. Measured
+   * at 390px: 63.5px rows whose link box was 23.3px, so two thirds of every row
+   * on the site's primary navigation was a dead tap. The <li> is already
+   * position: relative, so a transparent overlay is the whole fix — the
+   * accessible name stays the title, and the description stays outside the
+   * link's text. It does cost selection and long-press on the description.
+   */
+  .lessons a::after {
+    content: "";
+    position: absolute;
+    inset: 0;
   }
   .tick {
     grid-column: 2;
@@ -356,16 +469,7 @@ const firstHref = `/learn/${lessons[0]?.id}/`;
     display: none;
   }
 
-  .sr-only {
-    position: absolute;
-    inline-size: 1px;
-    block-size: 1px;
-    margin: -1px;
-    padding: 0;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
+  /* .sr-only now lives in tokens.css — /reference needs the same utility. */
 
   @media (max-width: 560px) {
     .phase {
@@ -390,6 +494,7 @@ const firstHref = `/learn/${lessons[0]?.id}/`;
   const rows = Array.from(document.querySelectorAll<HTMLElement>("[data-lesson-slug]"));
   const cta = document.querySelector<HTMLAnchorElement>("[data-hero-cta]");
   const courseBar = document.querySelector<HTMLElement>("[data-course-bar]");
+  const resumeTitle = document.querySelector<HTMLElement>("[data-resume-title]");
 
   function paint(el: HTMLElement, done: number, total: number): void {
     el.style.setProperty("--pct", `${total === 0 ? 0 : (done / total) * 100}%`);
@@ -410,28 +515,69 @@ const firstHref = `/learn/${lessons[0]?.id}/`;
       if (tick) tick.hidden = false;
     }
 
+    // Resume points at the first unfinished lesson in ladder order — not the
+    // last one visited, which on a re-read would send you backwards. Worked out
+    // before the phase pass because the phase pass marks the card holding it.
+    const next = rows.find((r) => !r.dataset.complete);
+    // The phase holding the row you would resume. Marked on the card and on its
+    // jump chip, so the answer survives the hero scrolling off the screen.
+    const currentPhase = next?.closest<HTMLElement>("[data-phase]");
+
     for (const phase of document.querySelectorAll<HTMLElement>("[data-phase]")) {
-      const items = phase.querySelectorAll("[data-lesson-slug]");
       const bar = phase.querySelector<HTMLElement>("[data-progress]");
-      if (bar) paint(bar, phase.querySelectorAll("[data-complete]").length, items.length);
+      if (bar) {
+        paint(
+          bar,
+          phase.querySelectorAll("[data-complete]").length,
+          phase.querySelectorAll("[data-lesson-slug]").length,
+        );
+      }
+      // "current" is the only value anything reads — the card's accent rule
+      // below and the gate in e2e/nav.spec.ts. "done" and "ahead" were written
+      // and asked for nowhere, and telling them apart cost a second pass over
+      // every phase, re-counting rows this one has already counted.
+      if (phase === currentPhase) phase.dataset.state = "current";
     }
 
     if (courseBar) {
       const bar = courseBar.querySelector<HTMLElement>("[data-progress]");
-      if (bar) paint(bar, done.size, rows.length);
-      courseBar.hidden = false;
+      // Ladder rows, not store rows. `done.size` counts what IndexedDB holds,
+      // which after a lesson is renamed or retired includes slugs the ladder no
+      // longer shows — and the bar would then read 26/25.
+      if (bar) paint(bar, rows.filter((r) => r.dataset.complete).length, rows.length);
+      courseBar.removeAttribute("data-empty");
     }
 
-    // Resume points at the first unfinished lesson in ladder order — not the
-    // last one visited, which on a re-read would send you backwards.
-    const next = rows.find((r) => !r.dataset.complete);
     const link = next?.querySelector("a");
     if (cta && link) {
       cta.href = link.getAttribute("href") ?? cta.href;
-      cta.textContent = `Resume: ${link.textContent?.trim() ?? "next lesson"}`;
+      // A fixed label, because the button is a tap target: the title goes on
+      // the reserved line below so a 40-character lesson name cannot grow the
+      // button and shove "All algorithms" out from under a moving thumb.
+      cta.textContent = "Resume lesson";
+      if (resumeTitle) resumeTitle.textContent = link.textContent?.trim() ?? "";
     } else if (cta) {
       cta.href = "/practice/";
       cta.textContent = "Course complete — go practice";
+    }
+
+    // ── You are here ───────────────────────────────────────────────────
+    if (currentPhase) {
+      const chip = currentPhase.querySelector<HTMLElement>("[data-here]");
+      if (chip) chip.hidden = false;
+      // By href, which is the chip's whole contract with the page: the card's
+      // own id IS the fragment the chip points at. The chip used to carry a
+      // second copy of the phase key purely so this line could find it, and
+      // that copy needed CSS.escape because `phase-1.5` is not a legal selector
+      // — the id `phaseAnchor()` builds is, and that is the point of it.
+      const jump = document.querySelector<HTMLElement>(`.pagenav a[href="#${currentPhase.id}"]`);
+      // `resume`, not `here`. Two different questions get asked of this bar and
+      // they have different answers: `here` is which phase you have SCROLLED to
+      // and is owned by the shared scroll-spy in lib/jumpbar.ts, while this is
+      // which phase your PROGRESS is in — the one the hero would resume into.
+      // They are usually different chips. Marking both with one class meant the
+      // spy cleared this on its first callback.
+      jump?.classList.add("resume");
     }
   }
 

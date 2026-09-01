@@ -21,16 +21,25 @@
 import { getCollection } from "astro:content";
 import Base from "./Base.astro";
 import Header from "../components/Header.astro";
+import JumpBar from "../components/JumpBar.astro";
 import Page from "../components/Page.astro";
 import ProgressBar from "../components/ProgressBar.astro";
 import LessonMeta from "../components/LessonMeta.astro";
-import { phaseName } from "../data/phases";
+import { phaseAnchor, phaseName } from "../data/phases";
 import { caseById } from "../data/algs";
+import { referenceHref } from "../data/refsections";
 import { TRAINER_GROUPS } from "../lib/trainer";
 
 interface PracticeLink {
   href: string;
   label: string;
+  /**
+   * Following this link means "done with this lesson". Declared in the
+   * lesson's own frontmatter (see content.config.ts), never inferred from the
+   * href — `white-cross.mdx` offers `/print`, and crediting a lesson because
+   * the reader went to fetch the card set hides it from Resume permanently.
+   */
+  advance: boolean;
 }
 interface Practice {
   groups: string[];
@@ -49,10 +58,22 @@ interface Props {
   prerequisites: string[];
   algorithms: string[];
   practice: Practice;
+  /** Astro's own `render().headings`, passed through by learn/[...slug].astro. */
+  headings?: { depth: number; slug: string; text: string }[];
 }
 
-const { id, title, description, phase, minutes, objectives, prerequisites, algorithms, practice } =
-  Astro.props;
+const {
+  id,
+  title,
+  description,
+  phase,
+  minutes,
+  objectives,
+  prerequisites,
+  algorithms,
+  practice,
+  headings = [],
+} = Astro.props;
 
 const all = (await getCollection("lessons")).sort((a, b) => a.data.order - b.data.order);
 const byId = new Map(all.map((l) => [l.id, l]));
@@ -78,28 +99,101 @@ for (const g of practice.groups) {
 }
 
 const prereqs = prerequisites.map((p) => byId.get(p)!);
+/**
+ * A trainer group key is ALSO a /reference section id — the two lists are the
+ * same eleven strings — so a lesson can link to the set it teaches without a
+ * line of new data. Locked sets cannot reach here: TRAINER_GROUPS is already
+ * filtered through `isLocked`, and the validation loop above throws on a lesson
+ * that names a group outside it, so `444-oll` and `444-pll` fail the build
+ * rather than shipping a dead fragment.
+ */
 const drills = practice.groups.map((key) => ({
   key,
   name: TRAINER_GROUPS.find((g) => g.key === key)!.name,
+  // No isLocked() guard here: TRAINER_GROUPS is already filtered by it, and the
+  // loop above throws on a lesson naming a group that is not in it — so a
+  // locked group cannot reach this line, and a guard would be dead code
+  // claiming to protect against something that already fails the build.
+  reference: referenceHref(key),
 }));
+
+/** The cases this lesson teaches, as pages. Build-validated above. */
+const taught = algorithms.map((a) => caseById.get(a)!);
+
+/** The rest of this phase — a lesson could reach two others before this. */
+const siblings = all.filter((l) => l.data.phase === phase);
+const inPhase = siblings.findIndex((l) => l.id === id) + 1;
+
+/**
+ * The outline for the jump bar: this page's own landmarks, in document order.
+ *
+ * The LAYOUT's three headings bracket the body's, and including them is what
+ * makes the bar universal rather than conditional. Body headings alone would
+ * have given three lessons fewer than three chips, and a navigation aid that
+ * appears on 22 of 25 pages is a rule the reader has to learn; "What you'll
+ * learn" (all 25) and "Practice" (all 25) mean every lesson gets at least
+ * three, so the bar is simply always there.
+ *
+ * Depth 2 only. The deepest lesson has 16 headings and a chip strip that lists
+ * every h3 stops being a summary — `full-oll-overview` alone would contribute
+ * nine of them, all subdivisions of two h2s already in the list.
+ *
+ * `headings` is Astro's own, so the slugs here are the ids actually emitted
+ * into the page rather than a second slugging of the same text. Six shipped
+ * heading ids begin with a digit ("1-build-the-white-cross…"): those are legal
+ * URL fragments and ILLEGAL `querySelector` arguments, which is the same trap
+ * `phaseAnchor()` exists for one level up. Nothing here may look them up with
+ * a selector.
+ */
+const outline = [
+  { id: "objectives-heading", label: "Overview" },
+  ...headings.filter((h) => h.depth === 2).map((h) => ({ id: h.slug, label: h.text })),
+  ...(taught.length > 0 ? [{ id: "taught-heading", label: "Cases" }] : []),
+  { id: "practice-heading", label: "Practice" },
+];
 ---
 
 <Base title={`${title} — Cubepath`} description={description}>
-  <Header active="learn" />
+  <Header active="learn">
+    <JumpBar slot="pagenav" items={outline} label="On this page" />
+  </Header>
   <Page>
     <div class="lesson-head">
+      {
+        /*
+        "Learn", not "3×3 course". One destination had three names — "Learn" in
+        the header, "3×3 course" here, "Speedcubing from zero" in its own h1 —
+        and on the six 4×4 and 5×5 lessons the crumb read "3×3 course › 4×4",
+        mis-describing the page's own container, which is the single job a
+        breadcrumb has. case/[...id].astro already names its parent the way the
+        header does; this follows it.
+
+        The phase segment is a link now. It was inert text because there was
+        nothing to link to: the course index shipped no phase ids at all.
+      */
+      }
       <nav class="crumbs" aria-label="Breadcrumb">
-        <a href="/">3×3 course</a>
+        <a href="/">Learn</a>
         <span class="sep" aria-hidden="true">›</span>
-        <span>{phaseName(phase)}</span>
+        <a href={`/#${phaseAnchor(phase)}`}>{phaseName(phase)}</a>
       </nav>
+      {
+        /*
+        Position within the PHASE, with the global step demoted to text beside
+        it. "Step 12 of 25" answered a question nobody asks — a reader coming
+        back wants to know how much of the phase they are in is left, and a bar
+        filled to 48% of the whole course reads as completion rather than
+        position.
+      */
+      }
       <div class="position">
         <ProgressBar
-          label={`Step ${step} of ${all.length}`}
-          value={step}
-          max={all.length}
+          label={`${inPhase} of ${siblings.length} in ${phaseName(phase)}`}
+          value={inPhase}
+          max={siblings.length}
           count={false}
         />
+        <span class="hint step">Step {step} of {all.length}</span>
       </div>
     </div>
 
@@ -119,12 +213,14 @@ const drills = practice.groups.map((key) => ({
 
     {
       /*
-      The *write* half of the course progress layer. db.ts has a `lessons`
-      store and index.astro reads it for the per-phase bars, the ✓ marks and
-      the "Resume: <lesson>" CTA — but nothing called markLessonComplete(), so
-      every phase bar read 0/N forever and Resume never appeared. `position` is
-      off: the "Step N of M" bar above already says that. Renders nothing and
-      occupies no space until the lesson has actually been completed.
+      The *write* half of the course progress layer, and the reason the ✓ marks,
+      the per-phase bars and the Resume CTA on index.astro have anything to
+      read. It has two writers — the [data-lesson-end] sentinel below, and the
+      exits tagged data-lesson-advance — because for a long time the pager click
+      was the only one, and a reader who left by this page's own filled "Drill"
+      button was never credited. `position` is off: the phase bar above already
+      says where they are. Renders nothing and occupies no space until the
+      lesson has actually been completed.
     */
     }
     <LessonMeta id={id} />
@@ -140,26 +236,99 @@ const drills = practice.groups.map((key) => ({
       <slot />
     </article>
 
+    {
+      /*
+      The lesson's own cases, as pages.
+
+      `algorithms` is a required frontmatter array of real case ids, validated
+      against caseById at build time above — and it was rendered NOWHERE. 37
+      ids across 8 lessons, checked on every build so a typo failed it, and not
+      one of them reachable by a reader.
+    */
+    }
+    {
+      taught.length > 0 && (
+        <section class="taught" aria-labelledby="taught-heading">
+          <h2 id="taught-heading" class="label">
+            Cases in this lesson
+          </h2>
+          <ul>
+            {taught.map((k) => (
+              <li>
+                <a href={`/case/${k.id}/`}>{k.name}</a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    {/* Writer 1's target — see LessonMeta.astro. Renders nothing. */}
+    <div data-lesson-end aria-hidden="true"></div>
+
     <section class="practice card" aria-labelledby="practice-heading">
       <h2 id="practice-heading">Practice</h2>
       <p>{practice.note}</p>
       <div class="actions">
         {
           drills.map((d) => (
-            <a class="btn btn--primary" href={`/practice/?group=${d.key}`}>
+            <a class="btn btn--primary" href={`/practice/?group=${d.key}`} data-lesson-advance>
               Drill {d.name}
             </a>
           ))
         }
         {
+          /*
+          The same set, laid out rather than quizzed. A trainer group key IS a
+          /reference section id, so this costs no new data — and until now a
+          lesson's only onward link was a quiz, so a reader who wanted to SEE
+          all 21 perms went to the header and landed at the top of a 9,000px
+          page to hunt for the section by hand.
+        */
+        }
+        {
+          /* Every drill has a reference section by construction — a trainer
+             group key IS a /reference section id — so there is nothing to
+             filter out here. */
+          drills.map((d) => (
+            <a class="btn" href={d.reference}>
+              See all {d.name}
+            </a>
+          ))
+        }
+        {
           practice.links.map((l) => (
-            <a class="btn" href={l.href}>
+            <a class="btn" href={l.href} {...(l.advance ? { "data-lesson-advance": "" } : {})}>
               {l.label}
             </a>
           ))
         }
       </div>
     </section>
+
+    {
+      /*
+      The rest of this phase. Before this, a lesson could reach exactly two
+      other lessons — the one before and the one after — so a reader who wanted
+      a sibling went back to "/" and scrolled a 5,100px ladder.
+    */
+    }
+    {
+      siblings.length > 1 && (
+        <nav class="phase-nav" aria-label={phaseName(phase)}>
+          <span class="label">{phaseName(phase)}</span>
+          <ul>
+            {siblings.map((l) => (
+              <li>
+                <a href={`/learn/${l.id}/`} {...(l.id === id ? { "aria-current": "page" } : {})}>
+                  {l.data.title}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )
+    }
 
     <nav class="pager" aria-label="Lesson">
       {
@@ -174,12 +343,17 @@ const drills = practice.groups.map((key) => ({
       }
       {
         next ? (
-          <a class="pager-link next" href={`/learn/${next.id}/`}>
-            <span class="dir">Next →</span>
+          <a class="pager-link next" href={`/learn/${next.id}/`} data-lesson-advance>
+            {/* The pager walks out of a phase — and out of the 3×3 course into
+                the big cubes — with no signal at all. Name the destination
+                phase when it changes, so "Next" is never a surprise. */}
+            <span class="dir">
+              {next.data.phase === phase ? "Next →" : `Next phase → ${phaseName(next.data.phase)}`}
+            </span>
             <span class="what">{next.data.title}</span>
           </a>
         ) : (
-          <a class="pager-link next" href="/">
+          <a class="pager-link next" href="/" data-lesson-advance>
             <span class="dir">Done →</span>
             <span class="what">Course overview</span>
           </a>
@@ -206,7 +380,49 @@ const drills = practice.groups.map((key) => ({
     color: var(--faint);
   }
   .position {
-    flex: 0 1 180px;
+    flex: 0 1 200px;
+    display: grid;
+    gap: 2px;
+    justify-items: end;
+  }
+  .step {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* The cases this lesson teaches. A plain list of links, not chips: .chip is
+     --soft, which is a weak affordance for a row of destinations. */
+  .taught {
+    margin: var(--space-6) 0 0;
+  }
+  /* One rule: the two wrapping link lists are meant to read as one object. */
+  .taught ul,
+  .phase-nav ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    margin: var(--space-2) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .taught a,
+  .phase-nav a {
+    font-weight: 600;
+  }
+
+  /* The rest of the phase, above the pager. */
+  .phase-nav {
+    margin: var(--space-6) 0 0;
+    padding: var(--space-4) 0 0;
+    border-top: 1px solid var(--line);
+  }
+  .phase-nav a {
+    overflow-wrap: break-word;
+  }
+  /* You are here: the current lesson is named but is not a destination. */
+  .phase-nav a[aria-current="page"] {
+    color: var(--soft);
+    text-decoration: none;
+    cursor: default;
   }
 
   h1 {
@@ -388,5 +604,39 @@ const drills = practice.groups.map((key) => ({
      eyebrow is already distinguished by size, weight and letter-spacing. */
   .pager-link.next .dir {
     color: var(--on-accent);
+  }
+
+  /*
+   * Phones. The way forward at the end of every lesson was a 46%-wide box
+   * holding a full lesson title, so "Orient Corners: Anti-Sune + 5 New Cases"
+   * wrapped to four ragged lines in the one place on the screen where the
+   * thumb already is. Stack them full width instead.
+   *
+   * The class is presentational only. Both "next" links carry
+   * `data-lesson-advance`, which is what LessonMeta.astro looks for — a rename
+   * here cannot silently remove one of the two completion writers.
+   */
+  @media (max-width: 560px) {
+    .pager {
+      display: grid;
+      /* An explicit 1fr track, because the base rule's `justify-content:
+         space-between` still applies in grid and would leave a single
+         max-content column sitting at 244px of a 358px row. */
+      grid-template-columns: 1fr;
+      gap: var(--space-3);
+    }
+    .pager-link {
+      max-inline-size: none;
+    }
+    .pager-link.next {
+      text-align: start;
+    }
+    /* The empty <span> that stands in for a missing "Previous". */
+    .pager > span:empty {
+      display: none;
+    }
+    .position {
+      justify-items: start;
+    }
   }
 </style>

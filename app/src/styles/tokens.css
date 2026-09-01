@@ -142,6 +142,43 @@
      30px. */
   --measure-prose: 68ch; /* ~72 characters at --text-md — lessons, home, print, cards */
   --measure-app: 1200px; /* practice, reference — grids, not prose */
+
+  /*
+   * Sticky chrome. The header is `position: sticky; top: 0` on every route, so
+   * anything an anchor, a focus move or a scrollIntoView aims at has to clear
+   * it — otherwise the browser parks the target underneath and the reader sees
+   * the middle of a section with no heading above it.
+   *
+   * --hdr-h is a FALLBACK, not the number: Header.astro measures the real bar
+   * on every route and writes the measured value inline on <html>, which beats
+   * this declaration. 55px is the desktop height (the phone bar is 45px), and a
+   * fallback should over-clear rather than under-clear — extra clearance only
+   * costs whitespace, too little hides the thing you navigated to.
+   *
+   * There is no second variable any more, and that is the point. /reference
+   * used to publish its own --toolbar-h for its sticky filter bar, which meant
+   * the clearance was a sum of two measurements taken by two observers, with a
+   * hand-maintained pre-JS fallback for the second. Every surface that needs a
+   * bar now renders it INSIDE `.site-header`, so there is exactly one sticky
+   * box on every route and exactly one number to keep true.
+   */
+  --hdr-h: 55px;
+}
+
+/* The bar is shorter once the wordmark drops out. Without this the pre-JS
+   fallback leaves /reference's sticky toolbar parked 6px below the header, with
+   a strip of the page scrolling through the gap until the script runs. */
+@media (max-width: 560px) {
+  :root {
+    --hdr-h: 49px;
+  }
+}
+
+/* One rule instead of a scroll-margin per anchored element. scroll-padding
+   covers fragment navigation, sequential focus and scrollIntoView alike, so
+   Shift-Tab stops parking the focused element behind the sticky bars. */
+html {
+  scroll-padding-block-start: calc(var(--hdr-h) + var(--space-3));
 }
 
 /*
@@ -289,6 +326,21 @@ h3 {
   margin: 0;
 }
 
+/* Visible to assistive tech, not to the eye. A utility, not a restatement of a
+   shared class — it was defined privately in index.astro until /reference
+   needed the same thing for its jump chips. Do not use it to hide a control:
+   `hidden` (above) is for that. */
+.sr-only {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 /* Uppercase eyebrow above a block. Use on a real heading element when it
    titles a section — a <span> leaves the section with no accessible name. */
 .label {
@@ -309,6 +361,58 @@ h3 {
   border-radius: var(--r-pill);
   padding: var(--space-1) var(--space-3);
 }
+/*
+ * An in-page jump chip, in its two live states. Every jump bar on the site is
+ * a row of anchors — /reference's section strip and the `pagenav` outline on
+ * /, /glossary and all 25 lessons — and lib/jumpbar.ts drives them all, so
+ * "hovered" and "you are in this section" are defined here once rather than
+ * per surface. They were per surface: the two copies disagreed about the
+ * font-weight, and one of them reached for a `--ink-soft` that has never
+ * existed in this file, which made the whole declaration invalid and left
+ * those chips at inherited ink instead of --soft.
+ *
+ * `a.chip`, not `.chip`: a ghost chip is a read-only <span> tag and must not
+ * light up under the pointer.
+ */
+a.chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  text-decoration: none;
+}
+a.chip.here {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+/*
+ * A chip whose section the current filter emptied. Opacity rather than a
+ * recolour to --faint: once the chip is aria-disabled the WCAG 1.4.3
+ * inactive-component exception applies, and --faint against the normal --soft
+ * is a *less* perceptible difference. `lib/jumpbar.ts` sets the class, the
+ * attribute and the tab order together.
+ */
+a.chip.off {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/*
+ * A side-scrolling strip with no scrollbar drawn — the header's nav, the
+ * outline, /reference's section bar. The three of them said `scrollbar-width:
+ * none` and only ONE also said `::-webkit-scrollbar`, so on a WebKit older
+ * than the standard property (Safari < 18.2) two of the strips drew a bar the
+ * third did not. Both halves belong together, which is the argument for a
+ * class rather than three copies.
+ *
+ * Only the scrollbar. Each strip's bleed, mask and breakpoint are its own —
+ * they genuinely differ — so they stay where they are.
+ */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Selected. Colour alone is not a state — pair it with aria-pressed. */
 .chip--active,
 .chip.active {

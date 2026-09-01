@@ -1,6 +1,3 @@
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { expect, test, type Page } from "@playwright/test";
 
 /**
@@ -32,33 +29,7 @@ import { expect, test, type Page } from "@playwright/test";
 // add it here. `npx playwright test` serves `dist/` via `astro preview`, so a
 // build is already a precondition of this suite running at all.
 
-const DIST = fileURLToPath(new URL("../dist/", import.meta.url));
-
-/**
- * Every route the site publishes, as a path, in sitemap order. Read from every
- * `sitemap-N.xml` rather than just `sitemap-0.xml`, because @astrojs/sitemap
- * shards at 45 000 URLs and a hardcoded shard would quietly stop covering the
- * overflow.
- */
-function publishedRoutes(): string[] {
-  const shards = readdirSync(DIST).filter((f) => /^sitemap-\d+\.xml$/.test(f));
-  if (shards.length === 0) {
-    throw new Error(
-      `no sitemap-N.xml in ${DIST} — the E2E suite needs a build first ` +
-        "(`npx astro build`, or `make ci`).",
-    );
-  }
-  const routes = shards
-    .sort()
-    .flatMap((shard) => [
-      ...readFileSync(join(DIST, shard), "utf8").matchAll(/<loc>([^<]+)<\/loc>/g),
-    ])
-    .map((m) => m[1])
-    .filter((loc): loc is string => typeof loc === "string")
-    .map((loc) => new URL(loc).pathname);
-  if (routes.length === 0) throw new Error(`${DIST} sitemaps contained no <loc> entries`);
-  return routes;
-}
+import { publishedRoutes } from "./routes";
 
 /** The page template a route came from: `/case/foo/` and `/case/bar/` share one. */
 function template(route: string): string {
@@ -296,6 +267,28 @@ test.describe("mobile regressions — 375px, both themes", () => {
             `${where}: scrollWidth ${a.scrollWidth} exceeds innerWidth ${a.innerWidth}.`,
           )
           .toBeLessThanOrEqual(a.innerWidth);
+
+        // (1b) …and it must still hold once the page is USED, not just loaded.
+        // The sweep above only ever loaded routes idle, and that is exactly how
+        // 872px of horizontal scroll shipped on /reference: the page was 375px
+        // until you typed, and a query that emptied every section exposed the
+        // toolbar's 856px scrollable width to the document. A control that only
+        // misbehaves once touched is still a shipped defect.
+        const search = page.locator("[data-ref-search]");
+        if (await search.count()) {
+          for (const query of ["zzzzznomatch", "sune"]) {
+            await search.fill(query);
+            const used = await audit(page);
+            expect
+              .soft(
+                used.scrollWidth,
+                `${where}: after typing "${query}" the page scrolls horizontally — ` +
+                  `scrollWidth ${used.scrollWidth} > clientWidth ${used.clientWidth}.`,
+              )
+              .toBeLessThanOrEqual(used.clientWidth);
+          }
+          await search.fill("");
+        }
 
         // (2) No visible <img> without a working src.
         expect

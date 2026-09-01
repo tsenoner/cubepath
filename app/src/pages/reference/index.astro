@@ -5,11 +5,13 @@ import Page from "../../components/Page.astro";
 import CaseRow from "../../components/CaseRow.astro";
 import EmptyState from "../../components/EmptyState.astro";
 import ProgressBar from "../../components/ProgressBar.astro";
-import { ALL_CASES, CASES, caseById, type CaseDef } from "../../data/algs";
-import { GENERATED_CASES } from "../../data/fullsets.gen";
-import { RICH } from "../../data/fullsets.rich.gen";
+import { ALL_CASES, type CaseDef } from "../../data/algs";
 import { caseIcon } from "../../data/icons";
-import { TAUGHT_444_CASES, isLocked } from "../../lib/unlocks";
+import { caseHaystack } from "../../lib/casesearch";
+import { groupWords } from "../../lib/search";
+import { lessonForGroup, type TeachingLesson } from "../../lib/teaches";
+import { SECTIONS as SECTION_SPECS, caseAnchor, sectionWords } from "../../data/refsections";
+import { isLocked } from "../../lib/unlocks";
 
 /**
  * The reference is the site's index of every case, so two things here are
@@ -34,32 +36,53 @@ interface Sub {
   title: string;
   items: CaseDef[];
 }
-interface Section {
+/**
+ * A cross-section link inside a blurb: the case to point at, and the words to
+ * point with. Resolved through `anchorOf`, so the anchor rule lives in one
+ * place and a link to a case no visible section owns is a build error rather
+ * than a dead fragment.
+ */
+interface BlurbLink {
+  caseId: string;
+  text: string;
+}
+/**
+ * A blurb is a list of parts, and a link is one of them.
+ *
+ * It used to be a string with a `{link}` token in it plus a separate
+ * `blurbLink`, which needed a split, a `parts.length !== 2` build gate and a
+ * before/link/after triple to reassemble — 30 lines of protocol serving one
+ * sentence, and a grammar the next blurb would have had to be authored
+ * against. An array cannot lose its token or grow a second one.
+ */
+type Blurb = (string | BlurbLink)[];
+
+/** The wording. Structure — order, ids, membership — comes from SECTION_SPECS. */
+interface Presentation {
+  title: string;
+  kind: "rows" | "grid";
+  blurb?: Blurb;
+}
+interface Section extends Presentation {
   /** URL fragment. Derived from the group/phase key this section renders. */
   id: string;
-  title: string;
   /** Short form, for the jump bar. */
   nav: string;
-  /** Plain text. A single `{link}` token marks where `blurbLink` goes. */
-  blurb?: string;
-  /**
-   * A cross-section link in the blurb: the case to point at, and the words to
-   * point with. The href is resolved through `anchorOf`, so the anchor rule
-   * lives in one place and a link to a case no visible section owns is a build
-   * error rather than a dead fragment.
-   */
-  blurbLink?: { caseId: string; text: string };
-  kind: "rows" | "grid";
   items: CaseDef[];
   subs: Sub[];
 }
+/** A section as actually rendered: locked members dropped, search words resolved. */
+type Rendered = Section & { words: string };
 
-/** "4x4oll-0-corners" -> "0 Corners"; "oll-small-l-shape" -> "Small L Shape". */
-const subTitle = (key: string) =>
-  key
-    .replace(/^(?:4x4oll|4x4pll|oll|pll|f2l|555)-/, "")
-    .replace(/-/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+/**
+ * "4x4oll-0-corners" -> "0 Corners"; "oll-small-l-shape" -> "Small L Shape".
+ *
+ * Title-cases `groupWords`, which is the same transform the SEARCH haystack
+ * applies to the same key — so the heading a reader sees above a tile and the
+ * words they can find it by cannot come apart. The prefix list was typed here
+ * and again in lib/search.ts.
+ */
+const subTitle = (key: string) => groupWords(key).replace(/\b\w/g, (c) => c.toUpperCase());
 
 /** Group a flat case list by its own `group` key, preserving dataset order. */
 function subsOf(cases: CaseDef[]): Sub[] {
@@ -72,117 +95,70 @@ function subsOf(cases: CaseDef[]): Sub[] {
   return [...byKey].map(([key, items]) => ({ key, title: subTitle(key), items }));
 }
 
-const gen = (test: (k: CaseDef) => boolean) => GENERATED_CASES.filter(test);
-
 /**
- * Curated course cases, rendered as full CaseRows — id is the group key, and
- * the members default to the curated cases carrying it. `items` overrides that
- * for a section whose membership is the course's rather than the data's.
+ * The wording, one entry per section in `SECTION_SPECS`.
+ *
+ * Prose lives here; ORDER, ids and MEMBERSHIP live in data/refsections.ts, so
+ * the corpus tests/search.spec.ts builds is the corpus this page renders. The
+ * two lists are checked against each other below, both ways.
  */
-const rows = (
-  id: string,
-  nav: string,
-  title: string,
-  blurb?: string,
-  items?: CaseDef[],
-  blurbLink?: { caseId: string; text: string },
-): Section => ({
-  id,
-  nav,
-  title,
-  ...(blurb ? { blurb } : {}),
-  ...(blurbLink ? { blurbLink } : {}),
-  kind: "rows",
-  items: items ?? CASES.filter((k) => k.group === id),
-  subs: [],
-});
-
-/** A full set, rendered as icon tiles grouped by shape — id is the phase key. */
-const grid = (
-  id: string,
-  nav: string,
-  title: string,
-  items: CaseDef[],
-  blurb: string,
-): Section => ({
-  id,
-  nav,
-  title,
-  blurb,
-  kind: "grid",
-  items,
-  subs: subsOf(items),
-});
-
-const SECTIONS: Section[] = [
-  rows(
-    "beginner-triggers",
-    "Triggers",
-    "The Beginner Method",
-    "Not cases — the three algorithms the beginner solve is built out of. Righty alone finishes the " +
-      "first two layers and untwists the last corners; Niklas puts the last four corners in their seats.",
-    // Course membership: two groups, one section. The triggers and the corner
-    // cycle sit at different stages of the ladder, but a reader looking up
-    // "the beginner algorithms" wants one list, not two.
-    CASES.filter((k) => k.group === "beginner-triggers" || k.group === "beginner-corner-cycle"),
-  ),
-  rows(
-    "cross-eo",
-    "Cross",
-    "Yellow Cross",
-    "Three cases — and the first two are the same trigger.",
-  ),
-  rows("2look-oll-corners", "OLL corners", "Corner Orientation — 2-Look OLL"),
-  rows("2look-pll-corners", "PLL corners", "Corner Permutation — 2-Look PLL"),
-  rows("2look-pll-edges", "PLL edges", "Edge Permutation — 2-Look PLL"),
-  grid(
-    "full-oll",
-    "Full OLL",
-    "Full OLL",
-    gen((k) => /^oll\.\d+$/.test(k.id)),
-    "The complete orientation set, grouped the way you recognize them.",
-  ),
-  grid(
-    "full-f2l",
-    "F2L",
-    "F2L",
-    gen((k) => k.phase === "full-f2l"),
-    "First-two-layers pairs for the front-right slot; learn them intuitively first and look the awkward ones up here.",
-  ),
-  grid(
-    "full-pll",
-    "Full PLL",
-    "Full PLL",
-    gen((k) => k.id.startsWith("pll.")),
-    "Permutations with their piece-movement arrows.",
-  ),
-  rows(
-    "444-parity",
-    "4×4",
-    "4×4 Skills",
-    "The whole of what a 4×4 adds to the 3×3 you already solve: one algorithm for pairing, and the " +
-      "two states a 3×3 can never produce. Centres are intuitive — there is nothing to look up.",
-    // Course membership, not data membership: the two PLL-parity faces were
-    // generated into "4x4pll-edges-only" alongside cases the course does not
-    // teach, but the 4×4 lesson teaches both of them. The edge flip is a
-    // curated entry with no set of its own — it is a mid-pairing tool, so it
-    // belongs to no case list, which is exactly why it had no row anywhere.
-    [caseById.get("444.edge-flip")!, ...[...TAUGHT_444_CASES].map((id) => caseById.get(id)!)],
-  ),
-  grid(
-    "444-oll",
-    "4×4 OLL",
-    "4×4 OLL",
-    gen((k) => k.group.startsWith("4x4oll-")),
-    "Edge-flip states of the 4×4 last layer, grouped by how many corners are already oriented.",
-  ),
-  grid(
-    "444-pll",
-    "4×4 PLL",
-    "4×4 PLL",
-    gen((k) => k.group.startsWith("4x4pll-")),
-    "Permutations that need the 4×4 parity algorithm folded into them.",
-  ),
+const PRESENTATION: Record<string, Presentation> = {
+  "beginner-triggers": {
+    title: "The Beginner Method",
+    kind: "rows",
+    blurb: [
+      "Not cases — the three algorithms the beginner solve is built out of. Righty alone finishes " +
+        "the first two layers and untwists the last corners; Niklas puts the last four corners in " +
+        "their seats.",
+    ],
+  },
+  "cross-eo": {
+    title: "Yellow Cross",
+    kind: "rows",
+    blurb: ["Three cases — and the first two are the same trigger."],
+  },
+  "2look-oll-corners": { title: "Corner Orientation — 2-Look OLL", kind: "rows" },
+  "2look-pll-corners": { title: "Corner Permutation — 2-Look PLL", kind: "rows" },
+  "2look-pll-edges": { title: "Edge Permutation — 2-Look PLL", kind: "rows" },
+  "full-oll": {
+    title: "Full OLL",
+    kind: "grid",
+    blurb: ["The complete orientation set, grouped the way you recognize them."],
+  },
+  "full-f2l": {
+    title: "F2L",
+    kind: "grid",
+    blurb: [
+      "First-two-layers pairs for the front-right slot; learn them intuitively first and look the " +
+        "awkward ones up here.",
+    ],
+  },
+  "full-pll": {
+    title: "Full PLL",
+    kind: "grid",
+    blurb: ["Permutations with their piece-movement arrows."],
+  },
+  "444-parity": {
+    title: "4×4 Skills",
+    kind: "rows",
+    blurb: [
+      "The whole of what a 4×4 adds to the 3×3 you already solve: one algorithm for pairing, and " +
+        "the two states a 3×3 can never produce. Centres are intuitive — there is nothing to look " +
+        "up.",
+    ],
+  },
+  "444-oll": {
+    title: "4×4 OLL",
+    kind: "grid",
+    blurb: [
+      "Edge-flip states of the 4×4 last layer, grouped by how many corners are already oriented.",
+    ],
+  },
+  "444-pll": {
+    title: "4×4 PLL",
+    kind: "grid",
+    blurb: ["Permutations that need the 4×4 parity algorithm folded into them."],
+  },
   // A ROW, not a tile grid. Only one 5x5 case is unlocked, and a lone icon
   // tile showed its diagram and nothing else — no algorithm, no recognition
   // cue, and (before the set became drawable) not even a picture, just the
@@ -193,17 +169,38 @@ const SECTIONS: Section[] = [
   // the one-home rule at the top of this file has exactly one exception, the
   // 2-look rows that re-present a case the full-set grids also carry, which is
   // two different presentations rather than the same row twice.
-  rows(
-    "555-parity",
-    "5×5",
-    "5×5 Skills",
-    "Two algorithms finish a 5×5, and you already know one: {link} is the same seven outer " +
-      "turns on both cubes. This is the other one — the only thing a 5×5 asks that a 4×4 does " +
-      "not. Centres and pairing are technique, taught in the lessons.",
-    gen((k) => k.phase === "555"),
-    { caseId: "444.edge-flip", text: "the edge flip" },
-  ),
-];
+  "555-parity": {
+    title: "5×5 Skills",
+    kind: "rows",
+    blurb: [
+      "Two algorithms finish a 5×5, and you already know one: ",
+      { caseId: "444.edge-flip", text: "the edge flip" },
+      " is the same seven outer turns on both cubes. This is the other one — the only thing a 5×5 " +
+        "asks that a 4×4 does not. Centres and pairing are technique, taught in the lessons.",
+    ],
+  },
+};
+
+// Both ways, at build time: a section with no wording renders a blank heading,
+// and wording for an id the registry dropped is dead text nobody will notice.
+for (const key of Object.keys(PRESENTATION)) {
+  if (!SECTION_SPECS.some((spec) => spec.id === key)) {
+    throw new Error(`/reference: wording for "${key}", which is not a section`);
+  }
+}
+
+const SECTIONS: Section[] = SECTION_SPECS.map((spec) => {
+  const shown = PRESENTATION[spec.id];
+  if (!shown) throw new Error(`/reference: no wording for section "${spec.id}"`);
+  const items = spec.members();
+  return {
+    id: spec.id,
+    nav: spec.nav,
+    ...shown,
+    items,
+    subs: shown.kind === "grid" ? subsOf(items) : [],
+  };
+});
 
 /*
  * Locked sets never reach the page: sections keyed to a locked set are dropped
@@ -211,8 +208,11 @@ const SECTIONS: Section[] = [
  * case cannot slip through a section that merely overlaps it. Both go through
  * the one `isLocked` predicate — unlocking restores the sections untouched.
  */
-const VISIBLE: Section[] = SECTIONS.filter((s) => !isLocked(s.id)).map((s) => ({
+const VISIBLE: Rendered[] = SECTIONS.filter((s) => !isLocked(s.id)).map((s) => ({
   ...s,
+  // Once per section, not once per tile: this was called 142 times to produce
+  // ten distinct strings, re-filtering the trainer's group list on each.
+  words: sectionWords(s.id),
   items: s.items.filter((k) => !isLocked(k)),
   subs: s.subs
     .map((sub) => ({ ...sub, items: sub.items.filter((k) => !isLocked(k)) }))
@@ -231,43 +231,30 @@ for (const s of VISIBLE) {
 }
 /** The anchor for `id`, but only in the one section that owns it. */
 const anchorOf = (section: string, id: string) =>
-  anchorOwner.get(id) === section ? id.replace(/\./g, "-") : undefined;
+  anchorOwner.get(id) === section ? caseAnchor(id) : undefined;
 
 /**
- * A blurb, split around its optional cross-section link. Resolving the href
- * through `anchorOf` (asking the section that OWNS the case) keeps the
- * "#" + id-with-dots-as-dashes rule in one place; before this the 5×5 blurb
- * was raw HTML with `#444-edge-flip` typed into it, which would have died
- * silently if the anchor rule or the section order ever changed.
+ * Resolve a blurb's link parts to hrefs, keeping the plain strings as they are.
+ *
+ * Asking `anchorOf` (via the section that OWNS the case) keeps the
+ * "#" + id-with-dots-as-dashes rule in one place; before this the 5×5 blurb was
+ * raw HTML with `#444-edge-flip` typed into it, which would have died silently
+ * if the anchor rule or the section order ever changed. A link to a case no
+ * visible section owns is still a build error rather than a dead fragment.
  */
-type Blurb = { before: string; link: { href: string; text: string } | null; after: string };
-const BLURBS = new Map<string, Blurb>(
-  VISIBLE.flatMap((s): [string, Blurb][] => {
-    if (!s.blurb) return [];
-    if (!s.blurbLink) return [[s.id, { before: s.blurb, link: null, after: "" }]];
-    const { caseId, text } = s.blurbLink;
-    const owner = anchorOwner.get(caseId);
-    const anchor = owner ? anchorOf(owner, caseId) : undefined;
-    if (!anchor) {
+type ResolvedPart = string | { href: string; text: string };
+const blurbParts = (s: Rendered): ResolvedPart[] =>
+  (s.blurb ?? []).map((part) => {
+    if (typeof part === "string") return part;
+    // Owned by SOME visible section is the whole question — asking `anchorOf`
+    // with that section could only ever compare it to itself.
+    if (!anchorOwner.has(part.caseId)) {
       throw new Error(
-        `/reference: the ${s.id} blurb links to ${caseId}, which no visible section owns`,
+        `/reference: the ${s.id} blurb links to ${part.caseId}, which no visible section owns`,
       );
     }
-    // The token is as load-bearing as the anchor: without this, a blurb that
-    // lost its `{link}` would silently append the link after the last full
-    // stop, and one that grew a second token would silently drop everything
-    // after it. Both read as prose a human wrote, which is why they have to
-    // fail the build rather than the eye.
-    const parts = s.blurb.split("{link}");
-    if (parts.length !== 2) {
-      throw new Error(
-        `/reference: the ${s.id} blurb carries ${parts.length - 1} "{link}" tokens, expected 1`,
-      );
-    }
-    const [before = "", after = ""] = parts;
-    return [[s.id, { before, link: { href: `#${anchor}`, text }, after }]];
-  }),
-);
+    return { href: `#${caseAnchor(part.caseId)}`, text: part.text };
+  });
 
 // ── Presentation helpers ─────────────────────────────────────────────
 /** "OLL 27" -> "27"; "Ba (4×4 PLL)" -> "Ba"; "T-Perm" -> "T". */
@@ -277,29 +264,41 @@ const tileLabel = (name: string) =>
     .replace(/^(?:OLL|F2L|L2E)\s+/, "")
     .replace(/-Perm$/, "");
 
-/** Name + recognition cue + id, lowercased — what the filter matches against. */
-const searchText = (k: CaseDef) =>
-  `${k.name} ${k.recognition ?? RICH[k.id]?.recognition ?? ""} ${k.id}`.toLowerCase();
-
 // Distinct cases, not the sum of the sections: the 2-look rows deliberately
 // repeat ids the Full OLL / Full PLL grids also carry.
 const total = ALL_CASES.filter((k) => !isLocked(k)).length;
+// Rows and tiles actually rendered — 142 against `total`'s 129, because of that
+// same deliberate double-listing. The filter counts DOM entries, so this is the
+// denominator it has to report against; using `total` there would let a query
+// claim more matches than there are cases.
+const listed = VISIBLE.reduce((n, s) => n + s.items.length, 0);
+
+/** Section id -> the lesson that teaches it. Derived from lesson frontmatter. */
+const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
+  await Promise.all(VISIBLE.map(async (s) => [s.id, await lessonForGroup(s.id)] as const)),
+);
 ---
 
 <Base
   title="Algorithm Reference — Cubepath"
   description="Every Cubepath algorithm — machine-verified, tap to play in 3D."
 >
-  <Header active="reference" />
-  <Page measure="app">
-    <h1>Algorithm Reference</h1>
-    <p class="lead">
-      All {total} cases this site teaches, each machine-verified against a cube simulator before it ships.
-      Tap a case to play it in 3D. Prefer paper? <a href="/cubepath.pdf">Download the PDF guide</a> or
-      the <a href="/print">printable card set</a> — three progression cards plus an annex.
-    </p>
+  {
+    /*
+    ONE STICKY BOX, one measured height, one observer.
 
-    <div class="toolbar">
+    This page used to be the site's only route with a second sticky bar, and it
+    paid for it three times over: --toolbar-h was published by its own
+    ResizeObserver, added into tokens.css's clearance calc as a second term,
+    and declared a third time as a pre-JS `:root` fallback that had to be
+    hand-updated whenever the bar's height changed. The clearance was computed
+    in three places with two different values at one point. It is a row inside
+    `.site-header` now, so the header's existing observer measures the whole
+    thing as --hdr-h and there is nothing left to keep in sync.
+  */
+  }
+  <Header active="reference">
+    <div class="toolbar" slot="pagenav">
       <div class="controls">
         <input
           type="search"
@@ -310,13 +309,35 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
           autocomplete="off"
           spellcheck="false"
         />
-        <p class="hint count" role="status" data-ref-count></p>
+        {
+          /* Rendered non-empty so the sticky toolbar is its final height from
+            first paint, and so clearing the filter announces the way back. */
+        }
+        {
+          /*
+          Two children, one status region. The VISIBLE half stays short and
+          bounded because `.count` is `white-space: nowrap` inside a
+          `display: grid` toolbar, so whatever it holds sets the grid column's
+          min-content width: writing the 93-character zero-result sentence here
+          stretched the page to 872px on a 375px phone. The guidance still
+          reaches a screen reader from the `.sr-only` half — which is inside
+          the same `role="status"`, so it is one announcement, not two — and it
+          is already on screen in the `.noresults` panel below.
+        */
+        }
+        <p class="hint count" role="status" data-ref-status>
+          <span data-ref-count>{listed} cases</span><span class="sr-only" data-ref-count-detail
+          ></span>
+        </p>
       </div>
-      <nav class="jump" aria-label="Sections">
+      <nav class="jump no-scrollbar" aria-label="Sections">
         {
           VISIBLE.map((s) => (
-            <a href={`#${s.id}`} class="chip" data-jump={s.id}>
+            <a href={`#${s.id}`} class="chip" data-jump={s.id} aria-disabled="false">
               {s.nav} <span class="n">{s.items.length}</span>
+              <span class="sr-only" data-jump-empty hidden>
+                — no matches
+              </span>
             </a>
           ))
         }
@@ -325,6 +346,28 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
         <ProgressBar label="Cases you have started" value={0} max={total} id="ref-progress" />
       </div>
     </div>
+  </Header>
+  <Page measure="app">
+    <h1>Algorithm Reference</h1>
+    {
+      /*
+      Both numbers, and the reason they differ, because the page shows both and
+      they used to sit two lines apart with nothing reconciling them: the lead
+      said "All 125 cases" and the filter said "138 cases" (129 and 142 today).
+      The 13 the course
+      teaches by name are listed twice on purpose — once in their own lesson
+      section, once inside the full set.
+    */
+    }
+    <p class="lead">
+      All {total} cases this site teaches, each machine-verified against a cube simulator before it ships.
+      Tap a case to play it in 3D — the {listed - total} the course teaches by name appear twice, once
+      in their lesson's section and once in the full set. Prefer paper?{" "}
+      <a href="/cubepath.pdf">Download the PDF guide</a> or the <a href="/print"
+        >printable card set</a
+      >
+      — three progression cards plus an annex.
+    </p>
 
     <div class="noresults" data-ref-empty hidden>
       <EmptyState glyph="⌕" title="No case matches that">
@@ -337,27 +380,47 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
     {
       VISIBLE.map((s) => {
         const hasIcons = s.items.some((k) => k.icon);
-        const blurb = BLURBS.get(s.id);
+        // tabindex="-1" so the jump bar can move focus to the section, not just
+        // the viewport. Not a labelled `region`: nine of them would restate the
+        // nine h2s a screen reader already navigates by, under a jump bar that
+        // already names every one.
+        const blurb = blurbParts(s);
         return (
-          <section id={s.id} data-section>
+          <section id={s.id} tabindex="-1" data-section>
             <h2>
-              {s.title} <span class="n">({s.items.length})</span>
+              {s.title}{" "}
+              <span class="n" data-section-count>
+                ({s.items.length})
+              </span>
             </h2>
-            {/* Text plus an optional resolved link — never raw HTML. A section
+            {/* Text and resolved links, in order — never raw HTML. A section
                 sometimes has to point at a case whose home is another section;
-                see the 5×5 blurb and `BLURBS`. */}
-            {blurb && (
+                see the 5×5 blurb. */}
+            {blurb.length > 0 && (
               <p class="lead">
-                {blurb.before}
-                {blurb.link && <a href={blurb.link.href}>{blurb.link.text}</a>}
-                {blurb.after}
+                {blurb.map((part) =>
+                  typeof part === "string" ? part : <a href={part.href}>{part.text}</a>,
+                )}
+              </p>
+            )}
+            {/*
+              Back into the course. A section id IS a trainer group key, and a
+              lesson declares the groups it teaches, so this edge is derived
+              from the same frontmatter as the lesson's forward link. Nothing on
+              this page led to a lesson before.
+            */}
+            {taughtBy[s.id] && (
+              <p class="hint taught-in">
+                Taught in <a href={taughtBy[s.id]!.href}>{taughtBy[s.id]!.title}</a>
               </p>
             )}
             {s.kind === "rows" ? (
               <div class="case-list card">
                 {s.items.map((k) => {
                   const anchor = anchorOf(s.id, k.id);
-                  return <CaseRow id={k.id} {...(anchor ? { anchor } : {})} />;
+                  return (
+                    <CaseRow id={k.id} searchExtra={s.words} {...(anchor ? { anchor } : {})} />
+                  );
                 })}
               </div>
             ) : (
@@ -375,6 +438,13 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
                         {sub.title} <span class="n">({sub.items.length})</span>
                       </h3>
                     )}
+                    {/* `data-search` is built by lib/casesearch.ts, the same
+                        builder CaseRow and the unit corpus use — the two copies
+                        of this string had already drifted, and sharing it is why
+                        "awkward", "4x4" and "parity" find anything at all.
+                        `s.words` is the section's own jump label plus the
+                        trainer's name for the set, so a heading a reader can see
+                        is a heading they can search by. */}
                     <div class:list={["tiles", { "tiles--text": !hasIcons }]}>
                       {sub.items.map((k) => {
                         const icon = caseIcon(k.id);
@@ -386,13 +456,14 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
                             title={k.name}
                             aria-label={k.name}
                             data-case={k.id}
-                            data-search={searchText(k)}
+                            data-search={caseHaystack(k, s.words)}
                           >
                             {icon && (
                               <img src={icon} alt="" width="72" height="72" loading="lazy" />
                             )}
                             <span class="tile-name">{tileLabel(k.name)}</span>
-                            <span class="tile-status" data-case-status hidden />
+                            {/* Not `hidden`: the line is reserved, see .tile-status. */}
+                            <span class="tile-status" data-case-status />
                           </a>
                         );
                       })}
@@ -410,6 +481,8 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
 
 <script>
   import { allProgress, getDB, type CaseStatus } from "../../lib/db";
+  import { filter, normalize } from "../../lib/search";
+  import { chromeHeight, markEmptySections, wireJumpBar } from "../../lib/jumpbar";
 
   // ── Filter ─────────────────────────────────────────────────────────
   // Static-build friendly and offline-safe: everything it matches on is
@@ -419,53 +492,230 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
   // did on /practice.
   const search = document.querySelector<HTMLInputElement>("[data-ref-search]");
   const countOut = document.querySelector<HTMLElement>("[data-ref-count]");
+  const countDetail = document.querySelector<HTMLElement>("[data-ref-count-detail]");
   const noResults = document.querySelector<HTMLElement>("[data-ref-empty]");
   const entries = [...document.querySelectorAll<HTMLElement>("[data-search]")];
   const subs = [...document.querySelectorAll<HTMLElement>("[data-sub]")];
   const sections = [...document.querySelectorAll<HTMLElement>("[data-section]")];
   const jumps = [...document.querySelectorAll<HTMLAnchorElement>("[data-jump]")];
+  // WITH the other DOM lookups, not further down beside `wireJumpBar`. `apply()`
+  // reads it, and `apply()` runs during this module's own evaluation (the
+  // back-navigation restore below), so a `const` declared after that call sits
+  // in its temporal dead zone: the whole page script threw a ReferenceError
+  // before the filter, the jump bar or the progress layer had wired anything.
+  const jumpBar = document.querySelector<HTMLElement>(".jump");
+
+  const TOTAL = entries.length;
+
+  const haystacks = entries.map((el) => el.dataset.search ?? "");
+
+  /*
+   * Which entries live inside each subgroup and each section, worked out once.
+   *
+   * `apply` used to ask the DOM instead — `querySelector("[data-search]:not([hidden])")`
+   * on all 34 boxes, every keystroke, which for a zero-result query walks all
+   * 142 tiles twice over. The answer is already in `hits`; only the mapping
+   * from box to entry was missing, and that mapping cannot change after load.
+   */
+  const indexOf = new Map(entries.map((el, i) => [el, i] as const));
+  const idxIn = (box: HTMLElement): number[] =>
+    [...box.querySelectorAll<HTMLElement>("[data-search]")].flatMap((el) => {
+      const i = indexOf.get(el);
+      return i === undefined ? [] : [i];
+    });
+  const subIdx = subs.map(idxIn);
+  const sectionIdx = sections.map(idxIn);
 
   function apply(raw: string): void {
-    const needle = raw.trim().toLowerCase();
+    const needle = raw.trim();
+    // One pass over the whole list, because the strict/loose decision is a
+    // property of the query against the corpus, not of a single entry.
+    const hits = filter(haystacks, needle);
     let shown = 0;
-    for (const el of entries) {
-      const hit = needle === "" || (el.dataset.search ?? "").includes(needle);
+    for (const [i, el] of entries.entries()) {
+      const hit = hits[i] ?? true;
       el.hidden = !hit;
       if (hit) shown += 1;
     }
-    for (const sub of subs) sub.hidden = !sub.querySelector("[data-search]:not([hidden])");
-    for (const section of sections) {
-      section.hidden = !section.querySelector("[data-search]:not([hidden])");
-    }
-    for (const jump of jumps) {
-      const target = jump.dataset.jump ? document.getElementById(jump.dataset.jump) : null;
-      jump.classList.toggle("off", target !== null && target.hidden);
-    }
+    const anyShown = (idx: readonly number[]) => idx.some((j) => hits[j] ?? true);
+    for (const [i, sub] of subs.entries()) sub.hidden = !anyShown(subIdx[i] ?? []);
+    for (const [i, section] of sections.entries()) section.hidden = !anyShown(sectionIdx[i] ?? []);
+    if (jumpBar) markEmptySections(jumpBar);
     if (noResults) noResults.hidden = shown > 0;
     if (countOut) {
-      countOut.textContent = needle === "" ? "" : `${shown} ${shown === 1 ? "match" : "matches"}`;
+      // Short and bounded — this one is visible, and `.count` is nowrap inside
+      // a grid, so a long string here becomes horizontal page scroll.
+      countOut.textContent =
+        normalize(needle) === "" ? `${TOTAL} cases` : `${shown} of ${TOTAL} shown`;
+    }
+    if (countDetail) {
+      // The zero case carries the way out, not just the count: the visible
+      // EmptyState panel says "try a case name, a number, or a cue" and a
+      // screen reader was hearing only "0 matches" as the page emptied. It
+      // lives in the sr-only sibling so it cannot affect layout.
+      countDetail.textContent =
+        shown === 0 && normalize(needle) !== ""
+          ? " — no case matches that. Try a case name, a number, or a word from a recognition cue."
+          : "";
     }
   }
 
-  if (search) {
-    search.addEventListener("input", () => apply(search.value));
-    // A back-navigation restores the field's value but not the filtered DOM.
-    if (search.value) apply(search.value);
+  /*
+   * Keep the reader's place, in both directions.
+   *
+   * Typing collapses the document (9344px -> 1368px at 390px wide), the browser
+   * clamps scrollY to the new maximum, and the matches — laid out from the top
+   * — end up ABOVE the viewport while the sticky toolbar confidently reports
+   * "4 matches". Measured: from y=6000 inside the F2L grid, the first match for
+   * "ua" landed at top = -32px. So on the first keystroke, lift the reader to
+   * the results; on clearing, put them back where they were.
+   *
+   * Never scroll downward (someone filtering from the top is not moved), never
+   * `smooth` (one animation per keystroke would fight the thumb), and restore
+   * only if they have not scrolled deliberately inside the filtered view.
+   */
+  let savedY: number | null = null;
+  /*
+   * Did the reader scroll THEMSELVES while the filter was on?
+   *
+   * The obvious test — "is scrollY still where we left it" — does not work,
+   * because clearing the filter grows the document again and Chrome's scroll
+   * anchoring immediately moves the viewport to keep the topmost visible
+   * element steady (measured: 266 -> 2189 before any of our code ran). So the
+   * offset always differs, and the restore never fired. Watch the event
+   * instead, and discount the scrolls we cause ourselves.
+   */
+  let readerScrolled = false;
+  let selfScrollUntil = 0;
+  window.addEventListener(
+    "scroll",
+    () => {
+      if (savedY !== null && performance.now() > selfScrollUntil) readerScrolled = true;
+    },
+    { passive: true },
+  );
+  /** Ignore scroll events for a moment — ours, and the browser's. */
+  function holdScrollAttribution(): void {
+    selfScrollUntil = performance.now() + 300;
+  }
+  function selfScroll(top: number): void {
+    holdScrollAttribution();
+    window.scrollTo({ top, behavior: "auto" });
   }
 
-  // ── Sticky offsets ─────────────────────────────────────────────────
-  // The site header and this page's toolbar are both sticky, so an anchor jump
-  // must clear the pair of them. Measured, not hard-coded: the header shrinks
-  // below 560px and the toolbar wraps at any width.
-  const header = document.querySelector<HTMLElement>(".site-header");
-  const toolbar = document.querySelector<HTMLElement>(".toolbar");
-  function measure(): void {
-    const root = document.documentElement;
-    if (header) root.style.setProperty("--hdr-h", `${Math.round(header.offsetHeight)}px`);
-    if (toolbar) root.style.setProperty("--toolbar-h", `${Math.round(toolbar.offsetHeight)}px`);
+  /**
+   * Where the reader has to be for the top match to sit below the sticky bars.
+   *
+   * Computed from the match itself, NOT from `toolbar.offsetTop`: the toolbar
+   * is `position: sticky`, so once it is stuck `offsetTop` reports its shifted
+   * position rather than its position in flow. Deep in the page that reads back
+   * as "you are already at the top of the results" — measured 5997 against a
+   * real flow position of ~250 — and the scroll never happened.
+   *
+   * Reading the rect here forces the reflow the hiding just queued, which is
+   * exactly what we want: these are post-filter coordinates, after the browser
+   * has clamped scrollY to the collapsed document.
+   */
+  function topMatchY(): number | null {
+    const first = entries.find((e) => !e.hidden);
+    if (!first) return null;
+    return Math.max(0, first.getBoundingClientRect().top + window.scrollY - chromeHeight() - 12);
   }
-  measure();
-  window.addEventListener("resize", () => requestAnimationFrame(measure), { passive: true });
+
+  function applyAndKeepPlace(raw: string): void {
+    const wasFiltering = savedY !== null;
+    // "Filtering" means the query has a token, not that the field has
+    // characters: a query of only punctuation ("---") normalizes to nothing and
+    // matches everything, so treating it as a filter would teleport the reader
+    // to the top of the page and label the full list "142 of 142 shown".
+    const nowFiltering = normalize(raw) !== "";
+
+    // Before apply(), not after: collapsing the document makes the browser
+    // clamp scrollY, and that clamp fires a scroll event of its own. It is a
+    // consequence of the keystroke, not the reader moving, and counting it as
+    // theirs is what stopped the restore from ever running.
+    holdScrollAttribution();
+
+    if (nowFiltering && !wasFiltering) {
+      savedY = window.scrollY;
+      readerScrolled = false;
+    }
+    apply(raw);
+
+    if (nowFiltering) {
+      const top = topMatchY();
+      // Upward only. Someone filtering from the top of the page is not moved;
+      // someone filtering from deep inside the F2L grid is lifted to their
+      // results instead of being left below all of them. `auto`, never
+      // `smooth`: one animation per keystroke would fight the reader's thumb.
+      if (top !== null && window.scrollY > top) selfScroll(top);
+    } else if (wasFiltering) {
+      const back = savedY ?? 0;
+      const keep = !readerScrolled;
+      savedY = null;
+      if (!keep) return;
+      // Force the reflow the un-hiding queued before setting the offset, so we
+      // are writing against the grown document rather than the collapsed one.
+      void document.documentElement.scrollHeight;
+      selfScroll(back);
+    }
+  }
+
+  /*
+   * NOT rAF-coalesced, and that is a measured decision rather than an omission.
+   *
+   * One apply is 1.3-5.2ms on a throttled phone, so batching a fast typist's
+   * keystrokes into one per frame is real work saved. It was tried. But the
+   * scroll bookkeeping below is a sequence of before/after readings around the
+   * reflow each keystroke causes, and deferring the apply by a frame moved the
+   * restore off by 113px on the measured phone case — the reader lands near
+   * where they were instead of where they were. Three milliseconds is not worth
+   * that, and the coalescing cannot be made safe without unpicking the
+   * attribution window this depends on.
+   */
+  if (search) {
+    search.addEventListener("input", () => applyAndKeepPlace(search.value));
+    // The UA cancel button on <input type="search"> fires `search`, and in some
+    // browsers not `input` — without this the DOM stays filtered behind a box
+    // that looks empty. Escape is the keyboard equivalent, and Firefox renders
+    // no cancel button at all, so it is the only exit there.
+    search.addEventListener("search", () => applyAndKeepPlace(search.value));
+    search.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape" || search.value === "") return;
+      e.preventDefault();
+      search.value = "";
+      applyAndKeepPlace("");
+    });
+    // A back-navigation restores the field's value but not the filtered DOM.
+    if (search.value) apply(search.value);
+    else apply("");
+  }
+
+  // A bfcache restore brings its own scroll position; a saved offset from
+  // before the page was frozen would fight it.
+  window.addEventListener("pageshow", (e) => {
+    if (e.persisted) savedY = null;
+  });
+
+  // ── Sticky offsets ─────────────────────────────────────────────────
+  // Nothing to publish here any more. The toolbar is a row INSIDE
+  // `.site-header`, so Header.astro's own ResizeObserver measures it as part of
+  // --hdr-h — including the three ways it grows that are not window resizes and
+  // that each left the old one-shot measurement stale: the progress bar unhides
+  // for a reader with saved progress (+38px at >=561px), the match count appears
+  // on the first keystroke (+20px at 390px), and the webfont settles. That bug
+  // is now structurally impossible rather than separately handled. `jumpBar` is
+  // resolved with the other DOM lookups at the top, because `apply()` needs it.
+
+  // ── Which section am I in, and does a chip really go there? ────────
+  // Both behaviours now come from lib/jumpbar.ts, which is this code moved
+  // rather than rewritten: the -52px scrollIntoView regression and the
+  // stranded-aria-current bug are documented there, and every surface with a
+  // jump bar gets them right by construction instead of re-deriving them.
+  // The bar measures the sticky chrome, reads the destination off each href and
+  // takes "disabled" from the `aria-disabled` this page's filter already writes.
+  // All three were passed in, identically to how the outline passes them.
+  if (jumpBar) wireJumpBar({ bar: jumpBar, chips: jumps });
 
   // ── Your own progress, in the table ────────────────────────────────
   // jperm — the reference benchmark — puts your own times beside the case. We
@@ -480,11 +730,15 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
   };
 
   async function stampProgress(): Promise<void> {
-    const progress = await allProgress();
+    // Both reads at once: they are independent stores, so awaiting them in
+    // series made the progress layer wait for the sum rather than the max.
+    const [progress, cards] = await Promise.all([
+      allProgress(),
+      getDB().then((db) => db.getAll("cards")),
+    ]);
     const started = progress.filter((p) => p.status !== "unseen");
     if (started.length === 0) return;
 
-    const cards = await (await getDB()).getAll("cards");
     const scheduled = new Map(cards.map((c) => [c.caseId, c] as const));
     const status = new Map<string, CaseStatus>(started.map((p) => [p.caseId, p.status] as const));
     const now = Date.now();
@@ -521,7 +775,32 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
             : `Due in ${rel(due - now)}`;
       const last = card?.last_review;
       slot.title = last ? `Last reviewed ${rel(now - last.getTime())} ago` : "Not reviewed yet";
+      // Still needed for the CaseRow chip, which stays `hidden` until written:
+      // .chip carries a border, radius and padding, so reserving it the way the
+      // tile line is reserved would paint an empty pill on every lesson and
+      // case page too. A no-op for the tile, whose line is always present.
       slot.hidden = false;
+      // A tile's aria-label overrode its own content, so the learned/due layer
+      // — the reason this page reads IndexedDB at all — was announced to
+      // nobody. Fold the status in rather than dropping the label: `title` is
+      // still the only way a pointer user sees the name tileLabel() truncated
+      // ("OLL 27" -> "27").
+      if (el.hasAttribute("aria-label")) {
+        el.setAttribute("aria-label", `${el.title} — ${slot.textContent}`);
+      }
+    }
+
+    // Per-section ratios on the headings the reader is already scanning:
+    // "Full OLL (12/57)". Works for rows and tiles alike, because CaseRow
+    // carries data-case on its root too. Left off the JUMP chips on purpose —
+    // that number is the set's SIZE, which is what a first-time visitor picks
+    // a section by, and widening every chip lengthens the nowrap phone strip.
+    for (const section of document.querySelectorAll<HTMLElement>("[data-section]")) {
+      const out = section.querySelector<HTMLElement>("[data-section-count]");
+      if (!out) continue;
+      const all = section.querySelectorAll("[data-case]").length;
+      const seen = section.querySelectorAll("[data-case][data-status]").length;
+      if (seen > 0) out.textContent = `(${seen}/${all})`;
     }
   }
 
@@ -544,15 +823,33 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
    * sections and rows beneath it.
    */
   .toolbar {
-    position: sticky;
-    top: var(--hdr-h, 47px);
-    z-index: 5;
+    /*
+     * No position, no top, no z-index, no background, no border, no margin —
+     * every one of those was this element being its own sticky bar, and it is a
+     * row inside `.site-header` now. Leaving them cost 40px of pure margin
+     * inside the header box and left a second sticky element nested in the
+     * first: measured 217px of chrome against the 177px the two separate bars
+     * used, which is the opposite of the point. Only the layout of its own
+     * contents belongs here.
+     *
+     * The shell gutter has to be re-applied because this no longer sits inside
+     * <Page>.
+     */
     display: grid;
     gap: var(--space-2);
-    margin: var(--space-4) 0 var(--space-5);
-    padding: var(--space-3) 0;
-    background: var(--paper);
-    border-block-end: 1px solid var(--line);
+    max-width: var(--shell-max);
+    margin-inline: auto;
+    padding: 0 var(--shell-x) var(--space-2);
+    /*
+     * No `overflow-x: clip` here. `.jump` bleeds past this box to reach the
+     * screen edges and its nowrap strip measures 901px against 375px, which the
+     * document used to inherit as 872px of horizontal scroll. `.site-header`
+     * clips that axis for the whole sticky box now — deliberately there rather
+     * than per slot, "so a future bar cannot reintroduce it" — and it clips
+     * TIGHTER than this ever did, so the copy that lived here could never be
+     * the effective one. It also justified itself by a `position: sticky` this
+     * element no longer has.
+     */
   }
   .controls {
     display: flex;
@@ -564,6 +861,17 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
     min-inline-size: 0;
     max-inline-size: 32rem;
     font: inherit;
+    /*
+     * AFTER `font: inherit`, which is a shorthand and resets font-size — order
+     * is load-bearing here. Mobile Safari force-zooms the viewport when a
+     * focused text input is under 16px, and the page never zooms back: the
+     * reader taps the one control that finds a case among 300, and the header
+     * and half of every row go off-screen for the rest of the session. In the
+     * base rule, not the phone block: iPadOS zooms identically at 768-1024px,
+     * where that media query never applies. --text-lg is 17px, and an <input>
+     * is not a heading, so the "never override the heading scale" rule stands.
+     */
+    font-size: var(--text-lg);
     color: var(--ink);
     background: var(--card);
     border: 1px solid var(--line);
@@ -579,15 +887,12 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
     flex-wrap: wrap;
     gap: var(--space-2);
   }
-  .jump .chip:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-    text-decoration: none;
-  }
-  /* A section the current filter emptied: still reachable, visibly inactive. */
-  .jump .chip.off {
-    opacity: 0.45;
-  }
+  /*
+   * `a.chip:hover` and `a.chip.here` are in tokens.css, with every other chip
+   * state. Both in-page bars mark the current section the same way and both
+   * used to say so themselves; the outline's copy drifted far enough to name a
+   * custom property that does not exist.
+   */
   .n {
     color: var(--faint);
     font-weight: 400;
@@ -601,10 +906,32 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
     margin-block: var(--space-5);
   }
 
+  /*
+   * No scroll-margin here any more, on purpose.
+   *
+   * This page used to write `calc(--hdr-h + --toolbar-h + --space-3)` three
+   * times — on `section`, on `.case-list .case-row[id]` and on `.full-group` —
+   * and the one anchored element it forgot was `.tile`, which owns the anchor
+   * for 106 of the 119 tiles. So the round trip the site advertises (a case
+   * page's "See it in the reference") landed the tile with ZERO visible pixels,
+   * fully behind 154px of sticky chrome; measured in both Chromium and WebKit
+   * at 390x844 on oll.40, pll.ga and f2l.12. The row-anchored oll.27, which had
+   * the rule, landed correctly.
+   *
+   * The fix is not a fourth copy. tokens.css sets the clearance once as
+   * `html { scroll-padding-block-start }`, which applies to every scroll into
+   * this page's scrollport — so a tile, a row, a section and a subgroup all
+   * clear the bars by construction, and so does a focus move, which no
+   * scroll-margin ever covered. Adding a scroll-margin back would stack on top
+   * of the padding and double the clearance.
+   */
   section {
     margin-block-start: var(--space-7);
-    /* Clear both sticky bars when an anchor jump lands here. */
-    scroll-margin-block-start: calc(var(--hdr-h, 47px) + var(--toolbar-h, 104px) + var(--space-3));
+  }
+  /* The jump bar focuses the section it scrolls to. Inside, not around: a ring
+     drawn outside a full-width section sits past the viewport edge. */
+  section:focus-visible {
+    outline-offset: -2px;
   }
   h2 {
     margin-block-end: var(--space-2);
@@ -612,18 +939,11 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
   .case-list {
     overflow: hidden;
   }
-  /* An anchored row is a link target too, so it needs the same clearance as a
-     section heading. :global because the row belongs to CaseRow.astro — but it
-     is scoped to this page's .case-list, which is why the offsets are safe. */
-  .case-list :global(.case-row[id]) {
-    scroll-margin-block-start: calc(var(--hdr-h, 47px) + var(--toolbar-h, 104px) + var(--space-3));
-  }
   .nodiagram {
     margin-block: var(--space-2) 0;
   }
   .full-group {
     margin-block: var(--space-4);
-    scroll-margin-block-start: calc(var(--hdr-h, 47px) + var(--toolbar-h, 104px) + var(--space-3));
   }
   .full-group h3 {
     color: var(--soft);
@@ -677,11 +997,26 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
   .tile-name {
     overflow-wrap: anywhere;
   }
-  /* Written by the progress script. Text, never colour alone. */
+  /*
+   * Written by the progress script. Text, never colour alone.
+   *
+   * The line is RESERVED rather than revealed: it used to carry `hidden`, so
+   * stampProgress() grew every tile by 22.6px after paint — and the moment that
+   * costs you is coming Back from a case page, when the browser has already
+   * restored your scroll offset against the shorter layout and the grid then
+   * grows underneath it. The honest cost of reserving is that /reference is
+   * ~650px longer on a phone for everyone, first-time readers included.
+   *
+   * The reservation is built from tokens (--text-xs at the body's 1.55
+   * line-height), not from `1lh`: that unit is recent enough that an older
+   * browser drops the declaration silently, and a silently-dropped reservation
+   * brings the shift straight back.
+   */
   .tile-status {
     font-size: var(--text-xs);
     font-weight: 600;
     color: var(--accent);
+    min-block-size: calc(var(--text-xs) * 1.55);
   }
   .tile[data-status="learned"] {
     border-color: var(--ok);
@@ -696,6 +1031,14 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
     color: var(--warn);
   }
 
+  /* Coming back from a case page lands on a tile among forty near-identical
+     ones; :target says which. LAST, deliberately: it has the same specificity
+     as .tile[data-status="learned"] above, so source order is the only thing
+     that lets the reader see where they landed on a case they have studied. */
+  .tile:target {
+    border-color: var(--accent);
+  }
+
   @media (max-width: 560px) {
     .controls {
       flex-direction: column;
@@ -706,13 +1049,21 @@ const total = ALL_CASES.filter((k) => !isLocked(k)).length;
       max-inline-size: none;
     }
     /* The jump chips stack three rows deep on a phone and push the first
-       case off the screen; scroll them sideways instead. */
+       case off the screen; scroll them sideways instead.
+
+       The strip is 871px wide in a 390px viewport — three of nine chips
+       visible, with `scrollbar-width: none` removing the only hint that the
+       other six exist. A reader looking for Full OLL sees four chips that all
+       say "2-look" and concludes the full sets are not in the bar. The mask is
+       that hint. --space-4 and no wider: a mask multiplies alpha, so a fade
+       that reaches across a chip's label costs it measured contrast, while
+       16px lands in the inter-chip gap and the trailing padding. */
     .jump {
       flex-wrap: nowrap;
       overflow-x: auto;
-      scrollbar-width: none;
       margin-inline: calc(-1 * var(--shell-x));
       padding-inline: var(--shell-x);
+      mask-image: linear-gradient(to right, #000 calc(100% - var(--space-4)), transparent);
     }
     .jump .chip {
       white-space: nowrap;

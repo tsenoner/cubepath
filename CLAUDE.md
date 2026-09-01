@@ -112,7 +112,7 @@ npm run format:check     # prettier (npm run format to write)
 npx astro check          # strictest type gate for src/ + e2e/ + tests/
 npm run check:scripts    # tsc --checkJs over scripts/*.mjs
 npx vitest run           # every algorithm machine-verified on the cubing.js kpuzzle
-npx playwright test      # smoke + airplane-mode E2E (the PWA gate) + axe a11y
+npx playwright test      # smoke + airplane-mode E2E (the PWA gate) + axe a11y + nav
 node scripts/gen-cases.mjs      # regenerate src/data/fullsets.gen.ts + .rich.gen.ts
 node scripts/extract-algs.mjs   # re-extract + verify the JPerm dataset (gated write)
 node scripts/verify-f2l.mjs     # F2L-41 verifier
@@ -147,6 +147,118 @@ to perform. Annotate new scripts with JSDoc; do not add a script that opts out.
 The scripts stay on `strict` rather than the app's `strictest`, because
 `noUncheckedIndexedAccess` costs ~99 casts in dense cube-math indexing that JS
 cannot write as `!`.
+
+## Navigating the site: three rules that are one rule each
+
+The wayfinding layer was reworked on 2026-08-30 (docs/DECISIONS.md § "Navigating
+/learn and /reference"). Three of its invariants are easy to break by adding
+something reasonable, so they are stated here rather than only in the diff.
+
+**There is ONE sticky box per route, and ONE number describing it.**
+`Header.astro` is that box; it measures itself with a ResizeObserver and
+publishes `--hdr-h` on every route, and `tokens.css` states the clearance once as
+`html { scroll-padding-block-start: calc(var(--hdr-h) + var(--space-3)) }`.
+
+A page that needs its own bar — an outline, a filter, section chips — renders it
+into Header's **`pagenav` slot**, as a second ROW INSIDE `.site-header`. Because
+the observer watches the whole header box, that row is measured for free and
+needs no variable, no second observer and no term in the calc. `/reference` had
+the alternative: its own sticky toolbar, its own `--toolbar-h`, its own observer
+and a hand-maintained pre-JS fallback for it, with the clearance at one point
+computed in three places with two different values. Consolidating it removed the
+variable and 17px of chrome (177px → 160px at 390×844).
+
+Do not add a `scroll-margin` to an anchored element: `scroll-padding` insets the
+scrollport and `scroll-margin` expands the target, so the two STACK and the
+element lands a full header lower than intended. `/reference` used to write the
+same `calc` on three elements and forgot `.tile`, which owns the anchor for 106
+of 119 tiles — the site's own "See it in the reference" link landed with zero
+visible pixels — and `/glossary`, the destination of every auto-linked term in
+the course, shipped two of them until it was measured at 65px low.
+
+**The bar's BEHAVIOUR lives in `src/lib/jumpbar.ts`, and there is one copy.**
+`wireJumpBar()` marks the section you are in, keeps that chip in view, and moves
+FOCUS (not just the viewport) when a chip is taken. Two traps are encoded there
+because this repo shipped both: `scrollIntoView` is unusable on a chip inside
+sticky chrome — it walks every ancestor scrolling box including the document,
+and dragged the page backwards 52px at every section boundary — so the module
+sets `scrollLeft`/`scrollTop` on the bar and touches no ancestor; and the
+observer clears the current-chip marking BEFORE its early return, or a filter
+that empties the page strands `aria-current` on a chip that is simultaneously
+`aria-disabled`. Do not hand-write a second spy. `markEmptySections()` is the
+other half and belongs to the module for the same reason: a chip over a section
+the filter emptied has to lose its class, its `aria-disabled`, its tab stop and
+its sr-only flag together. /reference had that as twelve lines of its own page
+script, so /glossary — the site's other filter — shipped live chips pointing at
+`display: none` sections.
+
+**A bar goes in the slot only if the page is long enough to need one.** `/`
+(6.2 phone screens), `/glossary` (10.3), `/reference` (13.8) and every lesson
+(up to 11.5) have one. `/practice` is 1.1 screens and `/print` is 2.5; both are
+gated at a maximum height in `e2e/nav.spec.ts` so the absence is deliberate and
+checked, rather than an omission somebody later "fixes".
+
+**A phase id comes from `phaseAnchor()`** in `data/phases.ts`, never from the
+raw key. `#444` and `#phase-1.5` are legal fragments but illegal
+`querySelector` arguments, so the prefix and the de-dotting are load-bearing.
+A /reference address comes from `data/refsections.ts` the same way —
+`caseAnchor()` for a case, `referenceHref()` for the link — and for the same
+reason: four places hand-wrote those two rules, so changing either produced a
+dead fragment (a silent scroll to the top of a 12,000px page) rather than an
+error.
+
+**Lesson completion has two writers, and neither is optional.** `LessonMeta`
+observes a `data-lesson-end` sentinel AND the exits tagged `data-lesson-advance`
+— that ATTRIBUTE and nothing else, so a presentational class rename cannot
+silently remove a writer; the selector used to also match `a.pager-link.next`,
+which pinned a CSS class as behavioural contract. For a year the pager click was
+the only writer, so a reader who took the lesson's own filled "Drill …" button
+never got credit and the whole progress layer stayed dark.
+
+**Whether an exit finishes the lesson is DECLARED, not inferred**:
+`practice.links[].advance` in the lesson's frontmatter (`content.config.ts`),
+defaulting to FALSE. `Lesson.astro` used to tag any href starting `/practice/`
+or `/learn/`, which is a guess about intent read off a URL — a lesson linking
+back to a prerequisite would have credited itself. The default is the safe
+direction: an uncredited lesson is offered again, a wrongly credited one
+disappears from Resume with no way back. `white-cross.mdx` offers `/print` and
+is the case the rule exists for; `e2e/nav.spec.ts` pins it.
+
+Four shared modules exist so the same string is not built twice:
+
+- `src/lib/search.ts` — normalisation and matching. Used by every haystack
+  builder AND by /glossary, the site's other filter, which had kept the
+  `.includes()` idiom this module was written to replace. Client-safe: it
+  imports nothing.
+- `src/lib/casesearch.ts` — a case's recognition cue (lean entries leave it to
+  RICH) and its haystack. BUILD-TIME ONLY, because it reads
+  `fullsets.rich.gen.ts`; that is exactly why it is not part of `search.ts`,
+  which two client scripts import.
+- `src/data/refsections.ts` — /reference's SECTIONS: the order, the ids, the
+  jump labels, the membership, the search words and the two addressing rules.
+  Membership lives here and not in the page because a label-only registry
+  cannot be gated — `tests/search.spec.ts` had to guess which section a case
+  renders under, guessed `CaseDef.group` (a recognition grouping in a different
+  namespace), and so indexed most of the page under the wrong section name with
+  no gate able to see it. The page supplies only the WORDING, one entry per id,
+  and fails the build if the two lists diverge either way.
+- `src/lib/teaches.ts` — case → lesson and group → lesson, inverted at build
+  time from lesson frontmatter. Build-time only; never import it from a client
+  `<script>`.
+
+`search.ts` compiles a query ONCE per query, not once per entry, and
+`haystackFor` de-duplicates tokens. Both are why the filter is cheap: the five
+haystack sources overlap by construction, so /reference used to ship 14.8 KB of
+`data-search` (10.3 KB now) and rebuild the matcher 142 times per keystroke.
+The filter is deliberately NOT rAF-coalesced — it was tried, and deferring the
+apply by a frame moved the scroll restore off by 113px, because the bookkeeping
+around it is a sequence of readings taken either side of the reflow each
+keystroke causes.
+A shared component class is styled ONCE, in `tokens.css` — `.chip` and its
+`a.chip:hover` / `a.chip.here` states included. Both jump bars restated it, the
+two copies disagreed, and one asked for a `--ink-soft` that has never existed,
+which silently dropped the declaration and left every outline chip at inherited
+ink.
 
 Two Prettier settings are load-bearing, not taste: `.prettierignore` excludes
 `src/content` (its MDX printer rewrites `*italic*` and explodes the lesson
