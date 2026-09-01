@@ -120,6 +120,67 @@ const { items, label } = Astro.props;
     }
   }
   /*
+   * WIDE SCREENS: the strip becomes a sidebar in the margin nobody was using.
+   *
+   * Prose is capped at --measure-prose (68ch, ~72 characters) because that is
+   * the readable measure — at 1440px a lesson's text line is 612px and the
+   * page leaves 390px empty on EACH side, and at 1920px it is 630px. The
+   * answer to that waste is not longer lines, which would read worse; it is to
+   * put something in the margin. This outline is the obvious tenant: as a
+   * column it shows all 16 of a long lesson's sections at once, where the
+   * strip could only show three or four and had to be scrolled.
+   *
+   * `position: fixed` takes it OUT of the header's flow, so the observer that
+   * publishes --hdr-h stops counting it and the header goes back to being one
+   * thin bar on wide screens — the sidebar costs no vertical chrome at all.
+   * That also means `top` can be expressed against --hdr-h without a circular
+   * dependency, because by then --hdr-h no longer contains this element.
+   *
+   * Anchored to the centre line rather than to the viewport edge, so it tracks
+   * the prose column at every width instead of drifting away from it. The
+   * width formula is what stops it colliding with the text at exactly 1100px,
+   * where the margin is only 220px.
+   *
+   * Only `.pagenav` gets this. /reference's bar is `.toolbar`, a filter plus
+   * ten chips on a 1200px `--measure-app` page whose margin is 120px — there
+   * is no room for a sidebar there and no reason to want one.
+   */
+  @media (min-width: 1100px) {
+    .pagenav {
+      position: fixed;
+      inset-block-start: calc(var(--hdr-h) + var(--space-5));
+      inset-inline-end: calc(50% + var(--measure-prose) / 2 + var(--space-5));
+      inline-size: min(13rem, calc(50vw - var(--measure-prose) / 2 - var(--space-6)));
+      max-block-size: calc(100vh - var(--hdr-h) - var(--space-7));
+      overflow-y: auto;
+      flex-direction: column;
+      align-items: stretch;
+      flex-wrap: nowrap;
+      gap: 2px;
+      margin: 0;
+      padding: 0;
+      mask-image: none;
+    }
+    .chip {
+      /* A list, not a row of pills: the border-per-chip reads as clutter in a
+         column, and a left rule gives the current item somewhere to sit. */
+      border: 0;
+      border-inline-start: 2px solid var(--line);
+      border-radius: 0;
+      padding: 4px 10px;
+      white-space: normal;
+      text-align: start;
+    }
+    .chip:hover {
+      border-inline-start-color: var(--accent);
+      background: var(--accent-soft);
+    }
+    .chip.here {
+      border-inline-start-color: var(--accent);
+    }
+  }
+
+  /*
    * A landscape phone is 390px TALL. Two stacked sticky rows there is most of
    * the screen, so the whole header stops sticking rather than this row
    * silently costing a reader two thirds of their viewport.

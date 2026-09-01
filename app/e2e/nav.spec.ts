@@ -600,3 +600,58 @@ for (const route of ["/practice/", "/print/"] as const) {
     expect(height, `${route} has grown — reconsider whether it needs a bar`).toBeLessThan(844 * 4);
   });
 }
+
+// ── Wide screens: the outline moves into the margin ──────────────────
+// A lesson's text line is 612px because --measure-prose caps it at ~72
+// characters, which leaves 390px empty on each side at 1440px and 630px at
+// 1920px. The outline is what fills it. `position: fixed` takes the bar out of
+// the header's flow, so the header returns to one thin row and the sidebar
+// costs no vertical chrome at all — measured 167px -> 55px at the breakpoint.
+for (const route of ["/", "/glossary/", "/learn/full-oll-overview/"] as const) {
+  test(`${route}: the outline becomes a margin sidebar at >=1100px`, async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(route);
+    await page.waitForTimeout(300);
+
+    const r = await page.evaluate(() => {
+      const bar = document.querySelector(".pagenav")!;
+      const p = document.querySelector("main p")!;
+      const bb = bar.getBoundingClientRect();
+      const pb = p.getBoundingClientRect();
+      const chips = [...bar.querySelectorAll(".chip")];
+      return {
+        position: getComputedStyle(bar).position,
+        gapToText: Math.round(pb.left - bb.right),
+        onScreen: bb.left >= 0 && bb.top >= 0,
+        // the whole point of a column: every chip legible at once, no scrolling
+        allChipsInView: chips.every((c) => {
+          const r = c.getBoundingClientRect();
+          return r.top >= bb.top - 1 && r.bottom <= bb.bottom + 1;
+        }),
+        chips: chips.length,
+        headerH: Math.round(document.querySelector(".site-header")!.getBoundingClientRect().height),
+        hscroll: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      };
+    });
+
+    expect(r.position, "the bar must leave the header flow at desktop").toBe("fixed");
+    expect(r.onScreen, "the sidebar must be on screen").toBe(true);
+    // It must not collide with the prose it sits beside.
+    expect(r.gapToText, "the sidebar overlaps the text column").toBeGreaterThan(0);
+    expect(r.allChipsInView, "every chip must be readable without scrolling").toBe(true);
+    expect(r.chips).toBeGreaterThan(2);
+    // Out of flow means the header is one row again — the sidebar is free.
+    expect(r.headerH, "the header must shed the bar's height at desktop").toBeLessThan(90);
+    expect(r.hscroll).toBe(false);
+  });
+}
+
+test("below the breakpoint the outline is still the in-header strip", async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 900 });
+  await page.goto("/learn/full-oll-overview/");
+  const pos = await page.evaluate(
+    () => getComputedStyle(document.querySelector(".pagenav")!).position,
+  );
+  expect(pos, "1024px is below the sidebar breakpoint").not.toBe("fixed");
+  expect(await page.locator(".site-header .pagenav").count()).toBe(1);
+});
