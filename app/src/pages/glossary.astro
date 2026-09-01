@@ -128,7 +128,7 @@ const searchText = (e: (typeof GLOSS_ENTRIES)[number]) =>
 </Base>
 
 <script>
-  import { filter } from "../lib/search";
+  import { filter, normalize } from "../lib/search";
   import { markEmptySections } from "../lib/jumpbar";
 
   // The same MATCHER as /reference's filter, not merely the same shape:
@@ -164,7 +164,13 @@ const searchText = (e: (typeof GLOSS_ENTRIES)[number]) =>
     if (pagenav) markEmptySections(pagenav);
     if (noResults) noResults.hidden = shown > 0;
     if (countOut) {
-      countOut.textContent = needle === "" ? "" : `${shown} ${shown === 1 ? "term" : "terms"}`;
+      // "Filtering" means the query has a TOKEN, not that the field has
+      // characters. A query of only punctuation ("---") normalizes to nothing
+      // and matches everything, so testing the raw string labelled the whole
+      // unfiltered list "142 terms" as if it were a result set. /reference asks
+      // the same question the same way.
+      countOut.textContent =
+        normalize(needle) === "" ? "" : `${shown} ${shown === 1 ? "term" : "terms"}`;
     }
   }
 

@@ -66,16 +66,23 @@ function workerSafePreloadHelper() {
  * the real Workbox `sw.js` is the whole PWA update mechanism.
  */
 function devServiceWorkerReset() {
+  // `event.waitUntil`, not a bare async listener: without it the browser is
+  // free to terminate the worker the moment the handler returns its promise,
+  // and the cache deletion this exists for is exactly the part that would be
+  // cut short — leaving the stale precache that hides the change you are
+  // looking at.
   const BODY = [
     "self.addEventListener('install', () => self.skipWaiting());",
-    "self.addEventListener('activate', async () => {",
-    "  try {",
-    "    const keys = await caches.keys();",
-    "    await Promise.all(keys.map((k) => caches.delete(k)));",
-    "    await self.registration.unregister();",
-    "    const clients = await self.clients.matchAll({ type: 'window' });",
-    "    for (const c of clients) c.navigate(c.url);",
-    "  } catch {}",
+    "self.addEventListener('activate', (event) => {",
+    "  event.waitUntil((async () => {",
+    "    try {",
+    "      const keys = await caches.keys();",
+    "      await Promise.all(keys.map((k) => caches.delete(k)));",
+    "      await self.registration.unregister();",
+    "      const clients = await self.clients.matchAll({ type: 'window' });",
+    "      for (const c of clients) c.navigate(c.url);",
+    "    } catch {}",
+    "  })());",
     "});",
   ].join("\n");
   /** @type {import("vite").Plugin} */

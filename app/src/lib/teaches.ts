@@ -34,31 +34,41 @@ interface Maps {
   byGroup: Map<string, TeachingLesson>;
 }
 
-let cached: Maps | null = null;
+/**
+ * The PROMISE, not the resolved value.
+ *
+ * Caching the result only helps a caller that arrives after the first build has
+ * finished, and the busiest caller does the opposite: /reference asks for all
+ * ten sections through one `Promise.all`, so ten calls start before any of them
+ * has anything to cache — ten `getCollection` reads and ten map builds where
+ * one was intended. A promise is cached the moment the first call starts.
+ */
+let cached: Promise<Maps> | null = null;
 
-async function build(): Promise<Maps> {
-  if (cached) return cached;
-  const lessons = (await getCollection("lessons")).sort((a, b) => a.data.order - b.data.order);
-  const byCase = new Map<string, TeachingLesson>();
-  const byGroup = new Map<string, TeachingLesson>();
+function build(): Promise<Maps> {
+  cached ??= (async () => {
+    const lessons = (await getCollection("lessons")).sort((a, b) => a.data.order - b.data.order);
+    const byCase = new Map<string, TeachingLesson>();
+    const byGroup = new Map<string, TeachingLesson>();
 
-  for (const lesson of lessons) {
-    const entry: TeachingLesson = {
-      id: lesson.id,
-      title: lesson.data.title,
-      href: `/learn/${lesson.id}/`,
-    };
-    // First lesson in course order wins: a case introduced in Phase 3 and
-    // revisited in Full CFOP should send the reader to where it was taught,
-    // not to where it was recapped.
-    for (const caseId of lesson.data.algorithms) {
-      if (!byCase.has(caseId)) byCase.set(caseId, entry);
+    for (const lesson of lessons) {
+      const entry: TeachingLesson = {
+        id: lesson.id,
+        title: lesson.data.title,
+        href: `/learn/${lesson.id}/`,
+      };
+      // First lesson in course order wins: a case introduced in Phase 3 and
+      // revisited in Full CFOP should send the reader to where it was taught,
+      // not to where it was recapped.
+      for (const caseId of lesson.data.algorithms) {
+        if (!byCase.has(caseId)) byCase.set(caseId, entry);
+      }
+      for (const group of lesson.data.practice.groups) {
+        if (!byGroup.has(group)) byGroup.set(group, entry);
+      }
     }
-    for (const group of lesson.data.practice.groups) {
-      if (!byGroup.has(group)) byGroup.set(group, entry);
-    }
-  }
-  cached = { byCase, byGroup };
+    return { byCase, byGroup };
+  })();
   return cached;
 }
 

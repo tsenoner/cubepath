@@ -112,6 +112,9 @@ export function trainerGroups(): TrainerGroup[] {
  */
 export const TRAINER_GROUPS: readonly TrainerGroup[] = trainerGroups();
 
+/** "Full OLL (57)" -> "Full OLL". */
+const stripCount = (name: string): string => name.replace(/\s*\([^)]*\)\s*$/, "");
+
 /**
  * Short set label for a case — the trainer group's name without its count.
  * Derived from `trainerGroups()` so the placeholder tile shown where a case
@@ -119,7 +122,9 @@ export const TRAINER_GROUPS: readonly TrainerGroup[] = trainerGroups();
  */
 export function groupLabel(def: CaseDef): string {
   const g = trainerGroups().find((t) => t.member(def));
-  return g ? setName(g.key) : def.group;
+  // The group is already in hand — `setName(g.key)` would re-filter the whole
+  // list through `isLocked` and search it again for the entry we are holding.
+  return g ? stripCount(g.name) : def.group;
 }
 
 /**
@@ -132,7 +137,7 @@ export function groupLabel(def: CaseDef): string {
  */
 export function setName(key: string): string {
   const g = trainerGroups().find((t) => t.key === key);
-  return (g?.name ?? key).replace(/\s*\([^)]*\)\s*$/, "");
+  return stripCount(g?.name ?? key);
 }
 
 /** Members of a visible set, minus anything `isLocked` hides inside it. */

@@ -246,14 +246,14 @@ type ResolvedPart = string | { href: string; text: string };
 const blurbParts = (s: Rendered): ResolvedPart[] =>
   (s.blurb ?? []).map((part) => {
     if (typeof part === "string") return part;
-    const owner = anchorOwner.get(part.caseId);
-    const anchor = owner ? anchorOf(owner, part.caseId) : undefined;
-    if (!anchor) {
+    // Owned by SOME visible section is the whole question — asking `anchorOf`
+    // with that section could only ever compare it to itself.
+    if (!anchorOwner.has(part.caseId)) {
       throw new Error(
         `/reference: the ${s.id} blurb links to ${part.caseId}, which no visible section owns`,
       );
     }
-    return { href: `#${anchor}`, text: part.text };
+    return { href: `#${caseAnchor(part.caseId)}`, text: part.text };
   });
 
 // ── Presentation helpers ─────────────────────────────────────────────
@@ -263,15 +263,6 @@ const tileLabel = (name: string) =>
     .replace(/\s*\(4×4 (?:OLL|PLL)\)$/, "")
     .replace(/^(?:OLL|F2L|L2E)\s+/, "")
     .replace(/-Perm$/, "");
-
-/**
- * What the filter matches against. Built by lib/casesearch.ts, which CaseRow
- * and the unit corpus use too — the two copies of this string had already
- * drifted, and the shared builder is why "awkward", "4x4" and "r u r" now find
- * anything at all. `nav` is the section's own jump label, so a visible heading
- * is searchable.
- */
-const searchText = caseHaystack;
 
 // Distinct cases, not the sum of the sections: the 2-look rows deliberately
 // repeat ids the Full OLL / Full PLL grids also carry.
@@ -447,6 +438,13 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
                         {sub.title} <span class="n">({sub.items.length})</span>
                       </h3>
                     )}
+                    {/* `data-search` is built by lib/casesearch.ts, the same
+                        builder CaseRow and the unit corpus use — the two copies
+                        of this string had already drifted, and sharing it is why
+                        "awkward", "4x4" and "parity" find anything at all.
+                        `s.words` is the section's own jump label plus the
+                        trainer's name for the set, so a heading a reader can see
+                        is a heading they can search by. */}
                     <div class:list={["tiles", { "tiles--text": !hasIcons }]}>
                       {sub.items.map((k) => {
                         const icon = caseIcon(k.id);
@@ -458,7 +456,7 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
                             title={k.name}
                             aria-label={k.name}
                             data-case={k.id}
-                            data-search={searchText(k, s.words)}
+                            data-search={caseHaystack(k, s.words)}
                           >
                             {icon && (
                               <img src={icon} alt="" width="72" height="72" loading="lazy" />
@@ -500,6 +498,12 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
   const subs = [...document.querySelectorAll<HTMLElement>("[data-sub]")];
   const sections = [...document.querySelectorAll<HTMLElement>("[data-section]")];
   const jumps = [...document.querySelectorAll<HTMLAnchorElement>("[data-jump]")];
+  // WITH the other DOM lookups, not further down beside `wireJumpBar`. `apply()`
+  // reads it, and `apply()` runs during this module's own evaluation (the
+  // back-navigation restore below), so a `const` declared after that call sits
+  // in its temporal dead zone: the whole page script threw a ReferenceError
+  // before the filter, the jump bar or the progress layer had wired anything.
+  const jumpBar = document.querySelector<HTMLElement>(".jump");
 
   const TOTAL = entries.length;
 
@@ -700,8 +704,8 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
   // that each left the old one-shot measurement stale: the progress bar unhides
   // for a reader with saved progress (+38px at >=561px), the match count appears
   // on the first keystroke (+20px at 390px), and the webfont settles. That bug
-  // is now structurally impossible rather than separately handled.
-  const jumpBar = document.querySelector<HTMLElement>(".jump");
+  // is now structurally impossible rather than separately handled. `jumpBar` is
+  // resolved with the other DOM lookups at the top, because `apply()` needs it.
 
   // ── Which section am I in, and does a chip really go there? ────────
   // Both behaviours now come from lib/jumpbar.ts, which is this code moved

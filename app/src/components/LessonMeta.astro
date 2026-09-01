@@ -20,9 +20,11 @@
  *
  *          a[data-lesson-advance]
  *
- * The last of those matches Lesson.astro's markup as it stands, so the pager
- * works with no change to that file. Add `data-lesson-next` to the next-link if
- * the class ever changes and this keeps working either way.
+ * That ATTRIBUTE and nothing else. The selector used to also match
+ * `a.pager-link.next`, which pinned a presentational CSS class as a behavioural
+ * contract — rename the class and one of the two writers disappears silently.
+ * Lesson.astro tags the qualifying exits itself, so a new exit is opted IN
+ * rather than matched by accident.
  *
  * WHY THE OBSERVER EXISTS. Until it did, the pager click was the ONLY call site
  * of markLessonComplete in the app. Every lesson ends with a Practice card
@@ -34,8 +36,8 @@
  * the whole progress layer was dark for them.
  *
  * The last lesson has no next lesson, but its pager still renders a "Course
- * overview →" link with the same class — so finishing the course records the
- * final lesson too.
+ * overview →" link carrying the same attribute — so finishing the course
+ * records the final lesson too.
  *
  * `position` is off by default because Lesson.astro renders its own "Step N of
  * M" bar; turn it on for a page that does not. With it off and the lesson not
@@ -131,15 +133,24 @@ const phase = idx >= 0 ? all[idx]?.data.phase : undefined;
       })
       .catch(() => undefined);
 
-    let recorded = false;
+    // One write, shared by both writers, plus a flag for "it has LANDED".
+    // Those are two different questions and collapsing them into one boolean
+    // lost writes: the click handler skipped its own wait whenever a write had
+    // merely been STARTED, so a reader who took the drill button while the
+    // observer's write was still in flight navigated away and the transaction
+    // died with the document.
+    let written = false;
+    let write: Promise<void> | null = null;
     const record = (): Promise<void> => {
-      if (recorded) return Promise.resolve();
-      recorded = true;
       // markLessonComplete is idempotent and preserves the original
       // completedAt (db.ts), so the two writers racing is harmless.
-      return markLessonComplete(slug)
-        .then(showBadge)
+      write ??= markLessonComplete(slug)
+        .then(() => {
+          written = true;
+          showBadge();
+        })
         .catch(() => undefined);
+      return write;
     };
 
     // ── Writer 1: the reader reached the end of the lesson ──────────────
@@ -148,29 +159,40 @@ const phase = idx >= 0 ? all[idx]?.data.phase : undefined;
     // a short lesson can render with the sentinel already in view, and
     // arriving-and-leaving is not reading. The 2s dwell is the same idea in
     // time — a fast scroll to the bottom and straight back out does not count.
+    //
+    // The two conditions are held as STATE and re-checked from both sides. An
+    // IntersectionObserver only reports CHANGES, so testing `scrolled` inside
+    // its callback alone lost the short-lesson case it was written for: the
+    // sentinel is already in view at load, that one callback is rejected
+    // because nothing has scrolled yet, and the sentinel never leaves the
+    // viewport to produce a second one. The scroll now re-asks the question.
     const sentinel = document.querySelector("[data-lesson-end]");
     if (sentinel && "IntersectionObserver" in window) {
       let scrolled = false;
+      let inView = false;
+      let timer = 0;
+      const check = (): void => {
+        if (!(inView && scrolled)) {
+          window.clearTimeout(timer);
+          timer = 0;
+          return;
+        }
+        if (timer) return;
+        timer = window.setTimeout(() => {
+          observer.disconnect();
+          void record();
+        }, 2000);
+      };
       const onScroll = (): void => {
         scrolled = true;
+        check();
       };
       window.addEventListener("scroll", onScroll, { passive: true, once: true });
 
-      let timer = 0;
       const observer = new IntersectionObserver(
         (records) => {
-          const seen = records.some((r) => r.isIntersecting) && scrolled;
-          if (!seen) {
-            window.clearTimeout(timer);
-            timer = 0;
-            return;
-          }
-          if (timer) return;
-          timer = window.setTimeout(() => {
-            observer.disconnect();
-            window.removeEventListener("scroll", onScroll);
-            void record();
-          }, 2000);
+          for (const r of records) inView = r.isIntersecting;
+          check();
         },
         { threshold: 0.5 },
       );
@@ -191,9 +213,11 @@ const phase = idx >= 0 ? all[idx]?.data.phase : undefined;
         if (e.defaultPrevented || e.button !== 0) return;
         if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
         if (exit.target && exit.target !== "_self") return;
-        // Already written by the observer: let the browser navigate normally,
-        // which keeps its own loading feedback instead of a dead 30ms.
-        if (recorded) return;
+        // Already LANDED (not merely started) — let the browser navigate
+        // normally, which keeps its own loading feedback instead of a dead
+        // 30ms. A write still in flight falls through to the wait below;
+        // `record()` returns the same promise, so it is not started twice.
+        if (written) return;
 
         const href = exit.href;
         e.preventDefault();

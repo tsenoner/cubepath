@@ -13,6 +13,25 @@ import { isLocked } from "../src/lib/unlocks";
  * in the comments are from a 390x844 phone against the real build.
  */
 
+/*
+ * This file runs its tests in PARALLEL, and it is the only one that says so.
+ *
+ * It is the suite's critical path: 47 of the 165 tests, and the whole run used
+ * to cost what this file alone costs, because Playwright parallelises across
+ * FILES and serialises within one. Measured, both ways, three to four runs
+ * each: at two workers (a 4-core CI runner's default) 35.1s -> 24.7s, and at
+ * the seven a 14-core laptop uses, 35.7s -> 11.2s.
+ *
+ * Safe by construction rather than by luck: there is no beforeAll, no
+ * afterAll and no module-level state here, and every test takes its own `page`
+ * — so Playwright already gives each one an isolated context, which is what
+ * IndexedDB seeding, viewport size and scroll position all live in. The tests
+ * that measure scroll and layout are the ones to watch under CPU contention,
+ * and they were clean across eight consecutive runs at both worker counts;
+ * `retries: 1` in the config remains the backstop.
+ */
+test.describe.configure({ mode: "parallel" });
+
 const PHONE = { width: 390, height: 844 };
 
 /** Mark lessons complete the way LessonMeta does, then reload. */

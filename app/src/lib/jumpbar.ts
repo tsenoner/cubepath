@@ -171,31 +171,89 @@ export function wireJumpBar(opts: JumpBarOptions): void {
 
   // Suppress the auto-scroll for a moment after the reader pans the bar
   // themselves, so it cannot yank the chips out from under their thumb.
+  // `selfPanUntil` is the other half: `revealChip` writes scrollLeft/scrollTop,
+  // which fires this very listener, so without it the module read its OWN
+  // reveal as the reader panning and muted the next one for a second.
   let pannedUntil = 0;
-  bar.addEventListener("scroll", () => (pannedUntil = performance.now() + 1000), {
-    passive: true,
-  });
-
-  const spy = new IntersectionObserver(
-    (records) => {
-      // Clear BEFORE the early return — see TRAP TWO above.
-      for (const c of chips) {
-        c.classList.remove("here");
-        c.removeAttribute("aria-current");
-      }
-      const hit = records.find((r) => r.isIntersecting);
-      if (!hit) return;
-      const chip = chipFor.get(hit.target.id);
-      if (!chip || isDisabled(chip)) return;
-      chip.classList.add("here");
-      chip.setAttribute("aria-current", "location");
-      if (performance.now() > pannedUntil) revealChip(bar, chip);
+  let selfPanUntil = 0;
+  bar.addEventListener(
+    "scroll",
+    () => {
+      if (performance.now() > selfPanUntil) pannedUntil = performance.now() + 1000;
     },
-    // Top edge at the bottom of the sticky chrome, bottom edge 55% up the
-    // viewport: the current section is the one occupying the band you read.
-    { rootMargin: `-${Math.round(chromeHeight())}px 0px -55% 0px` },
+    { passive: true },
   );
-  for (const s of sections) spy.observe(s);
+
+  /*
+   * Which sections are in the reading band, kept as STATE rather than read off
+   * each callback's records.
+   *
+   * An IntersectionObserver reports only the entries whose state CHANGED. The
+   * band is ~45% of the viewport and the sections are much taller, so scrolling
+   * from one to the next arrives as two separate callbacks: the new section
+   * enters (both are in the band), and only later does the old one leave. That
+   * second callback carries a single record with `isIntersecting: false` —
+   * reading the answer out of `records` alone found no hit there and dropped
+   * the marking entirely, so the bar went blank in the middle of a section.
+   */
+  const inBand = new Set<Element>();
+
+  /** The topmost section currently in the band, in document order. */
+  const mark = (): void => {
+    // Clear BEFORE the early return — see TRAP TWO above.
+    for (const c of chips) {
+      c.classList.remove("here");
+      c.removeAttribute("aria-current");
+    }
+    const hit = sections.find((s) => inBand.has(s));
+    if (!hit) return;
+    const chip = chipFor.get(hit.id);
+    if (!chip || isDisabled(chip)) return;
+    chip.classList.add("here");
+    chip.setAttribute("aria-current", "location");
+    if (performance.now() > pannedUntil) {
+      selfPanUntil = performance.now() + 200;
+      revealChip(bar, chip);
+    }
+  };
+
+  /*
+   * The band's top edge is the bottom of the sticky chrome, and that number
+   * MOVES: /reference's header grows when the progress bar unhides and again
+   * when the match count appears, a lesson's outline leaves the header flow at
+   * >=1100px, and the webfont settles on every route. `rootMargin` cannot be
+   * written after construction, so the observer is rebuilt when the measurement
+   * changes — the same reason Header.astro measures with a ResizeObserver
+   * rather than on `resize`.
+   */
+  let spy: IntersectionObserver | null = null;
+  let banded = -1;
+  const observe = (): void => {
+    const chrome = Math.round(chromeHeight());
+    if (chrome === banded) return;
+    banded = chrome;
+    spy?.disconnect();
+    inBand.clear();
+    spy = new IntersectionObserver(
+      (records) => {
+        for (const r of records) {
+          if (r.isIntersecting) inBand.add(r.target);
+          else inBand.delete(r.target);
+        }
+        mark();
+      },
+      // Top edge at the bottom of the sticky chrome, bottom edge 55% up the
+      // viewport: the current section is the one occupying the band you read.
+      { rootMargin: `-${chrome}px 0px -55% 0px` },
+    );
+    for (const s of sections) spy.observe(s);
+  };
+  observe();
+
+  const header = document.querySelector<HTMLElement>(".site-header");
+  if (header && "ResizeObserver" in window) {
+    new ResizeObserver(() => requestAnimationFrame(observe)).observe(header);
+  }
 }
 
 /**
