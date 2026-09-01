@@ -1,12 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { CASES, caseById, type CaseDef } from "../src/data/algs";
-import { GENERATED_CASES } from "../src/data/fullsets.gen";
-import { RICH } from "../src/data/fullsets.rich.gen";
-import { filter, haystackFor, matches, normalize } from "../src/lib/search";
-import { SECTION_NAV, sectionWords } from "../src/data/refsections";
-import { setName } from "../src/lib/trainer";
-import { TAUGHT_444_CASES, isLocked } from "../src/lib/unlocks";
+import { caseHaystack } from "../src/lib/casesearch";
+import { filter, matches, normalize } from "../src/lib/search";
+import { SECTIONS, sectionWords } from "../src/data/refsections";
+import { isLocked } from "../src/lib/unlocks";
 
 /**
  * The /reference filter, gated against the real dataset.
@@ -20,67 +17,34 @@ import { TAUGHT_444_CASES, isLocked } from "../src/lib/unlocks";
  */
 
 /**
- * The extra words /reference feeds each case: its section's jump label plus the
- * trainer's name for the same set.
- *
- * The COMPOSITION is imported now, not just the label map. The previous fix
- * imported `SECTION_NAV` under a comment about a re-typed table drifting four
- * ways from the page — and then re-typed the recipe that consumes it, so the
- * page could still change what it feeds the filter with this corpus none the
- * wiser. `sectionWords` is the one definition both read.
- *
- * KNOWN GAP, left visible rather than papered over: the page keys these words
- * on the SECTION a case is rendered under, and this keys them on
- * `CaseDef.group`, which for the three grid sections is a recognition group
- * ("oll-dot", "f2l-*", "pll-*") in a different namespace entirely. Those
- * entries therefore carry the trainer fallback here where the page carries
- * "Full OLL". Closing it needs section MEMBERSHIP — not just labels — to live
- * in data/refsections.ts, which is a change to the page rather than to this
- * file.
- */
-const extraFor = (group: string): string =>
-  group in SECTION_NAV ? sectionWords(group) : setName(group);
-
-/**
  * The page's haystacks, built the way the page builds them.
  *
- * Deliberately NOT `ALL_CASES`, which merges a curated entry over its generated
- * twin. /reference renders both — the curated 2-look ROW (whose name is "Ua")
- * and the Full PLL TILE (whose name is "Ua-Perm") — and the difference is not
- * cosmetic: dedupe to the curated name and the corpus contains no "perm" for
- * the U perms at all, so a test built on it would "prove" that "u perm" cannot
- * work while the real page finds both.
+ * SECTION-DRIVEN, exactly like the page: walk the visible sections in order,
+ * take each one's members, and give every one of them that section's words.
+ * This used to walk the CASE LISTS instead and key the words on `CaseDef.group`
+ * — a recognition grouping in a different namespace — so most of the corpus
+ * carried "oll dot" where the page carries "Full OLL", and the gate written to
+ * stop a re-typed label map from drifting could not see a wrong label on any
+ * full set. Membership lives in data/refsections.ts now, so there is nothing
+ * left here to guess.
+ *
+ * Deliberately NOT deduped to `ALL_CASES`, because the page is not: it renders
+ * the curated 2-look ROW (whose name is "Ua") and the Full PLL TILE (whose name
+ * is "Ua-Perm"), and the difference is not cosmetic. Dedupe to the curated name
+ * and the corpus contains no "perm" for the U perms at all, so a test built on
+ * it would "prove" that "u perm" cannot work while the real page finds both.
  */
-const hay = (k: CaseDef, extra: string): string =>
-  haystackFor({
-    name: k.name,
-    recognition: k.recognition ?? RICH[k.id]?.recognition,
-    id: k.id,
-    group: k.group,
-    extra,
-  });
 
 /**
  * The corpus keeps its ids, so a test can name the case it expects instead of
  * asserting a number that says nothing about whether the RIGHT case was found.
- *
- * Section membership, not group membership, for the 4×4 parity pair: the page
- * lists them under "4×4 parity" though their generated group is
- * "4x4pll-edges-only", and that section label is the only reason they are
- * findable by the word.
  */
-const ENTRY = (k: CaseDef, extra: string) => ({ id: k.id, hay: hay(k, extra) });
-const taught444 = (k: CaseDef) => TAUGHT_444_CASES.has(k.id);
-const CORPUS = [
-  // The two taught 4×4 cases are listed once, by the section that owns them.
-  ...CASES.filter((k) => !isLocked(k) && !taught444(k)).map((k) => ENTRY(k, extraFor(k.group))),
-  ...GENERATED_CASES.filter((k) => !isLocked(k) && !taught444(k)).map((k) =>
-    ENTRY(k, extraFor(k.group)),
-  ),
-  ...[...TAUGHT_444_CASES]
-    .map((id) => caseById.get(id)!)
-    .map((k) => ENTRY(k, extraFor("444-parity"))),
-];
+const CORPUS = SECTIONS.filter((s) => !isLocked(s.id)).flatMap((s) =>
+  s
+    .members()
+    .filter((k) => !isLocked(k))
+    .map((k) => ({ id: k.id, hay: caseHaystack(k, sectionWords(s.id)) })),
+);
 const HAYSTACKS = CORPUS.map((e) => e.hay);
 
 const found = (q: string): string[] =>
@@ -141,8 +105,17 @@ describe("filter over the real case list", () => {
   it("finds every parity case the course teaches, not one of them", () => {
     // "parity" used to return 1 of 3, so the 5x5 case read as missing from the
     // site. Named, not counted — the point is WHICH cases come back.
+    //
+    // FOUR, not three. `444.edge-flip` is rendered in the `444-parity` section
+    // and so carries that section's words, which is the whole mechanism that
+    // makes the 5x5 case findable at all — and the built page has always
+    // returned it here. This corpus asserted three because it keyed the words
+    // on `CaseDef.group` instead of on the section, and so was gated against a
+    // page that does not exist. It is a fair result rather than an over-match:
+    // the flip is one of the three rows a reader typing "parity" is shown, and
+    // the section it sits in is exactly what they asked for.
     expect(found("parity").sort()).toEqual(
-      ["444.oll-parity", "444.pll.pure-e", "555.l2e-6"].sort(),
+      ["444.edge-flip", "444.oll-parity", "444.pll.pure-e", "555.l2e-6"].sort(),
     );
   });
 

@@ -112,6 +112,35 @@ function focusTarget(id: string): void {
 }
 
 /**
+ * Mark the chips whose section the page has filtered away.
+ *
+ * A chip pointing at a `display: none` section is a dead link: pressing it
+ * rewrites the URL fragment and moves nothing, with no feedback at all, and
+ * `focusTarget` cannot focus a hidden element either. /reference fixed that —
+ * and kept the fix in its own page script, twelve lines of `aria-disabled`,
+ * `tabIndex` and class toggling that the NEXT filtered page could not inherit.
+ * /glossary is that page: it hides whole groups on a query and shipped live
+ * chips over them.
+ *
+ * Here instead, so any bar over any filter gets it by construction. Call it
+ * after the filter has set `hidden`.
+ */
+export function markEmptySections(bar: HTMLElement): void {
+  for (const chip of bar.querySelectorAll<HTMLAnchorElement>("a[href^='#']")) {
+    const target = document.getElementById(chipId(chip));
+    const off = target !== null && target.hidden;
+    chip.classList.toggle("off", off);
+    // All three agree, or the appearance and the semantics disagree: out of the
+    // tab order, out of the pointer's reach (`a.chip.off` in tokens.css) and
+    // announced.
+    chip.setAttribute("aria-disabled", String(off));
+    chip.tabIndex = off ? -1 : 0;
+    const flag = chip.querySelector<HTMLElement>("[data-jump-empty]");
+    if (flag) flag.hidden = !off;
+  }
+}
+
+/**
  * Mark where the reader is, keep that chip in view, and make a chip a real
  * jump. Safe to call when the page has no bar or the browser has no
  * IntersectionObserver — it simply does less.

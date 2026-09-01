@@ -2,7 +2,8 @@ import { expect, test, type Page } from "@playwright/test";
 
 import { PHASES, phaseAnchor } from "../src/data/phases";
 import { publishedRoutes } from "./routes";
-import { SECTION_NAV } from "../src/data/refsections";
+import { SECTION_NAV, SECTIONS } from "../src/data/refsections";
+import { isLocked } from "../src/lib/unlocks";
 
 /**
  * Navigation and wayfinding, gated.
@@ -191,14 +192,20 @@ test("the filter matches what a cuber types, and says what it found", async ({ p
   const search = page.locator("[data-ref-search]");
   const shown = () => page.locator("[data-search]:not([hidden])");
 
+  // `expect.poll`, not a bare `count()`: the filter applies once per animation
+  // frame rather than synchronously inside the input handler, so reading the
+  // DOM the instant `fill()` resolves races it. These used to pass only because
+  // the handler happened to be synchronous — a contract no test asked for.
+  const count = () => expect.poll(() => shown().count());
+
   // Every one of these returned zero before lib/search.ts.
   for (const q of ["t perm", "u perm", "4x4", "awkward", "anti sune", "parity"]) {
     await search.fill(q);
-    expect(await shown().count(), `"${q}" must find something`).toBeGreaterThan(0);
+    await count().toBeGreaterThan(0);
   }
   // …and "t perm" must find the T-Perm, not all 25 perms.
   await search.fill("t perm");
-  expect(await shown().count()).toBeLessThanOrEqual(2);
+  await count().toBeLessThanOrEqual(2);
 
   await search.fill("zzzzqqq");
   // Asserted on the whole `role="status"` region, not on the visible span: the
@@ -228,6 +235,7 @@ test("filtering keeps the reader with the results, and clearing puts them back",
   expect(before, "the test needs a page tall enough to scroll into").toBeGreaterThan(3000);
 
   await page.keyboard.type("ua");
+  await expect(page.locator("[data-ref-count]")).toHaveText(/^\d+ of \d+ shown$/);
   await page.waitForTimeout(400);
   const firstTop = await page
     .locator("[data-search]:not([hidden])")
@@ -253,6 +261,26 @@ test("a jump chip the filter emptied is inert, not a dead link", async ({ page }
     await expect(chip).toHaveAttribute("aria-disabled", "true");
     expect(await chip.evaluate((el) => (el as HTMLElement).tabIndex)).toBe(-1);
   }
+});
+
+// The same defect one page over. /reference's fix lived in /reference's script,
+// so /glossary — which hides whole groups on a query — shipped live chips over
+// `display: none` sections. `markEmptySections` is shared now, and this is the
+// gate that says so.
+test("a glossary chip the filter emptied is inert too", async ({ page }) => {
+  await page.goto("/glossary/");
+  await page.locator("[data-gloss-search]").fill("dedge");
+  await page.waitForTimeout(300);
+  const off = page.locator(".pagenav .chip.off");
+  expect(await off.count(), "a narrow query must empty at least one group").toBeGreaterThan(0);
+  for (const chip of await off.all()) {
+    await expect(chip).toHaveAttribute("aria-disabled", "true");
+    expect(await chip.evaluate((el) => (el as HTMLElement).tabIndex)).toBe(-1);
+  }
+  // …and a chip that still has matches stays a live link.
+  const live = page.locator(".pagenav .chip:not(.off)");
+  expect(await live.count()).toBeGreaterThan(0);
+  await expect(live.first()).toHaveAttribute("aria-disabled", "false");
 });
 
 test("a jump chip moves focus to its section, not just the viewport", async ({ page }) => {
@@ -420,9 +448,11 @@ test("a number query finds the case with that number, not its whole set", async 
     ["21", 6],
   ] as const) {
     await search.fill(q);
-    const n = await shown().count();
-    expect(n, `"${q}" must not return a whole set`).toBeLessThanOrEqual(ceiling);
-    expect(n, `"${q}" must still find its own case`).toBeGreaterThan(0);
+    // Polled: the filter lands on the next frame, not inside the handler.
+    await expect
+      .poll(() => shown().count(), { message: `"${q}" must not return a whole set` })
+      .toBeLessThanOrEqual(ceiling);
+    expect(await shown().count(), `"${q}" must still find its own case`).toBeGreaterThan(0);
   }
 });
 
@@ -548,6 +578,17 @@ test("a lesson outline chip lands its heading clear of the two-row header", asyn
     const clear = await clearanceOf(page, `/learn/full-oll-overview/#${id}`, id);
     expect(clear, `#${id} landed under the sticky header`).toBeGreaterThanOrEqual(0);
   }
+});
+
+// The documented exception, now that "does this finish the lesson" is declared
+// in frontmatter rather than guessed from the href. white-cross.mdx offers the
+// printable cards; crediting the lesson because the reader went to fetch them
+// would hide it from Resume permanently.
+test("a practice link that is not an exit is not tagged as one", async ({ page }) => {
+  await page.goto("/learn/white-cross/");
+  await expect(page.locator('a.btn[href="/practice/"]')).toHaveAttribute("data-lesson-advance", "");
+  expect(await page.locator('a.btn[href="/print"][data-lesson-advance]').count()).toBe(0);
+  await expect(page.locator('a.btn[href="/print"]')).toBeVisible();
 });
 
 // The bar must NOT be a completion writer. Crediting a lesson for jumping to
@@ -772,6 +813,25 @@ test("every rendered section's chip label matches the shared registry", async ({
     expect(registry[id], `no registry entry for rendered section "${id}"`).toBeDefined();
     expect(registry[id], `chip for "${id}" reads "${label}"`).toBe(label);
   }
+  // …and the registry says what is IN each section, not only what it is
+  // called, so the count the heading prints is checked against it. This is the
+  // half that could not be gated while the registry held labels alone: the
+  // unit corpus had to guess at membership, guessed `CaseDef.group`, and so
+  // indexed most of the page under the wrong section name without any gate
+  // being able to notice.
+  const counts = await page.evaluate(() =>
+    [...document.querySelectorAll<HTMLElement>("section[data-section]")].map((sec) => ({
+      id: sec.id,
+      n: Number(sec.querySelector("[data-section-count]")?.textContent?.replace(/\D/g, "") ?? "-1"),
+    })),
+  );
+  for (const { id, n } of counts) {
+    const spec = SECTIONS.find((x) => x.id === id);
+    expect(spec, `section #${id} renders but the registry does not list it`).toBeDefined();
+    const expected = spec!.members().filter((k) => !isLocked(k)).length;
+    expect(n, `#${id} renders ${n} cases, the registry says ${expected}`).toBe(expected);
+  }
+
   // …and every section on the page has an id the registry knows, so a new
   // section cannot ship with an unindexed label.
   const ids = await page.evaluate(() =>

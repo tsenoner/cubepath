@@ -47,7 +47,7 @@ const { items, label } = Astro.props;
 
 {
   items.length > 0 && (
-    <nav class="pagenav" aria-label={label}>
+    <nav class="pagenav no-scrollbar" aria-label={label}>
       {items.map((it) => (
         <a class="chip" href={`#${it.id}`}>
           {it.label}
@@ -108,13 +108,9 @@ const { items, label } = Astro.props;
     .pagenav {
       flex-wrap: nowrap;
       overflow-x: auto;
-      scrollbar-width: none;
       /* The cutoff cue: the strip visibly fades where it continues, so the
          chips off-screen read as off-screen rather than as absent. */
       mask-image: linear-gradient(to right, #000 calc(100% - 16px), transparent);
-    }
-    .pagenav::-webkit-scrollbar {
-      display: none;
     }
   }
   /*

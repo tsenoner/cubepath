@@ -129,6 +129,7 @@ const searchText = (e: (typeof GLOSS_ENTRIES)[number]) =>
 
 <script>
   import { filter } from "../lib/search";
+  import { markEmptySections } from "../lib/jumpbar";
 
   // The same MATCHER as /reference's filter, not merely the same shape:
   // token-wise, punctuation-folded, strict-then-widen. Everything it matches on
@@ -140,6 +141,7 @@ const searchText = (e: (typeof GLOSS_ENTRIES)[number]) =>
   const noResults = document.querySelector<HTMLElement>("[data-gloss-empty]");
   const entries = [...document.querySelectorAll<HTMLElement>("[data-search]")];
   const groups = [...document.querySelectorAll<HTMLElement>("[data-gloss-group]")];
+  const pagenav = document.querySelector<HTMLElement>(".pagenav");
 
   const haystacks = entries.map((el) => el.dataset.search ?? "");
 
@@ -155,6 +157,11 @@ const searchText = (e: (typeof GLOSS_ENTRIES)[number]) =>
       if (hit) shown += 1;
     }
     for (const group of groups) group.hidden = !group.querySelector("[data-search]:not([hidden])");
+    // The outline must agree with the page: a chip over a group this query
+    // emptied is a link that rewrites the fragment and moves nothing. Shared
+    // with /reference rather than re-derived — the fix lived in that page's
+    // script, which is exactly why this page shipped without it.
+    if (pagenav) markEmptySections(pagenav);
     if (noResults) noResults.hidden = shown > 0;
     if (countOut) {
       countOut.textContent = needle === "" ? "" : `${shown} ${shown === 1 ? "term" : "terms"}`;

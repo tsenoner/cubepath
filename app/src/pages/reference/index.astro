@@ -5,14 +5,13 @@ import Page from "../../components/Page.astro";
 import CaseRow from "../../components/CaseRow.astro";
 import EmptyState from "../../components/EmptyState.astro";
 import ProgressBar from "../../components/ProgressBar.astro";
-import { ALL_CASES, CASES, caseById, type CaseDef } from "../../data/algs";
-import { GENERATED_CASES } from "../../data/fullsets.gen";
-import { RICH } from "../../data/fullsets.rich.gen";
+import { ALL_CASES, type CaseDef } from "../../data/algs";
 import { caseIcon } from "../../data/icons";
-import { groupWords, haystackFor } from "../../lib/search";
+import { caseHaystack } from "../../lib/casesearch";
+import { groupWords } from "../../lib/search";
 import { lessonForGroup, type TeachingLesson } from "../../lib/teaches";
-import { caseAnchor, sectionNav, sectionWords } from "../../data/refsections";
-import { TAUGHT_444_CASES, isLocked } from "../../lib/unlocks";
+import { SECTIONS as SECTION_SPECS, caseAnchor, sectionWords } from "../../data/refsections";
+import { isLocked } from "../../lib/unlocks";
 
 /**
  * The reference is the site's index of every case, so two things here are
@@ -37,22 +36,38 @@ interface Sub {
   title: string;
   items: CaseDef[];
 }
-interface Section {
+/**
+ * A cross-section link inside a blurb: the case to point at, and the words to
+ * point with. Resolved through `anchorOf`, so the anchor rule lives in one
+ * place and a link to a case no visible section owns is a build error rather
+ * than a dead fragment.
+ */
+interface BlurbLink {
+  caseId: string;
+  text: string;
+}
+/**
+ * A blurb is a list of parts, and a link is one of them.
+ *
+ * It used to be a string with a `{link}` token in it plus a separate
+ * `blurbLink`, which needed a split, a `parts.length !== 2` build gate and a
+ * before/link/after triple to reassemble — 30 lines of protocol serving one
+ * sentence, and a grammar the next blurb would have had to be authored
+ * against. An array cannot lose its token or grow a second one.
+ */
+type Blurb = (string | BlurbLink)[];
+
+/** The wording. Structure — order, ids, membership — comes from SECTION_SPECS. */
+interface Presentation {
+  title: string;
+  kind: "rows" | "grid";
+  blurb?: Blurb;
+}
+interface Section extends Presentation {
   /** URL fragment. Derived from the group/phase key this section renders. */
   id: string;
-  title: string;
   /** Short form, for the jump bar. */
   nav: string;
-  /** Plain text. A single `{link}` token marks where `blurbLink` goes. */
-  blurb?: string;
-  /**
-   * A cross-section link in the blurb: the case to point at, and the words to
-   * point with. The href is resolved through `anchorOf`, so the anchor rule
-   * lives in one place and a link to a case no visible section owns is a build
-   * error rather than a dead fragment.
-   */
-  blurbLink?: { caseId: string; text: string };
-  kind: "rows" | "grid";
   items: CaseDef[];
   subs: Sub[];
 }
@@ -80,98 +95,70 @@ function subsOf(cases: CaseDef[]): Sub[] {
   return [...byKey].map(([key, items]) => ({ key, title: subTitle(key), items }));
 }
 
-const gen = (test: (k: CaseDef) => boolean) => GENERATED_CASES.filter(test);
-
 /**
- * Curated course cases, rendered as full CaseRows — id is the group key, and
- * the members default to the curated cases carrying it. `items` overrides that
- * for a section whose membership is the course's rather than the data's.
+ * The wording, one entry per section in `SECTION_SPECS`.
+ *
+ * Prose lives here; ORDER, ids and MEMBERSHIP live in data/refsections.ts, so
+ * the corpus tests/search.spec.ts builds is the corpus this page renders. The
+ * two lists are checked against each other below, both ways.
  */
-const rows = (
-  id: string,
-  title: string,
-  blurb?: string,
-  items?: CaseDef[],
-  blurbLink?: { caseId: string; text: string },
-): Section => ({
-  id,
-  nav: sectionNav(id),
-  title,
-  ...(blurb ? { blurb } : {}),
-  ...(blurbLink ? { blurbLink } : {}),
-  kind: "rows",
-  items: items ?? CASES.filter((k) => k.group === id),
-  subs: [],
-});
-
-/** A full set, rendered as icon tiles grouped by shape — id is the phase key. */
-const grid = (id: string, title: string, items: CaseDef[], blurb: string): Section => ({
-  id,
-  nav: sectionNav(id),
-  title,
-  blurb,
-  kind: "grid",
-  items,
-  subs: subsOf(items),
-});
-
-const SECTIONS: Section[] = [
-  rows(
-    "beginner-triggers",
-    "The Beginner Method",
-    "Not cases — the three algorithms the beginner solve is built out of. Righty alone finishes the " +
-      "first two layers and untwists the last corners; Niklas puts the last four corners in their seats.",
-    // Course membership: two groups, one section. The triggers and the corner
-    // cycle sit at different stages of the ladder, but a reader looking up
-    // "the beginner algorithms" wants one list, not two.
-    CASES.filter((k) => k.group === "beginner-triggers" || k.group === "beginner-corner-cycle"),
-  ),
-  rows("cross-eo", "Yellow Cross", "Three cases — and the first two are the same trigger."),
-  rows("2look-oll-corners", "Corner Orientation — 2-Look OLL"),
-  rows("2look-pll-corners", "Corner Permutation — 2-Look PLL"),
-  rows("2look-pll-edges", "Edge Permutation — 2-Look PLL"),
-  grid(
-    "full-oll",
-    "Full OLL",
-    gen((k) => /^oll\.\d+$/.test(k.id)),
-    "The complete orientation set, grouped the way you recognize them.",
-  ),
-  grid(
-    "full-f2l",
-    "F2L",
-    gen((k) => k.phase === "full-f2l"),
-    "First-two-layers pairs for the front-right slot; learn them intuitively first and look the awkward ones up here.",
-  ),
-  grid(
-    "full-pll",
-    "Full PLL",
-    gen((k) => k.id.startsWith("pll.")),
-    "Permutations with their piece-movement arrows.",
-  ),
-  rows(
-    "444-parity",
-    "4×4 Skills",
-    "The whole of what a 4×4 adds to the 3×3 you already solve: one algorithm for pairing, and the " +
-      "two states a 3×3 can never produce. Centres are intuitive — there is nothing to look up.",
-    // Course membership, not data membership: the two PLL-parity faces were
-    // generated into "4x4pll-edges-only" alongside cases the course does not
-    // teach, but the 4×4 lesson teaches both of them. The edge flip is a
-    // curated entry with no set of its own — it is a mid-pairing tool, so it
-    // belongs to no case list, which is exactly why it had no row anywhere.
-    [caseById.get("444.edge-flip")!, ...[...TAUGHT_444_CASES].map((id) => caseById.get(id)!)],
-  ),
-  grid(
-    "444-oll",
-    "4×4 OLL",
-    gen((k) => k.group.startsWith("4x4oll-")),
-    "Edge-flip states of the 4×4 last layer, grouped by how many corners are already oriented.",
-  ),
-  grid(
-    "444-pll",
-    "4×4 PLL",
-    gen((k) => k.group.startsWith("4x4pll-")),
-    "Permutations that need the 4×4 parity algorithm folded into them.",
-  ),
+const PRESENTATION: Record<string, Presentation> = {
+  "beginner-triggers": {
+    title: "The Beginner Method",
+    kind: "rows",
+    blurb: [
+      "Not cases — the three algorithms the beginner solve is built out of. Righty alone finishes " +
+        "the first two layers and untwists the last corners; Niklas puts the last four corners in " +
+        "their seats.",
+    ],
+  },
+  "cross-eo": {
+    title: "Yellow Cross",
+    kind: "rows",
+    blurb: ["Three cases — and the first two are the same trigger."],
+  },
+  "2look-oll-corners": { title: "Corner Orientation — 2-Look OLL", kind: "rows" },
+  "2look-pll-corners": { title: "Corner Permutation — 2-Look PLL", kind: "rows" },
+  "2look-pll-edges": { title: "Edge Permutation — 2-Look PLL", kind: "rows" },
+  "full-oll": {
+    title: "Full OLL",
+    kind: "grid",
+    blurb: ["The complete orientation set, grouped the way you recognize them."],
+  },
+  "full-f2l": {
+    title: "F2L",
+    kind: "grid",
+    blurb: [
+      "First-two-layers pairs for the front-right slot; learn them intuitively first and look the " +
+        "awkward ones up here.",
+    ],
+  },
+  "full-pll": {
+    title: "Full PLL",
+    kind: "grid",
+    blurb: ["Permutations with their piece-movement arrows."],
+  },
+  "444-parity": {
+    title: "4×4 Skills",
+    kind: "rows",
+    blurb: [
+      "The whole of what a 4×4 adds to the 3×3 you already solve: one algorithm for pairing, and " +
+        "the two states a 3×3 can never produce. Centres are intuitive — there is nothing to look " +
+        "up.",
+    ],
+  },
+  "444-oll": {
+    title: "4×4 OLL",
+    kind: "grid",
+    blurb: [
+      "Edge-flip states of the 4×4 last layer, grouped by how many corners are already oriented.",
+    ],
+  },
+  "444-pll": {
+    title: "4×4 PLL",
+    kind: "grid",
+    blurb: ["Permutations that need the 4×4 parity algorithm folded into them."],
+  },
   // A ROW, not a tile grid. Only one 5x5 case is unlocked, and a lone icon
   // tile showed its diagram and nothing else — no algorithm, no recognition
   // cue, and (before the set became drawable) not even a picture, just the
@@ -182,16 +169,38 @@ const SECTIONS: Section[] = [
   // the one-home rule at the top of this file has exactly one exception, the
   // 2-look rows that re-present a case the full-set grids also carry, which is
   // two different presentations rather than the same row twice.
-  rows(
-    "555-parity",
-    "5×5 Skills",
-    "Two algorithms finish a 5×5, and you already know one: {link} is the same seven outer " +
-      "turns on both cubes. This is the other one — the only thing a 5×5 asks that a 4×4 does " +
-      "not. Centres and pairing are technique, taught in the lessons.",
-    gen((k) => k.phase === "555"),
-    { caseId: "444.edge-flip", text: "the edge flip" },
-  ),
-];
+  "555-parity": {
+    title: "5×5 Skills",
+    kind: "rows",
+    blurb: [
+      "Two algorithms finish a 5×5, and you already know one: ",
+      { caseId: "444.edge-flip", text: "the edge flip" },
+      " is the same seven outer turns on both cubes. This is the other one — the only thing a 5×5 " +
+        "asks that a 4×4 does not. Centres and pairing are technique, taught in the lessons.",
+    ],
+  },
+};
+
+// Both ways, at build time: a section with no wording renders a blank heading,
+// and wording for an id the registry dropped is dead text nobody will notice.
+for (const key of Object.keys(PRESENTATION)) {
+  if (!SECTION_SPECS.some((spec) => spec.id === key)) {
+    throw new Error(`/reference: wording for "${key}", which is not a section`);
+  }
+}
+
+const SECTIONS: Section[] = SECTION_SPECS.map((spec) => {
+  const shown = PRESENTATION[spec.id];
+  if (!shown) throw new Error(`/reference: no wording for section "${spec.id}"`);
+  const items = spec.members();
+  return {
+    id: spec.id,
+    nav: spec.nav,
+    ...shown,
+    items,
+    subs: shown.kind === "grid" ? subsOf(items) : [],
+  };
+});
 
 /*
  * Locked sets never reach the page: sections keyed to a locked set are dropped
@@ -225,40 +234,27 @@ const anchorOf = (section: string, id: string) =>
   anchorOwner.get(id) === section ? caseAnchor(id) : undefined;
 
 /**
- * A blurb, split around its optional cross-section link. Resolving the href
- * through `anchorOf` (asking the section that OWNS the case) keeps the
- * "#" + id-with-dots-as-dashes rule in one place; before this the 5×5 blurb
- * was raw HTML with `#444-edge-flip` typed into it, which would have died
- * silently if the anchor rule or the section order ever changed.
+ * Resolve a blurb's link parts to hrefs, keeping the plain strings as they are.
+ *
+ * Asking `anchorOf` (via the section that OWNS the case) keeps the
+ * "#" + id-with-dots-as-dashes rule in one place; before this the 5×5 blurb was
+ * raw HTML with `#444-edge-flip` typed into it, which would have died silently
+ * if the anchor rule or the section order ever changed. A link to a case no
+ * visible section owns is still a build error rather than a dead fragment.
  */
-type Blurb = { before: string; link: { href: string; text: string } | null; after: string };
-const BLURBS = new Map<string, Blurb>(
-  VISIBLE.flatMap((s): [string, Blurb][] => {
-    if (!s.blurb) return [];
-    if (!s.blurbLink) return [[s.id, { before: s.blurb, link: null, after: "" }]];
-    const { caseId, text } = s.blurbLink;
-    const owner = anchorOwner.get(caseId);
-    const anchor = owner ? anchorOf(owner, caseId) : undefined;
+type ResolvedPart = string | { href: string; text: string };
+const blurbParts = (s: Rendered): ResolvedPart[] =>
+  (s.blurb ?? []).map((part) => {
+    if (typeof part === "string") return part;
+    const owner = anchorOwner.get(part.caseId);
+    const anchor = owner ? anchorOf(owner, part.caseId) : undefined;
     if (!anchor) {
       throw new Error(
-        `/reference: the ${s.id} blurb links to ${caseId}, which no visible section owns`,
+        `/reference: the ${s.id} blurb links to ${part.caseId}, which no visible section owns`,
       );
     }
-    // The token is as load-bearing as the anchor: without this, a blurb that
-    // lost its `{link}` would silently append the link after the last full
-    // stop, and one that grew a second token would silently drop everything
-    // after it. Both read as prose a human wrote, which is why they have to
-    // fail the build rather than the eye.
-    const parts = s.blurb.split("{link}");
-    if (parts.length !== 2) {
-      throw new Error(
-        `/reference: the ${s.id} blurb carries ${parts.length - 1} "{link}" tokens, expected 1`,
-      );
-    }
-    const [before = "", after = ""] = parts;
-    return [[s.id, { before, link: { href: `#${anchor}`, text }, after }]];
-  }),
-);
+    return { href: `#${anchor}`, text: part.text };
+  });
 
 // ── Presentation helpers ─────────────────────────────────────────────
 /** "OLL 27" -> "27"; "Ba (4×4 PLL)" -> "Ba"; "T-Perm" -> "T". */
@@ -269,19 +265,13 @@ const tileLabel = (name: string) =>
     .replace(/-Perm$/, "");
 
 /**
- * What the filter matches against. Built by lib/search.ts, which CaseRow uses
- * too — the two copies of this string had already drifted, and the shared
- * builder is why "awkward", "4x4" and "r u r" now find anything at all.
- * `nav` is the section's own jump label, so a visible heading is searchable.
+ * What the filter matches against. Built by lib/casesearch.ts, which CaseRow
+ * and the unit corpus use too — the two copies of this string had already
+ * drifted, and the shared builder is why "awkward", "4x4" and "r u r" now find
+ * anything at all. `nav` is the section's own jump label, so a visible heading
+ * is searchable.
  */
-const searchText = (k: CaseDef, nav: string) =>
-  haystackFor({
-    name: k.name,
-    recognition: k.recognition ?? RICH[k.id]?.recognition,
-    id: k.id,
-    group: k.group,
-    extra: nav,
-  });
+const searchText = caseHaystack;
 
 // Distinct cases, not the sum of the sections: the 2-look rows deliberately
 // repeat ids the Full OLL / Full PLL grids also carry.
@@ -349,7 +339,7 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
           ></span>
         </p>
       </div>
-      <nav class="jump" aria-label="Sections">
+      <nav class="jump no-scrollbar" aria-label="Sections">
         {
           VISIBLE.map((s) => (
             <a href={`#${s.id}`} class="chip" data-jump={s.id} aria-disabled="false">
@@ -403,7 +393,7 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
         // the viewport. Not a labelled `region`: nine of them would restate the
         // nine h2s a screen reader already navigates by, under a jump bar that
         // already names every one.
-        const blurb = BLURBS.get(s.id);
+        const blurb = blurbParts(s);
         return (
           <section id={s.id} tabindex="-1" data-section>
             <h2>
@@ -412,14 +402,14 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
                 ({s.items.length})
               </span>
             </h2>
-            {/* Text plus an optional resolved link — never raw HTML. A section
+            {/* Text and resolved links, in order — never raw HTML. A section
                 sometimes has to point at a case whose home is another section;
-                see the 5×5 blurb and `BLURBS`. */}
-            {blurb && (
+                see the 5×5 blurb. */}
+            {blurb.length > 0 && (
               <p class="lead">
-                {blurb.before}
-                {blurb.link && <a href={blurb.link.href}>{blurb.link.text}</a>}
-                {blurb.after}
+                {blurb.map((part) =>
+                  typeof part === "string" ? part : <a href={part.href}>{part.text}</a>,
+                )}
               </p>
             )}
             {/*
@@ -494,7 +484,7 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
 <script>
   import { allProgress, getDB, type CaseStatus } from "../../lib/db";
   import { filter, normalize } from "../../lib/search";
-  import { chromeHeight, wireJumpBar } from "../../lib/jumpbar";
+  import { chromeHeight, markEmptySections, wireJumpBar } from "../../lib/jumpbar";
 
   // ── Filter ─────────────────────────────────────────────────────────
   // Static-build friendly and offline-safe: everything it matches on is
@@ -515,6 +505,23 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
 
   const haystacks = entries.map((el) => el.dataset.search ?? "");
 
+  /*
+   * Which entries live inside each subgroup and each section, worked out once.
+   *
+   * `apply` used to ask the DOM instead — `querySelector("[data-search]:not([hidden])")`
+   * on all 34 boxes, every keystroke, which for a zero-result query walks all
+   * 142 tiles twice over. The answer is already in `hits`; only the mapping
+   * from box to entry was missing, and that mapping cannot change after load.
+   */
+  const indexOf = new Map(entries.map((el, i) => [el, i] as const));
+  const idxIn = (box: HTMLElement): number[] =>
+    [...box.querySelectorAll<HTMLElement>("[data-search]")].flatMap((el) => {
+      const i = indexOf.get(el);
+      return i === undefined ? [] : [i];
+    });
+  const subIdx = subs.map(idxIn);
+  const sectionIdx = sections.map(idxIn);
+
   function apply(raw: string): void {
     const needle = raw.trim();
     // One pass over the whole list, because the strict/loose decision is a
@@ -526,24 +533,10 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
       el.hidden = !hit;
       if (hit) shown += 1;
     }
-    for (const sub of subs) sub.hidden = !sub.querySelector("[data-search]:not([hidden])");
-    for (const section of sections) {
-      section.hidden = !section.querySelector("[data-search]:not([hidden])");
-    }
-    for (const jump of jumps) {
-      const target = jump.dataset.jump ? document.getElementById(jump.dataset.jump) : null;
-      const off = target !== null && target.hidden;
-      jump.classList.toggle("off", off);
-      // A chip whose section the filter emptied used to stay a live link
-      // pointing at a `display: none` element: pressing it rewrote the URL
-      // fragment and moved nothing, with no feedback at all. Now the semantics
-      // match the appearance — out of the tab order, out of the pointer's
-      // reach (`pointer-events: none` in the style block), and announced.
-      jump.setAttribute("aria-disabled", String(off));
-      jump.tabIndex = off ? -1 : 0;
-      const flag = jump.querySelector<HTMLElement>("[data-jump-empty]");
-      if (flag) flag.hidden = !off;
-    }
+    const anyShown = (idx: readonly number[]) => idx.some((j) => hits[j] ?? true);
+    for (const [i, sub] of subs.entries()) sub.hidden = !anyShown(subIdx[i] ?? []);
+    for (const [i, section] of sections.entries()) section.hidden = !anyShown(sectionIdx[i] ?? []);
+    if (jumpBar) markEmptySections(jumpBar);
     if (noResults) noResults.hidden = shown > 0;
     if (countOut) {
       // Short and bounded — this one is visible, and `.count` is nowrap inside
@@ -664,6 +657,18 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
     }
   }
 
+  /*
+   * NOT rAF-coalesced, and that is a measured decision rather than an omission.
+   *
+   * One apply is 1.3-5.2ms on a throttled phone, so batching a fast typist's
+   * keystrokes into one per frame is real work saved. It was tried. But the
+   * scroll bookkeeping below is a sequence of before/after readings around the
+   * reflow each keystroke causes, and deferring the apply by a frame moved the
+   * restore off by 113px on the measured phone case — the reader lands near
+   * where they were instead of where they were. Three milliseconds is not worth
+   * that, and the coalescing cannot be made safe without unpicking the
+   * attribution window this depends on.
+   */
   if (search) {
     search.addEventListener("input", () => applyAndKeepPlace(search.value));
     // The UA cancel button on <input type="search"> fires `search`, and in some
@@ -721,11 +726,15 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
   };
 
   async function stampProgress(): Promise<void> {
-    const progress = await allProgress();
+    // Both reads at once: they are independent stores, so awaiting them in
+    // series made the progress layer wait for the sum rather than the max.
+    const [progress, cards] = await Promise.all([
+      allProgress(),
+      getDB().then((db) => db.getAll("cards")),
+    ]);
     const started = progress.filter((p) => p.status !== "unseen");
     if (started.length === 0) return;
 
-    const cards = await (await getDB()).getAll("cards");
     const scheduled = new Map(cards.map((c) => [c.caseId, c] as const));
     const status = new Map<string, CaseStatus>(started.map((p) => [p.caseId, p.status] as const));
     const now = Date.now();
@@ -880,21 +889,6 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
    * used to say so themselves; the outline's copy drifted far enough to name a
    * custom property that does not exist.
    */
-  /*
-   * A section the current filter emptied. This used to say "still reachable,
-   * visibly inactive" — and it was not reachable: the chip stayed a live link
-   * pointing at a `display: none` element, so a tap rewrote the URL fragment
-   * and moved nothing. The script now sets aria-disabled and tabindex="-1";
-   * this takes it out of the pointer's reach so all three agree.
-   *
-   * Kept as opacity rather than recoloured to --faint: once the chip is
-   * aria-disabled the WCAG 1.4.3 inactive-component exception applies, and
-   * --faint against the normal --soft is a *less* perceptible difference.
-   */
-  .jump .chip.off {
-    opacity: 0.45;
-    pointer-events: none;
-  }
   .n {
     color: var(--faint);
     font-weight: 400;
@@ -1063,7 +1057,6 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
     .jump {
       flex-wrap: nowrap;
       overflow-x: auto;
-      scrollbar-width: none;
       margin-inline: calc(-1 * var(--shell-x));
       padding-inline: var(--shell-x);
       mask-image: linear-gradient(to right, #000 calc(100% - var(--space-4)), transparent);

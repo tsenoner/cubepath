@@ -10,10 +10,9 @@
 import AlgText from "./AlgText.astro";
 import TwistyPlayer from "./TwistyPlayer.astro";
 import { caseById, primaryAlg } from "../data/algs";
-import { RICH } from "../data/fullsets.rich.gen";
 import { caseIcon } from "../data/icons";
 import { contextForCase } from "../lib/ladders";
-import { haystackFor } from "../lib/search";
+import { caseHaystack, recognitionOf } from "../lib/casesearch";
 
 interface Props {
   id: string;
@@ -37,7 +36,7 @@ if (!def) throw new Error(`CaseRow: unknown case id ${id}`);
 const icon = caseIcon(id);
 const alg = primaryAlg(def);
 // Lean generated entries omit recognition; RICH carries it at build time.
-const recognition = def.recognition ?? RICH[id]?.recognition ?? "";
+const recognition = recognitionOf(def) ?? "";
 // The row knows exactly which case it is showing, so it names the step rather
 // than leaving the player to infer one: `group` gives the stage, `phase` the
 // ladder. This is the three-tier ladder's only always-correct entry point.
@@ -49,13 +48,7 @@ const context = contextForCase(def);
   open={open}
   id={anchor}
   data-case={id}
-  data-search={haystackFor({
-    name: def.name,
-    recognition,
-    id,
-    group: def.group,
-    extra: searchExtra,
-  })}
+  data-search={caseHaystack(def, searchExtra)}
 >
   <summary>
     {

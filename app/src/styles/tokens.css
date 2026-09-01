@@ -383,6 +383,35 @@ a.chip.here {
   border-color: var(--accent);
   color: var(--accent);
 }
+/*
+ * A chip whose section the current filter emptied. Opacity rather than a
+ * recolour to --faint: once the chip is aria-disabled the WCAG 1.4.3
+ * inactive-component exception applies, and --faint against the normal --soft
+ * is a *less* perceptible difference. `lib/jumpbar.ts` sets the class, the
+ * attribute and the tab order together.
+ */
+a.chip.off {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/*
+ * A side-scrolling strip with no scrollbar drawn — the header's nav, the
+ * outline, /reference's section bar. The three of them said `scrollbar-width:
+ * none` and only ONE also said `::-webkit-scrollbar`, so on a WebKit older
+ * than the standard property (Safari < 18.2) two of the strips drew a bar the
+ * third did not. Both halves belong together, which is the argument for a
+ * class rather than three copies.
+ *
+ * Only the scrollbar. Each strip's bleed, mask and breakpoint are its own —
+ * they genuinely differ — so they stay where they are.
+ */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
 
 /* Selected. Colour alone is not a state — pair it with aria-pressed. */
 .chip--active,

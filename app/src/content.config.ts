@@ -58,7 +58,31 @@ const lessons = defineCollection({
      */
     practice: z.object({
       groups: z.array(z.string()).default([]),
-      links: z.array(z.object({ href: z.string(), label: z.string() })).default([]),
+      links: z
+        .array(
+          z.object({
+            href: z.string(),
+            label: z.string(),
+            /**
+             * Does following this link mean "done with this lesson"?
+             *
+             * DECLARED, not inferred. `Lesson.astro` used to tag an exit when
+             * its href started with `/practice/` or `/learn/`, which is a guess
+             * about intent made from a URL shape: a lesson linking BACK to a
+             * prerequisite, or sideways to a drill it recommends mid-lesson,
+             * would have credited itself and hidden itself from Resume
+             * permanently. The person writing the link is the one who knows.
+             *
+             * Defaults to FALSE because that is the safe direction — an
+             * uncredited lesson is a lesson the reader is offered again, while
+             * a wrongly credited one disappears from the course with no way
+             * back. `white-cross.mdx` offers `/print`, which is the case the
+             * whole rule exists for.
+             */
+            advance: z.boolean().default(false),
+          }),
+        )
+        .default([]),
       /** One sentence: what to drill, and what "done enough" looks like. */
       note: z.string(),
     }),

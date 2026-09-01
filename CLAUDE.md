@@ -185,7 +185,12 @@ and dragged the page backwards 52px at every section boundary — so the module
 sets `scrollLeft`/`scrollTop` on the bar and touches no ancestor; and the
 observer clears the current-chip marking BEFORE its early return, or a filter
 that empties the page strands `aria-current` on a chip that is simultaneously
-`aria-disabled`. Do not hand-write a second spy.
+`aria-disabled`. Do not hand-write a second spy. `markEmptySections()` is the
+other half and belongs to the module for the same reason: a chip over a section
+the filter emptied has to lose its class, its `aria-disabled`, its tab stop and
+its sr-only flag together. /reference had that as twelve lines of its own page
+script, so /glossary — the site's other filter — shipped live chips pointing at
+`display: none` sections.
 
 **A bar goes in the slot only if the page is long enough to need one.** `/`
 (6.2 phone screens), `/glossary` (10.3), `/reference` (13.8) and every lesson
@@ -204,28 +209,51 @@ error.
 
 **Lesson completion has two writers, and neither is optional.** `LessonMeta`
 observes a `data-lesson-end` sentinel AND the exits tagged `data-lesson-advance`
-(added in `Lesson.astro`) — that ATTRIBUTE and nothing else, so a presentational
-class rename cannot silently remove a writer; the selector used to also match
-`a.pager-link.next`, which pinned a CSS class as behavioural contract. Tag an
-exit only when following it means "done with this lesson" — `white-cross.mdx`
-puts `/print` in `practice.links`, and
-crediting a lesson for that hides it from Resume permanently. For a year the
-pager click was the only writer, so a reader who took the lesson's own filled
-"Drill …" button never got credit and the whole progress layer stayed dark.
+— that ATTRIBUTE and nothing else, so a presentational class rename cannot
+silently remove a writer; the selector used to also match `a.pager-link.next`,
+which pinned a CSS class as behavioural contract. For a year the pager click was
+the only writer, so a reader who took the lesson's own filled "Drill …" button
+never got credit and the whole progress layer stayed dark.
 
-Three shared modules exist so the same string is not built twice:
-`src/lib/search.ts` (the filter's normalisation and matching — used by both
-haystack builders AND by /glossary, which is the site's other filter and had
-kept the `.includes()` idiom the module was written to replace),
-`src/data/refsections.ts` (a section's jump label, its search words, and the two
-/reference addressing rules) and `src/lib/teaches.ts` (case → lesson and group →
-lesson, inverted at build time from lesson frontmatter — build-time only, never
-import it from a client `<script>`).
+**Whether an exit finishes the lesson is DECLARED, not inferred**:
+`practice.links[].advance` in the lesson's frontmatter (`content.config.ts`),
+defaulting to FALSE. `Lesson.astro` used to tag any href starting `/practice/`
+or `/learn/`, which is a guess about intent read off a URL — a lesson linking
+back to a prerequisite would have credited itself. The default is the safe
+direction: an uncredited lesson is offered again, a wrongly credited one
+disappears from Resume with no way back. `white-cross.mdx` offers `/print` and
+is the case the rule exists for; `e2e/nav.spec.ts` pins it.
+
+Four shared modules exist so the same string is not built twice:
+
+- `src/lib/search.ts` — normalisation and matching. Used by every haystack
+  builder AND by /glossary, the site's other filter, which had kept the
+  `.includes()` idiom this module was written to replace. Client-safe: it
+  imports nothing.
+- `src/lib/casesearch.ts` — a case's recognition cue (lean entries leave it to
+  RICH) and its haystack. BUILD-TIME ONLY, because it reads
+  `fullsets.rich.gen.ts`; that is exactly why it is not part of `search.ts`,
+  which two client scripts import.
+- `src/data/refsections.ts` — /reference's SECTIONS: the order, the ids, the
+  jump labels, the membership, the search words and the two addressing rules.
+  Membership lives here and not in the page because a label-only registry
+  cannot be gated — `tests/search.spec.ts` had to guess which section a case
+  renders under, guessed `CaseDef.group` (a recognition grouping in a different
+  namespace), and so indexed most of the page under the wrong section name with
+  no gate able to see it. The page supplies only the WORDING, one entry per id,
+  and fails the build if the two lists diverge either way.
+- `src/lib/teaches.ts` — case → lesson and group → lesson, inverted at build
+  time from lesson frontmatter. Build-time only; never import it from a client
+  `<script>`.
 
 `search.ts` compiles a query ONCE per query, not once per entry, and
 `haystackFor` de-duplicates tokens. Both are why the filter is cheap: the five
 haystack sources overlap by construction, so /reference used to ship 14.8 KB of
 `data-search` (10.3 KB now) and rebuild the matcher 142 times per keystroke.
+The filter is deliberately NOT rAF-coalesced — it was tried, and deferring the
+apply by a frame moved the scroll restore off by 113px, because the bookkeeping
+around it is a sequence of readings taken either side of the reflow each
+keystroke causes.
 A shared component class is styled ONCE, in `tokens.css` — `.chip` and its
 `a.chip:hover` / `a.chip.here` states included. Both jump bars restated it, the
 two copies disagreed, and one asked for a `--ink-soft` that has never existed,

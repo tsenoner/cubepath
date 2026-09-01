@@ -33,6 +33,13 @@ import { TRAINER_GROUPS } from "../lib/trainer";
 interface PracticeLink {
   href: string;
   label: string;
+  /**
+   * Following this link means "done with this lesson". Declared in the
+   * lesson's own frontmatter (see content.config.ts), never inferred from the
+   * href — `white-cross.mdx` offers `/print`, and crediting a lesson because
+   * the reader went to fetch the card set hides it from Resume permanently.
+   */
+  advance: boolean;
 }
 interface Practice {
   groups: string[];
@@ -291,13 +298,7 @@ const outline = [
         }
         {
           practice.links.map((l) => (
-            <a
-              class="btn"
-              href={l.href}
-              {...(l.href.startsWith("/practice/") || l.href.startsWith("/learn/")
-                ? { "data-lesson-advance": "" }
-                : {})}
-            >
+            <a class="btn" href={l.href} {...(l.advance ? { "data-lesson-advance": "" } : {})}>
               {l.label}
             </a>
           ))
