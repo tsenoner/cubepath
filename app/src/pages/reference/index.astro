@@ -328,30 +328,22 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
   title="Algorithm Reference — Cubepath"
   description="Every Cubepath algorithm — machine-verified, tap to play in 3D."
 >
-  <Header active="reference" />
-  <Page measure="app">
-    <h1>Algorithm Reference</h1>
-    {
-      /*
-      Both numbers, and the reason they differ, because the page shows both and
-      they used to sit two lines apart with nothing reconciling them: the lead
-      said "All 125 cases" and the filter said "138 cases" (129 and 142 today).
-      The 13 the course
-      teaches by name are listed twice on purpose — once in their own lesson
-      section, once inside the full set.
-    */
-    }
-    <p class="lead">
-      All {total} cases this site teaches, each machine-verified against a cube simulator before it ships.
-      Tap a case to play it in 3D — the {listed - total} the course teaches by name appear twice, once
-      in their lesson's section and once in the full set. Prefer paper?{" "}
-      <a href="/cubepath.pdf">Download the PDF guide</a> or the <a href="/print"
-        >printable card set</a
-      >
-      — three progression cards plus an annex.
-    </p>
+  {
+    /*
+    ONE STICKY BOX, one measured height, one observer.
 
-    <div class="toolbar">
+    This page used to be the site's only route with a second sticky bar, and it
+    paid for it three times over: --toolbar-h was published by its own
+    ResizeObserver, added into tokens.css's clearance calc as a second term,
+    and declared a third time as a pre-JS `:root` fallback that had to be
+    hand-updated whenever the bar's height changed. The clearance was computed
+    in three places with two different values at one point. It is a row inside
+    `.site-header` now, so the header's existing observer measures the whole
+    thing as --hdr-h and there is nothing left to keep in sync.
+  */
+  }
+  <Header active="reference">
+    <div class="toolbar" slot="pagenav">
       <div class="controls">
         <input
           type="search"
@@ -399,6 +391,28 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
         <ProgressBar label="Cases you have started" value={0} max={total} id="ref-progress" />
       </div>
     </div>
+  </Header>
+  <Page measure="app">
+    <h1>Algorithm Reference</h1>
+    {
+      /*
+      Both numbers, and the reason they differ, because the page shows both and
+      they used to sit two lines apart with nothing reconciling them: the lead
+      said "All 125 cases" and the filter said "138 cases" (129 and 142 today).
+      The 13 the course
+      teaches by name are listed twice on purpose — once in their own lesson
+      section, once inside the full set.
+    */
+    }
+    <p class="lead">
+      All {total} cases this site teaches, each machine-verified against a cube simulator before it ships.
+      Tap a case to play it in 3D — the {listed - total} the course teaches by name appear twice, once
+      in their lesson's section and once in the full set. Prefer paper?{" "}
+      <a href="/cubepath.pdf">Download the PDF guide</a> or the <a href="/print"
+        >printable card set</a
+      >
+      — three progression cards plus an annex.
+    </p>
 
     <div class="noresults" data-ref-empty hidden>
       <EmptyState glyph="⌕" title="No case matches that">
@@ -637,7 +651,7 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
   function topMatchY(): number | null {
     const first = entries.find((e) => !e.hidden);
     if (!first) return null;
-    const chrome = (header?.offsetHeight ?? 0) + (toolbar?.offsetHeight ?? 0);
+    const chrome = header?.offsetHeight ?? 0;
     return Math.max(0, first.getBoundingClientRect().top + window.scrollY - chrome - 12);
   }
 
@@ -705,32 +719,14 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
   });
 
   // ── Sticky offsets ─────────────────────────────────────────────────
-  // The site header and this page's toolbar are both sticky, so an anchor jump
-  // must clear the pair of them. Header.astro publishes --hdr-h on every route;
-  // this page owns --toolbar-h, because it is the only route with a second bar.
-  //
-  // A ResizeObserver, not the old resize listener. The toolbar grows AFTER the
-  // one-shot measurement in three ways that are not window resizes, and every
-  // one of them left the offsets stale: the progress bar unhides for a reader
-  // with saved progress (+38px at >=561px), the match count appears on the
-  // first keystroke (+20px at 390px), and the webfont settles. The symptom was
-  // that the returning reader — the one the progress bar exists for — is
-  // exactly the one whose jump-bar clicks stopped landing on the heading.
-  //
-  // No feedback loop: measure() writes --toolbar-h, which feeds the sections'
-  // scroll-margin and never the toolbar's own height.
+  // Nothing to publish here any more. The toolbar is a row INSIDE
+  // `.site-header`, so Header.astro's own ResizeObserver measures it as part of
+  // --hdr-h — including the three ways it grows that are not window resizes and
+  // that each left the old one-shot measurement stale: the progress bar unhides
+  // for a reader with saved progress (+38px at >=561px), the match count appears
+  // on the first keystroke (+20px at 390px), and the webfont settles. That bug
+  // is now structurally impossible rather than separately handled.
   const header = document.querySelector<HTMLElement>(".site-header");
-  const toolbar = document.querySelector<HTMLElement>(".toolbar");
-  function measure(): void {
-    if (toolbar) {
-      document.documentElement.style.setProperty(
-        "--toolbar-h",
-        `${Math.round(toolbar.offsetHeight)}px`,
-      );
-    }
-  }
-  measure();
-  if (toolbar) new ResizeObserver(() => requestAnimationFrame(measure)).observe(toolbar);
 
   // ── Which section am I in? ─────────────────────────────────────────
   // The jump bar was write-only: nine chips, no aria-current, no active state,
@@ -802,7 +798,7 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
   }
 
   function chromeHeight(): number {
-    return (header?.offsetHeight ?? 0) + (toolbar?.offsetHeight ?? 0);
+    return header?.offsetHeight ?? 0;
   }
 
   // ── Jump = go there, not just scroll there ─────────────────────────
@@ -912,30 +908,6 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
   });
 </script>
 
-<style is:global>
-  /*
-   * The pre-JS value of --toolbar-h, and the only global style this page ships.
-   *
-   * tokens.css turns `--hdr-h + --toolbar-h` into one `html scroll-padding`
-   * rule, which is what makes every anchor, focus move and scrollIntoView on
-   * the site clear the sticky chrome. --toolbar-h has to be declared on the
-   * scroll container itself, which a scoped block cannot reach, and it belongs
-   * here rather than in tokens.css because /reference is the only route with a
-   * second sticky bar. Astro bundles page CSS per route, so this loads nowhere
-   * else.
-   *
-   * Measured across the breakpoints: 128px at 320-560, 139px at 600-860 (the
-   * controls have wrapped but the progress bar is back), 104px at 1024+. The
-   * fallback is the MAXIMUM, not the commonest: one that under-clears buries
-   * the heading you navigated to, while one that over-clears costs a little
-   * whitespace for the few hundred milliseconds before the ResizeObserver
-   * writes the measured value.
-   */
-  :root {
-    --toolbar-h: 139px;
-  }
-</style>
-
 <style>
   h1 {
     margin-block-end: var(--space-2);
@@ -950,15 +922,23 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
    * sections and rows beneath it.
    */
   .toolbar {
-    position: sticky;
-    top: var(--hdr-h);
-    z-index: 5;
+    /*
+     * No position, no top, no z-index, no background, no border, no margin —
+     * every one of those was this element being its own sticky bar, and it is a
+     * row inside `.site-header` now. Leaving them cost 40px of pure margin
+     * inside the header box and left a second sticky element nested in the
+     * first: measured 217px of chrome against the 177px the two separate bars
+     * used, which is the opposite of the point. Only the layout of its own
+     * contents belongs here.
+     *
+     * The shell gutter has to be re-applied because this no longer sits inside
+     * <Page>.
+     */
     display: grid;
     gap: var(--space-2);
-    margin: var(--space-4) 0 var(--space-5);
-    padding: var(--space-3) 0;
-    background: var(--paper);
-    border-block-end: 1px solid var(--line);
+    max-width: var(--shell-max);
+    margin-inline: auto;
+    padding: 0 var(--shell-x) var(--space-2);
     /*
      * CLIP, and specifically `clip` rather than `hidden`.
      *

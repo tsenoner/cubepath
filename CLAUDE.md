@@ -154,15 +154,33 @@ The wayfinding layer was reworked on 2026-08-30 (docs/DECISIONS.md § "Navigatin
 /learn and /reference"). Three of its invariants are easy to break by adding
 something reasonable, so they are stated here rather than only in the diff.
 
-**Sticky clearance is declared ONCE**, in `tokens.css`, as
-`html { scroll-padding-block-start: calc(var(--hdr-h) + var(--toolbar-h, 0px) + var(--space-3)) }`.
+**There is ONE sticky box per route, and ONE number describing it.**
+`Header.astro` is that box; it measures itself with a ResizeObserver and
+publishes `--hdr-h` on every route, and `tokens.css` states the clearance once as
+`html { scroll-padding-block-start: calc(var(--hdr-h) + var(--space-3)) }`.
+
+A page that needs its own bar — an outline, a filter, section chips — renders it
+into Header's **`pagenav` slot**, as a second ROW INSIDE `.site-header`. Because
+the observer watches the whole header box, that row is measured for free and
+needs no variable, no second observer and no term in the calc. `/reference` had
+the alternative: its own sticky toolbar, its own `--toolbar-h`, its own observer
+and a hand-maintained pre-JS fallback for it, with the clearance at one point
+computed in three places with two different values. Consolidating it removed the
+variable and 17px of chrome (177px → 160px at 390×844).
+
 Do not add a `scroll-margin` to an anchored element: `scroll-padding` insets the
 scrollport and `scroll-margin` expands the target, so the two STACK and the
 element lands a full header lower than intended. `/reference` used to write the
 same `calc` on three elements and forgot `.tile`, which owns the anchor for 106
 of 119 tiles — the site's own "See it in the reference" link landed with zero
-visible pixels. `Header.astro` measures and publishes `--hdr-h` on every route;
-`/reference` publishes `--toolbar-h` and is the only page that may.
+visible pixels — and `/glossary`, the destination of every auto-linked term in
+the course, shipped two of them until it was measured at 65px low.
+
+**A bar goes in the slot only if the page is long enough to need one.** `/`
+(6.2 phone screens), `/glossary` (10.3), `/reference` (13.8) and every lesson
+(up to 11.5) have one. `/practice` is 1.1 screens and `/print` is 2.5; both are
+gated at a maximum height in `e2e/nav.spec.ts` so the absence is deliberate and
+checked, rather than an omission somebody later "fixes".
 
 **A phase id comes from `phaseAnchor()`** in `data/phases.ts`, never from the
 raw key. `#444` and `#phase-1.5` are legal fragments but illegal

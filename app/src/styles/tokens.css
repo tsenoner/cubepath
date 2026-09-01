@@ -155,9 +155,12 @@
    * fallback should over-clear rather than under-clear — extra clearance only
    * costs whitespace, too little hides the thing you navigated to.
    *
-   * --toolbar-h is deliberately absent here. Only /reference has a second
-   * sticky bar; it measures and publishes its own, and the `0px` default below
-   * is exactly right for every other route.
+   * There is no second variable any more, and that is the point. /reference
+   * used to publish its own --toolbar-h for its sticky filter bar, which meant
+   * the clearance was a sum of two measurements taken by two observers, with a
+   * hand-maintained pre-JS fallback for the second. Every surface that needs a
+   * bar now renders it INSIDE `.site-header`, so there is exactly one sticky
+   * box on every route and exactly one number to keep true.
    */
   --hdr-h: 55px;
 }
@@ -175,7 +178,7 @@
    covers fragment navigation, sequential focus and scrollIntoView alike, so
    Shift-Tab stops parking the focused element behind the sticky bars. */
 html {
-  scroll-padding-block-start: calc(var(--hdr-h) + var(--toolbar-h, 0px) + var(--space-3));
+  scroll-padding-block-start: calc(var(--hdr-h) + var(--space-3));
 }
 
 /*

@@ -209,6 +209,21 @@ const links = [
     position: sticky;
     top: 0;
     z-index: 10;
+    /*
+     * The one sticky box clips its own overflow, so nothing a page puts in the
+     * `pagenav` slot can widen the document. /reference's section strip bleeds
+     * past its row to reach the screen edges and measures 901px of chips
+     * against a 375px box; it scrolls that itself, but the overflow still
+     * propagated up and made the page 872px wide — 2.3 screens — as soon as a
+     * query emptied the sections. Clipping here rather than on each slot's
+     * contents means a future bar cannot reintroduce it.
+     *
+     * `clip`, never `hidden`: `hidden` makes the block axis a scroll container
+     * too, and this element is `position: sticky`. `clip` takes one axis and
+     * leaves the other alone. The margin lets a focus ring breathe.
+     */
+    overflow-x: clip;
+    overflow-clip-margin: var(--space-2);
   }
   .bar {
     display: flex;
@@ -447,7 +462,8 @@ const links = [
    * what makes a fragment link, a focus move and a scrollIntoView clear the
    * sticky header instead of landing behind it. This lives here rather than in
    * a page because the header is the thing being measured and it ships
-   * everywhere; /reference measures only its own second bar (--toolbar-h).
+   * everywhere — including the optional second row, since this observes the
+   * whole `.site-header` box rather than just `.bar`.
    *
    * A ResizeObserver, not a resize listener: the bar also changes height when
    * the webfont settles and when the Install button appears, neither of which
