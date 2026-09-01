@@ -4,6 +4,7 @@ import { CASES, caseById, type CaseDef } from "../src/data/algs";
 import { GENERATED_CASES } from "../src/data/fullsets.gen";
 import { RICH } from "../src/data/fullsets.rich.gen";
 import { filter, haystackFor, matches, normalize } from "../src/lib/search";
+import { SECTION_NAV } from "../src/data/refsections";
 import { setName } from "../src/lib/trainer";
 import { TAUGHT_444_CASES, isLocked } from "../src/lib/unlocks";
 
@@ -20,24 +21,15 @@ import { TAUGHT_444_CASES, isLocked } from "../src/lib/unlocks";
 
 /**
  * The extra words /reference feeds each case: its section's jump label plus the
- * trainer's name for the same set. Taken from TRAINER_GROUPS rather than
- * re-typed, so this cannot claim a label the page does not actually render.
+ * trainer's name for the same set.
+ *
+ * IMPORTED, not re-typed. This was a literal map with a comment claiming it was
+ * derived, and it had drifted four ways from the page — a dead `555-l2e` key
+ * (renamed `555-parity`), no `beginner-triggers`, no `full-pll`, and "4×4
+ * parity" where the chip says "4×4" — so the filter was gated against a corpus
+ * the page never renders. The registry is now the one source both read.
  */
-const NAV: Record<string, string> = {
-  "cross-eo": "Cross",
-  "2look-oll-corners": "OLL corners",
-  "2look-pll-corners": "PLL corners",
-  "2look-pll-edges": "PLL edges",
-  "full-oll": "Full OLL",
-  "full-f2l": "F2L",
-  "444-parity": "4×4 parity",
-  "555-l2e": "5×5 L2E",
-};
-// Exactly what reference/index.astro's sectionWords() builds — via setName, so
-// the parenthetical size is stripped here for the same reason it is stripped
-// there. Re-typing the names would let this test pass against a corpus the page
-// never renders.
-const extraFor = (group: string): string => `${NAV[group] ?? ""} ${setName(group)}`;
+const extraFor = (group: string): string => `${SECTION_NAV[group] ?? ""} ${setName(group)}`;
 
 /**
  * The page's haystacks, built the way the page builds them.

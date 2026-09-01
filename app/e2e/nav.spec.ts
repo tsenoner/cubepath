@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { PHASES, phaseAnchor } from "../src/data/phases";
+import { SECTION_NAV } from "../src/data/refsections";
 
 /**
  * Navigation and wayfinding, gated.
@@ -724,4 +725,39 @@ test("an outline chip moves focus to its heading, not just the viewport", async 
   // the content it points at on /reference.
   expect(active.stillOnChip, "focus stayed on the chip").toBe(false);
   expect(active.id, "focus must land on the heading the chip names").toBeTruthy();
+});
+
+// ── The jump labels the filter indexes are the labels on screen ──────
+// `sectionWords()` feeds each section's chip label into every one of its cases'
+// search haystacks, so a wrong label is a wrong search index rather than a
+// cosmetic slip. tests/search.spec.ts used to carry its own hand-typed copy of
+// this map — under a comment claiming it was derived and therefore could not
+// drift — and it had drifted four ways: a dead `555-l2e` key, no
+// `beginner-triggers`, no `full-pll`, and "4×4 parity" for a chip reading
+// "4×4". Both now read src/data/refsections.ts; this checks that registry
+// against the rendered page.
+test("every rendered section's chip label matches the shared registry", async ({ page }) => {
+  await page.goto("/reference/");
+  const onPage = await page.evaluate(() =>
+    [...document.querySelectorAll<HTMLElement>(".jump .chip[data-jump]")].map((c) => ({
+      id: c.dataset.jump!,
+      // the chip prints its label then a count in a <span class="n">
+      label: (c.childNodes[0]?.textContent ?? "").trim(),
+    })),
+  );
+  expect(onPage.length, "the jump bar must render chips").toBeGreaterThan(5);
+
+  const registry = SECTION_NAV;
+  for (const { id, label } of onPage) {
+    expect(registry[id], `no registry entry for rendered section "${id}"`).toBeDefined();
+    expect(registry[id], `chip for "${id}" reads "${label}"`).toBe(label);
+  }
+  // …and every section on the page has an id the registry knows, so a new
+  // section cannot ship with an unindexed label.
+  const ids = await page.evaluate(() =>
+    [...document.querySelectorAll("section[data-section]")].map((s) => s.id),
+  );
+  for (const id of ids) {
+    expect(registry[id], `section #${id} renders but has no jump label`).toBeDefined();
+  }
 });

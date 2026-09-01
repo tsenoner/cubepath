@@ -11,6 +11,7 @@ import { RICH } from "../../data/fullsets.rich.gen";
 import { caseIcon } from "../../data/icons";
 import { haystackFor } from "../../lib/search";
 import { lessonForGroup, type TeachingLesson } from "../../lib/teaches";
+import { sectionNav } from "../../data/refsections";
 import { setName } from "../../lib/trainer";
 import { TAUGHT_444_CASES, isLocked } from "../../lib/unlocks";
 
@@ -84,14 +85,13 @@ const gen = (test: (k: CaseDef) => boolean) => GENERATED_CASES.filter(test);
  */
 const rows = (
   id: string,
-  nav: string,
   title: string,
   blurb?: string,
   items?: CaseDef[],
   blurbLink?: { caseId: string; text: string },
 ): Section => ({
   id,
-  nav,
+  nav: sectionNav(id),
   title,
   ...(blurb ? { blurb } : {}),
   ...(blurbLink ? { blurbLink } : {}),
@@ -101,15 +101,9 @@ const rows = (
 });
 
 /** A full set, rendered as icon tiles grouped by shape — id is the phase key. */
-const grid = (
-  id: string,
-  nav: string,
-  title: string,
-  items: CaseDef[],
-  blurb: string,
-): Section => ({
+const grid = (id: string, title: string, items: CaseDef[], blurb: string): Section => ({
   id,
-  nav,
+  nav: sectionNav(id),
   title,
   blurb,
   kind: "grid",
@@ -120,7 +114,6 @@ const grid = (
 const SECTIONS: Section[] = [
   rows(
     "beginner-triggers",
-    "Triggers",
     "The Beginner Method",
     "Not cases — the three algorithms the beginner solve is built out of. Righty alone finishes the " +
       "first two layers and untwists the last corners; Niklas puts the last four corners in their seats.",
@@ -129,18 +122,12 @@ const SECTIONS: Section[] = [
     // "the beginner algorithms" wants one list, not two.
     CASES.filter((k) => k.group === "beginner-triggers" || k.group === "beginner-corner-cycle"),
   ),
-  rows(
-    "cross-eo",
-    "Cross",
-    "Yellow Cross",
-    "Three cases — and the first two are the same trigger.",
-  ),
-  rows("2look-oll-corners", "OLL corners", "Corner Orientation — 2-Look OLL"),
-  rows("2look-pll-corners", "PLL corners", "Corner Permutation — 2-Look PLL"),
-  rows("2look-pll-edges", "PLL edges", "Edge Permutation — 2-Look PLL"),
+  rows("cross-eo", "Yellow Cross", "Three cases — and the first two are the same trigger."),
+  rows("2look-oll-corners", "Corner Orientation — 2-Look OLL"),
+  rows("2look-pll-corners", "Corner Permutation — 2-Look PLL"),
+  rows("2look-pll-edges", "Edge Permutation — 2-Look PLL"),
   grid(
     "full-oll",
-    "Full OLL",
     "Full OLL",
     gen((k) => /^oll\.\d+$/.test(k.id)),
     "The complete orientation set, grouped the way you recognize them.",
@@ -148,20 +135,17 @@ const SECTIONS: Section[] = [
   grid(
     "full-f2l",
     "F2L",
-    "F2L",
     gen((k) => k.phase === "full-f2l"),
     "First-two-layers pairs for the front-right slot; learn them intuitively first and look the awkward ones up here.",
   ),
   grid(
     "full-pll",
     "Full PLL",
-    "Full PLL",
     gen((k) => k.id.startsWith("pll.")),
     "Permutations with their piece-movement arrows.",
   ),
   rows(
     "444-parity",
-    "4×4",
     "4×4 Skills",
     "The whole of what a 4×4 adds to the 3×3 you already solve: one algorithm for pairing, and the " +
       "two states a 3×3 can never produce. Centres are intuitive — there is nothing to look up.",
@@ -175,13 +159,11 @@ const SECTIONS: Section[] = [
   grid(
     "444-oll",
     "4×4 OLL",
-    "4×4 OLL",
     gen((k) => k.group.startsWith("4x4oll-")),
     "Edge-flip states of the 4×4 last layer, grouped by how many corners are already oriented.",
   ),
   grid(
     "444-pll",
-    "4×4 PLL",
     "4×4 PLL",
     gen((k) => k.group.startsWith("4x4pll-")),
     "Permutations that need the 4×4 parity algorithm folded into them.",
@@ -198,7 +180,6 @@ const SECTIONS: Section[] = [
   // two different presentations rather than the same row twice.
   rows(
     "555-parity",
-    "5×5",
     "5×5 Skills",
     "Two algorithms finish a 5×5, and you already know one: {link} is the same seven outer " +
       "turns on both cubes. This is the other one — the only thing a 5×5 asks that a 4×4 does " +

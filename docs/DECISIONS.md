@@ -1502,3 +1502,118 @@ bridge, so the lookup is derived rather than a second table.
 
 All three are now gated in `nav.spec.ts` — including one test that simply
 scrolls `/reference` to the bottom and asserts the page never moved backwards.
+
+## The navigation is vertical now, and there is one sticky box (2026-09-01)
+
+A second wayfinding pass, after "the navigation is still very clumsy". The
+previous one fixed the LATERAL graph — page to page — and it worked: case page
+→ teaching lesson 129/129, case → its reference row 129/129, case → /practice
+129/129, lesson → /practice 25/25. So the complaint was not a broken link
+graph.
+
+**Every page is 6–14 phone screens tall and offers no way to move WITHIN it.**
+Measured at 390×844: `/` 5,248px (6.2 screens), a long lesson 9,743px (11.5),
+`/reference` 11,625px (13.8). At y=4,800 in that lesson the only links on
+screen were the five header destinations — the breadcrumb sits at y=73 and the
+next navigation of any kind is the pager at y=9,402, so the middle ~70% of
+every long lesson was a dead zone.
+
+The decisive measurement: **25 of 25 lessons carry ≥4 headings, 180 in all,
+every one already has an `id`, and zero had a table of contents.** That is the
+same defect the previous pass fixed one level up (the index shipped nine ids,
+not one a phase); it was fixed for phases and never for headings. `render()`
+returns those headings and `learn/[...slug].astro` was throwing them away.
+
+**One bar, one slot, one sticky box.** `Header.astro` gained a `pagenav` slot
+rendering a second ROW INSIDE `.site-header`. Because its ResizeObserver
+watches the whole header box, anything in that slot is measured into `--hdr-h`
+for free and `tokens.css`'s single `scroll-padding-block-start` clears it with
+no edit. `/reference`'s separate sticky toolbar — with its own `--toolbar-h`,
+its own observer and a hand-maintained pre-JS fallback — moved into the same
+slot; `--toolbar-h` is deleted and the clearance is one term. That
+consolidation had to be measured twice: moving the markup alone kept the
+toolbar's `position: sticky` and its 16/24px margins, which had been collapsing
+outside the header, giving 217px of chrome against the 177px two separate bars
+used. Stripping what the header already provides lands it at 160px, so it
+returns 17px.
+
+**Which surfaces get a bar is a measurement, not a convention.** `/` (6.2
+screens), `/glossary` (10.3), `/reference` (13.8) and every lesson do.
+`/practice` is 1.1 screens and `/print` is 2.5 — a bar there is chrome with
+nothing to navigate. Both absences are gated with a height ceiling, so if
+either grows the decision gets revisited rather than silently inherited.
+
+**On wide screens the outline moves into the margin.** The measurement that
+settles the recurring "why is the desktop column so narrow" question: the text
+line is 612px on the prose routes AND on `/reference`; `/practice`, the widest
+box, has the narrowest text at 558px. The site holds line length constant
+everywhere, which is right at 68ch ≈ 72 characters. So the answer to 390px of
+empty margin per side is not longer lines — it is to put the outline there. At
+≥1100px it becomes a fixed column anchored to the centre line, 24px clear of
+the prose at every width. It is also FREE: leaving the header's flow drops
+`--hdr-h` from 167px to 55px, so the sidebar gains a full-height column and
+gives back 112px of vertical chrome.
+
+**The spy is shared, not copied.** `src/lib/jumpbar.ts` is /reference's
+scroll-spy MOVED — the extraction shipped as its own step and the six gated
+/reference tests passed with zero edits, which is the only way to know a move
+was faithful. It encodes two regressions this repo actually shipped:
+`scrollIntoView` walks every ancestor scrolling box including the document
+(−52px per section boundary), and the observer must clear its marking BEFORE
+the early return, or a filter that empties the page strands `aria-current` on a
+chip that is simultaneously `aria-disabled`. Generalised twice for the outline:
+`revealChip` handles both axes (strip below 561px, column above 1100px), and
+`focusTarget` adds `tabindex="-1"` on demand, because an `<h2>` is not
+focusable and a jump that leaves focus on the chip is half a jump.
+
+Wiring it to the course index exposed a genuine collision: that page had two
+writers of `.here` — progress ("the phase you would resume into") and scroll
+("the phase you are looking at"). Different questions, usually different
+answers, so they are different marks now: `.here` belongs to the spy on every
+surface, `.resume` is progress.
+
+### Four shipped defects the audit found before it proposed anything
+
+- **The offline promise was three-quarters true.** Every lesson's filled
+  primary
+button is `/practice/?group=<key>` — 16 across 12 lessons — and a Workbox
+precache lookup matches the FULL url. Workbox strips only `utm_*`/`fbclid` by
+default and `navigateFallback` is null, so the button died in airplane mode on
+a PWA whose whole pitch is airplane mode. Worse quietly: that element carries
+`data-lesson-advance`, so an offline reader taking the lesson's own call to
+action earned no credit. `e2e/offline.spec.ts` missed it by one query string —
+it visited `/practice/` bare — and derives the list now.
+- **`/glossary` stacked its own anchors.** Two `scroll-margin`s against the
+  global `scroll-padding` — the pattern CLAUDE.md names and /reference was
+already fixed for — on the destination of every auto-linked term. 65px low.
+- **`/reference` scrolled sideways once used.** 872px on a 375px phone, 2.3
+  screens, whenever a query emptied the sections. The 375px sweep only ever
+LOADED routes; it types now. The `overflow-x: clip` that fixes it belongs on
+the one sticky box, not on the toolbar — when the toolbar stopped being
+outermost the overflow simply escaped through the header and the gate caught it
+on the first run.
+- **`/practice` was a sink.** 0 `<a>` elements in `main`: everything pointed
+  into the trainer and nothing out, so a reader who failed a drill could not
+reach the lesson. Three derived edges added. The 138 tracker rows were NOT
+converted — they look inert and are not; a delegated listener cycles each
+case's status and seeds its FSRS card.
+
+### Also corrected
+
+`tests/search.spec.ts` carried a hand-typed section-label map under a comment
+claiming it was derived "so this cannot claim a label the page does not
+actually render". It was re-typed and had drifted four ways: a dead `555-l2e`
+key, no `beginner-triggers`, no `full-pll`, and "4×4 parity" for a chip reading
+"4×4". Since those labels are fed into every case's search haystack, that is a
+wrong search index rather than a cosmetic slip. `src/data/refsections.ts` is
+now the one source, the page derives its chips from it, and a test checks the
+registry against the rendered page.
+
+`/sw.js` 404'd noisily in dev forever. The PWA plugin generates no worker in
+dev, but any browser that has loaded a production build or an `astro preview`
+on localhost still has the real one registered and re-fetches its script
+indefinitely. Dev now answers with a worker that clears caches and unregisters
+itself — which also removes the stale PRECACHE, the half that silently serves
+an old build's assets. A dev-server middleware (`apply: "serve"`), not a
+`src/pages/sw.js` route, which would have overwritten the real Workbox worker
+at build time.
