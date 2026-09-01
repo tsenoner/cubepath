@@ -5,6 +5,7 @@ import Page from "../../components/Page.astro";
 import EmptyState from "../../components/EmptyState.astro";
 import ProgressBar from "../../components/ProgressBar.astro";
 import { caseIcon } from "../../data/icons";
+import { referenceHref } from "../../data/refsections";
 import { defaultSettings, poolFor, selectionLabel, trainerSets } from "../../lib/trainer";
 
 // Every trainable set, resolved once and used twice: the picker on the left and
@@ -232,7 +233,7 @@ const OPEN_AT_MOST = 12;
                     made that mistake once on /reference's rows.
                   */}
                   <p class="set-out">
-                    <a href={`/reference/#${s.key}`}>See this set in the reference →</a>
+                    <a href={referenceHref(s.key)}>See this set in the reference →</a>
                   </p>
                   {s.cases.map((c) =>
                     caseIcon(c.id) ? (

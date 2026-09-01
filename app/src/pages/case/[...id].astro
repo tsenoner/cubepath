@@ -10,6 +10,7 @@ import { ALL_CASES, CURATED_IDS, primaryAlg, type CaseDef } from "../../data/alg
 import { CASE_SCRAMBLES } from "../../data/fullsets.gen";
 import { RICH } from "../../data/fullsets.rich.gen";
 import { caseIcon } from "../../data/icons";
+import { caseAnchor, referenceHref } from "../../data/refsections";
 import { TAUGHT_444_CASES, isLocked } from "../../lib/unlocks";
 import { contextForCase } from "../../lib/ladders";
 import { teachingLesson } from "../../lib/teaches";
@@ -99,8 +100,8 @@ const here = siblings.findIndex((k) => k.id === def.id);
 const prev = here > 0 ? siblings[here - 1] : undefined;
 const next = here >= 0 && here < siblings.length - 1 ? siblings[here + 1] : undefined;
 
-/** The case's anchor in the reference list — see pages/reference/index.astro. */
-const refAnchor = `/reference/#${def.id.replace(/\./g, "-")}`;
+/** The case's anchor in the reference list. Both ends of the link derive it. */
+const refAnchor = referenceHref(caseAnchor(def.id));
 
 /**
  * The lesson that teaches this case. Derived from lesson frontmatter, so it

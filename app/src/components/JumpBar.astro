@@ -36,13 +36,6 @@ interface Item {
   /** The `id` of the element this chip lands on. Must exist on the page. */
   id: string;
   label: string;
-  /**
-   * Extra attributes merged onto the anchor — `data-phase-jump` on the course
-   * index, whose script marks the phase you are in. Kept as a pass-through so
-   * a surface can add its own behaviour without this component learning about
-   * that surface.
-   */
-  attrs?: Record<string, string>;
 }
 interface Props {
   items: Item[];
@@ -56,7 +49,7 @@ const { items, label } = Astro.props;
   items.length > 0 && (
     <nav class="pagenav" aria-label={label}>
       {items.map((it) => (
-        <a class="chip" href={`#${it.id}`} {...(it.attrs ?? {})}>
+        <a class="chip" href={`#${it.id}`}>
           {it.label}
         </a>
       ))}
@@ -83,33 +76,18 @@ const { items, label } = Astro.props;
     margin: 0 auto;
     padding: 0 var(--shell-x) var(--space-2);
   }
+  /*
+   * Layout only. `.chip`'s type, colour, padding and radius come from
+   * tokens.css — which is the rule that file states for every shared component
+   * class — and so do its `:hover` and `.here` states, so this bar and
+   * /reference's are the same object rather than two that merely resemble each
+   * other. Restating them here is how this bar came to ask for a `--ink-soft`
+   * that does not exist, and to claim a font-weight change for `.here` that the
+   * base chip's own 600 had already made invisible.
+   */
   .chip {
     display: inline-block;
-    padding: 4px 10px;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    font-size: var(--text-xs);
-    line-height: 1.6;
-    color: var(--ink-soft);
     white-space: nowrap;
-    text-decoration: none;
-  }
-  .chip:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-    text-decoration: none;
-  }
-  /*
-   * "You are here". The course index's script adds this to the phase it has
-   * worked out you are in; it lives here rather than on that page so that when
-   * a scroll-spy is shared across these bars there is one definition of the
-   * current chip, not one per surface. Not colour alone — the weight change
-   * carries it for a reader who cannot see the accent.
-   */
-  .chip.here {
-    border-color: var(--accent);
-    color: var(--accent);
-    font-weight: 600;
   }
   /*
    * A different question, so a different mark. On the course index `.here` is

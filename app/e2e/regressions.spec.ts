@@ -1,6 +1,3 @@
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { expect, test, type Page } from "@playwright/test";
 
 /**
@@ -32,33 +29,7 @@ import { expect, test, type Page } from "@playwright/test";
 // add it here. `npx playwright test` serves `dist/` via `astro preview`, so a
 // build is already a precondition of this suite running at all.
 
-const DIST = fileURLToPath(new URL("../dist/", import.meta.url));
-
-/**
- * Every route the site publishes, as a path, in sitemap order. Read from every
- * `sitemap-N.xml` rather than just `sitemap-0.xml`, because @astrojs/sitemap
- * shards at 45 000 URLs and a hardcoded shard would quietly stop covering the
- * overflow.
- */
-function publishedRoutes(): string[] {
-  const shards = readdirSync(DIST).filter((f) => /^sitemap-\d+\.xml$/.test(f));
-  if (shards.length === 0) {
-    throw new Error(
-      `no sitemap-N.xml in ${DIST} — the E2E suite needs a build first ` +
-        "(`npx astro build`, or `make ci`).",
-    );
-  }
-  const routes = shards
-    .sort()
-    .flatMap((shard) => [
-      ...readFileSync(join(DIST, shard), "utf8").matchAll(/<loc>([^<]+)<\/loc>/g),
-    ])
-    .map((m) => m[1])
-    .filter((loc): loc is string => typeof loc === "string")
-    .map((loc) => new URL(loc).pathname);
-  if (routes.length === 0) throw new Error(`${DIST} sitemaps contained no <loc> entries`);
-  return routes;
-}
+import { publishedRoutes } from "./routes";
 
 /** The page template a route came from: `/case/foo/` and `/case/bar/` share one. */
 function template(route: string): string {

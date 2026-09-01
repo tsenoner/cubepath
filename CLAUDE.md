@@ -196,20 +196,41 @@ checked, rather than an omission somebody later "fixes".
 **A phase id comes from `phaseAnchor()`** in `data/phases.ts`, never from the
 raw key. `#444` and `#phase-1.5` are legal fragments but illegal
 `querySelector` arguments, so the prefix and the de-dotting are load-bearing.
+A /reference address comes from `data/refsections.ts` the same way —
+`caseAnchor()` for a case, `referenceHref()` for the link — and for the same
+reason: four places hand-wrote those two rules, so changing either produced a
+dead fragment (a silent scroll to the top of a 12,000px page) rather than an
+error.
 
 **Lesson completion has two writers, and neither is optional.** `LessonMeta`
 observes a `data-lesson-end` sentinel AND the exits tagged `data-lesson-advance`
-(added in `Lesson.astro`). Tag an exit only when following it means "done with
-this lesson" — `white-cross.mdx` puts `/print` in `practice.links`, and
+(added in `Lesson.astro`) — that ATTRIBUTE and nothing else, so a presentational
+class rename cannot silently remove a writer; the selector used to also match
+`a.pager-link.next`, which pinned a CSS class as behavioural contract. Tag an
+exit only when following it means "done with this lesson" — `white-cross.mdx`
+puts `/print` in `practice.links`, and
 crediting a lesson for that hides it from Resume permanently. For a year the
 pager click was the only writer, so a reader who took the lesson's own filled
 "Drill …" button never got credit and the whole progress layer stayed dark.
 
-Two shared modules exist so the same string is not built twice:
-`src/lib/search.ts` (the /reference filter's normalisation and matching, used by
-both haystack builders) and `src/lib/teaches.ts` (case → lesson and group →
+Three shared modules exist so the same string is not built twice:
+`src/lib/search.ts` (the filter's normalisation and matching — used by both
+haystack builders AND by /glossary, which is the site's other filter and had
+kept the `.includes()` idiom the module was written to replace),
+`src/data/refsections.ts` (a section's jump label, its search words, and the two
+/reference addressing rules) and `src/lib/teaches.ts` (case → lesson and group →
 lesson, inverted at build time from lesson frontmatter — build-time only, never
 import it from a client `<script>`).
+
+`search.ts` compiles a query ONCE per query, not once per entry, and
+`haystackFor` de-duplicates tokens. Both are why the filter is cheap: the five
+haystack sources overlap by construction, so /reference used to ship 14.8 KB of
+`data-search` (10.3 KB now) and rebuild the matcher 142 times per keystroke.
+A shared component class is styled ONCE, in `tokens.css` — `.chip` and its
+`a.chip:hover` / `a.chip.here` states included. Both jump bars restated it, the
+two copies disagreed, and one asked for a `--ink-soft` that has never existed,
+which silently dropped the declaration and left every outline chip at inherited
+ink.
 
 Two Prettier settings are load-bearing, not taste: `.prettierignore` excludes
 `src/content` (its MDX printer rewrites `*italic*` and explodes the lesson

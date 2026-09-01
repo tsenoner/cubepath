@@ -21,6 +21,8 @@
  * rendered; this only says what a section is CALLED, and keeping the hidden
  * ones listed means unlocking a set does not also need an edit here.
  */
+import { setName } from "../lib/trainer";
+
 export const SECTION_NAV: Record<string, string> = {
   "beginner-triggers": "Triggers",
   "cross-eo": "Cross",
@@ -41,4 +43,45 @@ export function sectionNav(id: string): string {
   const nav = SECTION_NAV[id];
   if (nav === undefined) throw new Error(`refsections: no jump label for section "${id}"`);
   return nav;
+}
+
+/**
+ * The words a section is known by beyond its own heading: the jump label plus
+ * the trainer's name for the same set. Fed to `haystackFor`'s `extra`, so a
+ * reader who types a heading they can see finds the cases under it.
+ *
+ * ONE definition, because this is the composition that drifted last time. The
+ * previous fix imported `SECTION_NAV` into `tests/search.spec.ts` but left the
+ * COMPOSITION duplicated there, so the page could still change what it feeds
+ * the filter while the unit corpus kept passing against the old recipe — the
+ * same false-green the registry was introduced to end, one level up.
+ *
+ * The trainer name is not redundant with the label: it is the site's OTHER
+ * public name for the set, printed on every lesson's "Drill …" button, and in
+ * one case it is the only place the site writes down what the set is called.
+ * The single 5×5 case is `L2E 6`, cued "One edge group flipped" — the word
+ * "parity" appears nowhere in the case, though the lesson, the trainer and
+ * every cuber alive call it edge parity.
+ */
+export function sectionWords(id: string): string {
+  return `${sectionNav(id)} ${setName(id)}`;
+}
+
+/**
+ * The DOM id a case is addressed by on /reference: its id with dots replaced by
+ * dashes, so `#555-l2e-6` and `#444-oll-parity` both resolve.
+ *
+ * Derived in one place for the same reason `phaseAnchor()` is (see
+ * data/phases.ts): the page that WRITES the anchor and the case page whose
+ * breadcrumb LINKS to it cannot disagree. They each hand-wrote this rule, and a
+ * change to either produced a dead fragment — a silent scroll to the top of a
+ * 12,000px page, not an error.
+ */
+export function caseAnchor(id: string): string {
+  return id.replace(/\./g, "-");
+}
+
+/** A link into /reference: a whole section by key, or one case by id. */
+export function referenceHref(anchor: string): string {
+  return `/reference/#${anchor}`;
 }

@@ -18,7 +18,7 @@
  *   2. Leaving by a link that means "I am done here" — the pager's Next, and
  *      the Practice card's drill links, found as:
  *
- *          a[data-lesson-next], a[data-lesson-advance], a.pager-link.next
+ *          a[data-lesson-advance]
  *
  * The last of those matches Lesson.astro's markup as it stands, so the pager
  * works with no change to that file. Add `data-lesson-next` to the next-link if
@@ -182,9 +182,7 @@ const phase = idx >= 0 ? all[idx]?.data.phase : undefined;
     // that card: white-cross.mdx offers /print in `practice.links`, and
     // crediting a lesson because the reader went to fetch the card set would
     // hide it from Resume permanently. Lesson.astro tags the qualifying ones.
-    const exits = document.querySelectorAll<HTMLAnchorElement>(
-      "a[data-lesson-next], a[data-lesson-advance], a.pager-link.next",
-    );
+    const exits = document.querySelectorAll<HTMLAnchorElement>("a[data-lesson-advance]");
 
     for (const exit of exits) {
       exit.addEventListener("click", (e) => {

@@ -147,11 +147,7 @@ const firstHref = `/learn/${lessons[0]?.id}/`;
     <JumpBar
       slot="pagenav"
       label="Course phases"
-      items={groups.map(({ phase }) => ({
-        id: phaseAnchor(phase.key),
-        label: phase.nav,
-        attrs: { "data-phase-jump": phase.key },
-      }))}
+      items={groups.map(({ phase }) => ({ id: phaseAnchor(phase.key), label: phase.nav }))}
     />
   </Header>
   <Page>
@@ -519,10 +515,28 @@ const firstHref = `/learn/${lessons[0]?.id}/`;
       if (tick) tick.hidden = false;
     }
 
+    // Resume points at the first unfinished lesson in ladder order — not the
+    // last one visited, which on a re-read would send you backwards. Worked out
+    // before the phase pass because the phase pass marks the card holding it.
+    const next = rows.find((r) => !r.dataset.complete);
+    // The phase holding the row you would resume. Marked on the card and on its
+    // jump chip, so the answer survives the hero scrolling off the screen.
+    const currentPhase = next?.closest<HTMLElement>("[data-phase]");
+
     for (const phase of document.querySelectorAll<HTMLElement>("[data-phase]")) {
-      const items = phase.querySelectorAll("[data-lesson-slug]");
       const bar = phase.querySelector<HTMLElement>("[data-progress]");
-      if (bar) paint(bar, phase.querySelectorAll("[data-complete]").length, items.length);
+      if (bar) {
+        paint(
+          bar,
+          phase.querySelectorAll("[data-complete]").length,
+          phase.querySelectorAll("[data-lesson-slug]").length,
+        );
+      }
+      // "current" is the only value anything reads — the card's accent rule
+      // below and the gate in e2e/nav.spec.ts. "done" and "ahead" were written
+      // and asked for nowhere, and telling them apart cost a second pass over
+      // every phase, re-counting rows this one has already counted.
+      if (phase === currentPhase) phase.dataset.state = "current";
     }
 
     if (courseBar) {
@@ -534,9 +548,6 @@ const firstHref = `/learn/${lessons[0]?.id}/`;
       courseBar.removeAttribute("data-empty");
     }
 
-    // Resume points at the first unfinished lesson in ladder order — not the
-    // last one visited, which on a re-read would send you backwards.
-    const next = rows.find((r) => !r.dataset.complete);
     const link = next?.querySelector("a");
     if (cta && link) {
       cta.href = link.getAttribute("href") ?? cta.href;
@@ -551,22 +562,15 @@ const firstHref = `/learn/${lessons[0]?.id}/`;
     }
 
     // ── You are here ───────────────────────────────────────────────────
-    // The phase holding the row you would resume. Marked on the card and on its
-    // jump chip, so the answer survives the hero scrolling off the screen.
-    const currentPhase = next?.closest<HTMLElement>("[data-phase]");
-    for (const phase of document.querySelectorAll<HTMLElement>("[data-phase]")) {
-      const items = phase.querySelectorAll("[data-lesson-slug]").length;
-      const complete = phase.querySelectorAll("[data-complete]").length;
-      phase.dataset.state =
-        phase === currentPhase ? "current" : complete === items ? "done" : "ahead";
-    }
     if (currentPhase) {
       const chip = currentPhase.querySelector<HTMLElement>("[data-here]");
       if (chip) chip.hidden = false;
-      const key = currentPhase.dataset.phase;
-      const jump = key
-        ? document.querySelector<HTMLElement>(`[data-phase-jump="${CSS.escape(key)}"]`)
-        : null;
+      // By href, which is the chip's whole contract with the page: the card's
+      // own id IS the fragment the chip points at. The chip used to carry a
+      // second copy of the phase key purely so this line could find it, and
+      // that copy needed CSS.escape because `phase-1.5` is not a legal selector
+      // — the id `phaseAnchor()` builds is, and that is the point of it.
+      const jump = document.querySelector<HTMLElement>(`.pagenav a[href="#${currentPhase.id}"]`);
       // `resume`, not `here`. Two different questions get asked of this bar and
       // they have different answers: `here` is which phase you have SCROLLED to
       // and is owned by the shared scroll-spy in lib/jumpbar.ts, while this is
@@ -574,7 +578,6 @@ const firstHref = `/learn/${lessons[0]?.id}/`;
       // They are usually different chips. Marking both with one class meant the
       // spy cleared this on its first callback.
       jump?.classList.add("resume");
-      jump?.setAttribute("data-resume-phase", "true");
     }
   }
 

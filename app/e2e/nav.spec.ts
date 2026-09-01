@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { PHASES, phaseAnchor } from "../src/data/phases";
+import { publishedRoutes } from "./routes";
 import { SECTION_NAV } from "../src/data/refsections";
 
 /**
@@ -37,12 +38,40 @@ async function seedLessons(page: Page, slugs: string[]): Promise<void> {
   }, slugs);
 }
 
-/** The bottom of the sticky chrome: the header, plus any second sticky bar. */
+/**
+ * The bottom of the sticky chrome.
+ *
+ * `.site-header` and nothing else: there is ONE sticky box per route, and a
+ * page that needs its own bar renders it into Header's `pagenav` slot, as a row
+ * INSIDE that box. This used to take `Math.max` with `.toolbar`, which is now a
+ * descendant of the header and so can never contribute — a helper documenting a
+ * two-box model the site no longer has.
+ */
 async function chromeBottom(page: Page): Promise<number> {
-  return page.evaluate(() => {
-    const rect = (s: string) => document.querySelector(s)?.getBoundingClientRect().bottom ?? 0;
-    return Math.max(rect(".site-header"), rect(".toolbar"));
-  });
+  return page.evaluate(
+    () => document.querySelector(".site-header")?.getBoundingClientRect().bottom ?? 0,
+  );
+}
+
+/**
+ * Land on `#id` within `url` and return how far the target sits below the
+ * sticky chrome. Negative means it is hidden behind it.
+ *
+ * Written once because four tests measured this, each with its own arbitrary
+ * settle wait (200/400/600/800ms). It polls the real condition instead: the
+ * anchor's position has to stop moving before it can be judged.
+ */
+async function clearanceOf(page: Page, url: string, id: string): Promise<number> {
+  await page.goto(url);
+  await page.waitForFunction((target) => !!document.getElementById(target), id);
+  let last = Number.NaN;
+  for (let i = 0; i < 25; i++) {
+    const top = await page.locator(`[id="${id}"]`).evaluate((el) => el.getBoundingClientRect().top);
+    if (Math.abs(top - last) < 1) break;
+    last = top;
+    await page.waitForTimeout(60);
+  }
+  return last - (await chromeBottom(page));
 }
 
 // ── The course index has addresses ───────────────────────────────────
@@ -53,7 +82,7 @@ test("every phase is addressable, and its jump chip resolves", async ({ page }) 
     const id = phaseAnchor(phase.key);
     const card = page.locator(`[id="${id}"]`);
     // A phase with no lessons is not rendered; the jump bar must agree.
-    const chip = page.locator(`[data-phase-jump="${phase.key}"]`);
+    const chip = page.locator(`.pagenav a[href="#${id}"]`);
     expect(await card.count(), `#${id} and its chip must both exist or neither`).toBe(
       await chip.count(),
     );
@@ -64,14 +93,9 @@ test("every phase is addressable, and its jump chip resolves", async ({ page }) 
 
 test("a phase anchor lands clear of the sticky header", async ({ page }) => {
   await page.setViewportSize(PHONE);
-  await page.goto(`/#${phaseAnchor("444")}`);
-  await page.waitForTimeout(600);
-  const top = await page
-    .locator(`[id="${phaseAnchor("444")}"]`)
-    .evaluate((el) => el.getBoundingClientRect().top);
-  expect(top, "the 4x4 phase card must not sit under the header").toBeGreaterThanOrEqual(
-    await chromeBottom(page),
-  );
+  const id = phaseAnchor("444");
+  const clear = await clearanceOf(page, `/#${id}`, id);
+  expect(clear, "the 4x4 phase card must not sit under the header").toBeGreaterThanOrEqual(0);
 });
 
 // ── The breadcrumb tells the truth ───────────────────────────────────
@@ -155,13 +179,9 @@ for (const [caseId, kind] of [
     await page.goto(`/case/${caseId}/`);
     const href = await page.locator('a[href^="/reference/#"]').first().getAttribute("href");
     expect(href, "the case page must offer its place in the reference").toBeTruthy();
-    await page.goto(href!);
-    await page.waitForTimeout(800);
     const id = href!.split("#")[1]!;
-    const box = await page.locator(`[id="${id}"]`).evaluate((el) => el.getBoundingClientRect().top);
-    expect(box, `${id} must not be hidden behind the toolbar`).toBeGreaterThanOrEqual(
-      await chromeBottom(page),
-    );
+    const clear = await clearanceOf(page, href!, id);
+    expect(clear, `${id} must not be hidden behind the toolbar`).toBeGreaterThanOrEqual(0);
   });
 }
 
@@ -244,8 +264,15 @@ test("a jump chip moves focus to its section, not just the viewport", async ({ p
 });
 
 // ── The filter input must not zoom iOS Safari ────────────────────────
+// Every app surface, from the sitemap — not a hand-typed three. The list said
+// /reference, /practice and /, and the page it omitted (/glossary) was the one
+// that shipped a 15px filter: the fix had been pasted into /reference rather
+// than shared, and the gate that should have noticed could not see the page.
+// `/case/` is excluded because it is 129 pages of one template with no input.
+const INPUT_ROUTES = publishedRoutes().filter((r) => !r.startsWith("/case/"));
+
 test("no text input is under Safari's 16px zoom floor", async ({ page }) => {
-  for (const path of ["/reference/", "/practice/", "/"]) {
+  for (const path of INPUT_ROUTES) {
     await page.goto(path);
     const sizes = await page.evaluate(() =>
       [...document.querySelectorAll("input")]
@@ -455,17 +482,14 @@ test("a glossary term lands clear of the sticky header, not a header lower", asy
   );
   expect(ids.length, "the glossary must render addressable entries").toBeGreaterThan(0);
   for (const id of ids) {
-    await page.goto(`/glossary/#${id}`);
-    await page.waitForTimeout(400);
-    const top = await page.locator(`[id="${id}"]`).evaluate((el) => el.getBoundingClientRect().top);
-    const bottom = await chromeBottom(page);
-    expect(top, `#${id} must not sit under the header`).toBeGreaterThanOrEqual(bottom);
+    const clear = await clearanceOf(page, `/glossary/#${id}`, id);
+    expect(clear, `#${id} must not sit under the header`).toBeGreaterThanOrEqual(0);
     // …and not a whole header BELOW it either, which is what stacking looked
     // like: clearance is one --space-3 gap, so allow a small tolerance only.
     expect(
-      top,
-      `#${id} landed ${Math.round(top - bottom)}px below the chrome — anchors stacked`,
-    ).toBeLessThan(bottom + 48);
+      clear,
+      `#${id} landed ${Math.round(clear)}px below the chrome — anchors stacked`,
+    ).toBeLessThan(48);
   }
 });
 
@@ -479,15 +503,16 @@ test("a glossary term lands clear of the sticky header, not a header lower", asy
 // y=73 and the next navigation is the pager at y=9,402.
 test("every lesson carries an outline whose every chip resolves and lands clear", async ({
   page,
-  baseURL,
 }) => {
   await page.setViewportSize(PHONE);
-  // From the SITEMAP, the way stickering.spec.ts enumerates case pages:
-  // `astro:content` is a build-time module and cannot be imported here, and a
-  // hand-written list of 25 slugs is exactly the staleness this suite exists
-  // to catch.
-  const sitemap = await (await page.request.get(`${baseURL}/sitemap-0.xml`)).text();
-  const slugs = [...sitemap.matchAll(/<loc>[^<]*\/learn\/([^/<]+)\/?<\/loc>/g)].map((m) => m[1]!);
+  // From the SITEMAP: `astro:content` is a build-time module and cannot be
+  // imported here, and a hand-written list of 25 slugs is exactly the staleness
+  // this suite exists to catch. Through the shared reader, which walks every
+  // shard — this fetched `sitemap-0.xml` by name, so the sweep would have
+  // stopped being exhaustive at the shard boundary without saying so.
+  const slugs = publishedRoutes()
+    .filter((r) => r.startsWith("/learn/"))
+    .map((r) => r.split("/").filter(Boolean)[1]!);
   expect(slugs.length, "the sitemap must list the lessons").toBeGreaterThan(20);
 
   for (const slug of slugs) {
@@ -520,12 +545,8 @@ test("a lesson outline chip lands its heading clear of the two-row header", asyn
     .evaluateAll((els) => els.map((e) => (e as HTMLAnchorElement).getAttribute("href")!.slice(1)));
   expect(ids.length).toBeGreaterThan(3);
   for (const id of ids) {
-    await page.goto(`/learn/full-oll-overview/#${id}`);
-    await page.waitForTimeout(200);
-    const top = await page.locator(`[id="${id}"]`).evaluate((el) => el.getBoundingClientRect().top);
-    expect(top, `#${id} landed under the sticky header`).toBeGreaterThanOrEqual(
-      await chromeBottom(page),
-    );
+    const clear = await clearanceOf(page, `/learn/full-oll-overview/#${id}`, id);
+    expect(clear, `#${id} landed under the sticky header`).toBeGreaterThanOrEqual(0);
   }
 });
 
@@ -535,7 +556,6 @@ test("a lesson outline chip lands its heading clear of the two-row header", asyn
 test("no outline chip is tagged as a lesson-completion exit", async ({ page }) => {
   await page.goto("/learn/two-look-oll/");
   expect(await page.locator(".pagenav .chip[data-lesson-advance]").count()).toBe(0);
-  expect(await page.locator(".pagenav .chip[data-lesson-next]").count()).toBe(0);
 });
 
 // ── The trainer is not a sink ────────────────────────────────────────

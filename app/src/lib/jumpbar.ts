@@ -28,20 +28,46 @@
 export interface JumpBarOptions {
   /** The scrolling strip (phone) or column (desktop) holding the chips. */
   bar: HTMLElement;
-  /** The chips, in document order. */
-  chips: HTMLElement[];
-  /** The id of the element a chip points at. */
-  idOf: (chip: HTMLElement) => string;
-  /**
-   * Height of the sticky chrome RIGHT NOW, called once when the observer is
-   * built. A function rather than a number so the caller decides what counts.
-   */
-  chromeHeight: () => number;
-  /**
-   * A chip the page has disabled must never be marked as where you are.
-   * /reference disables chips whose section the filter emptied.
-   */
-  isDisabled?: (chip: HTMLElement) => boolean;
+  /** The chips, in document order. Anchors: the href IS the destination. */
+  chips: HTMLAnchorElement[];
+}
+
+/**
+ * The id a chip points at. Read off the href rather than taken from the caller,
+ * because the href is the contract the markup already honours for a reader with
+ * no JavaScript — /reference's chips carried a `data-jump` holding the same
+ * string a second time, purely to hand it back here.
+ */
+function chipId(chip: HTMLAnchorElement): string {
+  return decodeURIComponent(chip.hash.slice(1));
+}
+
+/**
+ * A chip the page has disabled must never be marked as where you are.
+ * /reference disables the chips whose section its filter emptied.
+ *
+ * `aria-disabled`, which is what the click handler below already tests and what
+ * the filter already writes. The caller used to pass a predicate over a `.off`
+ * CLASS set on the same line as the attribute, so the module held two notions
+ * of disabled and only one of them was the one it announced.
+ */
+function isDisabled(chip: HTMLAnchorElement): boolean {
+  return chip.getAttribute("aria-disabled") === "true";
+}
+
+/**
+ * The height of the one sticky box, right now.
+ *
+ * `.site-header` is that box on every route — a page that needs its own bar
+ * renders it into Header's `pagenav` slot, as a second row inside it — so this
+ * is the whole of the chrome wherever a jump bar exists. At >=1100px the
+ * outline is `position: fixed` and OUT of the header, and the header is one
+ * thin row again; reading the live height covers both without a breakpoint in
+ * JavaScript. Three places wrote this same line: both jump bars, and
+ * /reference's "scroll the first match into view" arithmetic.
+ */
+export function chromeHeight(): number {
+  return document.querySelector<HTMLElement>(".site-header")?.offsetHeight ?? 0;
 }
 
 /**
@@ -91,12 +117,12 @@ function focusTarget(id: string): void {
  * IntersectionObserver — it simply does less.
  */
 export function wireJumpBar(opts: JumpBarOptions): void {
-  const { bar, chips, idOf, chromeHeight, isDisabled } = opts;
+  const { bar, chips } = opts;
   if (chips.length === 0) return;
 
-  const chipFor = new Map(chips.map((c) => [idOf(c), c] as const));
+  const chipFor = new Map(chips.map((c) => [chipId(c), c] as const));
   const sections = chips
-    .map((c) => document.getElementById(idOf(c)))
+    .map((c) => document.getElementById(chipId(c)))
     .filter((el): el is HTMLElement => el !== null);
 
   // ── Jump = go there, not just scroll there ─────────────────────────
@@ -131,7 +157,7 @@ export function wireJumpBar(opts: JumpBarOptions): void {
       const hit = records.find((r) => r.isIntersecting);
       if (!hit) return;
       const chip = chipFor.get(hit.target.id);
-      if (!chip || isDisabled?.(chip)) return;
+      if (!chip || isDisabled(chip)) return;
       chip.classList.add("here");
       chip.setAttribute("aria-current", "location");
       if (performance.now() > pannedUntil) revealChip(bar, chip);
@@ -158,15 +184,5 @@ export function wirePageNav(): void {
   // is the contract the markup already honours for a reader with no JavaScript.
   const bar = document.querySelector<HTMLElement>(".pagenav");
   if (!bar) return;
-  const header = document.querySelector<HTMLElement>(".site-header");
-  wireJumpBar({
-    bar,
-    chips: [...bar.querySelectorAll<HTMLAnchorElement>("a[href^='#']")],
-    idOf: (chip) => decodeURIComponent((chip as HTMLAnchorElement).hash.slice(1)),
-    // At >=1100px the bar is `position: fixed` and OUT of the header, so the
-    // header is one thin row and that is the whole of the sticky chrome; below
-    // that, the bar is a row inside the header and already counted. Reading the
-    // header's live height covers both without a breakpoint in JavaScript.
-    chromeHeight: () => header?.offsetHeight ?? 0,
-  });
+  wireJumpBar({ bar, chips: [...bar.querySelectorAll<HTMLAnchorElement>("a[href^='#']")] });
 }

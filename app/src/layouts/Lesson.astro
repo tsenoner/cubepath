@@ -27,6 +27,7 @@ import ProgressBar from "../components/ProgressBar.astro";
 import LessonMeta from "../components/LessonMeta.astro";
 import { phaseAnchor, phaseName } from "../data/phases";
 import { caseById } from "../data/algs";
+import { referenceHref } from "../data/refsections";
 import { TRAINER_GROUPS } from "../lib/trainer";
 
 interface PracticeLink {
@@ -106,7 +107,7 @@ const drills = practice.groups.map((key) => ({
   // loop above throws on a lesson naming a group that is not in it — so a
   // locked group cannot reach this line, and a guard would be dead code
   // claiming to protect against something that already fails the build.
-  reference: `/reference/#${key}`,
+  reference: referenceHref(key),
 }));
 
 /** The cases this lesson teaches, as pages. Build-validated above. */
@@ -279,13 +280,14 @@ const outline = [
         */
         }
         {
-          drills
-            .filter((d) => d.reference !== null)
-            .map((d) => (
-              <a class="btn" href={d.reference!}>
-                See all {d.name}
-              </a>
-            ))
+          /* Every drill has a reference section by construction — a trainer
+             group key IS a /reference section id — so there is nothing to
+             filter out here. */
+          drills.map((d) => (
+            <a class="btn" href={d.reference}>
+              See all {d.name}
+            </a>
+          ))
         }
         {
           practice.links.map((l) => (
@@ -340,7 +342,7 @@ const outline = [
       }
       {
         next ? (
-          <a class="pager-link next" href={`/learn/${next.id}/`}>
+          <a class="pager-link next" href={`/learn/${next.id}/`} data-lesson-advance>
             {/* The pager walks out of a phase — and out of the 3×3 course into
                 the big cubes — with no signal at all. Name the destination
                 phase when it changes, so "Next" is never a surprise. */}
@@ -350,7 +352,7 @@ const outline = [
             <span class="what">{next.data.title}</span>
           </a>
         ) : (
-          <a class="pager-link next" href="/">
+          <a class="pager-link next" href="/" data-lesson-advance>
             <span class="dir">Done →</span>
             <span class="what">Course overview</span>
           </a>
@@ -391,7 +393,9 @@ const outline = [
   .taught {
     margin: var(--space-6) 0 0;
   }
-  .taught ul {
+  /* One rule: the two wrapping link lists are meant to read as one object. */
+  .taught ul,
+  .phase-nav ul {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-2) var(--space-4);
@@ -399,7 +403,8 @@ const outline = [
     padding: 0;
     list-style: none;
   }
-  .taught a {
+  .taught a,
+  .phase-nav a {
     font-weight: 600;
   }
 
@@ -409,16 +414,7 @@ const outline = [
     padding: var(--space-4) 0 0;
     border-top: 1px solid var(--line);
   }
-  .phase-nav ul {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2) var(--space-4);
-    margin: var(--space-2) 0 0;
-    padding: 0;
-    list-style: none;
-  }
   .phase-nav a {
-    font-weight: 600;
     overflow-wrap: break-word;
   }
   /* You are here: the current lesson is named but is not a destination. */
@@ -615,9 +611,9 @@ const outline = [
    * wrapped to four ragged lines in the one place on the screen where the
    * thumb already is. Stack them full width instead.
    *
-   * .pager-link.next keeps its class: LessonMeta.astro's documented contract
-   * finds the exit as `a[data-lesson-next], a[data-lesson-advance],
-   * a.pager-link.next`.
+   * The class is presentational only. Both "next" links carry
+   * `data-lesson-advance`, which is what LessonMeta.astro looks for — a rename
+   * here cannot silently remove one of the two completion writers.
    */
   @media (max-width: 560px) {
     .pager {

@@ -361,6 +361,29 @@ h3 {
   border-radius: var(--r-pill);
   padding: var(--space-1) var(--space-3);
 }
+/*
+ * An in-page jump chip, in its two live states. Every jump bar on the site is
+ * a row of anchors — /reference's section strip and the `pagenav` outline on
+ * /, /glossary and all 25 lessons — and lib/jumpbar.ts drives them all, so
+ * "hovered" and "you are in this section" are defined here once rather than
+ * per surface. They were per surface: the two copies disagreed about the
+ * font-weight, and one of them reached for a `--ink-soft` that has never
+ * existed in this file, which made the whole declaration invalid and left
+ * those chips at inherited ink instead of --soft.
+ *
+ * `a.chip`, not `.chip`: a ghost chip is a read-only <span> tag and must not
+ * light up under the pointer.
+ */
+a.chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  text-decoration: none;
+}
+a.chip.here {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 /* Selected. Colour alone is not a state — pair it with aria-pressed. */
 .chip--active,
 .chip.active {

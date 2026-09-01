@@ -4,7 +4,7 @@ import { CASES, caseById, type CaseDef } from "../src/data/algs";
 import { GENERATED_CASES } from "../src/data/fullsets.gen";
 import { RICH } from "../src/data/fullsets.rich.gen";
 import { filter, haystackFor, matches, normalize } from "../src/lib/search";
-import { SECTION_NAV } from "../src/data/refsections";
+import { SECTION_NAV, sectionWords } from "../src/data/refsections";
 import { setName } from "../src/lib/trainer";
 import { TAUGHT_444_CASES, isLocked } from "../src/lib/unlocks";
 
@@ -23,13 +23,23 @@ import { TAUGHT_444_CASES, isLocked } from "../src/lib/unlocks";
  * The extra words /reference feeds each case: its section's jump label plus the
  * trainer's name for the same set.
  *
- * IMPORTED, not re-typed. This was a literal map with a comment claiming it was
- * derived, and it had drifted four ways from the page — a dead `555-l2e` key
- * (renamed `555-parity`), no `beginner-triggers`, no `full-pll`, and "4×4
- * parity" where the chip says "4×4" — so the filter was gated against a corpus
- * the page never renders. The registry is now the one source both read.
+ * The COMPOSITION is imported now, not just the label map. The previous fix
+ * imported `SECTION_NAV` under a comment about a re-typed table drifting four
+ * ways from the page — and then re-typed the recipe that consumes it, so the
+ * page could still change what it feeds the filter with this corpus none the
+ * wiser. `sectionWords` is the one definition both read.
+ *
+ * KNOWN GAP, left visible rather than papered over: the page keys these words
+ * on the SECTION a case is rendered under, and this keys them on
+ * `CaseDef.group`, which for the three grid sections is a recognition group
+ * ("oll-dot", "f2l-*", "pll-*") in a different namespace entirely. Those
+ * entries therefore carry the trainer fallback here where the page carries
+ * "Full OLL". Closing it needs section MEMBERSHIP — not just labels — to live
+ * in data/refsections.ts, which is a change to the page rather than to this
+ * file.
  */
-const extraFor = (group: string): string => `${SECTION_NAV[group] ?? ""} ${setName(group)}`;
+const extraFor = (group: string): string =>
+  group in SECTION_NAV ? sectionWords(group) : setName(group);
 
 /**
  * The page's haystacks, built the way the page builds them.

@@ -9,10 +9,9 @@ import { ALL_CASES, CASES, caseById, type CaseDef } from "../../data/algs";
 import { GENERATED_CASES } from "../../data/fullsets.gen";
 import { RICH } from "../../data/fullsets.rich.gen";
 import { caseIcon } from "../../data/icons";
-import { haystackFor } from "../../lib/search";
+import { groupWords, haystackFor } from "../../lib/search";
 import { lessonForGroup, type TeachingLesson } from "../../lib/teaches";
-import { sectionNav } from "../../data/refsections";
-import { setName } from "../../lib/trainer";
+import { caseAnchor, sectionNav, sectionWords } from "../../data/refsections";
 import { TAUGHT_444_CASES, isLocked } from "../../lib/unlocks";
 
 /**
@@ -57,13 +56,18 @@ interface Section {
   items: CaseDef[];
   subs: Sub[];
 }
+/** A section as actually rendered: locked members dropped, search words resolved. */
+type Rendered = Section & { words: string };
 
-/** "4x4oll-0-corners" -> "0 Corners"; "oll-small-l-shape" -> "Small L Shape". */
-const subTitle = (key: string) =>
-  key
-    .replace(/^(?:4x4oll|4x4pll|oll|pll|f2l|555)-/, "")
-    .replace(/-/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+/**
+ * "4x4oll-0-corners" -> "0 Corners"; "oll-small-l-shape" -> "Small L Shape".
+ *
+ * Title-cases `groupWords`, which is the same transform the SEARCH haystack
+ * applies to the same key — so the heading a reader sees above a tile and the
+ * words they can find it by cannot come apart. The prefix list was typed here
+ * and again in lib/search.ts.
+ */
+const subTitle = (key: string) => groupWords(key).replace(/\b\w/g, (c) => c.toUpperCase());
 
 /** Group a flat case list by its own `group` key, preserving dataset order. */
 function subsOf(cases: CaseDef[]): Sub[] {
@@ -195,8 +199,11 @@ const SECTIONS: Section[] = [
  * case cannot slip through a section that merely overlaps it. Both go through
  * the one `isLocked` predicate — unlocking restores the sections untouched.
  */
-const VISIBLE: Section[] = SECTIONS.filter((s) => !isLocked(s.id)).map((s) => ({
+const VISIBLE: Rendered[] = SECTIONS.filter((s) => !isLocked(s.id)).map((s) => ({
   ...s,
+  // Once per section, not once per tile: this was called 142 times to produce
+  // ten distinct strings, re-filtering the trainer's group list on each.
+  words: sectionWords(s.id),
   items: s.items.filter((k) => !isLocked(k)),
   subs: s.subs
     .map((sub) => ({ ...sub, items: sub.items.filter((k) => !isLocked(k)) }))
@@ -215,7 +222,7 @@ for (const s of VISIBLE) {
 }
 /** The anchor for `id`, but only in the one section that owns it. */
 const anchorOf = (section: string, id: string) =>
-  anchorOwner.get(id) === section ? id.replace(/\./g, "-") : undefined;
+  anchorOwner.get(id) === section ? caseAnchor(id) : undefined;
 
 /**
  * A blurb, split around its optional cross-section link. Resolving the href
@@ -275,20 +282,6 @@ const searchText = (k: CaseDef, nav: string) =>
     group: k.group,
     extra: nav,
   });
-
-/**
- * The words a section is known by, beyond its own heading — the jump label plus
- * the trainer's name for the same set.
- *
- * The trainer name is not redundant: it is the site's OTHER public label for
- * the set, printed on every lesson's "Drill …" button and on /practice, and in
- * one case it is the only place the site writes down what the set is actually
- * called. The single 5×5 case is `L2E 6`, cued "One edge group flipped" — the
- * word "parity" appears nowhere in the case, though the lesson, the trainer and
- * every cuber alive call it edge parity. Without this, typing "parity" finds
- * the 4×4 cases and reasonably suggests the 5×5 one is not on the site.
- */
-const sectionWords = (s: Section) => `${s.nav} ${setName(s.id)}`;
 
 // Distinct cases, not the sum of the sections: the 2-look rows deliberately
 // repeat ids the Full OLL / Full PLL grids also carry.
@@ -445,11 +438,7 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
                 {s.items.map((k) => {
                   const anchor = anchorOf(s.id, k.id);
                   return (
-                    <CaseRow
-                      id={k.id}
-                      searchExtra={sectionWords(s)}
-                      {...(anchor ? { anchor } : {})}
-                    />
+                    <CaseRow id={k.id} searchExtra={s.words} {...(anchor ? { anchor } : {})} />
                   );
                 })}
               </div>
@@ -479,7 +468,7 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
                             title={k.name}
                             aria-label={k.name}
                             data-case={k.id}
-                            data-search={searchText(k, sectionWords(s))}
+                            data-search={searchText(k, s.words)}
                           >
                             {icon && (
                               <img src={icon} alt="" width="72" height="72" loading="lazy" />
@@ -505,7 +494,7 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
 <script>
   import { allProgress, getDB, type CaseStatus } from "../../lib/db";
   import { filter, normalize } from "../../lib/search";
-  import { wireJumpBar } from "../../lib/jumpbar";
+  import { chromeHeight, wireJumpBar } from "../../lib/jumpbar";
 
   // ── Filter ─────────────────────────────────────────────────────────
   // Static-build friendly and offline-safe: everything it matches on is
@@ -633,8 +622,7 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
   function topMatchY(): number | null {
     const first = entries.find((e) => !e.hidden);
     if (!first) return null;
-    const chrome = header?.offsetHeight ?? 0;
-    return Math.max(0, first.getBoundingClientRect().top + window.scrollY - chrome - 12);
+    return Math.max(0, first.getBoundingClientRect().top + window.scrollY - chromeHeight() - 12);
   }
 
   function applyAndKeepPlace(raw: string): void {
@@ -708,12 +696,6 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
   // for a reader with saved progress (+38px at >=561px), the match count appears
   // on the first keystroke (+20px at 390px), and the webfont settles. That bug
   // is now structurally impossible rather than separately handled.
-  const header = document.querySelector<HTMLElement>(".site-header");
-  /** The one sticky box, measured live — the rootMargin is derived from it. */
-  function chromeHeight(): number {
-    return header?.offsetHeight ?? 0;
-  }
-
   const jumpBar = document.querySelector<HTMLElement>(".jump");
 
   // ── Which section am I in, and does a chip really go there? ────────
@@ -721,17 +703,10 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
   // rather than rewritten: the -52px scrollIntoView regression and the
   // stranded-aria-current bug are documented there, and every surface with a
   // jump bar gets them right by construction instead of re-deriving them.
-  if (jumpBar) {
-    wireJumpBar({
-      bar: jumpBar,
-      chips: jumps,
-      idOf: (chip) => chip.dataset.jump ?? "",
-      chromeHeight,
-      // A chip whose section the filter emptied is aria-disabled; it must never
-      // be announced as the place you are.
-      isDisabled: (chip) => chip.classList.contains("off"),
-    });
-  }
+  // The bar measures the sticky chrome, reads the destination off each href and
+  // takes "disabled" from the `aria-disabled` this page's filter already writes.
+  // All three were passed in, identically to how the outline passes them.
+  if (jumpBar) wireJumpBar({ bar: jumpBar, chips: jumps });
 
   // ── Your own progress, in the table ────────────────────────────────
   // jperm — the reference benchmark — puts your own times beside the case. We
@@ -853,28 +828,15 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
     margin-inline: auto;
     padding: 0 var(--shell-x) var(--space-2);
     /*
-     * CLIP, and specifically `clip` rather than `hidden`.
-     *
-     * `.jump` deliberately bleeds ±16px past this toolbar to reach the screen
-     * edges, and below 561px it is a nowrap strip whose ten chips measure
-     * 901px against a 375px box. It scrolls that overflow itself
-     * (`overflow-x: auto`), but the overflow was still reported up the tree:
-     * this toolbar's scrollable width is 856px against its own 343px box in
-     * EVERY state, and when a query emptied the sections the document
-     * inherited it — measured 872px of horizontal scroll on a 375px phone,
-     * 2.3 screens wide, on the site's most-used control.
-     *
-     * `hidden` is the wrong tool: it would make the block axis a scroll
-     * container too, and this element is `position: sticky`. `clip` clips one
-     * axis and leaves the other visible, so the strip keeps scrolling, the
-     * bleed survives, and the bar keeps sticking.
-     *
-     * Idle was always 375px, which is why the 375px sweep in
-     * e2e/regressions.spec.ts never saw this: it loads each route and never
-     * types into it.
+     * No `overflow-x: clip` here. `.jump` bleeds past this box to reach the
+     * screen edges and its nowrap strip measures 901px against 375px, which the
+     * document used to inherit as 872px of horizontal scroll. `.site-header`
+     * clips that axis for the whole sticky box now — deliberately there rather
+     * than per slot, "so a future bar cannot reintroduce it" — and it clips
+     * TIGHTER than this ever did, so the copy that lived here could never be
+     * the effective one. It also justified itself by a `position: sticky` this
+     * element no longer has.
      */
-    overflow-x: clip;
-    overflow-clip-margin: var(--space-4);
   }
   .controls {
     display: flex;
@@ -912,20 +874,12 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
     flex-wrap: wrap;
     gap: var(--space-2);
   }
-  .jump .chip:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-    text-decoration: none;
-  }
   /*
-   * The section currently under the sticky bars. Exactly the two declarations
-   * :hover already uses, so the chip's type, padding and radius are untouched
-   * and the bar becomes a position indicator as well as a shortcut.
+   * `a.chip:hover` and `a.chip.here` are in tokens.css, with every other chip
+   * state. Both in-page bars mark the current section the same way and both
+   * used to say so themselves; the outline's copy drifted far enough to name a
+   * custom property that does not exist.
    */
-  .jump .chip.here {
-    border-color: var(--accent);
-    color: var(--accent);
-  }
   /*
    * A section the current filter emptied. This used to say "still reachable,
    * visibly inactive" — and it was not reachable: the chip stayed a live link

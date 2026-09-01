@@ -61,19 +61,37 @@ export function haystackFor(parts: {
   group?: string | undefined;
   extra?: string | undefined;
 }): string {
-  return normalize(
-    [parts.name, parts.recognition, parts.id, groupWords(parts.group), parts.extra]
-      .filter(Boolean)
-      .join(" "),
+  return dedupe(
+    normalize(
+      [parts.name, parts.recognition, parts.id, groupWords(parts.group), parts.extra]
+        .filter(Boolean)
+        .join(" "),
+    ),
   );
 }
 
 /**
- * A group key as the page prints it: "oll-awkward-shape" -> "awkward shape".
- * Mirrors `subTitle` in pages/reference/index.astro, which turns the same key
- * into the visible `<h3>` — so what the reader sees is what they can search.
+ * Drop repeated words. The five sources above overlap heavily by construction —
+ * a Full OLL tile arrives as "… full oll full oll" once `groupWords` and the
+ * section's own two names have all had their say — and 4.6 KB of the 14.8 KB of
+ * `data-search` this page ships is that repetition. Matching is per TOKEN and no
+ * token can contain a space, so a duplicate word can never change a verdict; it
+ * only lengthens every scan.
  */
-function groupWords(group: string | undefined): string {
+function dedupe(s: string): string {
+  return [...new Set(s.split(" "))].join(" ");
+}
+
+/**
+ * A group key as the page prints it: "oll-awkward-shape" -> "awkward shape".
+ *
+ * `subTitle` in pages/reference/index.astro title-cases this to make the visible
+ * `<h3>`, so the heading a reader sees and the words they can search for it by
+ * come out of ONE prefix list. They were two, and adding a set prefix would have
+ * made a case unfindable by the heading printed directly above it — which is the
+ * exact miss ("awkward", 0 hits) this module was written to fix.
+ */
+export function groupWords(group: string | undefined): string {
   if (!group) return "";
   return group.replace(/^(?:4x4oll|4x4pll|oll|pll|f2l|555)-/, "").replace(/-/g, " ");
 }
@@ -106,13 +124,32 @@ function groupWords(group: string | undefined): string {
  * called Ua and Ub.
  */
 export function matches(haystack: string, query: string, loose = false): boolean {
-  const tokens = normalize(query).split(" ").filter(Boolean);
-  return tokens.every((tok) => {
-    if (tok.length > 2) return haystack.includes(tok);
-    const pattern = loose ? `(^| )${escapeRe(tok)}` : `(^| )${escapeRe(tok)}( |$)`;
-    return new RegExp(pattern).test(haystack);
+  return test(haystack, compile(tokensOf(query), loose));
+}
+
+/** A query as the matcher sees it: normalized, split, empties dropped. */
+function tokensOf(query: string): string[] {
+  return normalize(query).split(" ").filter(Boolean);
+}
+
+/**
+ * Turn tokens into one predicate each — ONCE per query, not once per entry.
+ *
+ * The rules below are unchanged; what changed is where they run. `matches()`
+ * used to re-normalize the query, re-split it and build a fresh `RegExp` inside
+ * the loop, so a keystroke on /reference paid for all of it 142 times (284 when
+ * the widen runs). Measured over the shipped corpus, hoisting it is ~3.5x.
+ */
+function compile(tokens: readonly string[], loose: boolean): ((h: string) => boolean)[] {
+  return tokens.map((tok) => {
+    if (tok.length > 2) return (h) => h.includes(tok);
+    const re = new RegExp(loose ? `(^| )${escapeRe(tok)}` : `(^| )${escapeRe(tok)}( |$)`);
+    return (h) => re.test(h);
   });
 }
+
+const test = (h: string, preds: readonly ((h: string) => boolean)[]): boolean =>
+  preds.every((p) => p(h));
 
 /**
  * Which of `haystacks` match — strict first, widening only if nothing does.
@@ -122,12 +159,20 @@ export function matches(haystack: string, query: string, loose = false): boolean
  * results to a query that would otherwise show the empty state. Returns a
  * boolean per input, positionally, so a caller holding DOM nodes can zip it
  * back without building a parallel index.
+ *
+ * The widen is skipped outright unless some token is short enough for the two
+ * rules to DISAGREE — they differ only on 1-2 characters. Without that guard
+ * every zero-result query with no short token ("awkward", "sune") paid for a
+ * second full pass that could not return anything the first had not.
  */
 export function filter(haystacks: readonly string[], query: string): boolean[] {
-  if (normalize(query) === "") return haystacks.map(() => true);
-  const strict = haystacks.map((h) => matches(h, query, false));
-  if (strict.some(Boolean)) return strict;
-  return haystacks.map((h) => matches(h, query, true));
+  const tokens = tokensOf(query);
+  if (tokens.length === 0) return haystacks.map(() => true);
+  const strict = compile(tokens, false);
+  const hit = haystacks.map((h) => test(h, strict));
+  if (hit.some(Boolean) || !tokens.some((t) => t.length <= 2)) return hit;
+  const loose = compile(tokens, true);
+  return haystacks.map((h) => test(h, loose));
 }
 
 /** Escape a user-typed token for use inside a RegExp. */

@@ -14,6 +14,7 @@ import JumpBar from "../components/JumpBar.astro";
 import Page from "../components/Page.astro";
 import EmptyState from "../components/EmptyState.astro";
 import { GLOSSARY, GLOSS_ENTRIES, glossByTerm, glossSlug } from "../data/glossary";
+import { normalize } from "../lib/search";
 
 // A cross-reference to a term that does not exist would be a dead anchor on a
 // page whose whole job is definitions. Fail the build instead.
@@ -25,9 +26,17 @@ for (const entry of GLOSS_ENTRIES) {
   }
 }
 
-/** Name + definition + variants, lowercased — what the filter matches on. */
+/**
+ * Name + definition + variants, folded — what the filter matches on.
+ *
+ * `normalize`, not `.toLowerCase()`. This page's data contains 12 `×`
+ * characters and plenty of hyphens, so the raw-substring filter it used to
+ * carry returned nothing for "4x4" and nothing for any two-word query — the
+ * measured miss table at the top of lib/search.ts, on the page every
+ * auto-linked term in all 25 lessons points at.
+ */
 const searchText = (e: (typeof GLOSS_ENTRIES)[number]) =>
-  `${e.term} ${(e.also ?? []).join(" ")} ${e.short} ${e.long ?? ""}`.toLowerCase();
+  normalize(`${e.term} ${(e.also ?? []).join(" ")} ${e.short} ${e.long ?? ""}`);
 ---
 
 <Base
@@ -119,9 +128,12 @@ const searchText = (e: (typeof GLOSS_ENTRIES)[number]) =>
 </Base>
 
 <script>
-  // Same shape as /reference's filter and for the same reasons: everything it
-  // matches on is already in the DOM as `data-search`, so there is no index to
-  // fetch and it works offline. `hidden` is what tokens.css backs with
+  import { filter } from "../lib/search";
+
+  // The same MATCHER as /reference's filter, not merely the same shape:
+  // token-wise, punctuation-folded, strict-then-widen. Everything it matches on
+  // is already in the DOM as `data-search`, so there is no index to fetch and it
+  // works offline. `hidden` is what tokens.css backs with
   // `display: none !important`.
   const search = document.querySelector<HTMLInputElement>("[data-gloss-search]");
   const countOut = document.querySelector<HTMLElement>("[data-gloss-count]");
@@ -129,11 +141,16 @@ const searchText = (e: (typeof GLOSS_ENTRIES)[number]) =>
   const entries = [...document.querySelectorAll<HTMLElement>("[data-search]")];
   const groups = [...document.querySelectorAll<HTMLElement>("[data-gloss-group]")];
 
+  const haystacks = entries.map((el) => el.dataset.search ?? "");
+
   function apply(raw: string): void {
-    const needle = raw.trim().toLowerCase();
+    const needle = raw.trim();
+    // One pass over the whole list: the strict/loose decision is a property of
+    // the query against the corpus, not of a single entry.
+    const hits = filter(haystacks, needle);
     let shown = 0;
-    for (const el of entries) {
-      const hit = needle === "" || (el.dataset.search ?? "").includes(needle);
+    for (const [i, el] of entries.entries()) {
+      const hit = hits[i] ?? true;
       el.hidden = !hit;
       if (hit) shown += 1;
     }
@@ -168,6 +185,15 @@ const searchText = (e: (typeof GLOSS_ENTRIES)[number]) =>
     min-inline-size: 0;
     max-inline-size: 30rem;
     font: inherit;
+    /*
+     * AFTER `font: inherit`, which is a shorthand and resets font-size — order
+     * is load-bearing. Mobile Safari force-zooms the viewport when a focused
+     * text input is under 16px and never zooms back; body copy here is 15px, so
+     * this control was over the line. /reference's filter says the same thing
+     * for the same reason; the gate in e2e/nav.spec.ts now sweeps every route
+     * that ships an input rather than a hand-typed three.
+     */
+    font-size: var(--text-lg);
     color: var(--ink);
     background: var(--card);
     border: 1px solid var(--line);
