@@ -176,6 +176,17 @@ of 119 tiles — the site's own "See it in the reference" link landed with zero
 visible pixels — and `/glossary`, the destination of every auto-linked term in
 the course, shipped two of them until it was measured at 65px low.
 
+**The bar's BEHAVIOUR lives in `src/lib/jumpbar.ts`, and there is one copy.**
+`wireJumpBar()` marks the section you are in, keeps that chip in view, and moves
+FOCUS (not just the viewport) when a chip is taken. Two traps are encoded there
+because this repo shipped both: `scrollIntoView` is unusable on a chip inside
+sticky chrome — it walks every ancestor scrolling box including the document,
+and dragged the page backwards 52px at every section boundary — so the module
+sets `scrollLeft`/`scrollTop` on the bar and touches no ancestor; and the
+observer clears the current-chip marking BEFORE its early return, or a filter
+that empties the page strands `aria-current` on a chip that is simultaneously
+`aria-disabled`. Do not hand-write a second spy.
+
 **A bar goes in the slot only if the page is long enough to need one.** `/`
 (6.2 phone screens), `/glossary` (10.3), `/reference` (13.8) and every lesson
 (up to 11.5) have one. `/practice` is 1.1 screens and `/print` is 2.5; both are

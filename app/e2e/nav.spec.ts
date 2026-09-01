@@ -655,3 +655,71 @@ test("below the breakpoint the outline is still the in-header strip", async ({ p
   expect(pos, "1024px is below the sidebar breakpoint").not.toBe("fixed");
   expect(await page.locator(".site-header .pagenav").count()).toBe(1);
 });
+
+// ── The outline knows where you are ──────────────────────────────────
+// Same machinery as /reference's strip, from lib/jumpbar.ts. The bar was
+// write-only before: 16 chips and nothing saying which section you were in.
+test("the lesson outline marks the section you are reading", async ({ page }) => {
+  await page.setViewportSize(PHONE);
+  await page.goto("/learn/full-oll-overview/");
+  await page.waitForTimeout(400);
+  const height = await page.evaluate(() => document.documentElement.scrollHeight);
+  const seen = new Set<string>();
+  for (let y = 0; y < height - 844; y += 900) {
+    await page.evaluate((t) => window.scrollTo(0, t), y);
+    await page.waitForTimeout(160);
+    // Read through the DOM, not a locator: between two sections NOTHING is in
+    // the reading band, so no chip is marked — which is correct, and would make
+    // `locator().first().textContent()` throw.
+    const state = await page.evaluate(() => ({
+      here: document.querySelector(".pagenav .chip.here")?.textContent?.trim() ?? null,
+      current: document.querySelectorAll('.pagenav .chip[aria-current="location"]').length,
+    }));
+    if (state.here) seen.add(state.here);
+    // Never two places at once.
+    expect(state.current, "two chips claimed to be the current section").toBeLessThan(2);
+  }
+  expect(seen.size, "the outline never marked more than one section").toBeGreaterThan(2);
+});
+
+// The regression the shared module exists to prevent: `scrollIntoView` walks
+// every ancestor scrolling box including the document, so revealing a chip
+// inside sticky chrome dragged the page backwards 52px at every section
+// boundary. /reference has had this gate; now every outline does too.
+for (const [name, size] of [
+  ["phone", PHONE],
+  ["desktop", { width: 1440, height: 900 }],
+] as const) {
+  test(`scrolling a lesson never moves the page backwards (${name})`, async ({ page }) => {
+    await page.setViewportSize(size);
+    await page.goto("/learn/full-oll-overview/");
+    await page.waitForTimeout(400);
+    const height = await page.evaluate(() => document.documentElement.scrollHeight);
+    let prev = 0;
+    for (let y = 0; y < height - size.height; y += 500) {
+      await page.evaluate((t) => window.scrollTo(0, t), y);
+      await page.waitForTimeout(120);
+      const now = await page.evaluate(() => Math.round(window.scrollY));
+      expect(now, `the page jumped backwards from ${prev} to ${now}`).toBeGreaterThanOrEqual(
+        prev - 5,
+      );
+      prev = now;
+    }
+  });
+}
+
+test("an outline chip moves focus to its heading, not just the viewport", async ({ page }) => {
+  await page.setViewportSize(PHONE);
+  await page.goto("/learn/full-oll-overview/");
+  await page.locator(".pagenav .chip").nth(3).click();
+  await page.waitForTimeout(400);
+  const active = await page.evaluate(() => ({
+    id: document.activeElement?.id ?? "",
+    stillOnChip: document.activeElement?.classList.contains("chip") ?? false,
+  }));
+  // A keyboard reader continuing to Tab must carry on from the SECTION, not
+  // from the next chip — the defect that left ~110 tab stops between a chip and
+  // the content it points at on /reference.
+  expect(active.stillOnChip, "focus stayed on the chip").toBe(false);
+  expect(active.id, "focus must land on the heading the chip names").toBeTruthy();
+});

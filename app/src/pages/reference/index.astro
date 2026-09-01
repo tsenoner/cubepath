@@ -524,6 +524,7 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
 <script>
   import { allProgress, getDB, type CaseStatus } from "../../lib/db";
   import { filter, normalize } from "../../lib/search";
+  import { wireJumpBar } from "../../lib/jumpbar";
 
   // ── Filter ─────────────────────────────────────────────────────────
   // Static-build friendly and offline-safe: everything it matches on is
@@ -727,98 +728,29 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
   // on the first keystroke (+20px at 390px), and the webfont settles. That bug
   // is now structurally impossible rather than separately handled.
   const header = document.querySelector<HTMLElement>(".site-header");
-
-  // ── Which section am I in? ─────────────────────────────────────────
-  // The jump bar was write-only: nine chips, no aria-current, no active state,
-  // nothing to say where you are in 9,344px of tiles. On a phone only three of
-  // the nine are on screen at once, so the answer has to be scrolled to as well
-  // as marked.
-  const jumpBar = document.querySelector<HTMLElement>(".jump");
-  if (jumpBar && sections.length > 0 && "IntersectionObserver" in window) {
-    const chipFor = new Map(jumps.map((j) => [j.dataset.jump ?? "", j] as const));
-    // Suppress the auto-scroll for a moment after the reader pans the strip
-    // themselves, so it cannot yank the chips out from under their thumb.
-    let panneduntil = 0;
-    jumpBar.addEventListener("scroll", () => (panneduntil = performance.now() + 1000), {
-      passive: true,
-    });
-
-    /**
-     * Bring a chip into view along the STRIP, and only the strip.
-     *
-     * Emphatically not `chip.scrollIntoView()`, which was the first attempt and
-     * is a trap here. scrollIntoView walks every ancestor scrolling box and the
-     * last one is the document; the chip lives in the sticky toolbar, whose
-     * rendered box sits ABOVE the optimal viewing region that this page's own
-     * `html { scroll-padding-block-start }` establishes — so the browser judged
-     * the chip out of view and scrolled the DOCUMENT up to "reveal" it. Because
-     * the toolbar is sticky the chip never moved, so it never converged: the
-     * page jerked 52px backwards at every section boundary, all the way down.
-     * Measured at -52px in both Chromium and WebKit.
-     *
-     * Setting `scrollLeft` touches no ancestor, and is a no-op at >=561px where
-     * the strip does not overflow and every chip is already visible.
-     */
-    function revealChip(chip: HTMLElement): void {
-      if (jumpBar === null || jumpBar.scrollWidth <= jumpBar.clientWidth) return;
-      const bar = jumpBar.getBoundingClientRect();
-      const box = chip.getBoundingClientRect();
-      const pad = 8;
-      if (box.left < bar.left) jumpBar.scrollLeft += box.left - bar.left - pad;
-      else if (box.right > bar.right) jumpBar.scrollLeft += box.right - bar.right + pad;
-    }
-
-    const spy = new IntersectionObserver(
-      (records) => {
-        // Clear BEFORE the early return. A filter that empties the page makes
-        // every section `display: none`, so nothing intersects and an early
-        // return would strand `aria-current="location"` on a chip that
-        // `apply()` has just marked aria-disabled and "no matches" — announced
-        // as both the place you are and a place you cannot go.
-        for (const j of jumps) {
-          j.classList.remove("here");
-          j.removeAttribute("aria-current");
-        }
-        const hit = records.find((r) => r.isIntersecting);
-        if (!hit) return;
-        const chip = chipFor.get(hit.target.id);
-        // Never mark a chip the filter has disabled as the place you are.
-        if (!chip || chip.classList.contains("off")) return;
-        chip.classList.add("here");
-        chip.setAttribute("aria-current", "location");
-        if (performance.now() > panneduntil) revealChip(chip);
-      },
-      // Top edge at the bottom of the sticky chrome, bottom edge 55% up the
-      // viewport: the current section is the one occupying the band you read.
-      // Measured once: the chrome changes height by at most the ~20px the
-      // filter count adds, which moves the band's edge by less than a section.
-      { rootMargin: `-${Math.round(chromeHeight())}px 0px -55% 0px` },
-    );
-    for (const s of sections) spy.observe(s);
-  }
-
+  /** The one sticky box, measured live — the rootMargin is derived from it. */
   function chromeHeight(): number {
     return header?.offsetHeight ?? 0;
   }
 
-  // ── Jump = go there, not just scroll there ─────────────────────────
-  // A chip moved the viewport and left focus on itself, so the next Tab went to
-  // the next chip: for a keyboard reader the only route into the Full PLL tiles
-  // was ~110 tab stops. The sections are focusable (tabindex="-1") purely so a
-  // programmatic focus can land on them; html's scroll-padding does the rest.
-  function focusSection(id: string): void {
-    document.getElementById(id)?.focus();
+  const jumpBar = document.querySelector<HTMLElement>(".jump");
+
+  // ── Which section am I in, and does a chip really go there? ────────
+  // Both behaviours now come from lib/jumpbar.ts, which is this code moved
+  // rather than rewritten: the -52px scrollIntoView regression and the
+  // stranded-aria-current bug are documented there, and every surface with a
+  // jump bar gets them right by construction instead of re-deriving them.
+  if (jumpBar) {
+    wireJumpBar({
+      bar: jumpBar,
+      chips: jumps,
+      idOf: (chip) => chip.dataset.jump ?? "",
+      chromeHeight,
+      // A chip whose section the filter emptied is aria-disabled; it must never
+      // be announced as the place you are.
+      isDisabled: (chip) => chip.classList.contains("off"),
+    });
   }
-  jumpBar?.addEventListener("click", (e) => {
-    const link = (e.target as HTMLElement | null)?.closest<HTMLAnchorElement>("[data-jump]");
-    if (!link || link.getAttribute("aria-disabled") === "true") return;
-    // Let the browser do the navigation and the scroll; only take the focus.
-    requestAnimationFrame(() => focusSection(link.dataset.jump ?? ""));
-  });
-  window.addEventListener("hashchange", () => {
-    const id = location.hash.slice(1);
-    if (id && document.getElementById(id)?.matches("[data-section]")) focusSection(id);
-  });
 
   // ── Your own progress, in the table ────────────────────────────────
   // jperm — the reference benchmark — puts your own times beside the case. We

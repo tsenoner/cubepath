@@ -24,13 +24,13 @@
  * cue. A document-ordered list of one page's own headings behind the 16px mask
  * below is exactly that case.
  *
- * NO SCROLL-SPY HERE, DELIBERATELY. /reference's spy is gated against a real
- * regression — `scrollIntoView` walks EVERY ancestor scrolling box including
- * the document, which scrolled the page backwards 52px at every section
- * boundary — and that machinery is worth sharing rather than re-deriving. This
- * component ships as plain anchors and no JavaScript until that extraction
- * happens, because a bar that merely works is worth more than a bar that also
- * highlights and might re-introduce the bug.
+ * THE SPY IS SHARED, NOT RE-DERIVED. This shipped as plain anchors first, on
+ * purpose: /reference's scroll-spy is gated against a real regression
+ * (`scrollIntoView` walks EVERY ancestor scrolling box including the document,
+ * which dragged the page backwards 52px at every section boundary), and a
+ * second hand-written copy of that logic would have been the third place on
+ * this site to get it wrong. `lib/jumpbar.ts` is that code MOVED; both bars
+ * call it, so both get the traps right by construction.
  */
 interface Item {
   /** The `id` of the element this chip lands on. Must exist on the page. */
@@ -63,6 +63,11 @@ const { items, label } = Astro.props;
     </nav>
   )
 }
+
+<script>
+  import { wirePageNav } from "../lib/jumpbar";
+  wirePageNav();
+</script>
 
 <style>
   /*
