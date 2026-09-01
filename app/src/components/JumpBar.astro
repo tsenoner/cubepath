@@ -36,10 +36,17 @@ interface Item {
   /** The `id` of the element this chip lands on. Must exist on the page. */
   id: string;
   label: string;
+  /**
+   * Extra attributes merged onto the anchor — `data-phase-jump` on the course
+   * index, whose script marks the phase you are in. Kept as a pass-through so
+   * a surface can add its own behaviour without this component learning about
+   * that surface.
+   */
+  attrs?: Record<string, string>;
 }
 interface Props {
   items: Item[];
-  /** Names the nav for a screen reader — "On this page", "Sections". */
+  /** Names the nav for a screen reader — "On this page", "Course phases". */
   label: string;
 }
 const { items, label } = Astro.props;
@@ -49,7 +56,7 @@ const { items, label } = Astro.props;
   items.length > 0 && (
     <nav class="pagenav" aria-label={label}>
       {items.map((it) => (
-        <a class="chip" href={`#${it.id}`}>
+        <a class="chip" href={`#${it.id}`} {...(it.attrs ?? {})}>
           {it.label}
         </a>
       ))}
@@ -86,6 +93,18 @@ const { items, label } = Astro.props;
     border-color: var(--accent);
     color: var(--accent);
     text-decoration: none;
+  }
+  /*
+   * "You are here". The course index's script adds this to the phase it has
+   * worked out you are in; it lives here rather than on that page so that when
+   * a scroll-spy is shared across these bars there is one definition of the
+   * current chip, not one per surface. Not colour alone — the weight change
+   * carries it for a reader who cannot see the accent.
+   */
+  .chip.here {
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 600;
   }
   @media (max-width: 560px) {
     .pagenav {

@@ -131,7 +131,10 @@ test("the course index marks the phase you are in, and resumes into it", async (
   const current = page.locator('[data-phase][data-state="current"]');
   await expect(current).toHaveCount(1);
   await expect(current.locator("[data-here]")).toBeVisible();
-  await expect(page.locator(".phase-jump .chip.here")).toHaveCount(1);
+  // `.pagenav`, not `.phase-jump`: the bar moved into the header's second row,
+  // so it survives the hero scrolling off a 5,208px page instead of being
+  // stranded at y=359. Same assertion, same behaviour, new home.
+  await expect(page.locator(".pagenav .chip.here")).toHaveCount(1);
 });
 
 // ── Anchors land where they are aimed ────────────────────────────────
@@ -563,3 +566,37 @@ test("the trainer links back out to the reference and to the case it is drilling
   const res = await page.goto(href!);
   expect(res?.status(), `${href} must be a real page`).toBe(200);
 });
+
+// ── The jump bar is reachable from anywhere on the page ──────────────
+// The course index's bar was `position: static` at y=359 on a 5,208px page, so
+// the only way to reach a phase was to already be in the first of 6.2 screens —
+// the one screen where the phases are visible anyway. It is a row inside the
+// sticky header now.
+for (const route of ["/", "/glossary/", "/learn/full-oll-overview/"] as const) {
+  test(`${route}: the jump bar is still on screen after scrolling deep`, async ({ page }) => {
+    await page.setViewportSize(PHONE);
+    await page.goto(route);
+    const height = await page.evaluate(() => document.documentElement.scrollHeight);
+    expect(height, `${route} must be long enough for this to matter`).toBeGreaterThan(844 * 3);
+    await page.evaluate(() => window.scrollTo(0, Math.round(document.body.scrollHeight * 0.6)));
+    await page.waitForTimeout(300);
+    const box = await page.locator(".site-header .pagenav").boundingBox();
+    expect(box, `${route}: the bar must exist in the header`).not.toBeNull();
+    expect(box!.y, `${route}: the bar scrolled off screen`).toBeGreaterThanOrEqual(0);
+    expect(box!.y + box!.height, `${route}: the bar is below the fold`).toBeLessThanOrEqual(844);
+  });
+}
+
+// …and the short surfaces deliberately have none. A jump bar on a 1.1-screen
+// page is chrome with nothing to navigate; /practice is 951px and /print is
+// 2,088px at 390x844. If either grows past a few screens, revisit — but do not
+// add a bar because the other pages have one.
+for (const route of ["/practice/", "/print/"] as const) {
+  test(`${route}: no jump bar, because the page is too short to need one`, async ({ page }) => {
+    await page.setViewportSize(PHONE);
+    await page.goto(route);
+    expect(await page.locator(".site-header .pagenav").count()).toBe(0);
+    const height = await page.evaluate(() => document.documentElement.scrollHeight);
+    expect(height, `${route} has grown — reconsider whether it needs a bar`).toBeLessThan(844 * 4);
+  });
+}

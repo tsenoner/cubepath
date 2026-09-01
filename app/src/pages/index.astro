@@ -28,6 +28,7 @@
 import { getCollection } from "astro:content";
 import Base from "../layouts/Base.astro";
 import Header from "../components/Header.astro";
+import JumpBar from "../components/JumpBar.astro";
 import Page from "../components/Page.astro";
 import ProgressBar from "../components/ProgressBar.astro";
 import { PHASES, phaseAnchor } from "../data/phases";
@@ -128,7 +129,31 @@ const firstHref = `/learn/${lessons[0]?.id}/`;
 ---
 
 <Base title="Cubepath — speedcubing from zero">
-  <Header active="learn" />
+  {
+    /*
+    The phase bar lives in the HEADER now, not in the page body.
+
+    It was static — deliberately, on the reasoning that "a second sticky bar
+    costs ~45px of an 844px phone viewport permanently". That premise is gone:
+    the bar is a second ROW INSIDE `.site-header`, which the existing
+    ResizeObserver already measures into --hdr-h, so there is no second sticky
+    element and no second variable. What the old arrangement actually cost was
+    reachability — measured at y=359 on a 5,248px page, so the only way to
+    reach a phase was to already be in the first of 6.2 screens, which is the
+    one screen where you can see the phases anyway.
+  */
+  }
+  <Header active="learn">
+    <JumpBar
+      slot="pagenav"
+      label="Course phases"
+      items={groups.map(({ phase }) => ({
+        id: phaseAnchor(phase.key),
+        label: phase.nav,
+        attrs: { "data-phase-jump": phase.key },
+      }))}
+    />
+  </Header>
   <Page>
     <section class="hero">
       <h1>Speedcubing from zero.</h1>
@@ -167,29 +192,6 @@ const firstHref = `/learn/${lessons[0]?.id}/`;
         <ProgressBar value={0} max={lessons.length} label="Course" />
       </div>
     </section>
-
-    {
-      /*
-      The course index had NO addresses. Eight phases and 25 lessons across
-      5,100px — 5.9 phone screens — and the built page shipped nine ids, not one
-      of them a phase or a lesson. So nothing on the site could point at a
-      phase: not a lesson breadcrumb, not a printed card, not a bookmark. The
-      other long page on this site has had a jump bar all along.
-
-      Static, not sticky: a second sticky bar costs ~45px of an 844px phone
-      viewport permanently, and unlike /reference's toolbar this one would hold
-      shortcuts and nothing else.
-    */
-    }
-    <nav class="phase-jump" aria-label="Course phases">
-      {
-        groups.map(({ phase }) => (
-          <a class="chip" href={`#${phaseAnchor(phase.key)}`} data-phase-jump={phase.key}>
-            {phase.nav}
-          </a>
-        ))
-      }
-    </nav>
 
     <ol class="ladder" role="list">
       {
@@ -321,18 +323,6 @@ const firstHref = `/learn/${lessons[0]?.id}/`;
     visibility: hidden;
   }
 
-  .phase-jump {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-    margin-block: var(--space-5) var(--space-4);
-  }
-  .phase-jump .chip:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-    text-decoration: none;
-  }
-
   .ladder {
     display: grid;
     gap: var(--space-4);
@@ -372,10 +362,6 @@ const firstHref = `/learn/${lessons[0]?.id}/`;
     vertical-align: middle;
     font-family: var(--font-body);
     white-space: nowrap;
-  }
-  .phase-jump .chip.here {
-    border-color: var(--accent);
-    color: var(--accent);
   }
   .phase-body {
     display: grid;

@@ -10,6 +10,7 @@
  */
 import Base from "../layouts/Base.astro";
 import Header from "../components/Header.astro";
+import JumpBar from "../components/JumpBar.astro";
 import Page from "../components/Page.astro";
 import EmptyState from "../components/EmptyState.astro";
 import { GLOSSARY, GLOSS_ENTRIES, glossByTerm, glossSlug } from "../data/glossary";
@@ -33,7 +34,25 @@ const searchText = (e: (typeof GLOSS_ENTRIES)[number]) =>
   title="Glossary — Cubepath"
   description="Every cubing term this course uses, defined in one sentence each."
 >
-  <Header active="glossary" />
+  {
+    /*
+    The second-longest page on the site — 8,687px, 10.3 phone screens — and it
+    had no in-page navigation of any kind. It is also the page the lessons send
+    readers to most: every first mention of every term across 25 lessons is an
+    auto-generated link into one of these five groups. Landing on a definition
+    and then wanting a neighbouring one meant scrolling.
+
+    Derived from GLOSSARY itself through the same `glossSlug` the sections use,
+    so a sixth group gets a chip by existing.
+  */
+  }
+  <Header active="glossary">
+    <JumpBar
+      slot="pagenav"
+      label="Glossary groups"
+      items={GLOSSARY.map((group) => ({ id: glossSlug(group.title), label: group.title }))}
+    />
+  </Header>
   <Page>
     <h1>Glossary</h1>
     <p class="lead">
