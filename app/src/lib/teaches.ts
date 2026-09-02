@@ -8,7 +8,7 @@
  * and wanted the explanation had the header and the browser's Back button.
  *
  * DERIVED, NEVER DECLARED. Both directions come from the same frontmatter, so
- * they cannot disagree: `algorithms` gives an exact case -> lesson edge (37 of
+ * they cannot disagree: `algorithms` gives an exact case -> lesson edge (42 of
  * them, and Lesson.astro already fails the build on an id that is not a real
  * case), and `practice.groups` gives a coarser group -> lesson edge, which
  * covers the sets a lesson teaches wholesale without listing 57 ids. Exact

@@ -137,7 +137,7 @@ const OPEN_AT_MOST = 12;
                 {
                   /*
                   The way OUT. Every other surface points into the trainer — all
-                  25 lessons and all 129 case pages link here — and until this
+                  25 lessons and all 134 case pages link here — and until this
                   link the trainer pointed nowhere: `main` held zero <a>
                   elements, so a reader who drilled a case, failed it and wanted
                   to study it had no route except the browser's back button.
@@ -315,8 +315,12 @@ const OPEN_AT_MOST = 12;
    * Two hazards, both measured: a visible <img> with no src renders the
    * broken-image glyph plus its alt text, and merely hiding the img leaves the
    * PREVIOUS case's diagram on the element — so the src is cleared either way.
-   * The placeholder is the common path today: 104 of 185 cases (all F2L, 4×4
-   * and 5×5) have no diagram art yet, and a bare gap reads as a broken page.
+   * The placeholder is the floor, not the common path: `tests/algs.spec.ts`
+   * fails if a case `isLocked` does not hide has no `icon`, so every case the
+   * trainer can actually deal has art and this branch should never be taken.
+   * It stays because a bare gap reads as a broken page if that gate ever comes
+   * off — the count it used to quote here went two sets and 41 F2L diagrams
+   * stale, which is why it now names the gate instead of a number.
    */
   function setCaseImage(img: HTMLImageElement, fallback: HTMLElement, def: CaseDef) {
     const src = caseIcon(def.id);

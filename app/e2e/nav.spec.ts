@@ -315,7 +315,7 @@ test("a jump chip moves focus to its section, not just the viewport", async ({ p
 // /reference, /practice and /, and the page it omitted (/glossary) was the one
 // that shipped a 15px filter: the fix had been pasted into /reference rather
 // than shared, and the gate that should have noticed could not see the page.
-// `/case/` is excluded because it is 129 pages of one template with no input.
+// `/case/` is excluded because it is 134 pages of one template with no input.
 const INPUT_ROUTES = publishedRoutes().filter((r) => !r.startsWith("/case/"));
 
 test("no text input is under Safari's 16px zoom floor", async ({ page }) => {
@@ -619,7 +619,7 @@ test("no outline chip is tagged as a lesson-completion exit", async ({ page }) =
 });
 
 // ── The trainer is not a sink ────────────────────────────────────────
-// Every other surface points INTO /practice — all 25 lessons and all 129 case
+// Every other surface points INTO /practice — all 25 lessons and all 134 case
 // pages — and /practice pointed nowhere: `main` held ZERO <a> elements. A
 // reader who drilled a case, failed it and wanted to study it had no route out
 // except the browser's back button.

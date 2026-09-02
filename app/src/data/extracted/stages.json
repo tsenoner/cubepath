@@ -1087,8 +1087,23 @@
     },
     {
       "kind": "exact",
+      "key": "beginner-edge-insert",
+      "stage": "e-layer"
+    },
+    {
+      "kind": "exact",
+      "key": "beginner-edge-swap",
+      "stage": "ep"
+    },
+    {
+      "kind": "exact",
       "key": "beginner-corner-cycle",
       "stage": "cp"
+    },
+    {
+      "kind": "exact",
+      "key": "beginner-corner-twist",
+      "stage": "oc"
     },
     {
       "kind": "exact",

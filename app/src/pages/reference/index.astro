@@ -47,6 +47,17 @@ interface BlurbLink {
   text: string;
 }
 /**
+ * The same, pointing at a whole SECTION: the beginner blurb sends a reader to
+ * the Yellow Cross section — three cases with recognition states, which is why
+ * they are a section of their own and not three more beginner rows. Resolved
+ * against the VISIBLE sections, so a link to one `isLocked` hides is a build
+ * error.
+ */
+interface SectionLink {
+  sectionId: string;
+  text: string;
+}
+/**
  * A blurb is a list of parts, and a link is one of them.
  *
  * It used to be a string with a `{link}` token in it plus a separate
@@ -55,7 +66,7 @@ interface BlurbLink {
  * sentence, and a grammar the next blurb would have had to be authored
  * against. An array cannot lose its token or grow a second one.
  */
-type Blurb = (string | BlurbLink)[];
+type Blurb = (string | BlurbLink | SectionLink)[];
 
 /** The wording. Structure — order, ids, membership — comes from SECTION_SPECS. */
 interface Presentation {
@@ -107,9 +118,13 @@ const PRESENTATION: Record<string, Presentation> = {
     title: "The Beginner Method",
     kind: "rows",
     blurb: [
-      "Not cases — the three algorithms the beginner solve is built out of. Righty alone finishes " +
-        "the first two layers and untwists the last corners; Niklas puts the last four corners in " +
-        "their seats.",
+      "Not cases — the algorithms the beginner solve is built out of, in course order: righty and " +
+        "lefty seat the white corners, the two inserts are those same triggers back to back, " +
+        "Sune + U swaps two yellow edges, Niklas seats the last four corners, and the two Speed " +
+        "Tricks twists finish without flipping the cube. Step 4's ",
+      { sectionId: "cross-eo", text: "yellow cross" },
+      " is the next section down: those three are cases, a state to recognise and the algorithm " +
+        "that clears it.",
     ],
   },
   "cross-eo": {
@@ -246,6 +261,16 @@ type ResolvedPart = string | { href: string; text: string };
 const blurbParts = (s: Rendered): ResolvedPart[] =>
   (s.blurb ?? []).map((part) => {
     if (typeof part === "string") return part;
+    if ("sectionId" in part) {
+      // A section id IS its fragment (see the `id={s.id}` below), so there is
+      // no second rule to keep in step — only the visibility check.
+      if (!VISIBLE.some((v) => v.id === part.sectionId)) {
+        throw new Error(
+          `/reference: the ${s.id} blurb links to section ${part.sectionId}, which is not rendered`,
+        );
+      }
+      return { href: `#${part.sectionId}`, text: part.text };
+    }
     // Owned by SOME visible section is the whole question — asking `anchorOf`
     // with that section could only ever compare it to itself.
     if (!anchorOwner.has(part.caseId)) {
@@ -267,10 +292,11 @@ const tileLabel = (name: string) =>
 // Distinct cases, not the sum of the sections: the 2-look rows deliberately
 // repeat ids the Full OLL / Full PLL grids also carry.
 const total = ALL_CASES.filter((k) => !isLocked(k)).length;
-// Rows and tiles actually rendered — 142 against `total`'s 129, because of that
+// Rows and tiles actually rendered, which is MORE than `total` because of that
 // same deliberate double-listing. The filter counts DOM entries, so this is the
 // denominator it has to report against; using `total` there would let a query
-// claim more matches than there are cases.
+// claim more matches than there are cases. Both figures are computed here and
+// rendered below — stating them in prose too only creates a copy that rots.
 const listed = VISIBLE.reduce((n, s) => n + s.items.length, 0);
 
 /** Section id -> the lesson that teaches it. Derived from lesson frontmatter. */
@@ -353,10 +379,11 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
       /*
       Both numbers, and the reason they differ, because the page shows both and
       they used to sit two lines apart with nothing reconciling them: the lead
-      said "All 125 cases" and the filter said "138 cases" (129 and 142 today).
-      The 13 the course
-      teaches by name are listed twice on purpose — once in their own lesson
-      section, once inside the full set.
+      said "All 125 cases" while the filter said "138 cases" — two hand-written
+      figures, both stale. They are `total` and `listed` now, computed above, so
+      no number is written down here. The cases the course teaches by name are
+      listed twice on purpose — once in their own lesson section, once inside
+      the full set.
     */
     }
     <p class="lead">

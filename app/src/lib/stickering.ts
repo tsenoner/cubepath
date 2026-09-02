@@ -396,7 +396,7 @@ async function build(
  * puzzle, stickering and algorithm — the shape `/case/[...id]` renders, and the
  * only shape a component that is not told WHICH case it is showing can resolve.
  *
- * 183 of the 185 cases are uniquely identified by that triple. The two that are
+ * 192 of the 194 cases are uniquely identified by that triple. The two that are
  * not are `eo.line` and `oll.45`: they share `F R U R' U' F'` and sit at
  * DIFFERENT stages (beginner/`eo` against cfop/`oll`) — which is precisely the
  * bug the yellow-cross lesson had. So an ambiguous triple resolves to NOTHING

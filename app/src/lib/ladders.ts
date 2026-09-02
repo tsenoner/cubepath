@@ -182,7 +182,7 @@ export const DEFAULT_LADDER = RAW.defaultLadder as LadderKey;
 
 /**
  * A case's stage, from its `group` — which is already exactly the right
- * granularity, and which all 185 cases carry. Throws rather than guessing: an
+ * granularity, and which all 194 cases carry. Throws rather than guessing: an
  * unmapped group is a data change that must be decided, not defaulted.
  */
 export function stageOfGroup(group: string): StageKey {

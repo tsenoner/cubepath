@@ -22,6 +22,7 @@ from cubepath.algs import ALGORITHMS
 from cubepath.glossary import gloss_line
 from cubepath.notation import (
     BIGCUBE_CHUNKS,
+    CHUNKS,
     PARITY_DIFF_4X4,
     PARITY_DIFF_5X5,
     PLL_CHUNKS,
@@ -131,18 +132,37 @@ _C1_CROSS = [
     Row("oll/oll_line.svg", "Line", "hold the bar left-to-right", key_alg("F-sexy-F'")),
 ]
 
+
+# Sune with the single U that makes it the Step 5 tool.
+#
+# The U is not decoration, which is why it is a CHUNK and not a `key_alg`
+# `extra=` label — that slot is for a rider like `_twice`'s "x2", text the
+# reader does not turn. Sune alone is a three-cycle of yellow edges and on its
+# own fixes no adjacent pair from any hold; Sune + U swaps exactly the front
+# and left edges and keeps the cross. The card printed Sune bare with "hold
+# them BACK and LEFT" for a while: from that hold nothing works, and from the
+# right hold the missing U was only survivable because Step 5's loop re-counts
+# with U turns anyway. The chunks are named separately so `test_cards.py` can
+# run the simulator on the moves this card actually prints — it derives the
+# hold from them and pins the wording, the U and that the body is Sune.
+_SUNE_U_CHUNKS = CHUNKS["Sune"] + [["U"]]
+_SUNE_U = alg(_SUNE_U_CHUNKS)
+
 _C1_MATCH = [
+    # BACK and RIGHT: the two edges Sune + U leaves alone. Derived and pinned by
+    # `test_card1_holds_the_pair_sune_u_actually_keeps`, the way the Niklas
+    # corner below is.
     Row(
         "steps/align_adjacent.svg",
         "two matched, side by side",
-        "hold them BACK and LEFT",
-        key_alg("Sune"),
+        "hold them BACK and RIGHT",
+        _SUNE_U,
     ),
     Row(
         "steps/align_diagonal.svg",
         "two matched, opposite",
         "run it once from any hold, then look again",
-        key_alg("Sune"),
+        _SUNE_U,
     ),
 ]
 
@@ -226,8 +246,9 @@ def card1_back() -> list[Section]:
         _cue("One algorithm, up to three times: dot to hook to line to cross."),
         _hdr("Match the yellow edges", "", "5"),
         _cue(
-            "First turn U so at least two top edges match the center under them. This "
-            "algorithm is called Sune; you use it on every card after this one."
+            "First turn U so at least two top edges match the center under them. The first "
+            "seven moves are Sune, used on every card after this one; here Sune gets one U "
+            "on the end."
         ),
         _rows(_C1_MATCH, "DS"),
     )

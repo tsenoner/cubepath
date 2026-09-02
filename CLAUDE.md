@@ -316,20 +316,51 @@ actually be used (in a lesson, in the guide, or on a printed card), and every
 term the CARD set glosses (`tools/cubepath/src/cubepath/glossary.py`) must be
 defined here too, so the paper and the site cannot teach different vocabularies.
 
-**Not every algorithm in the course is a case.** Four of them are TRIGGERS —
-`beginner.righty` (`R U R' U'`), `beginner.lefty`, `beginner.niklas` and
-`444.edge-flip` — and a trigger has no recognition state, which is what a case
-is. They shipped for a long time as bare `<AlgText>` in three or four lessons
-each, with no /reference row, no /case page, no 3D player and nothing verifying
-them. They are `CaseDef`s now, carrying `stickering: "full"` because there is no
-last-layer subset to mask, and the generic per-stickering invariant in
+**Not every algorithm in the course is a case.** Nine of them are TRIGGERS —
+the eight `beginner.*` entries in `algs.ts` (`righty`, `lefty`, the two
+second-layer inserts `edge-right`/`edge-left`, `sune-u`, `niklas`, and the two
+Speed Tricks corner twists `twist-right`/`twist-front`) plus `444.edge-flip` —
+and a trigger has no recognition state, which is what a case is. They shipped
+for a long time with no /reference row, no /case page, no 3D player and nothing
+verifying them. The first fix counted only bare `<AlgText>` strings with no
+case and so caught four; the inserts are composed from righty and lefty in
+prose, Sune + U is `oll.27` doing a different job, and the twists are printed
+as four-move halves plus "twice", so those five stayed missing while the
+guide's Algorithm Reference table and the printed first-solve card carried
+them. All nine are `CaseDef`s now, carrying `stickering: "full"` because there
+is no last-layer subset to mask, and the generic per-stickering invariant in
 `tests/algs.spec.ts` therefore has nothing to say about them. Each is pinned
 there by BEHAVIOUR instead — the claims its own lesson makes, checked: righty
 touches only the U layer and the FR slot and six of them are the identity, lefty
-is righty's literal mirror, Niklas plus one U moves three corners and no edge,
-the flip is seven outer turns legal on both big cubes. A `full` 3×3 case with no
-behavioural pin fails the build, so this cannot become a way in for an
-unverified algorithm.
+is righty's literal mirror, each insert touches only the U layer and its own
+slot and puts the corner back, Sune + U swaps exactly the front and left edges
+with the cross intact, Niklas plus one U moves three corners and no edge, each
+twist changes one U-layer piece (the front-right corner, in place) and three
+of them are the identity, the flip is seven outer turns legal on both big
+cubes. All eight strings that also live in
+`tools/cubepath/src/cubepath/algs.py` — `Sexy Move`, `Lefty`, both edge
+inserts, `Sune`, `Niklas` and both corner twists — are READ OUT OF that file by
+the test rather than retyped, so the site, the guide's table and the printed
+card cannot drift. A
+`full` 3×3 case with no behavioural pin fails the build, so this cannot become
+a way in for an unverified algorithm. Every beginner group key starts with
+`beginner-`; that prefix is what /reference's "The Beginner Method" section
+renders, and each group needs a chip label in `case/[...id].astro` and a stage
+rule in `gen-stickering.mjs` — the chip label and a MISSING stage rule both fail
+the build, but the stage rule is only read through the generated
+`src/data/extracted/stages.json`, so adding one means re-running
+`npm run gen:stickering` and committing the JSON. Nothing re-runs that generator
+in CI, so a rule added to `gen-stickering.mjs` alone silently does nothing.
+
+**Sune has two rows on /reference on purpose.** `oll.27` is the corner
+orientation case; `beginner.sune-u` is the same seven moves plus a `U`, which
+is the beginner method's edge-swap tool (Step 5). Without the `U` Sune is a
+three-cycle of the yellow edges and on its own aligns no adjacent pair from any
+hold. The printed first-solve card once said "hold them back and left" and
+printed Sune bare: from that hold no number of U turns after it helps
+(measured), and from the right hold the missing U was only survivable because
+Step 5's loop re-counts with U turns anyway. `test_cards.py` derives the hold
+from the simulator and pins the wording and the trailing `U`.
 
 **Every visible case carries a picture**, and it is gated from both sides:
 `tests/algs.spec.ts` fails if a case `isLocked` does not hide has no `icon`, and
