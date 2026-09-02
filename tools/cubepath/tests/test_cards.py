@@ -365,3 +365,71 @@ def test_card1_holds_the_corner_niklas_actually_keeps() -> None:
     other = {"FRONT-RIGHT", "BACK-LEFT", "BACK-RIGHT"} - {kept}
     for wrong in other:
         assert wrong not in cues, f"Card 1 names {wrong}, but Niklas keeps {kept}"
+
+
+_U_EDGES = {
+    "BACK": (("U", 0, 1), ("B", 0, 1)),
+    "LEFT": (("U", 1, 0), ("L", 0, 1)),
+    "RIGHT": (("U", 1, 2), ("R", 0, 1)),
+    "FRONT": (("U", 2, 1), ("F", 0, 1)),
+}
+
+
+def _edges_sune_u_keeps() -> set[str]:
+    """The two yellow edges Sune + U leaves in place, from the simulator.
+
+    Step 5 turns U until two edges sit over their centres, holds THOSE two
+    where the algorithm does not reach, and swaps the other two. So the hold
+    the card must name is the pair the algorithm keeps.
+    """
+    from cubepath.cube import Cube
+
+    def ident(cube, pos):
+        return tuple(cube.sticker_at(f, r, c) for f, r, c in _U_EDGES[pos])
+
+    solved = Cube.solved()
+    cube = Cube.solved()
+    cube.apply(ALGORITHMS["Sune"])
+    cube.apply("U")
+    kept = {p for p in _U_EDGES if ident(cube, p) == ident(solved, p)}
+    assert len(kept) == 2, f"Sune + U should keep exactly two edges, kept {kept}"
+    return kept
+
+
+def test_card1_holds_the_pair_sune_u_actually_keeps() -> None:
+    """Card 1's Step 5 row names the hold for an adjacent matched pair. The
+    card said BACK and LEFT and printed Sune without its U; from that hold
+    Sune followed by any number of U turns aligns nothing (measured, which is
+    how the row was caught). Derive the pair the algorithm keeps and pin the
+    wording to it, and pin the body — Sune's own chunks, then the U — because
+    bare Sune is a three-cycle and on its own fixes no adjacent pair from any
+    hold.
+    """
+    from cubepath.notation import CHUNKS
+    from cubepath.typst import alg
+
+    kept = _edges_sune_u_keeps()
+    assert kept == {"BACK", "RIGHT"}  # also what align-edges.mdx and the guide say
+    adjacent = cards._C1_MATCH[0]
+    cue = adjacent.cue.upper()
+    for side in kept:
+        assert side in cue, f"Card 1 must say hold them {kept}; it says {cue!r}"
+    for wrong in set(_U_EDGES) - kept:
+        assert wrong not in cue, f"Card 1 names {wrong}, but Sune + U keeps {kept}"
+    # Both Step 5 rows print SUNE — the chunks the simulator above ran — with
+    # the U as one more chunk, not some other algorithm that happens to end in U.
+    for row in cards._C1_MATCH:
+        assert row.body == alg(CHUNKS["Sune"] + [["U"]]), row.body
+    # ...and bare Sune really would not do: it keeps exactly one edge.
+    from cubepath.cube import Cube
+
+    bare = Cube.solved()
+    bare.apply(ALGORITHMS["Sune"])
+    solved = Cube.solved()
+    kept_bare = [
+        p
+        for p in _U_EDGES
+        if tuple(bare.sticker_at(f, r, c) for f, r, c in _U_EDGES[p])
+        == tuple(solved.sticker_at(f, r, c) for f, r, c in _U_EDGES[p])
+    ]
+    assert len(kept_bare) == 1, kept_bare

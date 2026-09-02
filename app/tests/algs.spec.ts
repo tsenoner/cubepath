@@ -152,10 +152,12 @@ async function checkStickeringInvariant(def: CaseDef, moves: string): Promise<vo
 /**
  * The method's own algorithms, pinned by what they DO.
  *
- * These four are triggers: `R U R' U'` and its mirror, the corner cycle, and
- * the big-cube edge flip. None of them has a case state, so none of the four
- * stickering invariants applies — and until they were given CaseDefs, nothing
- * verified them at all even though three lessons print the first one.
+ * These are triggers: `R U R' U'` and its mirror, the two second-layer inserts
+ * built from them, Sune + U in its beginner job, the corner cycle, the two
+ * Speed Tricks corner twists, and the big-cube edge flip. None of them has a
+ * case state, so none of the four stickering invariants applies — and until
+ * they were given CaseDefs, nothing verified them at all even though three
+ * lessons print the first one.
  *
  * Every claim below is quoted from the lesson that makes it. That is the point:
  * a lesson sentence like "six righty triggers in a row return the cube exactly
@@ -207,6 +209,130 @@ const TRIGGERS: Record<string, () => Promise<void>> = {
     expect(moved.EDGES, "Niklas + U leaves every edge alone").toEqual([]);
     expect(moved.CORNERS.length, "Niklas + U moves exactly three corners").toBe(3);
   },
+  "beginner.edge-right": async () => {
+    const kit = await kit3();
+    const def = caseById.get("beginner.edge-right")!;
+    const alg = primaryAlg(def);
+    // The same string the guide's table and the printed card carry, read out
+    // of the Python source that owns it rather than retyped here.
+    expect(alg).toBe(pythonAlgorithm("Edge Insert Right"));
+    // The picture is the other half of the pair's identity: the two inserts
+    // differ only in which centre the edge's top sticker matches, and
+    // tools/cubepath/tests/test_derivation.py derives each diagram's stickers
+    // from this same algs.py string. Pinning the icon here closes the loop.
+    expect(def.icon).toBe("/diagrams/steps/edge_right.svg");
+    // second-layer.mdx: "the insert borrows the solved corner beside it: the
+    // first trigger takes the corner out and the mirrored one puts it back."
+    // Read in the frame the reader started in — the alg carries a net `y`, so
+    // it is undone before looking — nothing outside the U layer and the
+    // front-right slot has moved, and the slot's CORNER is back in its seat;
+    // only the slot's EDGE has changed hands.
+    const state = forwardStateOf(kit, `${alg} y'`);
+    expect(kit.outsideSolved(state, { allowFRSlot: true }), "only U layer + FR slot").toBe(true);
+    const moved = movedSlots(kit, state);
+    expect(moved.CORNERS.includes(slotOf(kit, "CORNERS", "DFR")), "the corner is put back").toBe(
+      false,
+    );
+    expect(moved.EDGES.includes(slotOf(kit, "EDGES", "FR")), "the slot's edge is replaced").toBe(
+      true,
+    );
+  },
+  "beginner.edge-left": async () => {
+    const kit = await kit3();
+    const def = caseById.get("beginner.edge-left")!;
+    const alg = primaryAlg(def);
+    expect(alg).toBe(pythonAlgorithm("Edge Insert Left"));
+    expect(def.icon).toBe("/diagrams/steps/edge_left.svg");
+    // second-layer.mdx prints it as the right insert with every hand swapped,
+    // and it is: the literal mirror, rotation included.
+    expect(mirrorLR(primaryAlg(caseById.get("beginner.edge-right")!))).toBe(alg);
+    // ...which works the OTHER slot. Conjugated by `y` — the cube turned so
+    // that the slot the insert calls front-left IS the front-right slot, then
+    // turned back — the mirrored insert reads as the right insert: U layer +
+    // that one slot, corner back, edge replaced.
+    const state = forwardStateOf(kit, `${alg} y`);
+    expect(kit.outsideSolved(state, { allowFRSlot: true }), "does NOT work the FR slot").toBe(
+      false,
+    );
+    const asRight = forwardStateOf(kit, `y ${alg} y y'`);
+    expect(kit.outsideSolved(asRight, { allowFRSlot: true }), "only U layer + FL slot").toBe(true);
+    const moved = movedSlots(kit, asRight);
+    expect(moved.CORNERS.includes(slotOf(kit, "CORNERS", "DFR")), "the corner is put back").toBe(
+      false,
+    );
+  },
+  "beginner.sune-u": async () => {
+    const kit = await kit3();
+    const alg = primaryAlg(caseById.get("beginner.sune-u")!);
+    // Sune, then the single U the lesson prescribes — pinned to oll.27's string
+    // so the beginner row and the 2-look row cannot print two Sunes.
+    expect(alg).toBe(`${primaryAlg(caseById.get("oll.27")!)} U`);
+    // align-edges.mdx: "swaps the front and left edges while leaving the back
+    // and right edges — and the entire yellow cross — untouched. It scrambles
+    // the corners; ignore them completely."
+    const state = forwardStateOf(kit, alg);
+    expect(kit.outsideSolved(state, { allowFRSlot: false }), "preserves the first two layers").toBe(
+      true,
+    );
+    const moved = movedSlots(kit, state);
+    expect(moved.EDGES, "exactly the front and left edges").toEqual(
+      [slotOf(kit, "EDGES", "UF"), slotOf(kit, "EDGES", "UL")].sort((a, b) => a - b),
+    );
+    // The cross survives: every U-layer edge still has its U facelet up.
+    const edges = state.patternData["EDGES"]!;
+    for (const name of ["UF", "UR", "UB", "UL"]) {
+      expect(edges.orientation[slotOf(kit, "EDGES", name)], `${name} keeps yellow up`).toBe(0);
+    }
+    expect(moved.CORNERS.length, "and the corners are left for Steps 6 and 7").toBeGreaterThan(0);
+  },
+  "beginner.twist-right": async () => {
+    const kit = await kit3();
+    const def = caseById.get("beginner.twist-right")!;
+    const alg = primaryAlg(def);
+    expect(alg).toBe(pythonAlgorithm("Orient Corners Right"));
+    // Which face the yellow sticker is on is the only thing that tells the two
+    // twists apart, and the picture is where a reader reads it — see the
+    // edge-right pin for the other half of this gate.
+    expect(def.icon).toBe("/diagrams/steps/orient_right.svg");
+    // speed-tricks.mdx: "Turn only U between corners — never rotate the cube or
+    // touch any other face — and everything snaps back once the last corner is
+    // done." Two claims: the only U-layer piece it changes is the front-right
+    // corner, twisted in place, so U turns between corners never feed a solved
+    // piece into it...
+    const state = forwardStateOf(kit, alg);
+    const moved = movedSlots(kit, state);
+    const ufr = slotOf(kit, "CORNERS", "UFR");
+    expect(moved.CORNERS.filter((s) => uSlots(kit, "CORNERS").has(s))).toEqual([ufr]);
+    expect(moved.EDGES.filter((s) => uSlots(kit, "EDGES").has(s))).toEqual([]);
+    expect(state.patternData["CORNERS"]!.pieces[ufr], "twisted IN PLACE").toBe(
+      kit.solved.patternData["CORNERS"]!.pieces[ufr],
+    );
+    // ...and "six identical rounds return the cube exactly to where it
+    // started" — a round being the four-move half, so three of the stored
+    // doubled string. The bottom two layers really are wrecked in between,
+    // which is the warning the lesson prints in a caution box.
+    expect(kit.outsideSolved(state, { allowFRSlot: false }), "the mess is real").toBe(false);
+    expect(kit.toT(Array(3).fill(alg).join(" ")).isIdentityTransformation()).toBe(true);
+  },
+  "beginner.twist-front": async () => {
+    const kit = await kit3();
+    const def = caseById.get("beginner.twist-front")!;
+    const alg = primaryAlg(def);
+    expect(alg).toBe(pythonAlgorithm("Orient Corners Front"));
+    expect(def.icon).toBe("/diagrams/steps/orient_front.svg");
+    // speed-tricks.mdx: "the first algorithm undone, the same moves inverted
+    // in reverse order." So right-then-front is the identity, and the two
+    // twist the same corner opposite ways.
+    const right = primaryAlg(caseById.get("beginner.twist-right")!);
+    expect(kit.toT(`${right} ${alg}`).isIdentityTransformation()).toBe(true);
+    const ufr = slotOf(kit, "CORNERS", "UFR");
+    const twist = (a: string) => forwardStateOf(kit, a).patternData["CORNERS"]!.orientation[ufr]!;
+    expect(twist(alg)).not.toBe(0);
+    expect((twist(alg) + twist(right)) % 3, "opposite twists").toBe(0);
+    const moved = movedSlots(kit, forwardStateOf(kit, alg));
+    expect(moved.CORNERS.filter((s) => uSlots(kit, "CORNERS").has(s))).toEqual([ufr]);
+    expect(moved.EDGES.filter((s) => uSlots(kit, "EDGES").has(s))).toEqual([]);
+  },
   "444.edge-flip": async () => {
     const def = caseById.get("444.edge-flip")!;
     const alg = primaryAlg(def);
@@ -257,6 +383,35 @@ function movedSlots(kit: SlotKit, pattern: KPattern): { EDGES: number[]; CORNERS
     );
   };
   return { EDGES: of("EDGES"), CORNERS: of("CORNERS") };
+}
+
+/**
+ * An entry of `ALGORITHMS` in tools/cubepath/src/cubepath/algs.py — the copy
+ * the PDF guide's table and the printed cards are built from. Read from the
+ * source so a beginner row here and a card row there cannot drift apart; the
+ * Python side pins the same strings to the guide's table.
+ */
+function pythonAlgorithm(name: string): string {
+  const src = readFileSync(
+    new URL("../../tools/cubepath/src/cubepath/algs.py", import.meta.url),
+    "utf8",
+  );
+  const m = new RegExp(`^\\s*"${name}":\\s*"([^"]+)",`, "m").exec(src);
+  if (!m) throw new Error(`algs.py has no ALGORITHMS entry "${name}"`);
+  return m[1]!;
+}
+
+/** The slot a named piece occupies in the kpuzzle's own frame. */
+function slotOf(kit: SlotKit, orbit: string, name: string): number {
+  const i = PIECE_NAMES["3x3x3"]![orbit]!.indexOf(name);
+  if (i < 0) throw new Error(`no ${orbit} piece named ${name}`);
+  expect(kit.solved.patternData[orbit]!.pieces[i]).toBe(i);
+  return i;
+}
+
+/** The U-layer slots of an orbit, as the kit detected them. */
+function uSlots(kit: SlotKit, orbit: string): Set<number> {
+  return new Set(kit.U_SLOTS[orbit]!.flatMap((u, i) => (u ? [i] : [])));
 }
 
 describe("the method's own algorithms are pinned by what they do", () => {
@@ -957,15 +1112,17 @@ describe("algorithms that carry a net whole-cube rotation", () => {
    *
    * These are the cases whose primary algorithm has a net rotation. The list is
    * DERIVED, so an extraction that adds or drops one fails here rather than
-   * quietly widening the blast radius of a regression. 27 cases carry one; 25
-   * of them have a page (`444.pll.ka`/`kb` are locked), and all 25 shipped the
-   * wrong mask.
+   * quietly widening the blast radius of a regression. 27 cases carried one
+   * when the mask bug was found; 25 of them had a page (`444.pll.ka`/`kb` are
+   * locked), and all 25 shipped the wrong mask. The two beginner second-layer
+   * inserts, added later, make it 29: each turns the cube (`y` / `y'`)
+   * between its two triggers.
    */
   const ROTATION_ALGS: string[] = [];
   for (const a of ["", "x", "x2", "x'", "z", "z'"])
     for (const b of ["", "y", "y2", "y'"]) ROTATION_ALGS.push([a, b].filter(Boolean).join(" "));
 
-  test("27 of the 185 cases have one, and they are these", async () => {
+  test("29 of the 194 cases have one, and they are these", async () => {
     const found: string[] = [];
     for (const def of ALL_CASES) {
       const kp = await kpuzzleFor(def.puzzle);
@@ -981,7 +1138,11 @@ describe("algorithms that carry a net whole-cube rotation", () => {
       );
       if (!home) found.push(def.id);
     }
-    expect(found.length, found.join(" ")).toBe(27);
+    expect(found.length, found.join(" ")).toBe(29);
+    expect(found.filter((id) => id.startsWith("beginner.")).sort()).toEqual([
+      "beginner.edge-left",
+      "beginner.edge-right",
+    ]);
     expect(found.filter((id) => id.startsWith("pll.")).sort()).toEqual([
       "pll.aa",
       "pll.ab",
@@ -1282,9 +1443,11 @@ describe("aspect-aware narrowing", () => {
     return k.puzzle === "3x3x3" && aspect !== "both";
   });
 
-  test("82 orientation/permutation cases are in scope", () => {
+  test("85 orientation/permutation cases are in scope", () => {
     // 81 until `beginner.niklas` landed: it sits at `cp`, a permutation stage.
-    expect(relevant.length).toBe(82);
+    // 82 until the rest of the beginner method did: Sune + U sits at `ep`, the
+    // two corner twists at `oc`. The inserts sit at `e-layer`, a `both` stage.
+    expect(relevant.length).toBe(85);
   });
 
   for (const def of relevant) {
@@ -1354,7 +1517,7 @@ describe("aspect-aware narrowing", () => {
 
 describe("the ladder is wired into every renderer", () => {
   test("contextForPlayer resolves the case an algorithm uniquely identifies", async () => {
-    // How /case/[...id] gets the ladder without restating it: 187 of the 189
+    // How /case/[...id] gets the ladder without restating it: 192 of the 194
     // cases are uniquely identified by (puzzle, stickering, algorithm).
     let resolved = 0;
     const unresolved: string[] = [];
@@ -1366,7 +1529,7 @@ describe("the ladder is wired into every renderer", () => {
         resolved++;
       } else unresolved.push(def.id);
     }
-    expect(resolved).toBe(187);
+    expect(resolved).toBe(192);
     // ...and the two it refuses are the pair that share `F R U R' U' F'` and
     // sit at DIFFERENT stages. Guessing between them is the yellow-cross bug.
     expect(unresolved.sort()).toEqual(["eo.line", "oll.45"]);

@@ -1617,3 +1617,100 @@ itself — which also removes the stale PRECACHE, the half that silently serves
 an old build's assets. A dev-server middleware (`apply: "serve"`), not a
 `src/pages/sw.js` route, which would have overwritten the real Workbox worker
 at build time.
+
+## The beginner method is on /reference in full now (2026-09-02)
+
+The question that started it: "aren't we missing the second-layer insert, and
+Sune, and the yellow cross, and the corner twist from the beginner section?"
+Measured against the guide's own Algorithm Reference table — the 22 algorithms
+the course counts as learned — four had no case anywhere on the site, and a
+fifth was on the page only in a different job:
+
+| guide row | on /reference before |
+| --- | --- |
+| Edge Insert Right / Left (Phase 1) | nowhere — no CaseDef, no row, no /case page |
+| Sune "PE (+U)" (Phase 1, Step 5) | only as `oll.27`, a corner-orientation row with a corner-orientation picture |
+| Orient Corners Right / Front (Phase 1.5) | nowhere |
+| F-sexy-F' (Phase 1, Step 4) | present, as the Yellow Cross section one below |
+| Repeat righty + flip (Phase 1, Step 7) | covered by the righty row and the section blurb |
+
+The printed first-solve card (`/c0`) carried every one of them; the site's
+reference — the surface that exists to be looked up — was the thin one.
+
+**Why the earlier fix missed them.** The gap-closing entry above ("The
+beginner algorithms were nowhere") enumerated the course's algorithms by
+grepping for bare `<AlgText>` strings that had no CaseDef, and that census
+found exactly four. The inserts are composed from righty and lefty in prose
+(`U`, righty, `y`, lefty), Sune + U is an existing case in a new role, and the
+Speed Tricks finishers are printed as four-move halves plus "twice". Nothing
+in this log ever decided to leave them out; the only "no reference entry"
+ruling on record about something the course TEACHES is the one for big-cube
+centres (the two lock rulings hide sets the course does not teach), and its
+reasoning (a centre insert is a shape you aim, not an algorithm) does not
+transfer — `algs.py`, the guide's table, `test_derivation.py` and the card
+all treat these as named, counted, retire-tracked algorithms.
+
+**What changed.** Five `beginner.*` CaseDefs, each `stickering: "full"` and
+each pinned in `tests/algs.spec.ts` by the claim its own lesson makes: an
+insert touches only the U layer and its own slot and puts the corner back;
+the left insert is the right one's literal mirror; Sune + U swaps exactly the
+front and left edges with the cross intact and the first two layers untouched;
+a corner twist changes one U-layer piece (the front-right corner, in place),
+three of them are the identity, and the front twist is the right one undone.
+The four strings the guide also prints are read out of `algs.py` by the test,
+so a beginner row here and a card row there cannot drift. /reference's
+beginner section now renders every group with the `beginner-` prefix, in
+course order, and its blurb links to the Yellow Cross section instead of
+implying the three triggers are the whole method. Each new group has a stage
+in `gen-stickering.mjs` (inserts `e-layer`, the swap `ep`, the twists `oc` —
+so the swap's scrambled corners come out GREY on the beginner ladder, which is
+what the lesson says to do with them) and a chip label on the case page. The
+lessons declare what they teach: second-layer the inserts, align-edges Sune +
+U, speed-tricks the twists — so "Taught in" on `/case/beginner.sune-u` points
+at Step 5, where a beginner first meets Sune, rather than at the CFOP switch.
+
+**Sune gets a second row, deliberately.** Not an exception to /reference's
+one-home rule as coded — that rule is per id, `beginner.sune-u` is its own id
+and is listed once, and the 2-look rows stay the rule's only exception — but
+the same seven moves are now on the page twice, and that is the deliberate
+part. The guide's table lists Sune twice too — "PE (+U)" in Phase 1 and "OC"
+in Phase 2 — and the beginner row is a different algorithm string (the `U` is
+part of it), a different picture (`align_adjacent.svg`) and a different
+recognition cue.
+
+**The printed card was wrong, and it was wrong in a way no gate saw.** Card
+1's Step 5 row said "two matched, side by side — hold them BACK and LEFT" and
+printed Sune without its U. From that hold, Sune followed by any number of U
+turns aligns nothing (measured: every hold, every U count). The missing U was
+the lesser half: bare Sune is a three-cycle and on its own fixes no adjacent
+pair from any hold, but from the RIGHT hold a reader would have stumbled into
+the U through Step 5's own "turn U and count again" loop. The hold was the
+defect. The lesson, the guide and the card's own picture all say back and
+right with the U. Only the Niklas row had a simulator-derived gate on its
+hold; `test_cards.py` now derives the pair Sune + U keeps the same way and pins
+the wording, the trailing U chunk and that the body is Sune's own chunks. The
+row's intro cue, which called the printed algorithm "Sune" while Card 2 and
+the annex use that name for the seven-move form, now says which seven moves
+are Sune and that the U is the Step 5 addition. Rebuilt with `make cards`.
+
+**Left alone, on purpose, and worth knowing.** (1) The Yellow Cross section's
+Hook and Dot rows carry the Phase 1.5 wide-f algorithms while "Taught in" points
+at the Phase 1 lesson, which teaches two and three passes of F-sexy-F' with a
+different hold; the Hook icon is drawn for the Phase 1 back-left hold beside a
+cue saying front-right. A real mismatch, but a different change. (2) The repo
+disagrees with itself three ways on how many algorithms Phase 1.5 adds: the
+speed-tricks description ("not one new algorithm to learn") and
+orient-corners.mdx ("zero new algorithms") say zero; the entry above ("Phase
+1.5 adds one algorithm, not zero and not three") and the guide's Phase 1.5
+heading say one, the wide-f Hook; the machine-checked progression table says
++3 (the Hook and both corner finishers). The table is the tested claim; the
+prose is pedagogical framing (the finishers are a re-grip of Step 7). Not
+reconciled here; docs/TODO.md carries it.
+
+Counts that moved, all pinned: 194 cases (189 before), 134 of them visible
+(129) and 147 entries rendered on /reference once the 13 double-listed 2-look
+ids are counted (142), 168 published routes of which 134 are case pages (163
+and 129), 192 uniquely resolved by (puzzle, stickering, alg), 85
+orientation/permutation cases in the narrowing test (82), 29 primary
+algorithms carrying a net rotation (27 — the two inserts turn the cube
+between their triggers), 42 exact case → lesson edges (37).

@@ -254,20 +254,29 @@ export const CASES: CaseDef[] = [
   },
 
   // ── The method's own algorithms ────────────────────────────────────
-  // Four strings this course TEACHES that had no case at all, and therefore no
+  // The strings the beginner course TEACHES, in the order a reader meets them.
+  // For a long time none of them had a case at all, and therefore no
   // /reference row, no /case page, no 3D player and nowhere to look them up.
-  // Three separate lessons print `R U R' U'` and two print the edge flip; a
-  // reader who wanted either of them again had to remember which lesson it was
-  // in and scroll.
+  // The first pass at fixing that counted bare `<AlgText>` strings with no
+  // case — righty, lefty, Niklas and the big-cube edge flip below — and missed
+  // everything the lessons print some other way: the two second-layer inserts
+  // are composed from righty and lefty in prose, Sune + U is an existing case
+  // (oll.27) doing a different job, and the Speed Tricks finishers are printed
+  // as four-move halves plus "twice". The guide's Algorithm Reference table and
+  // the printed first-solve card carried all of them; /reference did not.
   //
   // They are TRIGGERS, not cases, and the difference is not pedantry: a case is
   // a recognisable state plus the algorithm that solves it, and none of these
-  // four has a state. That is why they carry `stickering: "full"` — there is no
+  // has a state. That is why they carry `stickering: "full"` — there is no
   // last-layer subset to mask — and why the generic per-stickering invariant in
   // tests/algs.spec.ts has nothing to say about them. Each is pinned there by
   // BEHAVIOUR instead, which is the stronger gate: exactly which pieces it
   // moves, and nothing else. A `full` 3x3 case with no behavioural pin fails
   // the build, so this cannot become a hole to slip an unverified alg through.
+  //
+  // Every `group` here starts with `beginner-`, which is what /reference's
+  // "The Beginner Method" section renders; the stage each group maps to is in
+  // scripts/gen-stickering.mjs (`STAGE_OF_GROUP`).
   {
     id: "beginner.righty",
     icon: "/diagrams/steps/corner_right.svg",
@@ -292,6 +301,60 @@ export const CASES: CaseDef[] = [
     phase: "phase-1",
     prereqs: ["beginner.righty"],
   },
+  // The second-layer inserts. Both triggers back to back with a cube rotation
+  // between them: the first takes the solved corner out of the slot, the
+  // mirrored one puts it back with the edge underneath. The guide's table names
+  // them "Edge Insert Right" / "Edge Insert Left" and
+  // tools/cubepath/src/cubepath/algs.py stores the same strings; the strings
+  // here are pinned to that file by tests/algs.spec.ts, so the card and the
+  // site cannot print different ones.
+  {
+    id: "beginner.edge-right",
+    icon: "/diagrams/steps/edge_right.svg",
+    group: "beginner-edge-insert",
+    name: "Edge insert — points right",
+    recognition:
+      "Upside-down T on the front face and the edge's top sticker matches the RIGHT centre. U, righty, turn the cube, lefty",
+    algs: [{ moves: "U R U R' U' y L' U' L U", primary: true }],
+    stickering: "full",
+    puzzle: "3x3x3",
+    phase: "phase-1",
+    prereqs: ["beginner.righty", "beginner.lefty"],
+  },
+  {
+    id: "beginner.edge-left",
+    icon: "/diagrams/steps/edge_left.svg",
+    group: "beginner-edge-insert",
+    name: "Edge insert — points left",
+    recognition:
+      "Upside-down T on the front face and the edge's top sticker matches the LEFT centre. U', lefty, turn the cube, righty",
+    algs: [{ moves: "U' L' U' L U y' R U R' U'", primary: true }],
+    stickering: "full",
+    puzzle: "3x3x3",
+    phase: "phase-1",
+    prereqs: ["beginner.righty", "beginner.lefty"],
+  },
+  // Sune in its BEGINNER job. The same seven moves are `oll.27`, a corner
+  // orientation case with a corner-orientation picture, and that is the only
+  // row a reader looking for "the thing that swaps two yellow edges" used to
+  // find. The trailing U is part of the tool: bare Sune is a three-cycle of the
+  // yellow edges and on its own aligns no adjacent pair from any hold. The
+  // printed card once said "hold them back and left" and printed Sune bare;
+  // from that hold no number of U turns after it helps (measured), and from
+  // the right hold the missing U is only survivable because Step 5's loop
+  // re-counts with U turns anyway.
+  {
+    id: "beginner.sune-u",
+    icon: "/diagrams/steps/align_adjacent.svg",
+    group: "beginner-edge-swap",
+    name: "Sune + U — the edge swap",
+    recognition:
+      "Two yellow edges already over their centres, side by side: hold them BACK and RIGHT. Swaps the front and left edges and leaves the cross alone; the corners scramble, ignore them",
+    algs: [{ moves: "R U R' U R U2 R' U", primary: true, note: "Sune, then a single U" }],
+    stickering: "full",
+    puzzle: "3x3x3",
+    phase: "phase-1",
+  },
   {
     id: "beginner.niklas",
     icon: "/diagrams/steps/corner_cycle.svg",
@@ -303,6 +366,36 @@ export const CASES: CaseDef[] = [
     stickering: "full",
     puzzle: "3x3x3",
     phase: "phase-1",
+  },
+  // The Speed Tricks corner finishers: Step 7's righty-and-flip without the
+  // flip. Stored DOUBLED, as algs.py stores them — cubing notation has no
+  // repeat operator, and the four-move half on its own orients nothing. The
+  // second is the first undone, so a reader who learns one has the other.
+  {
+    id: "beginner.twist-right",
+    icon: "/diagrams/steps/orient_right.svg",
+    group: "beginner-corner-twist",
+    name: "Corner twist — yellow faces right",
+    recognition:
+      "Yellow on top, an unsolved corner at the front-right with its yellow sticker facing RIGHT. Twists that one corner; turn only U between corners",
+    algs: [{ moves: "R' D' R D R' D' R D", primary: true, note: "R' D' R D, twice" }],
+    stickering: "full",
+    puzzle: "3x3x3",
+    phase: "phase-1.5",
+    prereqs: ["beginner.righty"],
+  },
+  {
+    id: "beginner.twist-front",
+    icon: "/diagrams/steps/orient_front.svg",
+    group: "beginner-corner-twist",
+    name: "Corner twist — yellow faces front",
+    recognition:
+      "Yellow on top, an unsolved corner at the front-right with its yellow sticker facing FRONT. The right-hand twist undone, move for move",
+    algs: [{ moves: "D' R' D R D' R' D R", primary: true, note: "D' R' D R, twice" }],
+    stickering: "full",
+    puzzle: "3x3x3",
+    phase: "phase-1.5",
+    prereqs: ["beginner.twist-right"],
   },
 
   // ── Big cubes ──────────────────────────────────────────────────────

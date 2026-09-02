@@ -448,7 +448,7 @@ const RENDERED_LADDERS = Object.keys(LADDERS);
 
 /**
  * `CaseDef.group` -> stage. First match wins, so exact keys precede prefixes.
- * `group` is already the right granularity: all 185 cases carry one.
+ * `group` is already the right granularity: all 194 cases carry one.
  * @type {{ kind: "exact" | "prefix", key: string, stage: string }[]}
  */
 const STAGE_OF_GROUP = [
@@ -458,14 +458,21 @@ const STAGE_OF_GROUP = [
   { kind: "exact", key: "2look-pll-edges", stage: "ep" },
   { kind: "exact", key: "444-parity", stage: "eo" },
   { kind: "exact", key: "555-parity", stage: "555-pairing" },
-  // The beginner method's own triggers. Righty and lefty are introduced to
-  // place the first-layer corners (`f1l`) and reused at every later step; the
-  // stage is where the reader MEETS them, which is what the tier model is
-  // about. Niklas positions the last-layer corners, so `cp` — and on the
-  // beginner ladder that is before orientation, which is exactly the case the
-  // two-ladder split exists for.
+  // The beginner method's own algorithms, one group per step the reader meets
+  // them at — the stage is where the reader MEETS the algorithm, which is what
+  // the tier model is about. Righty and lefty are introduced to place the
+  // first-layer corners (`f1l`) and reused at every later step; the two inserts
+  // fill the middle layer (`e-layer`); Sune + U aligns the yellow edges (`ep`,
+  // which on the beginner ladder comes BEFORE the corners — the corners it
+  // scrambles are grey, exactly as the lesson says to treat them); Niklas
+  // positions the last-layer corners (`cp`, again before orientation, which is
+  // exactly the case the two-ladder split exists for); the Speed Tricks
+  // finishers twist them (`oc`, the beginner ladder's last stage).
   { kind: "exact", key: "beginner-triggers", stage: "f1l" },
+  { kind: "exact", key: "beginner-edge-insert", stage: "e-layer" },
+  { kind: "exact", key: "beginner-edge-swap", stage: "ep" },
   { kind: "exact", key: "beginner-corner-cycle", stage: "cp" },
+  { kind: "exact", key: "beginner-corner-twist", stage: "oc" },
   { kind: "exact", key: "bigcube-pairing", stage: "444-pairing" },
   { kind: "prefix", key: "f2l-", stage: "f2l" },
   { kind: "prefix", key: "oll-", stage: "oll" },

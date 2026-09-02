@@ -39,7 +39,7 @@ function template(route: string): string {
 }
 
 /**
- * Sampling. The site publishes 218 routes, 185 of them from the single
+ * Sampling. The site publishes 168 routes, 134 of them from the single
  * `case/[...id].astro` template — testing all of them twice would spend most
  * of the suite re-proving one layout. So: every route from a template that
  * emits at most `FULL_UNDER` pages is tested in full (that is the home page,

@@ -11,6 +11,8 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
+import pytest
+
 from cubepath.algs import ALGORITHMS
 from cubepath.cube import (
     COLORS,
@@ -615,3 +617,43 @@ def test_f2l_diagram_is_a_state_its_own_algorithm_solves() -> None:
                 break
         assert solved_somewhere, f"F2L {raw['number']}: its own algorithm does not solve it"
     assert skipped == [32], f"the notation gap moved: {skipped}"
+
+
+# ── Beginner case icons draw the state their algorithm solves ─────────
+# The four paired lesson figures are also the /reference icons of the four
+# beginner cases the app pins to these same algs.py strings. Each pair differs
+# only in where the yellow (or matching) sticker sits, so an icon swapped for
+# its twin is a wrong picture that no existence check can see. The overrides
+# are what the picture paints; they must be the stickers of `state_before`.
+
+
+@pytest.mark.parametrize(
+    ("filename", "algorithm", "unrotate"),
+    [
+        ("orient_right", "Orient Corners Right", ""),
+        ("orient_front", "Orient Corners Front", ""),
+        # An insert ends turned by `y` / `y'`; the reader's frame is the one
+        # BEFORE the turn, so the solved cube is turned first and the inverse
+        # applied after, exactly as the app's tests read the same strings.
+        ("edge_right", "Edge Insert Right", "y"),
+        ("edge_left", "Edge Insert Left", "y'"),
+    ],
+)
+def test_beginner_case_icons_draw_the_state_their_algorithm_solves(
+    filename: str, algorithm: str, unrotate: str
+) -> None:
+    from cubepath.cube import invert_algorithm
+    from cubepath.diagrams import all_steps
+
+    step = next(s for s in all_steps() if s.filename == filename)
+    assert step.overrides, f"{filename} paints nothing"
+    cube = Cube.solved()
+    if unrotate:
+        cube.apply(unrotate)
+    cube.apply(invert_algorithm(ALGORITHMS[algorithm]))
+    for face in "UDFBLR":
+        assert cube.sticker_at(face, 1, 1) == COLORS[face], f"{filename}: centres not home"
+    for (face, a, b), colour in step.overrides.items():
+        sim_face, row, col = diagram_to_sim(face, a, b)
+        actual = _SIM_COLOR[cube.sticker_at(sim_face, row, col)]
+        assert colour == actual, f"{filename} paints {face}{a}{b} {colour}, the case has {actual}"
