@@ -1657,12 +1657,16 @@ the left insert is the right one's literal mirror; Sune + U swaps exactly the
 front and left edges with the cross intact and the first two layers untouched;
 a corner twist changes one U-layer piece (the front-right corner, in place),
 three of them are the identity, and the front twist is the right one undone.
-The four strings the guide also prints are read out of `algs.py` by the test,
-so a beginner row here and a card row there cannot drift. /reference's
+Every beginner string `algs.py` also owns — all eight of them, the four new
+ones plus righty, lefty, Niklas and Sune, which had been pinned to literals
+typed into the test — is read out of `algs.py` by the test now, so a beginner
+row here and a card row there cannot drift. /reference's
 beginner section now renders every group with the `beginner-` prefix, in
 course order, and its blurb links to the Yellow Cross section instead of
 implying the three triggers are the whole method. Each new group has a stage
-in `gen-stickering.mjs` (inserts `e-layer`, the swap `ep`, the twists `oc` —
+in `gen-stickering.mjs`, regenerated into `src/data/extracted/stages.json`,
+which is the copy the build actually reads (inserts `e-layer`, the swap `ep`,
+the twists `oc` —
 so the swap's scrambled corners come out GREY on the beginner ladder, which is
 what the lesson says to do with them) and a chip label on the case page. The
 lessons declare what they teach: second-layer the inserts, align-edges Sune +

@@ -8,7 +8,7 @@
  * SECTION rendering it; with only labels exported it had to guess at membership
  * and keyed them on `CaseDef.group` instead — a recognition grouping
  * ("oll-dot", "f2l-connected-pairs") in a different namespace entirely. For the
- * three grid sections that is most of the page's 142 entries carrying "oll dot"
+ * three grid sections that is most of the page's entries carrying "oll dot"
  * in the corpus where the page carries "Full OLL", so the gate written to stop
  * a re-typed label map from drifting was itself blind to a wrong label on every
  * full set. The registry now says what a section IS, and the page and the spec

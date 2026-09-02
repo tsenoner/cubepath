@@ -5,6 +5,7 @@ its algorithm's pre-state, arrows must match the actual piece permutation,
 and the guide's tables must match the canonical algorithm data.
 """
 
+import functools
 import json
 import re
 from collections import Counter
@@ -627,6 +628,14 @@ def test_f2l_diagram_is_a_state_its_own_algorithm_solves() -> None:
 # are what the picture paints; they must be the stickers of `state_before`.
 
 
+@functools.lru_cache(maxsize=1)
+def _step_by_filename():
+    """Every `StepDiagram` by the file it renders to. Built once, not per case."""
+    from cubepath.diagrams import all_steps
+
+    return {s.filename: s for s in all_steps()}
+
+
 @pytest.mark.parametrize(
     ("filename", "algorithm", "unrotate"),
     [
@@ -643,9 +652,12 @@ def test_beginner_case_icons_draw_the_state_their_algorithm_solves(
     filename: str, algorithm: str, unrotate: str
 ) -> None:
     from cubepath.cube import invert_algorithm
-    from cubepath.diagrams import all_steps
 
-    step = next(s for s in all_steps() if s.filename == filename)
+    # A bare `next()` here raises StopIteration, which pytest reports as an
+    # ERROR with no message rather than "this figure was renamed" — and the
+    # whole step list is rebuilt once per parameter set for one lookup.
+    step = _step_by_filename().get(filename)
+    assert step is not None, f"no step diagram named {filename}"
     assert step.overrides, f"{filename} paints nothing"
     cube = Cube.solved()
     if unrotate:

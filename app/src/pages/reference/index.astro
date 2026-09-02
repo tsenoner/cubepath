@@ -292,10 +292,11 @@ const tileLabel = (name: string) =>
 // Distinct cases, not the sum of the sections: the 2-look rows deliberately
 // repeat ids the Full OLL / Full PLL grids also carry.
 const total = ALL_CASES.filter((k) => !isLocked(k)).length;
-// Rows and tiles actually rendered — 147 against `total`'s 134, because of that
+// Rows and tiles actually rendered, which is MORE than `total` because of that
 // same deliberate double-listing. The filter counts DOM entries, so this is the
 // denominator it has to report against; using `total` there would let a query
-// claim more matches than there are cases.
+// claim more matches than there are cases. Both figures are computed here and
+// rendered below — stating them in prose too only creates a copy that rots.
 const listed = VISIBLE.reduce((n, s) => n + s.items.length, 0);
 
 /** Section id -> the lesson that teaches it. Derived from lesson frontmatter. */
@@ -378,10 +379,11 @@ const taughtBy: Record<string, TeachingLesson | undefined> = Object.fromEntries(
       /*
       Both numbers, and the reason they differ, because the page shows both and
       they used to sit two lines apart with nothing reconciling them: the lead
-      said "All 125 cases" and the filter said "138 cases" (134 and 147 today).
-      The 13 the course
-      teaches by name are listed twice on purpose — once in their own lesson
-      section, once inside the full set.
+      said "All 125 cases" while the filter said "138 cases" — two hand-written
+      figures, both stale. They are `total` and `listed` now, computed above, so
+      no number is written down here. The cases the course teaches by name are
+      listed twice on purpose — once in their own lesson section, once inside
+      the full set.
     */
     }
     <p class="lead">

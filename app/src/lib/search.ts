@@ -21,7 +21,8 @@
  * match every token of a multi-word query rather than the raw string.
  *
  * NOT the algorithm, though it was tempting and was tried. Adding the moves
- * makes `R U R'` match 100 of the 142 entries, no more useful than the 0 it
+ * makes `R U R'` match 100 of the 142 entries the page shipped when this was
+ * measured, no more useful than the 0 it
  * returned before — and worse, every alg contains a word-initial "u" and "r",
  * so those tokens stop discriminating for every OTHER query too ("u perm" goes
  * back to matching all 25 perms). The field advertises "name, number or
@@ -104,7 +105,8 @@ export function groupWords(group: string | undefined): string {
  * the punctuation, the dataset chose.
  *
  * The per-token rule is length-dependent, and every part of it was measured
- * against the 142 entries the page ships rather than reasoned about:
+ * against the entries the page ships (142 of them at the time) rather than
+ * reasoned about:
  *
  *   3+ chars   SUBSTRING. Anchoring these to a word start breaks the two
  *              commonest queries — "light" (35 hits, all inside "headlights"

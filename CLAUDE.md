@@ -337,14 +337,20 @@ slot and puts the corner back, Sune + U swaps exactly the front and left edges
 with the cross intact, Niklas plus one U moves three corners and no edge, each
 twist changes one U-layer piece (the front-right corner, in place) and three
 of them are the identity, the flip is seven outer turns legal on both big
-cubes. The four strings the guide also prints are read out of
-`tools/cubepath/src/cubepath/algs.py` by the test, so the site and the card
-cannot drift. A
+cubes. All eight strings that also live in
+`tools/cubepath/src/cubepath/algs.py` — `Sexy Move`, `Lefty`, both edge
+inserts, `Sune`, `Niklas` and both corner twists — are READ OUT OF that file by
+the test rather than retyped, so the site, the guide's table and the printed
+card cannot drift. A
 `full` 3×3 case with no behavioural pin fails the build, so this cannot become
 a way in for an unverified algorithm. Every beginner group key starts with
 `beginner-`; that prefix is what /reference's "The Beginner Method" section
-renders, and each group needs a stage rule in `gen-stickering.mjs` and a chip
-label in `case/[...id].astro` — both fail the build when missing.
+renders, and each group needs a chip label in `case/[...id].astro` and a stage
+rule in `gen-stickering.mjs` — the chip label and a MISSING stage rule both fail
+the build, but the stage rule is only read through the generated
+`src/data/extracted/stages.json`, so adding one means re-running
+`npm run gen:stickering` and committing the JSON. Nothing re-runs that generator
+in CI, so a rule added to `gen-stickering.mjs` alone silently does nothing.
 
 **Sune has two rows on /reference on purpose.** `oll.27` is the corner
 orientation case; `beginner.sune-u` is the same seven moves plus a `U`, which

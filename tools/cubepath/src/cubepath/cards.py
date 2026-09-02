@@ -133,19 +133,20 @@ _C1_CROSS = [
 ]
 
 
-def _sune_u() -> str:
-    """Sune with the single U that makes it the Step 5 tool.
-
-    The U is not decoration. Sune alone is a three-cycle of yellow edges and
-    on its own fixes no adjacent pair from any hold; Sune + U swaps exactly the
-    front and left edges and keeps the cross. The card printed Sune bare with
-    "hold them BACK and LEFT" for a while: from that hold nothing works, and
-    from the right hold the missing U was only survivable because Step 5's
-    loop re-counts with U turns anyway. `test_cards.py` derives the hold from
-    the simulator now and pins the wording, the U and that the body is Sune.
-    """
-    return alg(CHUNKS["Sune"] + [["U"]])
-
+# Sune with the single U that makes it the Step 5 tool.
+#
+# The U is not decoration, which is why it is a CHUNK and not a `key_alg`
+# `extra=` label — that slot is for a rider like `_twice`'s "x2", text the
+# reader does not turn. Sune alone is a three-cycle of yellow edges and on its
+# own fixes no adjacent pair from any hold; Sune + U swaps exactly the front
+# and left edges and keeps the cross. The card printed Sune bare with "hold
+# them BACK and LEFT" for a while: from that hold nothing works, and from the
+# right hold the missing U was only survivable because Step 5's loop re-counts
+# with U turns anyway. The chunks are named separately so `test_cards.py` can
+# run the simulator on the moves this card actually prints — it derives the
+# hold from them and pins the wording, the U and that the body is Sune.
+_SUNE_U_CHUNKS = CHUNKS["Sune"] + [["U"]]
+_SUNE_U = alg(_SUNE_U_CHUNKS)
 
 _C1_MATCH = [
     # BACK and RIGHT: the two edges Sune + U leaves alone. Derived and pinned by
@@ -155,13 +156,13 @@ _C1_MATCH = [
         "steps/align_adjacent.svg",
         "two matched, side by side",
         "hold them BACK and RIGHT",
-        _sune_u(),
+        _SUNE_U,
     ),
     Row(
         "steps/align_diagonal.svg",
         "two matched, opposite",
         "run it once from any hold, then look again",
-        _sune_u(),
+        _SUNE_U,
     ),
 ]
 

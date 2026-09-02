@@ -375,12 +375,15 @@ _U_EDGES = {
 }
 
 
-def _edges_sune_u_keeps() -> set[str]:
-    """The two yellow edges Sune + U leaves in place, from the simulator.
+def _u_edges_kept(algorithm: str) -> set[str]:
+    """The yellow edges `algorithm` leaves in place, from the simulator.
 
     Step 5 turns U until two edges sit over their centres, holds THOSE two
     where the algorithm does not reach, and swaps the other two. So the hold
-    the card must name is the pair the algorithm keeps.
+    the card must name is the pair the algorithm keeps. Flip-sensitive on
+    purpose (a tuple, where the corner version below uses a frozenset): an
+    edge turned in its own slot is not aligned, while a corner twisted in its
+    seat is still the corner Niklas kept.
     """
     from cubepath.cube import Cube
 
@@ -389,11 +392,8 @@ def _edges_sune_u_keeps() -> set[str]:
 
     solved = Cube.solved()
     cube = Cube.solved()
-    cube.apply(ALGORITHMS["Sune"])
-    cube.apply("U")
-    kept = {p for p in _U_EDGES if ident(cube, p) == ident(solved, p)}
-    assert len(kept) == 2, f"Sune + U should keep exactly two edges, kept {kept}"
-    return kept
+    cube.apply(algorithm)
+    return {p for p in _U_EDGES if ident(cube, p) == ident(solved, p)}
 
 
 def test_card1_holds_the_pair_sune_u_actually_keeps() -> None:
@@ -405,10 +405,13 @@ def test_card1_holds_the_pair_sune_u_actually_keeps() -> None:
     bare Sune is a three-cycle and on its own fixes no adjacent pair from any
     hold.
     """
-    from cubepath.notation import CHUNKS
-    from cubepath.typst import alg
+    from cubepath.notation import expand
 
-    kept = _edges_sune_u_keeps()
+    # Driven by the moves the card PRINTS, not by a retyped copy of them: the
+    # row's own chunks, expanded back to notation and handed to the simulator.
+    printed = expand(cards._SUNE_U_CHUNKS)
+    assert printed == f"{ALGORITHMS['Sune']} U", printed
+    kept = _u_edges_kept(printed)
     assert kept == {"BACK", "RIGHT"}  # also what align-edges.mdx and the guide say
     adjacent = cards._C1_MATCH[0]
     cue = adjacent.cue.upper()
@@ -416,20 +419,9 @@ def test_card1_holds_the_pair_sune_u_actually_keeps() -> None:
         assert side in cue, f"Card 1 must say hold them {kept}; it says {cue!r}"
     for wrong in set(_U_EDGES) - kept:
         assert wrong not in cue, f"Card 1 names {wrong}, but Sune + U keeps {kept}"
-    # Both Step 5 rows print SUNE — the chunks the simulator above ran — with
-    # the U as one more chunk, not some other algorithm that happens to end in U.
+    # Both Step 5 rows print that same algorithm, not some other one that
+    # happens to end in U.
     for row in cards._C1_MATCH:
-        assert row.body == alg(CHUNKS["Sune"] + [["U"]]), row.body
+        assert row.body == cards._SUNE_U, row.body
     # ...and bare Sune really would not do: it keeps exactly one edge.
-    from cubepath.cube import Cube
-
-    bare = Cube.solved()
-    bare.apply(ALGORITHMS["Sune"])
-    solved = Cube.solved()
-    kept_bare = [
-        p
-        for p in _U_EDGES
-        if tuple(bare.sticker_at(f, r, c) for f, r, c in _U_EDGES[p])
-        == tuple(solved.sticker_at(f, r, c) for f, r, c in _U_EDGES[p])
-    ]
-    assert len(kept_bare) == 1, kept_bare
+    assert len(_u_edges_kept(ALGORITHMS["Sune"])) == 1
