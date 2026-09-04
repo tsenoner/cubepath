@@ -17,7 +17,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
-    "verify:data": "node scripts/verify-f2l.mjs && node scripts/verify-l2e.mjs",
+    "verify:data": "node scripts/verify-f2l.mjs && node scripts/verify-l2e.mjs && node scripts/gen-stickering.mjs --check",
     "gen:icons": "node scripts/gen-icons.mjs",
     "gen:stickering": "node scripts/gen-stickering.mjs",
     "gen:case-states": "node scripts/gen-case-states.mjs",

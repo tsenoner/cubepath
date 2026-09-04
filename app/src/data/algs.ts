@@ -58,7 +58,7 @@ export const CASES: CaseDef[] = [
   },
   {
     id: "eo.hook",
-    icon: "/diagrams/oll/oll_hook.svg",
+    icon: "/diagrams/oll/oll_hook_wide.svg",
     group: "cross-eo",
     name: "Hook",
     recognition: "Yellow L-shape — hold the L in the front-right",
@@ -78,7 +78,14 @@ export const CASES: CaseDef[] = [
     ],
     stickering: "OLL",
     puzzle: "3x3x3",
-    phase: "phase-1",
+    // Phase 1.5, like the Hook and for the same reason: the stored algorithm is
+    // the CHAIN, whose second half is the wide-f, so a Phase 1 reader cannot run
+    // it. yellow-cross teaches the Dot as three passes of the narrow F-sexy-F';
+    // this row is speed-tricks' one-look answer, and `teaches.ts` sends "Taught
+    // in" to the lesson that actually prints it. The phase tag is what does
+    // that, and it is safe to move: `ladderOfPhase` maps phase-1 and phase-1.5
+    // to the SAME beginner ladder, so no mask, section or trainer set shifts.
+    phase: "phase-1.5",
   },
 
   // ── Corner orientation (OCLL) ──────────────────────────────────────

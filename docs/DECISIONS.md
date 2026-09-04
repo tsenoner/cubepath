@@ -1718,3 +1718,69 @@ and 129), 192 uniquely resolved by (puzzle, stickering, alg), 85
 orientation/permutation cases in the narrowing test (82), 29 primary
 algorithms carrying a net rotation (27 — the two inserts turn the cube
 between their triggers), 42 exact case → lesson edges (37).
+
+## The Hook's two holds, Phase 1.5's real count, and a gate for stages.json (2026-09-04)
+
+Three items `docs/TODO.md` had been carrying, closed together because the first
+two are the same defect seen from different sides.
+
+**A case belongs to the lesson that teaches ITS algorithm.** `eo.hook` carries
+the one-pass wide-f `f R U R' U' f'` and a cue saying front-right — both Phase
+1.5's — while yellow-cross (Phase 1) claimed it first and teaches two passes of
+the narrow `F R U R' U' F'` held BACK-LEFT. `teaches.ts` resolved "Taught in" by
+course order alone, so /reference showed the Phase 1.5 row and linked the Phase
+1 lesson: a reader following the site's own link landed somewhere that never
+prints the algorithm they came from. The rule is now "earliest claiming lesson
+wins, UNLESS the case names a phase and a claimant is in it" — and among
+claimants in that phase the earliest still wins. That last clause is not
+decoration: three phase-1 lessons claim `beginner.righty`, so "any phase match
+wins" silently becomes "LAST match wins" and moved righty from white-corners,
+where it is taught, to orient-corners, where it is reused. Measured before
+changing anything: exactly seven cases are claimed by more than one lesson, the
+new rule moves exactly one of them (`eo.hook`), and the 15 `pll.*` cases are
+untouched because their `phase` ("full-pll") is a different vocabulary from any
+lesson's — a phase-EQUALITY rule applied unguarded would have stranded every one
+of them. `app/tests/teaches.spec.ts` is new and pins all of it; nothing tested
+this map before, which is how the Hook shipped wrong.
+
+`eo.dot` moved to `phase-1.5` for the same reason: its stored algorithm is the
+CHAIN whose second half is the wide-f, so a Phase 1 reader cannot run it.
+Safe to move — `ladderOfPhase` maps phase-1 and phase-1.5 to the same beginner
+ladder, so no mask, section or trainer set shifts. `eo.line` stays at phase-1
+and stays with yellow-cross: its `F R U R' U' F'` really is Phase 1's. One
+/reference section, two homes, each correct.
+
+**The Hook now has two pictures.** The two holds are the whole recognition cue,
+and one file cannot carry both. The PDF guide never needed a second: its Lua
+filter rotates the image 180° at the Phase 1.5 figure. A `CaseDef.icon` is a
+path with nowhere to hang a rotation, so the web shipped the back-left picture
+beside a front-right cue. `oll_hook_wide` is the wide-f's own pre-state with no
+view turn applied; `oll_hook` keeps the `y2` view turn for Phase 1, the guide
+and Card 1 (a Phase 1 card). 181 SVGs now, and `_oll_cross_cases()` returns 4.
+
+**Phase 1.5 adds THREE algorithms.** This supersedes "Phase 1.5 adds one
+algorithm, not zero and not three" above. That entry read `algs.py` as holding
+only the wide-f Hook at 1.5; it also holds `Orient Corners Right` and `Orient
+Corners Front`, and the guide's progression table — derived from `algs.py` and
+tested twice — says +3. The prose said zero in two places, and this became a
+contradiction a reader could see once the twists rendered as cases: the
+speed-tricks description promised "not one new algorithm to learn" directly
+above a list of two. The prose yields, because the table is derived and the
+strings are real: `R' D' R D` is not `R U R' U'`, so a reader genuinely learns
+it. The claim is now "three short algorithms and no new ideas", which is true —
+the Hook is `F-sexy-F'` with a wider grip, and the second twist is the first
+inverted. Changed in the guide heading, speed-tricks' description and
+orient-corners' hand-off; the guide PDF was rebuilt.
+
+**stages.json is gated now.** It was the only row of CLAUDE.md's generated-
+artifacts table with nothing re-running its generator to compare. Editing
+`gen-stickering.mjs` and forgetting to regenerate was caught by accident
+(`stageOfGroup` throws); editing `stages.json` BY HAND with a different stage
+value passed `make check`, shipped, and was silently reverted by the next
+`npm run gen:stickering`. That is not cosmetic — a wrong stage decides which
+pieces a diagram tells a learner to preserve rather than solve.
+`gen-stickering.mjs --check` re-runs the generator, compares both committed
+outputs, and names the fix command; `npm run verify:data` runs it, so it is in
+`make check` and in CI. Verified to bite by tampering with one `stageOfGroup`
+row and watching it exit 1.
+

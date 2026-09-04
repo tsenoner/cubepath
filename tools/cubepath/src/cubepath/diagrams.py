@@ -579,13 +579,22 @@ def _arrow_pos(name: str, n: int = 3) -> tuple[float, float]:
 def _oll_cross_cases() -> list[CubeDiagram]:
     """OLL cross cases: Dot, Hook (L-shape), Line — derived from their algorithms.
 
-    The Hook diagram is drawn at the Phase-1 angle (L in back-left, where
-    F-sexy-F' turns it into a Line); Phase 1.5 rotates the image 180° to the
-    f-sexy-f' angle (L in front-right).
+    The Hook needs TWO pictures, because the two phases hold it differently and
+    the hold is the whole recognition cue. `oll_hook` is the Phase-1 angle (L in
+    back-left, where a pass of F-sexy-F' turns it into a Line); `oll_hook_wide`
+    is the angle `f-sexy-f'` actually solves in one pass (L in front-right), and
+    is that algorithm's own pre-state with no view turn applied.
+
+    The PDF guide needs only the first: its Lua filter rotates the image 180° at
+    the Phase 1.5 figure. The web cannot — a `CaseDef.icon` is a path, with
+    nowhere to hang a rotation — so `eo.hook`, whose algorithm and cue are both
+    Phase 1.5's, shipped the back-left picture beside a front-right cue until
+    this second render existed.
     """
     return [
         _derived_cross_case("oll_dot", "Dot", DOT_SEQUENCE),
         _derived_cross_case("oll_hook", "Hook / L-shape", ALGORITHMS["f-sexy-f'"], view_turn="y2"),
+        _derived_cross_case("oll_hook_wide", "Hook / L-shape (wide f)", ALGORITHMS["f-sexy-f'"]),
         _derived_cross_case("oll_line", "Line", ALGORITHMS["F-sexy-F'"]),
     ]
 
