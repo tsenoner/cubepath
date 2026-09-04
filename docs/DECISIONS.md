@@ -370,6 +370,11 @@ here, so it surfaced instead of silently italicising the card.
   "No new algorithms"; the plan said "+3". `algs.py` says the wide-`f` Hook is
   new there and nothing else is, and the guide's running total stopped at ~18
   for a 22-algorithm set. The progression table is now derived and tested.
+
+  > **Superseded 2026-09-04** — it is three, not one. `algs.py` also tags
+  > `Orient Corners Right` and `Orient Corners Front` as Phase 1.5, and the
+  > derived progression table says +3; see "§ The Hook's two holds, Phase 1.5's
+  > real count, and a gate for stages.json" below.
 - **What's Next now puts full PLL before full OLL**, with the reason printed:
   PLL is a closed set of 21 states told apart by sight; 22 of the 57 OLL cases
   differ only by a sliver at card size.
@@ -1724,39 +1729,64 @@ between their triggers), 42 exact case → lesson edges (37).
 Three items `docs/TODO.md` had been carrying, closed together because the first
 two are the same defect seen from different sides.
 
-**A case belongs to the lesson that teaches ITS algorithm.** `eo.hook` carries
-the one-pass wide-f `f R U R' U' f'` and a cue saying front-right — both Phase
-1.5's — while yellow-cross (Phase 1) claimed it first and teaches two passes of
-the narrow `F R U R' U' F'` held BACK-LEFT. `teaches.ts` resolved "Taught in" by
-course order alone, so /reference showed the Phase 1.5 row and linked the Phase
-1 lesson: a reader following the site's own link landed somewhere that never
-prints the algorithm they came from. The rule is now "earliest claiming lesson
-wins, UNLESS the case names a phase and a claimant is in it" — and among
-claimants in that phase the earliest still wins. That last clause is not
-decoration: three phase-1 lessons claim `beginner.righty`, so "any phase match
-wins" silently becomes "LAST match wins" and moved righty from white-corners,
-where it is taught, to orient-corners, where it is reused. Measured before
-changing anything: exactly seven cases are claimed by more than one lesson, the
-new rule moves exactly one of them (`eo.hook`), and the 15 `pll.*` cases are
-untouched because their `phase` ("full-pll") is a different vocabulary from any
-lesson's — a phase-EQUALITY rule applied unguarded would have stranded every one
-of them. `app/tests/teaches.spec.ts` is new and pins all of it; nothing tested
-this map before, which is how the Hook shipped wrong.
+**A lesson lists the cases whose algorithm it teaches — and that is now
+checked.** `eo.hook` carries the one-pass wide-f `f R U R' U' f'` and a cue
+saying front-right, both Phase 1.5's, while yellow-cross (Phase 1) listed it
+first and teaches two passes of the narrow `F R U R' U' F'` held BACK-LEFT.
+`teaches.ts` resolves "Taught in" by course order, so /reference showed the
+Phase 1.5 row and linked the Phase 1 lesson: a reader following the site's own
+link landed somewhere that never prints the algorithm they came from. Course
+order is the right rule; the defect was one line of frontmatter. `yellow-cross`
+lists `eo.line` alone now — it shows all three patterns and has its own figures
+for them, but the only algorithm it prints is the Line's. `eo.hook` and `eo.dot`
+(whose stored algorithm is the chain whose second half is the wide-f) are listed
+by speed-tricks only, so course order sends both there with nothing to break a
+tie. Measured: four cases are listed by more than one lesson (`444.edge-flip`,
+`beginner.righty`, `eo.line`, `oll.27`), each taught once and reused later, and
+course order is right for all four.
 
-`eo.dot` moved to `phase-1.5` for the same reason: its stored algorithm is the
-CHAIN whose second half is the wide-f, so a Phase 1 reader cannot run it.
-Safe to move — `ladderOfPhase` maps phase-1 and phase-1.5 to the same beginner
-ladder, so no mask, section or trainer set shifts. `eo.line` stays at phase-1
-and stays with yellow-cross: its `F R U R' U' F'` really is Phase 1's. One
-/reference section, two homes, each correct.
+The first cut of this fix left the frontmatter alone and taught `teaches.ts` a
+tie-break — "the earliest lesson in the case's phase, else the earliest" — and
+it was replaced before merging for two reasons. It compared `CaseDef.phase`
+with a lesson's phase, and `ladders.ts` documents that field as an opaque tag
+that is NOT a phase key for the generated sets ("full-pll" against a lesson's
+"full-cfop"), so the rule silently fell through to course order there and would
+have done the same for any future mismatch. And it was a heuristic where a
+declaration already existed: `content.config.ts` says `algorithms` is "case ids
+this lesson teaches", so the listing was wrong and the rule was papering over
+it. What remains of that cut is the GATE it lacked, in the new
+`app/tests/teaches.spec.ts`: a case whose `phase` is a course phase must resolve
+to a lesson of that phase, with the failure naming the fix ("drop it from that
+lesson's algorithms or move the case"); every listed case resolves to a lesson
+that lists it; and the multi-listed set is pinned so a new double listing has to
+come through the test. `eo.dot` moved to `phase-1.5` for the gate to hold it
+there — safe, because `ladderOfPhase` maps phase-1 and phase-1.5 to the same
+beginner ladder, so no mask, section or trainer set shifts.
 
-**The Hook now has two pictures.** The two holds are the whole recognition cue,
-and one file cannot carry both. The PDF guide never needed a second: its Lua
-filter rotates the image 180° at the Phase 1.5 figure. A `CaseDef.icon` is a
-path with nowhere to hang a rotation, so the web shipped the back-left picture
-beside a front-right cue. `oll_hook_wide` is the wide-f's own pre-state with no
-view turn applied; `oll_hook` keeps the `y2` view turn for Phase 1, the guide
-and Card 1 (a Phase 1 card). 181 SVGs now, and `_oll_cross_cases()` returns 4.
+**The spec would have passed on an empty collection, and in CI it did see one.**
+Vitest runs Vite in serve mode, and in serve mode Astro's content plugin reads
+the DEV data store at `.astro/data-store.json` — a file only `astro dev` writes;
+`astro sync`, `astro check` and `astro build` write `node_modules/.astro/`
+instead. On a fresh checkout every `getCollection()` in a test was `[]`; the
+first CI run of this branch failed only because the spec also pinned a count
+(run 33872766897). `tests/global-setup.ts` now points Astro's programmatic
+`sync` at the dev location, through the resolved file rather than the bare
+`astro` specifier (which resolves to an empty module inside Astro's own Vite
+config), and the spec asserts the collection is the whole lesson directory so
+the setup cannot rot silently. It costs about a second per `vitest run`.
+
+**The Hook has two pictures, and each is its phase's own pre-state.** The two
+holds are the whole recognition cue, and one file cannot carry both. `oll_hook`
+is now derived from two passes of the narrow F-sexy-F' — the Phase 1 procedure,
+exactly as `oll_dot` is drawn from the Dot chain — which lands the L in
+back-left without the hand-set `y2` view turn it used to need, so that
+parameter is gone. `oll_hook_wide` is the wide-f's own pre-state, L in
+front-right. The two were the same picture at two orientations, and before
+this the front-right one was manufactured twice more by rotating the first
+180° (the guide's Lua `rotate=` attribute at the Phase 1.5 figure, `Row.rot`
+on Card 2); both read `oll_hook_wide.svg` now and neither rotation has a user.
+The guide PDF and the cards were rebuilt. 181 SVGs, and `_oll_cross_cases()`
+returns 4.
 
 **Phase 1.5 adds THREE algorithms.** This supersedes "Phase 1.5 adds one
 algorithm, not zero and not three" above. That entry read `algs.py` as holding
@@ -1783,4 +1813,3 @@ pieces a diagram tells a learner to preserve rather than solve.
 outputs, and names the fix command; `npm run verify:data` runs it, so it is in
 `make check` and in CI. Verified to bite by tampering with one `stageOfGroup`
 row and watching it exit 1.
-

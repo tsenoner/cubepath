@@ -78,13 +78,12 @@ export const CASES: CaseDef[] = [
     ],
     stickering: "OLL",
     puzzle: "3x3x3",
-    // Phase 1.5, like the Hook and for the same reason: the stored algorithm is
-    // the CHAIN, whose second half is the wide-f, so a Phase 1 reader cannot run
-    // it. yellow-cross teaches the Dot as three passes of the narrow F-sexy-F';
-    // this row is speed-tricks' one-look answer, and `teaches.ts` sends "Taught
-    // in" to the lesson that actually prints it. The phase tag is what does
-    // that, and it is safe to move: `ladderOfPhase` maps phase-1 and phase-1.5
-    // to the SAME beginner ladder, so no mask, section or trainer set shifts.
+    // Phase 1.5, like the Hook: the stored algorithm is the CHAIN whose second
+    // half is the wide-f, so a Phase 1 reader cannot run it (yellow-cross
+    // teaches the Dot as three passes of the narrow F-sexy-F'). The tag is a
+    // checked claim — `tests/teaches.spec.ts` fails unless a phase-1.5 lesson
+    // is the one listing this case — and moving it is safe for the masks:
+    // `ladderOfPhase` maps phase-1 and phase-1.5 to the same beginner ladder.
     phase: "phase-1.5",
   },
 

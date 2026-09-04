@@ -157,7 +157,7 @@ Build the white cross directly on the **bottom** face instead of on top + flip. 
 The Hook case gets its own efficient algorithm using wide `f`:
 
 ![Dot](../app/public/diagrams/oll/oll_dot.svg){ width=28% }
-![Hook](../app/public/diagrams/oll/oll_hook.svg){ width=15% rotate=180 }
+![Hook](../app/public/diagrams/oll/oll_hook_wide.svg){ width=15% }
 ![Line](../app/public/diagrams/oll/oll_line.svg){ width=28% }
 
 | You see | Algorithm                                                           |

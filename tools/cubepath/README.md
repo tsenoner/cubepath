@@ -29,7 +29,7 @@ stops matching its generator.
 ## Commands
 
 ```bash
-uv run cubepath-diagrams   # 180 SVGs -> app/public/diagrams/, the one committed tree
+uv run cubepath-diagrams   # 181 SVGs -> app/public/diagrams/, the one committed tree
 uv run cubepath-cards      # card set -> guide/build/cards/ (needs typst + poppler)
 uv run cubepath-logo       # favicon.svg -> app/public/
 uv run pytest tests/

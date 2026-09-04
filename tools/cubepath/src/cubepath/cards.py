@@ -284,7 +284,7 @@ def _badge(case: str) -> str:
 
 _C2_CROSS = [
     Row("oll/oll_line.svg", "Line", "bar left-to-right", key_alg("F-sexy-F'")),
-    Row("oll/oll_hook.svg", "Hook", "hook pointing front-right", key_alg("f-sexy-f'"), 180),
+    Row("oll/oll_hook_wide.svg", "Hook", "hook pointing front-right", key_alg("f-sexy-f'")),
 ]
 
 _C2_OLL_A = [

@@ -41,5 +41,5 @@ def test_every_figure_the_guide_references_exists() -> None:
 
     files = guide_stamp.inputs()
     figures = [f for f in files if f.suffix == ".svg"]
-    assert len(figures) == 51, f"guide references {len(figures)} figures, expected 51"
+    assert len(figures) == 52, f"guide references {len(figures)} figures, expected 52"
     assert all(f.is_file() for f in files)

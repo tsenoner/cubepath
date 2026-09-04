@@ -14,6 +14,7 @@
  * setup permutation. Those strings are derived here, never typed by hand.
  *
  * Usage: node scripts/gen-stickering.mjs  (npm run gen:stickering)
+ *        node scripts/gen-stickering.mjs --check   (npm run verify:data)
  *
  * ─────────────────────────────────────────────────────────────────────────────
  * SCHEMA — src/data/extracted/stages.json  ("cubepath/stages@2")
@@ -22,8 +23,9 @@
  * src/lib/ladders.ts; the Python diagram pipeline (tools/cubepath) is intended
  * to read the same file so that one ladder drives both renderers. This repo has
  * shipped an ungated generated artifact before and paid for it, so: every field
- * below is documented here, and app/tests/algs.spec.ts re-derives the whole file
- * from cubing.js and fails if the committed copy drifts. Regenerate, never edit.
+ * below is documented here, and `--check` re-runs this generator inside
+ * `npm run verify:data` and fails if either committed copy drifts. Regenerate,
+ * never edit.
  *
  *   schema        "cubepath/stages@2". Bump on any breaking field change.
  *                 Version 2 made every per-puzzle field a map keyed by puzzle:
@@ -297,19 +299,21 @@ async function formatted(text, url) {
 }
 
 /**
- * `--check` compares instead of writing, and exits 1 on any difference.
- *
- * Both outputs of this script are COMMITTED and read by the app at build time,
- * and until this flag existed nothing re-ran the generator to confirm the
- * committed copies still matched it. Every other generated artifact in the repo
- * is pinned that way (see CLAUDE.md's table); these two were the exception, so
- * hand-editing `stages.json` with a different stage value passed `make check`,
- * shipped, and was silently reverted by the next `npm run gen:stickering`. A
- * wrong stage is not cosmetic: it decides which pieces a diagram tells a
- * learner to preserve rather than solve.
+ * `--check` compares instead of writing, and exits 1 on any difference. Both
+ * outputs are committed, and they were the one generated artifact nothing
+ * re-derived — a hand edit passed `make check` and shipped. See
+ * docs/DECISIONS.md § "The Hook's two holds, Phase 1.5's real count, and a
+ * gate for stages.json".
  */
 const CHECK = process.argv.includes("--check");
-/** @type {string[]} */
+/**
+ * Committed files whose contents no longer match what this run would write.
+ * `--check` says one line at the end and nothing else: the per-mask and
+ * per-ladder dump below is a WRITE receipt, and printing it on every
+ * `make check` buries the one line that matters (and reads as success right
+ * before the failure).
+ * @type {string[]}
+ */
 const stale = [];
 
 /**
@@ -317,13 +321,8 @@ const stale = [];
  * @param {string} text  already prettier-formatted
  */
 async function emit(url, text) {
-  const path = fileURLToPath(url);
-  if (!CHECK) {
-    await writeFile(url, text);
-    return;
-  }
-  const onDisk = await readFile(url, "utf8").catch(() => null);
-  if (onDisk !== text) stale.push(path);
+  if (!CHECK) return writeFile(url, text);
+  if ((await readFile(url, "utf8").catch(() => null)) !== text) stale.push(fileURLToPath(url));
 }
 
 const target = new URL("../src/lib/stickering.ts", import.meta.url);
@@ -342,10 +341,12 @@ const next = current.slice(0, from) + START + "\n" + lines.join("\n") + "\n" + c
 // moment anyone regenerated. The generator owns the region; it owns its shape.
 await emit(target, await formatted(next, target));
 
-console.log(
-  `wrote ${STICKERINGS.length} masks + ${PUZZLES.length} frames to src/lib/stickering.ts`,
-);
-for (const n of STICKERINGS) console.log(`  ${n.padEnd(5)} ${baseMasks[n]}`);
+if (!CHECK) {
+  console.log(
+    `wrote ${STICKERINGS.length} masks + ${PUZZLES.length} frames to src/lib/stickering.ts`,
+  );
+  for (const n of STICKERINGS) console.log(`  ${n.padEnd(5)} ${baseMasks[n]}`);
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // The progressive stage ladder — src/data/extracted/stages.json
@@ -755,22 +756,31 @@ const stagesPath = new URL("../src/data/extracted/stages.json", import.meta.url)
 if (!CHECK) await mkdir(new URL("./", stagesPath), { recursive: true });
 await emit(stagesPath, await formatted(JSON.stringify(stagesFile, null, 2), stagesPath));
 
-console.log(`\nwrote ${Object.keys(STAGE_SPECS).length} stages to src/data/extracted/stages.json`);
-for (const ladder of RENDERED_LADDERS) {
-  console.log(`  ${ladder} (${LADDER_PUZZLE[ladder]}): ${LADDERS[ladder].join(" -> ")}`);
-  for (const [stage, mask] of Object.entries(masks[ladder])) {
-    console.log(`    ${stage.padEnd(12)} ${mask}`);
+if (!CHECK) {
+  console.log(
+    `\nwrote ${Object.keys(STAGE_SPECS).length} stages to src/data/extracted/stages.json`,
+  );
+  for (const ladder of RENDERED_LADDERS) {
+    console.log(`  ${ladder} (${LADDER_PUZZLE[ladder]}): ${LADDERS[ladder].join(" -> ")}`);
+    for (const [stage, mask] of Object.entries(masks[ladder])) {
+      console.log(`    ${stage.padEnd(12)} ${mask}`);
+    }
   }
 }
 
 if (CHECK) {
   if (stale.length) {
+    // `process.exitCode`, not `process.exit()`: stderr is a PIPE under `npm
+    // run` and in CI, where writes are async — `process.exit()` can tear the
+    // process down before this message flushes, and the message (which files,
+    // and the command that fixes them) is the entire value of the gate.
     console.error(
       `\nSTALE — these committed files no longer match this generator:\n` +
         stale.map((p) => `  ${p}`).join("\n") +
         `\n\nRun \`npm run gen:stickering\` and commit the result.\n`,
     );
-    process.exit(1);
+    process.exitCode = 1;
+  } else {
+    console.log("stages.json and stickering.ts match the generator");
   }
-  console.log("\nstages.json and stickering.ts match the generator");
 }
