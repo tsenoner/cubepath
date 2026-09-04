@@ -98,13 +98,36 @@ def test_hook_is_phase1_angle():
     assert hook.u_face[5] == M and hook.u_face[7] == M
 
 
+def test_hook_wide_is_phase15_angle():
+    """`oll_hook_wide` shows the L in front-right — the angle f-sexy-f' solves.
+
+    It is `eo.hook`'s /reference icon, the guide's Phase 1.5 figure and Card 2's
+    picture, and its twin `oll_hook` is the Phase 1 hold. The pair is the whole
+    recognition cue and nothing but the file name tells them apart, which is
+    exactly how a back-left picture shipped beside a front-right cue. The two
+    are one case at opposite holds, so each must be the other's 180° turn — a
+    plan view rotated a half turn is its own row-major reversal.
+    """
+    wide = _case(_oll_cross_cases(), "oll_hook_wide")
+    assert wide.u_face[5] == YELLOW and wide.u_face[7] == YELLOW  # right + front edges
+    assert wide.u_face[1] == M and wide.u_face[3] == M
+    narrow = _case(_oll_cross_cases(), "oll_hook")
+    assert wide.u_face == list(reversed(narrow.u_face))
+
+
 def test_phase1_cross_chain():
     """The Phase-1 flow Dot →(F-sexy-F')→ Hook →(F-sexy-F')→ Line → solved works
-    when the learner holds Hook at back-left and Line horizontal, as pictured."""
+    when the learner holds Hook at back-left and Line horizontal, as pictured.
+
+    The Hook state here is the PICTURE's own — `state_before` of two narrow
+    passes, which is what `_oll_cross_cases()` draws `oll_hook` from. It was
+    hand-built as the wide-f pre-state turned `y2`: a different cube state that
+    only happens to share the U-face edge pattern, so once the generator stopped
+    rotating, the test was checking a state no diagram is derived from.
+    """
     f_alg = ALGORITHMS["F-sexy-F'"]
     # Hook held with L in back-left → Line (horizontal)
-    c = state_before(ALGORITHMS["f-sexy-f'"])
-    c.apply("y2")
+    c = state_before(f"{f_alg} {f_alg}")
     c.apply(f_alg)
     u = c.faces["U"]
     assert u[3] == "Y" and u[5] == "Y" and u[1] != "Y" and u[7] != "Y"

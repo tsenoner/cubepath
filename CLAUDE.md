@@ -83,15 +83,16 @@ of these is therefore pinned by a test:
 | artifact | produced by | pinned by |
 | --- | --- | --- |
 | `app/public/cubepath.pdf` | `make build-guide` | `tests/test_guide.py` (input digest in `guide/pdf.stamp.json`) |
-| `app/public/diagrams/**` (180 SVGs) | `make diagrams` | `tests/test_diagrams.py` — generator match, and the guide's figure paths resolve |
+| `app/public/diagrams/**` (181 SVGs) | `make diagrams` | `tests/test_diagrams.py` — generator match, and the guide's figure paths resolve |
 | `app/public/cards/*.pdf`, `app/src/data/cards.json` | `make cards` | `tests/test_cards.py` |
 | `app/public/favicon.svg`, `app/public/icons/*.png` | `make logo` | `tests/test_logo.py` |
 | `app/src/data/fullsets*.gen.ts` | `node scripts/gen-cases.mjs` | `app/tests/algs.spec.ts` (kpuzzle) |
+| `app/src/data/extracted/stages.json` + the generated region of `app/src/lib/stickering.ts` | `npm run gen:stickering` | `gen-stickering.mjs --check`, run by `npm run verify:data` |
 
 A PDF cannot be compared to its markdown — typst output is not byte-
 reproducible — so `make build-guide` stamps the **inputs** instead
 (`scripts/guide_stamp.py`: the markdown, the pandoc/typst config, the Lua
-filter, and only the 51 figures `cubepath.md` actually references) and the test
+filter, and only the 52 figures `cubepath.md` actually references) and the test
 recomputes that digest. Edit the guide and forget to rebuild, and `make check`
 fails. This gate exists because the shipped PDF went two content revisions
 stale in production without anything noticing.
@@ -139,6 +140,15 @@ run the same self-check: 12 edge positions, two wings each, 24 calibrated
 arrangements apiece. `kpuzzle-utils.d.mts` is hand-maintained beside it —
 adding an export to the `.mjs` alone type-errors, because the declaration file
 shadows it.
+
+**A vitest that reads `astro:content` needs `tests/global-setup.ts`.** Vitest
+runs Vite in serve mode, and in serve mode Astro's content plugin reads the DEV
+store at `.astro/data-store.json` — the file only `astro dev` writes. `astro
+sync`, `astro check` and `astro build` write `node_modules/.astro/` instead, so
+on a fresh checkout `getCollection()` inside a test is `[]`, and a loop over the
+lessons passes with nothing to check. The global setup points Astro's
+programmatic `sync` at the dev location, and `tests/teaches.spec.ts` asserts the
+collection is the whole lesson directory so the setup cannot rot silently.
 
 **Everything under `app/scripts/` is type-checked** (`scripts/tsconfig.json`,
 `checkJs: true`) — it generates the shipped algorithm data and runs the F2L/L2E
@@ -349,8 +359,9 @@ renders, and each group needs a chip label in `case/[...id].astro` and a stage
 rule in `gen-stickering.mjs` — the chip label and a MISSING stage rule both fail
 the build, but the stage rule is only read through the generated
 `src/data/extracted/stages.json`, so adding one means re-running
-`npm run gen:stickering` and committing the JSON. Nothing re-runs that generator
-in CI, so a rule added to `gen-stickering.mjs` alone silently does nothing.
+`npm run gen:stickering` and committing the JSON — which `npm run verify:data`
+now enforces by re-running the generator with `--check`, so a rule added to
+`gen-stickering.mjs` alone fails the build instead of silently doing nothing.
 
 **Sune has two rows on /reference on purpose.** `oll.27` is the corner
 orientation case; `beginner.sune-u` is the same seven moves plus a `U`, which
@@ -442,9 +453,9 @@ named for the package now (`parents[N]` depths are unchanged, so no code moved).
 
 ### Diagram Pipeline
 
-`tools/cubepath/src/cubepath/diagrams.py` defines the guide's 17 core cube diagrams as `CubeDiagram` dataclasses rendered to SVG using `svgwrite`. Case sticker data is **derived from algorithms** via `_derived_cross_case` / `_derived_oll_corner_case` / `_derived_pll_case` (OLL: yellow/grey masks; PLL: true colors). The entry point `cubepath-diagrams` writes to `app/public/diagrams/` — the one committed tree.
+`tools/cubepath/src/cubepath/diagrams.py` defines the guide's 18 core cube diagrams as `CubeDiagram` dataclasses rendered to SVG using `svgwrite`. Case sticker data is **derived from algorithms** via `_derived_cross_case` / `_derived_oll_corner_case` / `_derived_pll_case` (OLL: yellow/grey masks; PLL: true colors). The entry point `cubepath-diagrams` writes to `app/public/diagrams/` — the one committed tree.
 
-Four case groups: `_oll_cross_cases()` (3), `_oll_corner_cases()` (8), `_pll_corner_cases()` (2), `_pll_edge_cases()` (4) — the 17 `all_cases()` returns. `fullsets.py` builds the rest from the app's extraction: 78 plan views (57 OLL + 21 PLL) into `oll-full/` and `pll-full/`, 41 isometric `SlotDiagram` pictures into `f2l/`, and **three** big-cube plan views into `444-parity/` and `555-parity/` — those from the kpuzzle states in `case-states.json`, because `cube.py` cannot model a 4×4 and must not be taught to. 180 SVGs in all, and `tests/test_diagrams.py` pins that number: `EXPECTED_DIAGRAMS` is asserted against a full render, so a group added to `main()` and forgotten in the test (or the reverse) fails the build.
+Four case groups: `_oll_cross_cases()` (4 — the Hook is drawn twice, at each phase's hold), `_oll_corner_cases()` (8), `_pll_corner_cases()` (2), `_pll_edge_cases()` (4) — the 18 `all_cases()` returns. `fullsets.py` builds the rest from the app's extraction: 78 plan views (57 OLL + 21 PLL) into `oll-full/` and `pll-full/`, 41 isometric `SlotDiagram` pictures into `f2l/`, and **three** big-cube plan views into `444-parity/` and `555-parity/` — those from the kpuzzle states in `case-states.json`, because `cube.py` cannot model a 4×4 and must not be taught to. 181 SVGs in all, and `tests/test_diagrams.py` pins that number: `EXPECTED_DIAGRAMS` is asserted against a full render, so a group added to `main()` and forgotten in the test (or the reverse) fails the build.
 
 **The big cubes get parity and nothing else**, and that follows from the course
 rather than from the renderer. Cubepath teaches REDUCTION (Yau as the advanced
@@ -560,7 +571,7 @@ Handles five things:
 
 2. **Steps div** — `:::: {.steps}` wraps the Phase 1 step tables in a mirrored 4-column Typst grid layout.
 
-3. **Image rotation** — `![alt](path){ rotate=180 }` attribute wraps in `#box(width, rotate(..., image(...)))`. This keeps rotated images inline (important for side-by-side figure rows). Meaningful for plan-view (top-down) diagrams, where the turn picks a different AUF — **not** for 3D isometric ones, which it just prints upside down.
+3. **Image rotation** — `![alt](path){ rotate=180 }` attribute wraps in `#box(width, rotate(..., image(...)))`. This keeps rotated images inline (important for side-by-side figure rows). Meaningful for plan-view (top-down) diagrams, where the turn picks a different AUF — **not** for 3D isometric ones, which it just prints upside down. No figure uses it today: its one user was the Phase 1.5 Hook, which reads `oll_hook_wide.svg` now that the generator draws that hold itself (the card deck's `Row.rot` retired the same way).
 
 4. **Trigger-colour spans** — `[R U R' U']{.trig-r}` (also `.trig-g`, `.trig-b`) becomes bold coloured Typst text. The hexes are kept in sync with `cubepath/palette.py` and `tests/test_notation.py` fails the build if they drift.
 
@@ -583,7 +594,12 @@ of three tiers, and the tier is the whole teaching device:
 comes out of layer-move algebra, no slot index is ever typed. `app/src/lib/ladders.ts`
 reads it; `app/src/lib/stickering.ts` turns a `StageContext` into the player's
 `experimental-stickering-mask-orbits` attribute. Regenerate with
-`npm run gen:stickering`; never hand-edit either file.
+`npm run gen:stickering`; never hand-edit either file — `gen-stickering.mjs
+--check` re-runs the generator inside `npm run verify:data` and fails the build
+if either committed copy has drifted. This was the one generated artifact with
+no such gate: a hand edit passed `make check`, shipped, and was reverted by the
+next regeneration, and a wrong stage decides which pieces a diagram tells a
+learner to preserve rather than solve.
 
 Three facts shape it, and each is gated: there are **two 3×3 ladders**
 (beginner permutes the last-layer edges before orienting the corners, CFOP
@@ -683,7 +699,7 @@ project root. There is no copy step and no second tree:
 
 | directory | n | what |
 | --- | --- | --- |
-| `oll/` | 11 | the guide's OLL cases (plan-view, top-down) |
+| `oll/` | 12 | the guide's OLL cases (plan-view, top-down), the Hook twice — `oll_hook` at the Phase 1 back-left hold and `oll_hook_wide` at the front-right hold `f-sexy-f'` solves |
 | `pll/` | 6 | the guide's PLL cases (plan-view with arrows) |
 | `oll-full/` | 57 | the full OLL set (`fullsets.py`) |
 | `pll-full/` | 21 | the full PLL set (`fullsets.py`) |
@@ -693,7 +709,7 @@ project root. There is no copy step and no second tree:
 | `notation/` | 17 | 3D isometric move notation diagrams, the overview, and its `overview_hub` backup |
 | `steps/` | 24 | 3D isometric step progress + case diagrams, plus the 5 web-only ones (`_web_steps`): 4 course-index phase pictures and the `444.edge-flip` case icon |
 
-180 in total. `guide/cubepath.md` references 51 of them; the card set re-renders
+181 in total. `guide/cubepath.md` references 52 of them; the card set re-renders
 its own in `CARD` style rather than reusing these.
 
 ## Writing Philosophy

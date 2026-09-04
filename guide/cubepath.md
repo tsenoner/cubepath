@@ -146,7 +146,7 @@ Each letter = one 90° CW turn, looking at that face — so from your seat L, D 
 
 # Phase 1.5: Speed Tricks
 
-Three improvements that speed up Phase 1 with minimal new learning. One new algorithm — the wide-`f` Hook — and otherwise smarter use of what you know.
+Three improvements that speed up Phase 1 with minimal new learning. Three new algorithms — the wide-`f` Hook and the two corner twists — but no new ideas: the Hook is `F-sexy-F'` with a wider grip, and the twists are one four-move trigger and that trigger inverted.
 
 ## White Cross on Bottom
 
@@ -157,7 +157,7 @@ Build the white cross directly on the **bottom** face instead of on top + flip. 
 The Hook case gets its own efficient algorithm using wide `f`:
 
 ![Dot](../app/public/diagrams/oll/oll_dot.svg){ width=28% }
-![Hook](../app/public/diagrams/oll/oll_hook.svg){ width=15% rotate=180 }
+![Hook](../app/public/diagrams/oll/oll_hook_wide.svg){ width=15% }
 ![Line](../app/public/diagrams/oll/oll_line.svg){ width=28% }
 
 | You see | Algorithm                                                           |

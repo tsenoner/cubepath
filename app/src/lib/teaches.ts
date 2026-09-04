@@ -14,6 +14,12 @@
  * covers the sets a lesson teaches wholesale without listing 57 ids. Exact
  * wins where both apply.
  *
+ * A lesson lists the cases whose ALGORITHM it teaches, not every pattern it
+ * shows — `tests/teaches.spec.ts` holds each case's phase to its lesson's, so a
+ * listing that breaks that fails the build rather than sending "Taught in" to
+ * a lesson that never prints the row's algorithm (the Hook did exactly that;
+ * docs/DECISIONS.md § "The Hook's two holds").
+ *
  * Build-time only: this reaches into the content collection, so it must not be
  * imported from a client `<script>`.
  */

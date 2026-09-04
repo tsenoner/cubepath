@@ -114,7 +114,9 @@ VIEWBOX_SIZE = 192
 
 
 def test_all_cases_count():
-    assert len(all_cases()) == 17
+    # 18, not 17: the Hook is drawn at both phases' holds (see
+    # `_oll_cross_cases`). Everything else is one picture per case.
+    assert len(all_cases()) == 18
 
 
 def test_case_names_unique():
@@ -791,7 +793,7 @@ _SVG_DIRS = tuple(sorted(p.name for p in _APP_SVG.iterdir() if p.is_dir()))
 # generator that silently stopped emitting a whole group would drop it from
 # both and still pass. The pin is cross-checked against the generators' own
 # inventories below, so a deliberate change fails in exactly one obvious place.
-EXPECTED_DIAGRAMS = 180
+EXPECTED_DIAGRAMS = 181
 
 
 def _render_everything(out: Path) -> None:
@@ -1298,7 +1300,7 @@ def test_the_oll_plan_views_are_untouched_two_tier_pictures() -> None:
     # Directories, plus one FILE: `444-parity/` holds one OLL-style picture and
     # one PLL-style one, so it cannot be globbed as either.
     svgs = [
-        *(p for subdir, count in (("oll", 11), ("oll-full", 57)) for p in _dir_of(subdir, count)),
+        *(p for subdir, count in (("oll", 12), ("oll-full", 57)) for p in _dir_of(subdir, count)),
         _APP_SVG / "444-parity" / "444_oll_parity.svg",
     ]
     for svg in svgs:

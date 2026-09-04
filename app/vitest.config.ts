@@ -11,6 +11,9 @@ import { getViteConfig } from "astro/config";
 export default getViteConfig({
   test: {
     include: ["tests/**/*.spec.ts"],
+    // Syncs the content collection into the store this (serve-mode) config
+    // reads; without it `getCollection()` is `[]` on a fresh checkout.
+    globalSetup: ["tests/global-setup.ts"],
     testTimeout: 30000,
   },
 });

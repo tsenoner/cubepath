@@ -370,6 +370,11 @@ here, so it surfaced instead of silently italicising the card.
   "No new algorithms"; the plan said "+3". `algs.py` says the wide-`f` Hook is
   new there and nothing else is, and the guide's running total stopped at ~18
   for a 22-algorithm set. The progression table is now derived and tested.
+
+  > **Superseded 2026-09-04** — it is three, not one. `algs.py` also tags
+  > `Orient Corners Right` and `Orient Corners Front` as Phase 1.5, and the
+  > derived progression table says +3; see "§ The Hook's two holds, Phase 1.5's
+  > real count, and a gate for stages.json" below.
 - **What's Next now puts full PLL before full OLL**, with the reason printed:
   PLL is a closed set of 21 states told apart by sight; 22 of the 57 OLL cases
   differ only by a sliver at card size.
@@ -1718,3 +1723,93 @@ and 129), 192 uniquely resolved by (puzzle, stickering, alg), 85
 orientation/permutation cases in the narrowing test (82), 29 primary
 algorithms carrying a net rotation (27 — the two inserts turn the cube
 between their triggers), 42 exact case → lesson edges (37).
+
+## The Hook's two holds, Phase 1.5's real count, and a gate for stages.json (2026-09-04)
+
+Three items `docs/TODO.md` had been carrying, closed together because the first
+two are the same defect seen from different sides.
+
+**A lesson lists the cases whose algorithm it teaches — and that is now
+checked.** `eo.hook` carries the one-pass wide-f `f R U R' U' f'` and a cue
+saying front-right, both Phase 1.5's, while yellow-cross (Phase 1) listed it
+first and teaches two passes of the narrow `F R U R' U' F'` held BACK-LEFT.
+`teaches.ts` resolves "Taught in" by course order, so /reference showed the
+Phase 1.5 row and linked the Phase 1 lesson: a reader following the site's own
+link landed somewhere that never prints the algorithm they came from. Course
+order is the right rule; the defect was one line of frontmatter. `yellow-cross`
+lists `eo.line` alone now — it shows all three patterns and has its own figures
+for them, but the only algorithm it prints is the Line's. `eo.hook` and `eo.dot`
+(whose stored algorithm is the chain whose second half is the wide-f) are listed
+by speed-tricks only, so course order sends both there with nothing to break a
+tie. Measured: four cases are listed by more than one lesson (`444.edge-flip`,
+`beginner.righty`, `eo.line`, `oll.27`), each taught once and reused later, and
+course order is right for all four.
+
+The first cut of this fix left the frontmatter alone and taught `teaches.ts` a
+tie-break — "the earliest lesson in the case's phase, else the earliest" — and
+it was replaced before merging for two reasons. It compared `CaseDef.phase`
+with a lesson's phase, and `ladders.ts` documents that field as an opaque tag
+that is NOT a phase key for the generated sets ("full-pll" against a lesson's
+"full-cfop"), so the rule silently fell through to course order there and would
+have done the same for any future mismatch. And it was a heuristic where a
+declaration already existed: `content.config.ts` says `algorithms` is "case ids
+this lesson teaches", so the listing was wrong and the rule was papering over
+it. What remains of that cut is the GATE it lacked, in the new
+`app/tests/teaches.spec.ts`: a case whose `phase` is a course phase must resolve
+to a lesson of that phase, with the failure naming the fix ("drop it from that
+lesson's algorithms or move the case"); every listed case resolves to a lesson
+that lists it; and the multi-listed set is pinned so a new double listing has to
+come through the test. `eo.dot` moved to `phase-1.5` for the gate to hold it
+there — safe, because `ladderOfPhase` maps phase-1 and phase-1.5 to the same
+beginner ladder, so no mask, section or trainer set shifts.
+
+**The spec would have passed on an empty collection, and in CI it did see one.**
+Vitest runs Vite in serve mode, and in serve mode Astro's content plugin reads
+the DEV data store at `.astro/data-store.json` — a file only `astro dev` writes;
+`astro sync`, `astro check` and `astro build` write `node_modules/.astro/`
+instead. On a fresh checkout every `getCollection()` in a test was `[]`; the
+first CI run of this branch failed only because the spec also pinned a count
+(run 33872766897). `tests/global-setup.ts` now points Astro's programmatic
+`sync` at the dev location, through the resolved file rather than the bare
+`astro` specifier (which resolves to an empty module inside Astro's own Vite
+config), and the spec asserts the collection is the whole lesson directory so
+the setup cannot rot silently. It costs about a second per `vitest run`.
+
+**The Hook has two pictures, and each is its phase's own pre-state.** The two
+holds are the whole recognition cue, and one file cannot carry both. `oll_hook`
+is now derived from two passes of the narrow F-sexy-F' — the Phase 1 procedure,
+exactly as `oll_dot` is drawn from the Dot chain — which lands the L in
+back-left without the hand-set `y2` view turn it used to need, so that
+parameter is gone. `oll_hook_wide` is the wide-f's own pre-state, L in
+front-right. The two were the same picture at two orientations, and before
+this the front-right one was manufactured twice more by rotating the first
+180° (the guide's Lua `rotate=` attribute at the Phase 1.5 figure, `Row.rot`
+on Card 2); both read `oll_hook_wide.svg` now and neither rotation has a user.
+The guide PDF and the cards were rebuilt. 181 SVGs, and `_oll_cross_cases()`
+returns 4.
+
+**Phase 1.5 adds THREE algorithms.** This supersedes "Phase 1.5 adds one
+algorithm, not zero and not three" above. That entry read `algs.py` as holding
+only the wide-f Hook at 1.5; it also holds `Orient Corners Right` and `Orient
+Corners Front`, and the guide's progression table — derived from `algs.py` and
+tested twice — says +3. The prose said zero in two places, and this became a
+contradiction a reader could see once the twists rendered as cases: the
+speed-tricks description promised "not one new algorithm to learn" directly
+above a list of two. The prose yields, because the table is derived and the
+strings are real: `R' D' R D` is not `R U R' U'`, so a reader genuinely learns
+it. The claim is now "three short algorithms and no new ideas", which is true —
+the Hook is `F-sexy-F'` with a wider grip, and the second twist is the first
+inverted. Changed in the guide heading, speed-tricks' description and
+orient-corners' hand-off; the guide PDF was rebuilt.
+
+**stages.json is gated now.** It was the only row of CLAUDE.md's generated-
+artifacts table with nothing re-running its generator to compare. Editing
+`gen-stickering.mjs` and forgetting to regenerate was caught by accident
+(`stageOfGroup` throws); editing `stages.json` BY HAND with a different stage
+value passed `make check`, shipped, and was silently reverted by the next
+`npm run gen:stickering`. That is not cosmetic — a wrong stage decides which
+pieces a diagram tells a learner to preserve rather than solve.
+`gen-stickering.mjs --check` re-runs the generator, compares both committed
+outputs, and names the fix command; `npm run verify:data` runs it, so it is in
+`make check` and in CI. Verified to bite by tampering with one `stageOfGroup`
+row and watching it exit 1.
