@@ -308,21 +308,36 @@ async function formatted(text, url) {
 const CHECK = process.argv.includes("--check");
 /**
  * Committed files whose contents no longer match what this run would write.
- * `--check` says one line at the end and nothing else: the per-mask and
- * per-ladder dump below is a WRITE receipt, and printing it on every
- * `make check` buries the one line that matters (and reads as success right
- * before the failure).
  * @type {string[]}
  */
 const stale = [];
+
+/**
+ * The per-mask and per-ladder dumps below are a WRITE receipt: printing them on
+ * every `make check` buries the one line that matters, and reads as success
+ * right before the failure. `--check` says nothing until its verdict.
+ */
+const log = CHECK ? () => {} : console.log;
 
 /**
  * @param {URL} url
  * @param {string} text  already prettier-formatted
  */
 async function emit(url, text) {
-  if (!CHECK) return writeFile(url, text);
-  if ((await readFile(url, "utf8").catch(() => null)) !== text) stale.push(fileURLToPath(url));
+  if (CHECK) {
+    // Only ENOENT is swallowed. A file that is missing IS stale; anything else
+    // (EACCES, a directory in its place) is a broken checkout, and reporting it
+    // as drift would send the reader to `npm run gen:stickering`, which cannot
+    // fix it and would fail differently.
+    const current = await readFile(url, "utf8").catch((err) => {
+      if (err && err.code === "ENOENT") return null;
+      throw err;
+    });
+    if (current !== text) stale.push(fileURLToPath(url));
+    return;
+  }
+  await mkdir(new URL("./", url), { recursive: true });
+  await writeFile(url, text);
 }
 
 const target = new URL("../src/lib/stickering.ts", import.meta.url);
@@ -341,12 +356,8 @@ const next = current.slice(0, from) + START + "\n" + lines.join("\n") + "\n" + c
 // moment anyone regenerated. The generator owns the region; it owns its shape.
 await emit(target, await formatted(next, target));
 
-if (!CHECK) {
-  console.log(
-    `wrote ${STICKERINGS.length} masks + ${PUZZLES.length} frames to src/lib/stickering.ts`,
-  );
-  for (const n of STICKERINGS) console.log(`  ${n.padEnd(5)} ${baseMasks[n]}`);
-}
+log(`wrote ${STICKERINGS.length} masks + ${PUZZLES.length} frames to src/lib/stickering.ts`);
+for (const n of STICKERINGS) log(`  ${n.padEnd(5)} ${baseMasks[n]}`);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // The progressive stage ladder — src/data/extracted/stages.json
@@ -753,18 +764,13 @@ const stagesFile = {
 };
 
 const stagesPath = new URL("../src/data/extracted/stages.json", import.meta.url);
-if (!CHECK) await mkdir(new URL("./", stagesPath), { recursive: true });
 await emit(stagesPath, await formatted(JSON.stringify(stagesFile, null, 2), stagesPath));
 
-if (!CHECK) {
-  console.log(
-    `\nwrote ${Object.keys(STAGE_SPECS).length} stages to src/data/extracted/stages.json`,
-  );
-  for (const ladder of RENDERED_LADDERS) {
-    console.log(`  ${ladder} (${LADDER_PUZZLE[ladder]}): ${LADDERS[ladder].join(" -> ")}`);
-    for (const [stage, mask] of Object.entries(masks[ladder])) {
-      console.log(`    ${stage.padEnd(12)} ${mask}`);
-    }
+log(`\nwrote ${Object.keys(STAGE_SPECS).length} stages to src/data/extracted/stages.json`);
+for (const ladder of RENDERED_LADDERS) {
+  log(`  ${ladder} (${LADDER_PUZZLE[ladder]}): ${LADDERS[ladder].join(" -> ")}`);
+  for (const [stage, mask] of Object.entries(masks[ladder])) {
+    log(`    ${stage.padEnd(12)} ${mask}`);
   }
 }
 

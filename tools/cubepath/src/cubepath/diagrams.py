@@ -16,7 +16,7 @@ from typing import Any
 import svgwrite
 
 from cubepath import palette
-from cubepath.algs import ALGORITHMS, DOT_SEQUENCE
+from cubepath.algs import ALGORITHMS, DOT_SEQUENCE, HOOK_SEQUENCE
 from cubepath.cube import Cube, state_before
 
 # Colors — standard Western Rubik's cube (Yellow top, Red front)
@@ -583,16 +583,22 @@ def _oll_cross_cases() -> list[CubeDiagram]:
     passes of the narrow F-sexy-F' (L in back-left — Phase 1, the guide's
     Phase 1 figure and Card 1); `oll_hook_wide` is the one-pass wide `f-sexy-f'`
     (L in front-right — the `eo.hook` icon, the guide's Phase 1.5 figure and
-    Card 2). The web needs the second file because a `CaseDef.icon` is a path
-    with nowhere to hang a rotation; the guide and cards used to rotate the
-    first 180° instead and now read the second.
+    Card 2).
+
+    TWO FILES, not one file plus a rotation, and that is the point rather than a
+    workaround for anything: these are two teaching artifacts with different
+    recognition cues, each derived from the procedure it pictures. Every
+    consumer then reads a path and draws it. The guide and the cards used to
+    turn the first 180° at the use site, which is how a back-left picture
+    shipped beside a front-right cue — so that mechanism is gone from both
+    outputs (see CLAUDE.md § Lua Filter). `test_hook_wide_is_phase15_angle`
+    pins the pair as each other's half turn, derived.
     """
-    narrow = ALGORITHMS["F-sexy-F'"]
     return [
         _derived_cross_case("oll_dot", "Dot", DOT_SEQUENCE),
-        _derived_cross_case("oll_hook", "Hook / L-shape", f"{narrow} {narrow}"),
+        _derived_cross_case("oll_hook", "Hook / L-shape", HOOK_SEQUENCE),
         _derived_cross_case("oll_hook_wide", "Hook / L-shape (wide f)", ALGORITHMS["f-sexy-f'"]),
-        _derived_cross_case("oll_line", "Line", narrow),
+        _derived_cross_case("oll_line", "Line", ALGORITHMS["F-sexy-F'"]),
     ]
 
 

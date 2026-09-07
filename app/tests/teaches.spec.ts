@@ -11,36 +11,36 @@
  * from. The gate below turns the phase a case declares into a checked claim
  * about the lesson that teaches it. docs/DECISIONS.md § "The Hook's two holds".
  */
-import { readdirSync } from "node:fs";
 import { describe, expect, test } from "vitest";
-import { getCollection } from "astro:content";
 import { caseById } from "../src/data/algs";
 import { PHASES } from "../src/data/phases";
+import { lessonsInOrder } from "../src/lib/lessons";
 import { teachingLesson } from "../src/lib/teaches";
+import { lessonFiles } from "./lessons";
 
-const lessons = (await getCollection("lessons")).sort((a, b) => a.data.order - b.data.order);
+const lessons = await lessonsInOrder();
 const phaseOf = new Map(lessons.map((l) => [l.id, l.data.phase]));
 
 /** Every lesson listing each case, in course order — the map's raw input. */
 const claims = new Map<string, string[]>();
 for (const l of lessons)
-  for (const id of l.data.algorithms) {
-    const listedBy = claims.get(id);
-    if (listedBy) listedBy.push(l.id);
-    else claims.set(id, [l.id]);
-  }
+  for (const id of l.data.algorithms) claims.set(id, [...(claims.get(id) ?? []), l.id]);
 
 /** Where a case says it is taught. */
 const home = async (id: string) => (await teachingLesson(caseById.get(id)!))?.id;
+
+/**
+ * The phases a lesson can carry. `CaseDef.phase` is one of these for the
+ * curated cases and an opaque set tag ("full-pll") for the generated ones —
+ * `ladders.ts` says so — and only the former is a claim a lesson can be held to.
+ */
+const course = new Set(PHASES.map((p) => p.key));
 
 describe("case -> lesson attribution", () => {
   test("the collection is the whole lesson directory", () => {
     // Every loop below passes vacuously over `[]`, which is what a test sees
     // when the content store has not been synced (see tests/global-setup.ts).
-    const onDisk = readdirSync(new URL("../src/content/lessons/", import.meta.url)).filter((f) =>
-      f.endsWith(".mdx"),
-    );
-    expect(lessons.map((l) => `${l.id}.mdx`).sort()).toEqual(onDisk.sort());
+    expect(lessons.map((l) => `${l.id}.mdx`).sort()).toEqual(lessonFiles());
   });
 
   test("every listed case resolves to a lesson that lists it", async () => {
@@ -52,10 +52,6 @@ describe("case -> lesson attribution", () => {
   });
 
   test("a case is taught in a lesson of its own phase", async () => {
-    // The gate. `CaseDef.phase` is a course phase for the curated cases and an
-    // opaque set tag ("full-pll") for the generated ones — `ladders.ts` says
-    // so — and only the former is a claim a lesson can be held to.
-    const course = new Set(PHASES.map((p) => p.key));
     for (const id of claims.keys()) {
       const phase = caseById.get(id)!.phase;
       if (!course.has(phase)) continue;
@@ -67,21 +63,42 @@ describe("case -> lesson attribution", () => {
     }
   });
 
-  test("the cases more than one lesson lists, and where each lands", async () => {
-    // Pinned so a new double listing has to come through here. Each of these
-    // is taught once and REUSED later; course order is the right answer for
-    // all four, and the gate above is what keeps it that way.
+  test("where two lessons of one phase both list a case, the earlier teaches it", async () => {
+    // Strictly stronger than the phase gate above, which is kept for its
+    // diagnostic: that one names the fix for the common failure, this one says
+    // WHICH lesson of the right phase — the half a phase check cannot see, and
+    // the regression that sank the first attempt at this fix. A `phaseWins()`
+    // rule inside teaches.ts read "last in phase" for `beginner.righty` and
+    // moved it from the lesson that teaches it to the one that reuses it.
+    for (const [id, listedBy] of claims) {
+      const phase = caseById.get(id)!.phase;
+      if (!course.has(phase)) continue;
+      const inPhase = listedBy.filter((l) => phaseOf.get(l) === phase);
+      expect(await home(id), `${id}: not the earliest of ${inPhase.join(", ")}`).toBe(inPhase[0]);
+    }
+  });
+
+  test("the cases more than one lesson lists", async () => {
+    // A cheap double entry: a NEW double listing has to come through here and
+    // be looked at, because the rules above only decide which of the claimants
+    // wins, never whether listing it twice was right.
     const multi = [...claims].filter(([, v]) => v.length > 1).map(([k]) => k);
     expect(multi.sort()).toEqual(["444.edge-flip", "beginner.righty", "eo.line", "oll.27"]);
-    expect(await home("444.edge-flip")).toBe("444-edge-pairing");
-    expect(await home("beginner.righty")).toBe("white-corners");
-    expect(await home("eo.line")).toBe("yellow-cross");
-    expect(await home("oll.27")).toBe("cfop-switch");
-    // The two the gate exists for: one listing each, and it is Speed Tricks —
-    // same /reference section as the Line, a different home, both correct.
+
+    // The three the derived rules above cannot reach, pinned by hand.
+    // `eo.hook` and `eo.dot` are what this whole file exists for: Phase 1.5
+    // algorithms that Phase 1's yellow-cross used to list. One listing each
+    // now, so no rule above chooses between claimants — delist them from
+    // Speed Tricks too and attribution falls through to the group edge, which
+    // is the failure these two pins catch.
     expect(await home("eo.hook")).toBe("speed-tricks");
     expect(await home("eo.dot")).toBe("speed-tricks");
-    // A generated case's phase is a set tag the gate skips; course order holds.
-    expect(await home("pll.aa")).toBe("full-pll");
+    // That group edge, working. It has to be a case NO lesson lists — `pll.aa`
+    // stood here and is in full-pll's own `algorithms`, so it answered through
+    // the exact edge and pinned nothing the tests above had not already. A
+    // generated case's phase is a set tag, not a course phase, so the gates
+    // skip it and `practice.groups` is the only thing left to answer.
+    expect(claims.has("oll.1"), "oll.1 is listed now — pick another unlisted case").toBe(false);
+    expect(await home("oll.1")).toBe("full-oll-overview");
   });
 });

@@ -1,6 +1,14 @@
 --- Callout box filter for pandoc (Typst output).
 --- Transforms fenced divs (.algorithm, .tip, .caution, .info) into styled
---- blocks. Also handles image rotation and algorithm trigger color spans.
+--- blocks. Also handles the .steps and .borderless divs and algorithm trigger
+--- colour spans.
+---
+--- Image rotation is NOT here any more. A figure is drawn at the hold it
+--- teaches (cubepath `_oll_cross_cases` renders the Hook twice), and
+--- tests/test_guide.py fails the build if `rotate=` or an `Image` filter
+--- comes back — pandoc passes an unknown image attribute through to the
+--- typst writer, which ignores it, so the old attribute would now ship a
+--- silently unrotated figure.
 
 -- Both tables below are the guide's rendering of ONE definition that lives in
 -- tools/cubepath/src/cubepath/palette.py, alongside the app/src/styles/
@@ -47,23 +55,6 @@ local trigger_colors = {
   ["trig-g"] = { hex = "1B5E20" },  -- Green: R U R' U family
   ["trig-b"] = { hex = "12408C" },  -- Blue: R' F R F' family
 }
-
-function Image(el)
-  local angle = el.attributes["rotate"]
-  if not angle then return end
-  el.attributes["rotate"] = nil  -- don't pass through
-  local w = el.attributes["width"] or ""
-  el.attributes["width"] = nil
-  local src = el.src
-  local img = w ~= ""
-    and string.format('image("%s", width: 100%%)', src)
-    or  string.format('image("%s")', src)
-  local inner = string.format("rotate(%sdeg, %s)", angle, img)
-  local outer = w ~= ""
-    and string.format("#box(width: %s, %s)", w, inner)
-    or  string.format("#box(%s)", inner)
-  return pandoc.RawInline("typst", outer)
-end
 
 function Span(el)
   for cls, style in pairs(trigger_colors) do

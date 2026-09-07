@@ -16,7 +16,7 @@
  * table in src/lib/stickering.ts is re-derived from cubing.js here, and every
  * case's emitted mask must highlight exactly the pieces its algorithm fixes.
  */
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync } from "node:fs";
 
 import { describe, expect, test } from "vitest";
 import { Alg } from "cubing/alg";
@@ -73,6 +73,7 @@ import CASE_STATES from "../src/data/extracted/case-states.json";
 import { groupSize } from "../src/lib/trainer";
 import { isLocked } from "../src/lib/unlocks";
 import { makeSlotKit, type SlotKit } from "../scripts/lib/kpuzzle-utils.mjs";
+import { LESSON_DIR, lessonFiles } from "./lessons";
 
 const kpuzzleCache = new Map<string, Promise<KPuzzle>>();
 
@@ -1599,12 +1600,9 @@ describe("the ladder is wired into every renderer", () => {
   }
 
   function lessonEmbeds(): Embed[] {
-    const dir = new URL("../src/content/lessons/", import.meta.url);
     const out: Embed[] = [];
-    for (const file of readdirSync(dir)
-      .filter((f) => f.endsWith(".mdx"))
-      .sort()) {
-      const src = readFileSync(new URL(file, dir), "utf8");
+    for (const file of lessonFiles()) {
+      const src = readFileSync(new URL(file, LESSON_DIR), "utf8");
       for (const [, body] of src.matchAll(EMBED)) {
         const props: Record<string, unknown> = {};
         for (const [, key, value, ladder, stage] of body!.matchAll(ATTR)) {

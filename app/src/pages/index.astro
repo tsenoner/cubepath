@@ -25,7 +25,7 @@
  * hydrate. Every box a client script writes into is reserved by the server, so
  * nothing on this page moves after paint.
  */
-import { getCollection } from "astro:content";
+import { lessonsInOrder } from "../lib/lessons";
 import Base from "../layouts/Base.astro";
 import Header from "../components/Header.astro";
 import JumpBar from "../components/JumpBar.astro";
@@ -33,7 +33,7 @@ import Page from "../components/Page.astro";
 import ProgressBar from "../components/ProgressBar.astro";
 import { PHASES, phaseAnchor } from "../data/phases";
 
-const lessons = (await getCollection("lessons")).sort((a, b) => a.data.order - b.data.order);
+const lessons = await lessonsInOrder();
 
 /**
  * A picture per phase, from the generated diagram set — the phase cards were

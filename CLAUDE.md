@@ -148,7 +148,10 @@ sync`, `astro check` and `astro build` write `node_modules/.astro/` instead, so
 on a fresh checkout `getCollection()` inside a test is `[]`, and a loop over the
 lessons passes with nothing to check. The global setup points Astro's
 programmatic `sync` at the dev location, and `tests/teaches.spec.ts` asserts the
-collection is the whole lesson directory so the setup cannot rot silently.
+collection is the whole lesson directory so the setup cannot rot silently. That
+listing — and the lesson sources `glossary.spec.ts` searches, and the embeds
+`algs.spec.ts` scrapes — comes from `tests/lessons.ts`, which exists because all
+three specs had a private copy of the same URL and the same `.mdx` filter.
 
 **Everything under `app/scripts/` is type-checked** (`scripts/tsconfig.json`,
 `checkJs: true`) — it generates the shipped algorithm data and runs the F2L/L2E
@@ -234,7 +237,7 @@ direction: an uncredited lesson is offered again, a wrongly credited one
 disappears from Resume with no way back. `white-cross.mdx` offers `/print` and
 is the case the rule exists for; `e2e/nav.spec.ts` pins it.
 
-Four shared modules exist so the same string is not built twice:
+Five shared modules exist so the same string is not built twice:
 
 - `src/lib/search.ts` — normalisation and matching. Used by every haystack
   builder AND by /glossary, the site's other filter, which had kept the
@@ -255,6 +258,14 @@ Four shared modules exist so the same string is not built twice:
 - `src/lib/teaches.ts` — case → lesson and group → lesson, inverted at build
   time from lesson frontmatter. Build-time only; never import it from a client
   `<script>`.
+- `src/lib/lessons.ts` — `lessonsInOrder()`, the course in course order. The
+  ordering IS `teaches.ts`'s attribution rule ("first lesson listing a case
+  wins"), and four places sorted the collection themselves — the course index,
+  `Lesson.astro`, `LessonMeta.astro` and the spec that GATES the rule — so a
+  tie-break added to one would have reached none of the others. It is its own
+  module and not a second export from `teaches.ts` for the `casesearch.ts`
+  reason: the three navigation surfaces want the ORDER, and `teaches.ts` drags
+  `trainer.ts` → `data/algs.ts` → `fullsets.gen.ts` and `lib/db.ts` behind it.
 
 `search.ts` compiles a query ONCE per query, not once per entry, and
 `haystackFor` de-duplicates tokens. Both are why the filter is cheap: the five
@@ -565,17 +576,23 @@ cards.
 
 ### Lua Filter (`guide/filters/callouts.lua`)
 
-Handles five things:
+Handles four things:
 
 1. **Callout divs** — Fenced divs with classes `.algorithm`, `.tip`, `.caution`, `.info` become styled Typst `#block()` markup. A `title=` attribute overrides the default label.
 
 2. **Steps div** — `:::: {.steps}` wraps the Phase 1 step tables in a mirrored 4-column Typst grid layout.
 
-3. **Image rotation** — `![alt](path){ rotate=180 }` attribute wraps in `#box(width, rotate(..., image(...)))`. This keeps rotated images inline (important for side-by-side figure rows). Meaningful for plan-view (top-down) diagrams, where the turn picks a different AUF — **not** for 3D isometric ones, which it just prints upside down. No figure uses it today: its one user was the Phase 1.5 Hook, which reads `oll_hook_wide.svg` now that the generator draws that hold itself (the card deck's `Row.rot` retired the same way).
+3. **Trigger-colour spans** — `[R U R' U']{.trig-r}` (also `.trig-g`, `.trig-b`) becomes bold coloured Typst text. The hexes are kept in sync with `cubepath/palette.py` and `tests/test_notation.py` fails the build if they drift.
 
-4. **Trigger-colour spans** — `[R U R' U']{.trig-r}` (also `.trig-g`, `.trig-b`) becomes bold coloured Typst text. The hexes are kept in sync with `cubepath/palette.py` and `tests/test_notation.py` fails the build if they drift.
+4. **Borderless tables** — `::: {.borderless}` converts a table to a Typst `#grid()` so columns distribute equally.
 
-5. **Borderless tables** — `::: {.borderless}` converts a table to a Typst `#grid()` so columns distribute equally.
+There is **no rotation hop any more**, in either output. A figure is drawn at
+the hold it teaches: the Hook's two holds are two derived SVGs (`oll_hook`,
+`oll_hook_wide`), not one file turned 180° at each use site. The filter's
+`rotate=` attribute, the card deck's `Row.rot`, `typst.diagram`'s `rotate`
+argument and the Typst `dia` helper's `rot` arm were all that mechanism and are
+all deleted — a second way to orient a picture is how a back-left picture
+shipped beside a front-right cue.
 
 ## The three-tier colour model
 
@@ -711,6 +728,15 @@ project root. There is no copy step and no second tree:
 
 181 in total. `guide/cubepath.md` references 52 of them; the card set re-renders
 its own in `CARD` style rather than reusing these.
+
+**Every count above is parsed out of this file and checked**, not trusted: the
+total (here, in the artifact table, in the pipeline paragraph and in both
+READMEs), this table's per-directory rows, and the figure count are read back by
+`test_diagrams.py` and `test_guide.py` and asserted against `EXPECTED_DIAGRAMS`,
+the shipped tree and `guide_stamp.inputs()`. Same doctrine as
+`test_conventions.py` and the same reason — prose does not run, and this is the
+file every session reads before touching a diagram. Each parser fails if it
+matches nothing, so reformatting a row cannot quietly switch the gate off.
 
 ## Writing Philosophy
 

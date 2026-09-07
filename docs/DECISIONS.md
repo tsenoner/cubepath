@@ -1813,3 +1813,51 @@ pieces a diagram tells a learner to preserve rather than solve.
 outputs, and names the fix command; `npm run verify:data` runs it, so it is in
 `make check` and in CI. Verified to bite by tampering with one `stageOfGroup`
 row and watching it exit 1.
+
+## Deleting the rotation hop, and gating the counts that describe it (2026-09-07)
+
+A cleanup pass over the entry above, which had left two mechanisms standing with
+nothing using them and five prose copies of a number with nothing checking them.
+
+**Both rotation mechanisms are deleted, not just unused.** Drawing the Hook at
+each hold removed the last caller of the guide's Lua `rotate=` attribute and of
+the card deck's `Row.rot`; the entry above recorded that and left the code in
+place, with a sentence in CLAUDE.md explaining that no figure used it. That is
+the expensive shape: two untested markup-generating paths, a note that has to be
+maintained alongside them, and — the actual risk — a second way to orient a
+picture, which is precisely how a back-left picture shipped beside a front-right
+cue. Gone in four hops: `Image(el)` in `guide/filters/callouts.lua`, `Row.rot`,
+`typst.diagram`'s `rotate` argument, and the Typst preamble's `dia(..., rot:)`
+arm. A figure is now drawn at the hold it teaches, full stop. The guide PDF and
+the card PDFs were rebuilt; `app/src/data/cards.json` is byte-identical, so no
+card's content moved.
+
+**The documentation's counts are gated the way its cube conventions already
+were.** Landing one diagram meant hand-editing 181 into CLAUDE.md twice, both
+READMEs and the directory table, plus two figure counts — six numbers, each of
+which could have been missed silently, in the file every session reads before
+touching a diagram. `test_conventions.py` had already established the answer for
+this document: parse it, do not restate it. So
+`test_the_documented_diagram_total_matches_the_generators`,
+`test_the_documented_directory_table_matches_the_shipped_tree` and
+`test_claude_md_states_the_same_figure_count` read the prose and check it
+against `EXPECTED_DIAGRAMS`, the shipped tree and `guide_stamp.inputs()`. Each
+parser asserts it matched something, so a reformat that stopped the gate reading
+fails loudly rather than switching it off. Verified by mutating all five claims
+and watching each fail.
+
+**Smaller things, same pass.** `HOOK_SEQUENCE` joins `DOT_SEQUENCE` in
+`algs.py`: the Phase 1 chain was built by the generator and retyped by the test
+that gates it, which is the drift this PR had just finished repairing one file
+over. `gen-stickering.mjs`'s `--check` keeps `emit()` and loses the mode
+branching around it — one `log` that is a no-op under `--check` replaces four
+`if (!CHECK)` guards. `teaches.ts` exports `lessonsInOrder()`, and the course
+index, `Lesson.astro`, `LessonMeta.astro` and the spec that GATES the
+course-order rule all read it instead of sorting the collection themselves —
+four private definitions of "first", one of them inside the gate. And
+`app/tests/lessons.ts` holds the lesson-directory listing that three specs had
+a copy of. `teaches.spec.ts` gained the rule its pins were
+standing in for — where two lessons of one phase both list a case, the earlier
+teaches it — which is exactly the `beginner.righty` regression the reverted
+`phaseWins()` caused, and now derived rather than enumerated.
+

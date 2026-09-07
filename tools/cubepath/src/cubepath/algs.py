@@ -73,3 +73,9 @@ def in_daily_use() -> dict[str, str]:
 
 # The Dot cross case is solved by chaining both cross algorithms.
 DOT_SEQUENCE = "F R U R' U' F' f R U R' U' f'"
+
+# Phase 1 solves the Hook with a SECOND pass of the narrow cross algorithm
+# (Phase 1.5 replaces both with one wide-f pass). The diagram of the Hook and
+# the test of the Phase 1 chain must derive from one string, or the picture
+# and the procedure it claims to show can drift apart.
+HOOK_SEQUENCE = f"{ALGORITHMS["F-sexy-F'"]} {ALGORITHMS["F-sexy-F'"]}"

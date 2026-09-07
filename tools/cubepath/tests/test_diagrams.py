@@ -830,6 +830,66 @@ def test_the_pinned_diagram_count_matches_the_generators() -> None:
     )
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# The counts the DOCUMENTATION claims, checked against the same inventory.
+#
+# `EXPECTED_DIAGRAMS` above is gated; the five prose copies of it were not, and
+# this repo hand-edits all five whenever a diagram lands (180 -> 181 touched
+# CLAUDE.md twice, both READMEs and two figure counts in one commit). Prose does
+# not run, so a missed copy is a document that lies with nothing to catch it —
+# the same reasoning as `test_conventions.py`, which parses CLAUDE.md's cube
+# conventions rather than restating them. The document is the input here too.
+#
+# Every parser below raises when its pattern stops matching, deliberately: a
+# reformat that silently switched the gate off is worse than no gate.
+# ─────────────────────────────────────────────────────────────────────────────
+
+_CLAUDE_MD = _REPO / "CLAUDE.md"
+_README = _REPO / "README.md"
+_TOOLS_README = _REPO / "tools" / "cubepath" / "README.md"
+
+
+def _claimed(path: Path, pattern: str) -> list[int]:
+    """Every number `pattern` captures in `path`. Raises if it captures none."""
+    found = [int(m) for m in re.findall(pattern, path.read_text(), re.M)]
+    assert found, f"{path.name}: nothing matched {pattern!r} — the gate has stopped reading"
+    return found
+
+
+def test_the_documented_diagram_total_matches_the_generators() -> None:
+    """Five prose copies of one number, in three files."""
+    for path, pattern in (
+        (_CLAUDE_MD, r"\(\s*(\d+) SVGs\s*\)"),  # the artifact table
+        (_CLAUDE_MD, r"(\d+) SVGs in all"),  # the diagram-pipeline paragraph
+        (_CLAUDE_MD, r"^(\d+) in total\."),  # under the directory table
+        (_README, r"the (\d+) diagrams"),
+        (_TOOLS_README, r"# (\d+) SVGs ->"),
+    ):
+        for n in _claimed(path, pattern):
+            assert n == EXPECTED_DIAGRAMS, (
+                f"{path.name} says {n} diagrams, the generators produce "
+                f"{EXPECTED_DIAGRAMS} — update the prose"
+            )
+
+
+def test_the_documented_directory_table_matches_the_shipped_tree() -> None:
+    """CLAUDE.md's `| directory | n | what |` table, row by row.
+
+    A per-directory pin, so a group that grew while another shrank cannot hide
+    inside a correct total — the same reason `EXPECTED_DIAGRAMS` is cross-checked
+    against the generators' own inventories rather than trusted.
+    """
+    rows = re.findall(r"^\| `([a-z0-9-]+)/` \| (\d+) \|", _CLAUDE_MD.read_text(), re.M)
+    assert rows, "CLAUDE.md: the diagram directory table has stopped matching"
+    documented = {name: int(n) for name, n in rows}
+    actual = {d: len(list((_APP_SVG / d).glob("*.svg"))) for d in _SVG_DIRS}
+    assert documented == actual, (
+        f"CLAUDE.md's directory table disagrees with app/public/diagrams/: "
+        f"documented {documented}, shipped {actual}"
+    )
+    assert sum(actual.values()) == EXPECTED_DIAGRAMS
+
+
 def _themed_renders(tmp_path) -> dict[str, str]:
     """One output from each of the four screen render entry points."""
     return {

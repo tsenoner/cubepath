@@ -18,7 +18,7 @@
  * <Figure>, which frames and captions them; everything here is the safety net
  * for what markdown itself emits.
  */
-import { getCollection } from "astro:content";
+import { lessonsInOrder } from "../lib/lessons";
 import Base from "./Base.astro";
 import Header from "../components/Header.astro";
 import JumpBar from "../components/JumpBar.astro";
@@ -75,7 +75,7 @@ const {
   headings = [],
 } = Astro.props;
 
-const all = (await getCollection("lessons")).sort((a, b) => a.data.order - b.data.order);
+const all = await lessonsInOrder();
 const byId = new Map(all.map((l) => [l.id, l]));
 const idx = all.findIndex((l) => l.id === id);
 const step = idx + 1;

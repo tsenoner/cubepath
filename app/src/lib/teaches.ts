@@ -23,9 +23,8 @@
  * Build-time only: this reaches into the content collection, so it must not be
  * imported from a client `<script>`.
  */
-import { getCollection } from "astro:content";
-
 import type { CaseDef } from "../data/algs";
+import { lessonsInOrder } from "./lessons";
 import { TRAINER_GROUPS } from "./trainer";
 
 export interface TeachingLesson {
@@ -53,7 +52,7 @@ let cached: Promise<Maps> | null = null;
 
 function build(): Promise<Maps> {
   cached ??= (async () => {
-    const lessons = (await getCollection("lessons")).sort((a, b) => a.data.order - b.data.order);
+    const lessons = await lessonsInOrder();
     const byCase = new Map<string, TeachingLesson>();
     const byGroup = new Map<string, TeachingLesson>();
 
