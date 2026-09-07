@@ -228,6 +228,21 @@ which pinned a CSS class as behavioural contract. For a year the pager click was
 the only writer, so a reader who took the lesson's own filled "Drill …" button
 never got credit and the whole progress layer stayed dark.
 
+**A lesson declares what it TEACHES and what it merely SHOWS, in two fields.**
+`algorithms` is the cases whose algorithm the lesson prints, and it is what
+`teaches.ts` inverts into "Taught in"; `shows` is the cases it pictures and
+walks through without printing their algorithm. Both render in the lesson's own
+case list, in that order; only the first reaches attribution, and
+`Lesson.astro` fails the build if a lesson names the same case in both. They
+were ONE field, which made every listing answer two questions at once:
+yellow-cross draws Dot, Hook and Line but prints only the Line's algorithm, so
+it was sending `eo.hook`'s "Taught in" link to a Phase 1 lesson that never
+prints the Phase 1.5 algorithm the row shows. Trimming the array fixed the link
+and silently cut two of the three case pages off a lesson whose own heading is
+"One algorithm, three states". `tests/teaches.spec.ts` gates the split from
+both ends — every `shows` id is a real case, no lesson holds one in both
+fields, and a case a lesson only shows is never attributed to it.
+
 **Whether an exit finishes the lesson is DECLARED, not inferred**:
 `practice.links[].advance` in the lesson's frontmatter (`content.config.ts`),
 defaulting to FALSE. `Lesson.astro` used to tag any href starting `/practice/`
@@ -257,7 +272,7 @@ Five shared modules exist so the same string is not built twice:
   and fails the build if the two lists diverge either way.
 - `src/lib/teaches.ts` — case → lesson and group → lesson, inverted at build
   time from lesson frontmatter. Build-time only; never import it from a client
-  `<script>`.
+  `<script>`. It reads `algorithms` and **only** `algorithms`.
 - `src/lib/lessons.ts` — `lessonsInOrder()`, the course in course order. The
   ordering IS `teaches.ts`'s attribution rule ("first lesson listing a case
   wins"), and four places sorted the collection themselves — the course index,

@@ -26,6 +26,15 @@ const claims = new Map<string, string[]>();
 for (const l of lessons)
   for (const id of l.data.algorithms) claims.set(id, [...(claims.get(id) ?? []), l.id]);
 
+/**
+ * Every lesson that merely PICTURES each case. Disjoint from `claims` by a
+ * build-time check in `Lesson.astro`; kept separate here so the assertions
+ * below can say that this half reaches attribution nowhere.
+ */
+const shown = new Map<string, string[]>();
+for (const l of lessons)
+  for (const id of l.data.shows) shown.set(id, [...(shown.get(id) ?? []), l.id]);
+
 /** Where a case says it is taught. */
 const home = async (id: string) => (await teachingLesson(caseById.get(id)!))?.id;
 
@@ -75,6 +84,24 @@ describe("case -> lesson attribution", () => {
       if (!course.has(phase)) continue;
       const inPhase = listedBy.filter((l) => phaseOf.get(l) === phase);
       expect(await home(id), `${id}: not the earliest of ${inPhase.join(", ")}`).toBe(inPhase[0]);
+    }
+  });
+
+  test("`shows` pictures a case without claiming to teach it", async () => {
+    // The two fields were ONE, and that is how trimming yellow-cross to fix
+    // `eo.hook`'s "Taught in" link also cut Dot and Hook out of the case list
+    // on the lesson that draws them. Splitting them is only safe while this
+    // half stays invisible to attribution, so: every `shows` id is a real case,
+    // no lesson both teaches and shows the same one, and a case shown by a
+    // lesson is never attributed to it unless it also teaches it.
+    expect(shown.size, "no lesson uses `shows` — this gate has nothing to hold").toBeGreaterThan(0);
+    for (const [id, showers] of shown) {
+      expect(caseById.has(id), `${id} in \`shows\` is not a case id`).toBe(true);
+      const teachers = claims.get(id) ?? [];
+      for (const l of showers) {
+        expect(teachers, `${l} both teaches and shows ${id}`).not.toContain(l);
+        expect(await home(id), `${id} is attributed to ${l}, which only shows it`).not.toBe(l);
+      }
     }
   });
 

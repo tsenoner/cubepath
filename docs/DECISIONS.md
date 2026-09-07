@@ -1861,3 +1861,33 @@ standing in for — where two lessons of one phase both list a case, the earlier
 teaches it — which is exactly the `beginner.righty` regression the reverted
 `phaseWins()` caused, and now derived rather than enumerated.
 
+## A lesson teaches some cases and shows others (2026-09-07)
+
+`content.config.ts` gains `shows`, and `algorithms` keeps only its original
+meaning: the cases whose ALGORITHM the lesson prints.
+
+One array was answering two questions. `teaches.ts` inverts `algorithms` into
+"Taught in", and `Lesson.astro` renders the same array as the lesson's own
+"Cases in this lesson" list — so the entry above, fixing `eo.hook`'s
+attribution by trimming yellow-cross to `["eo.line"]`, was right about the
+first question and wrong about the second. Measured in the built HTML: the
+lesson went from three case links to one, on a page headed "One algorithm,
+three states" that draws Dot, Hook and Line and links a `<Figure>` for each.
+The reader saw three patterns and could reach one case page.
+
+The two questions are genuinely different — yellow-cross teaches the narrow
+`F R U R' U' F'` and counts passes with it, while the Dot's stored algorithm is
+the chain ending in the wide `f` and the Hook's is the wide-f itself, both
+Phase 1.5's — so the fix is a second field, not a cleverer rule over the first.
+`shows: ["eo.dot", "eo.hook"]` restores the three links; attribution is
+untouched, because nothing but `algorithms` reaches `teaches.ts`.
+
+Gated from both ends, because a split that leaks is worse than no split:
+`Lesson.astro` fails the build if a lesson names a case in both fields, and
+`tests/teaches.spec.ts` asserts every `shows` id is a real case and that a case
+a lesson only shows is never attributed to it. Verified by moving `eo.dot` back
+into yellow-cross's `algorithms` and watching both the phase gate and the
+overlap gate fail.
+
+Found by the review pass over the entry above, which had checked attribution
+and not the page.
