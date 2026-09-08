@@ -16,7 +16,7 @@ from typing import Any
 import svgwrite
 
 from cubepath import palette
-from cubepath.algs import ALGORITHMS, DOT_SEQUENCE
+from cubepath.algs import ALGORITHMS, DOT_SEQUENCE, HOOK_SEQUENCE
 from cubepath.cube import Cube, state_before
 
 # Colors — standard Western Rubik's cube (Yellow top, Red front)
@@ -472,16 +472,14 @@ def _yellow_mask(stickers: list[str]) -> list[str]:
     return [YELLOW if s == "Y" else UNORIENTED for s in stickers]
 
 
-def _derived_cross_case(name: str, label: str, alg: str, *, view_turn: str = "") -> CubeDiagram:
+def _derived_cross_case(name: str, label: str, alg: str) -> CubeDiagram:
     """OLL cross case derived from its algorithm's pre-state.
 
     Shows the U-face edge/center pattern; corners carry the orientation mask
-    (don't-care at the cross stage). `view_turn` reorients the derived state so the diagram
-    matches how the guide tells the learner to hold the cube.
+    (don't-care at the cross stage). The hold is the pre-state's own: pass the
+    procedure the phase actually runs and the picture comes out at that angle.
     """
     cube = state_before(alg)
-    if view_turn:
-        cube.apply(view_turn)
     u, _ = _u_layer_views(cube)
     u_face = _yellow_mask(u)
     for corner in (0, 2, 6, 8):
@@ -579,13 +577,27 @@ def _arrow_pos(name: str, n: int = 3) -> tuple[float, float]:
 def _oll_cross_cases() -> list[CubeDiagram]:
     """OLL cross cases: Dot, Hook (L-shape), Line — derived from their algorithms.
 
-    The Hook diagram is drawn at the Phase-1 angle (L in back-left, where
-    F-sexy-F' turns it into a Line); Phase 1.5 rotates the image 180° to the
-    f-sexy-f' angle (L in front-right).
+    The Hook is drawn twice, because the two phases hold it differently and the
+    hold is the whole recognition cue. Each picture is the pre-state of the
+    procedure its phase runs, so neither needs a view turn: `oll_hook` is two
+    passes of the narrow F-sexy-F' (L in back-left — Phase 1, the guide's
+    Phase 1 figure and Card 1); `oll_hook_wide` is the one-pass wide `f-sexy-f'`
+    (L in front-right — the `eo.hook` icon, the guide's Phase 1.5 figure and
+    Card 2).
+
+    TWO FILES, not one file plus a rotation, and that is the point rather than a
+    workaround for anything: these are two teaching artifacts with different
+    recognition cues, each derived from the procedure it pictures. Every
+    consumer then reads a path and draws it. The guide and the cards used to
+    turn the first 180° at the use site, which is how a back-left picture
+    shipped beside a front-right cue — so that mechanism is gone from both
+    outputs (see CLAUDE.md § Lua Filter). `test_hook_wide_is_phase15_angle`
+    pins the pair as each other's half turn, derived.
     """
     return [
         _derived_cross_case("oll_dot", "Dot", DOT_SEQUENCE),
-        _derived_cross_case("oll_hook", "Hook / L-shape", ALGORITHMS["f-sexy-f'"], view_turn="y2"),
+        _derived_cross_case("oll_hook", "Hook / L-shape", HOOK_SEQUENCE),
+        _derived_cross_case("oll_hook_wide", "Hook / L-shape (wide f)", ALGORITHMS["f-sexy-f'"]),
         _derived_cross_case("oll_line", "Line", ALGORITHMS["F-sexy-F'"]),
     ]
 

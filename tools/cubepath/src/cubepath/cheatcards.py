@@ -184,10 +184,7 @@ def _preamble(strict: bool = True) -> str:
 #let r(t) = text(fill: CR, t)
 #let g(t) = text(fill: CG, t)
 #let b(t) = text(fill: CB, t)
-#let dia(f, w, rot: 0deg) = {{
-  let i = image("card-svg/" + f, width: w)
-  if rot != 0deg {{ box(rotate(rot, i)) }} else {{ i }}
-}}
+#let dia(f, w) = image("card-svg/" + f, width: w)
 #let hdr(n, t, s) = block(above: 0.5mm, below: 0.35mm)[
   #text(size: 4.8pt, weight: "bold")[#if n != [] [#n#h(0.5mm)]#upper(t)]
   #if s != [] [#text(size: 3.8pt, fill: luma(95))[ · #s]]]

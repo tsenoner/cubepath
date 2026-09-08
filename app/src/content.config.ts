@@ -40,12 +40,30 @@ const lessons = defineCollection({
     prerequisites: z.array(z.string()).default([]),
 
     /**
-     * Case ids this lesson teaches, e.g. "oll.27". Validated against
-     * `caseById`. Empty for lessons that teach a technique rather than a case
-     * set — which is itself the signal CLAUDE.md's "as few new algorithms as
-     * possible per phase" rule needs to be checkable.
+     * Case ids whose ALGORITHM this lesson teaches, e.g. "oll.27". Validated
+     * against `caseById`. Empty for lessons that teach a technique rather than
+     * a case set — which is itself the signal CLAUDE.md's "as few new
+     * algorithms as possible per phase" rule needs to be checkable.
+     *
+     * This field decides ATTRIBUTION: `teaches.ts` sends a case's "Taught in"
+     * link to the first lesson listing it, and `tests/teaches.spec.ts` holds
+     * each case's phase to that lesson's. So it answers "who teaches this", and
+     * only that. For a case a lesson merely SHOWS, use `shows` — the two were
+     * one field, which is how trimming this array to fix an attribution bug
+     * silently cut two links off the lesson's own case list.
      */
     algorithms: z.array(z.string()).default([]),
+
+    /**
+     * Case ids this lesson PICTURES but does not teach the algorithm for.
+     *
+     * Rendered in the lesson's case list beside `algorithms` and invisible to
+     * attribution — nothing here can make a lesson the answer to "Taught in".
+     * yellow-cross is the case it exists for: it walks the reader from Dot
+     * through Hook to Line and draws all three, but the only algorithm it
+     * prints is the Line's, and the other two are Phase 1.5's.
+     */
+    shows: z.array(z.string()).default([]),
 
     /**
      * The closing handoff. `Lesson.astro` renders it as the `Practice` section

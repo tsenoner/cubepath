@@ -71,5 +71,5 @@ def esc(s: str) -> str:
     return s
 
 
-def diagram(svg: str, size: str, rotate: int = 0) -> str:
-    return f'dia("{svg}", {size}, rot: {rotate}deg)' if rotate else f'dia("{svg}", {size})'
+def diagram(svg: str, size: str) -> str:
+    return f'dia("{svg}", {size})'

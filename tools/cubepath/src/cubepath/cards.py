@@ -61,7 +61,6 @@ class Row:
     name: str
     cue: str
     body: str
-    rot: int = 0
     badge: str = ""
 
 
@@ -71,7 +70,7 @@ def _rows(items: list[Row], size: str, gutter: float = 0.7) -> str:
     for it in items:
         head = f"#nm[{esc(it.name)}]" + (f" {it.badge}" if it.badge else "")
         cue_txt = f" #cue[{esc(it.cue)}]" if it.cue else ""
-        cells.append(f"    {diagram(it.svg, size, it.rot)},\n      [{head}{cue_txt} \\ {it.body}],")
+        cells.append(f"    {diagram(it.svg, size)},\n      [{head}{cue_txt} \\ {it.body}],")
     return (
         f"#grid(columns: ({size}, 1fr), column-gutter: {gutter}mm, row-gutter: 0.25mm,\n"
         f"  align: (center + horizon, left + horizon),\n" + "\n".join(cells) + "\n)"
@@ -173,11 +172,8 @@ _C1_PLACE = [
     # and holding the solved corner front-right feeds it into the cycle.
     # `test_cards.py` derives the fixed corner and pins this wording to it.
     Row("steps/corner_cycle.svg", "one corner home", "hold it FRONT-LEFT", key_alg("Niklas")),
-    # No rotation here: `corner_cycle` is a 3D isometric drawing, so a 180deg
-    # turn does not re-orient the case the way it does for a top-down OLL plan
-    # view (see the Hook row on Card 2) — it just prints the cube upside down,
-    # yellow face underneath. The cue for this row is "from any hold" anyway,
-    # so there is no orientation to convey.
+    # Same picture, second row: the cue is "from any hold", so there is no
+    # orientation to convey and nothing distinguishes the two but the wording.
     Row(
         "steps/corner_cycle.svg",
         "no corner home",
@@ -284,7 +280,7 @@ def _badge(case: str) -> str:
 
 _C2_CROSS = [
     Row("oll/oll_line.svg", "Line", "bar left-to-right", key_alg("F-sexy-F'")),
-    Row("oll/oll_hook.svg", "Hook", "hook pointing front-right", key_alg("f-sexy-f'"), 180),
+    Row("oll/oll_hook_wide.svg", "Hook", "hook pointing front-right", key_alg("f-sexy-f'")),
 ]
 
 _C2_OLL_A = [

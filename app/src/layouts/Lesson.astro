@@ -18,7 +18,7 @@
  * <Figure>, which frames and captions them; everything here is the safety net
  * for what markdown itself emits.
  */
-import { getCollection } from "astro:content";
+import { lessonsInOrder } from "../lib/lessons";
 import Base from "./Base.astro";
 import Header from "../components/Header.astro";
 import JumpBar from "../components/JumpBar.astro";
@@ -57,6 +57,7 @@ interface Props {
   objectives: string[];
   prerequisites: string[];
   algorithms: string[];
+  shows: string[];
   practice: Practice;
   /** Astro's own `render().headings`, passed through by learn/[...slug].astro. */
   headings?: { depth: number; slug: string; text: string }[];
@@ -71,11 +72,12 @@ const {
   objectives,
   prerequisites,
   algorithms,
+  shows,
   practice,
   headings = [],
 } = Astro.props;
 
-const all = (await getCollection("lessons")).sort((a, b) => a.data.order - b.data.order);
+const all = await lessonsInOrder();
 const byId = new Map(all.map((l) => [l.id, l]));
 const idx = all.findIndex((l) => l.id === id);
 const step = idx + 1;
@@ -91,8 +93,20 @@ const groupKeys = new Set(TRAINER_GROUPS.map((g) => g.key));
 for (const p of prerequisites) {
   if (!byId.has(p)) throw new Error(`${id}: unknown prerequisite lesson "${p}"`);
 }
-for (const a of algorithms) {
-  if (!caseById.has(a)) throw new Error(`${id}: unknown case id "${a}" in algorithms`);
+for (const [field, ids] of [
+  ["algorithms", algorithms],
+  ["shows", shows],
+] as const) {
+  for (const a of ids) {
+    if (!caseById.has(a)) throw new Error(`${id}: unknown case id "${a}" in ${field}`);
+  }
+}
+const overlap = algorithms.filter((a) => shows.includes(a));
+if (overlap.length) {
+  throw new Error(
+    `${id}: ${overlap.join(", ")} in BOTH algorithms and shows — a case is either ` +
+      `taught here or only pictured here, and only \`algorithms\` decides "Taught in"`,
+  );
 }
 for (const g of practice.groups) {
   if (!groupKeys.has(g)) throw new Error(`${id}: unknown trainer group "${g}"`);
@@ -117,8 +131,14 @@ const drills = practice.groups.map((key) => ({
   reference: referenceHref(key),
 }));
 
-/** The cases this lesson teaches, as pages. Build-validated above. */
-const taught = algorithms.map((a) => caseById.get(a)!);
+/**
+ * The cases this lesson's list links, as pages. Build-validated above.
+ *
+ * Taught first, then merely shown, so the reader meets the lesson's own
+ * algorithms before the patterns it points at. Only `algorithms` reaches
+ * `teaches.ts`, so appending `shows` here cannot move a "Taught in" link.
+ */
+const taught = [...algorithms, ...shows].map((a) => caseById.get(a)!);
 
 /** The rest of this phase — a lesson could reach two others before this. */
 const siblings = all.filter((l) => l.data.phase === phase);
@@ -245,6 +265,11 @@ const outline = [
       one of them (42 distinct ids today, the count `lib/teaches.ts` states) was
       checked on every build so a typo failed it, and not one of them was
       reachable by a reader.
+
+      `shows` joins it here and nowhere else. The list is "what this page puts
+      in front of you"; attribution is "who teaches it", and one array answering
+      both questions is how trimming yellow-cross to fix its "Taught in" link
+      cut Dot and Hook out of a lesson that draws them both.
     */
     }
     {

@@ -37,7 +37,7 @@ cd app && npm run dev                        # app only
 Every published algorithm is machine-verified against the bundled cube simulator,
 and every case diagram is derived from its algorithm — a mismatch is a build
 error, not a shipped bug. The same applies to the generated files the app ships:
-the PDF, the 180 diagrams, the card PDFs and the favicon are each pinned to their
+the PDF, the 181 diagrams, the card PDFs and the favicon are each pinned to their
 generator by a test, so `make check` fails rather than letting a stale artifact
 reach production.
 

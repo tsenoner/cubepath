@@ -14,12 +14,17 @@
  * covers the sets a lesson teaches wholesale without listing 57 ids. Exact
  * wins where both apply.
  *
+ * A lesson lists the cases whose ALGORITHM it teaches, not every pattern it
+ * shows — `tests/teaches.spec.ts` holds each case's phase to its lesson's, so a
+ * listing that breaks that fails the build rather than sending "Taught in" to
+ * a lesson that never prints the row's algorithm (the Hook did exactly that;
+ * docs/DECISIONS.md § "The Hook's two holds").
+ *
  * Build-time only: this reaches into the content collection, so it must not be
  * imported from a client `<script>`.
  */
-import { getCollection } from "astro:content";
-
 import type { CaseDef } from "../data/algs";
+import { lessonsInOrder } from "./lessons";
 import { TRAINER_GROUPS } from "./trainer";
 
 export interface TeachingLesson {
@@ -47,7 +52,7 @@ let cached: Promise<Maps> | null = null;
 
 function build(): Promise<Maps> {
   cached ??= (async () => {
-    const lessons = (await getCollection("lessons")).sort((a, b) => a.data.order - b.data.order);
+    const lessons = await lessonsInOrder();
     const byCase = new Map<string, TeachingLesson>();
     const byGroup = new Map<string, TeachingLesson>();
 

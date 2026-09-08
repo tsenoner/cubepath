@@ -46,7 +46,7 @@
  * All of it is client-side: the static build is unaffected and it works
  * offline like the rest of the app.
  */
-import { getCollection } from "astro:content";
+import { lessonsInOrder } from "../lib/lessons";
 import { phaseName } from "../data/phases";
 
 interface Props {
@@ -58,7 +58,7 @@ interface Props {
 }
 const { id, position = false, class: className } = Astro.props;
 
-const all = (await getCollection("lessons")).sort((a, b) => a.data.order - b.data.order);
+const all = await lessonsInOrder();
 const idx = all.findIndex((l) => l.id === id);
 const step = idx >= 0 ? idx + 1 : 0;
 const phase = idx >= 0 ? all[idx]?.data.phase : undefined;

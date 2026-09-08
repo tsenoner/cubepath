@@ -246,7 +246,11 @@ def test_card_diagrams_are_rendered_in_card_style() -> None:
     the screen SVGs. A screen colour reaching a card means the re-render
     silently stopped happening."""
     counts = cheatcards.build_print_svgs()
-    assert counts == {"oll": 11, "pll": 6, "pll-full": 21, "steps": 19, "notation": 1}, counts
+    # oll is 12, not 11. The count is `all_cases()`, not card usage —
+    # `build_print_svgs` re-renders every case whether a card prints it or
+    # not — and the Hook is two of them now: `oll_hook` back-left, which
+    # Card 1 prints, and `oll_hook_wide` front-right, which Card 2 prints.
+    assert counts == {"oll": 12, "pll": 6, "pll-full": 21, "steps": 19, "notation": 1}, counts
     seen = set()
     for svg in sorted(cheatcards._CARD_SVG.rglob("*.svg")):
         text = svg.read_text()

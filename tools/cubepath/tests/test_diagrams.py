@@ -114,7 +114,9 @@ VIEWBOX_SIZE = 192
 
 
 def test_all_cases_count():
-    assert len(all_cases()) == 17
+    # 18, not 17: the Hook is drawn at both phases' holds (see
+    # `_oll_cross_cases`). Everything else is one picture per case.
+    assert len(all_cases()) == 18
 
 
 def test_case_names_unique():
@@ -791,7 +793,7 @@ _SVG_DIRS = tuple(sorted(p.name for p in _APP_SVG.iterdir() if p.is_dir()))
 # generator that silently stopped emitting a whole group would drop it from
 # both and still pass. The pin is cross-checked against the generators' own
 # inventories below, so a deliberate change fails in exactly one obvious place.
-EXPECTED_DIAGRAMS = 180
+EXPECTED_DIAGRAMS = 181
 
 
 def _render_everything(out: Path) -> None:
@@ -826,6 +828,66 @@ def test_the_pinned_diagram_count_matches_the_generators() -> None:
         f"the generators now produce {inventory} diagrams; if that is intended, "
         f"update EXPECTED_DIAGRAMS and re-run `make diagrams`"
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The counts the DOCUMENTATION claims, checked against the same inventory.
+#
+# `EXPECTED_DIAGRAMS` above is gated; the five prose copies of it were not, and
+# this repo hand-edits all five whenever a diagram lands (180 -> 181 touched
+# CLAUDE.md twice, both READMEs and two figure counts in one commit). Prose does
+# not run, so a missed copy is a document that lies with nothing to catch it —
+# the same reasoning as `test_conventions.py`, which parses CLAUDE.md's cube
+# conventions rather than restating them. The document is the input here too.
+#
+# Every parser below raises when its pattern stops matching, deliberately: a
+# reformat that silently switched the gate off is worse than no gate.
+# ─────────────────────────────────────────────────────────────────────────────
+
+_CLAUDE_MD = _REPO / "CLAUDE.md"
+_README = _REPO / "README.md"
+_TOOLS_README = _REPO / "tools" / "cubepath" / "README.md"
+
+
+def _claimed(path: Path, pattern: str) -> list[int]:
+    """Every number `pattern` captures in `path`. Raises if it captures none."""
+    found = [int(m) for m in re.findall(pattern, path.read_text(), re.M)]
+    assert found, f"{path.name}: nothing matched {pattern!r} — the gate has stopped reading"
+    return found
+
+
+def test_the_documented_diagram_total_matches_the_generators() -> None:
+    """Five prose copies of one number, in three files."""
+    for path, pattern in (
+        (_CLAUDE_MD, r"\(\s*(\d+) SVGs\s*\)"),  # the artifact table
+        (_CLAUDE_MD, r"(\d+) SVGs in all"),  # the diagram-pipeline paragraph
+        (_CLAUDE_MD, r"^(\d+) in total\."),  # under the directory table
+        (_README, r"the (\d+) diagrams"),
+        (_TOOLS_README, r"# (\d+) SVGs ->"),
+    ):
+        for n in _claimed(path, pattern):
+            assert n == EXPECTED_DIAGRAMS, (
+                f"{path.name} says {n} diagrams, the generators produce "
+                f"{EXPECTED_DIAGRAMS} — update the prose"
+            )
+
+
+def test_the_documented_directory_table_matches_the_shipped_tree() -> None:
+    """CLAUDE.md's `| directory | n | what |` table, row by row.
+
+    A per-directory pin, so a group that grew while another shrank cannot hide
+    inside a correct total — the same reason `EXPECTED_DIAGRAMS` is cross-checked
+    against the generators' own inventories rather than trusted.
+    """
+    rows = re.findall(r"^\| `([a-z0-9-]+)/` \| (\d+) \|", _CLAUDE_MD.read_text(), re.M)
+    assert rows, "CLAUDE.md: the diagram directory table has stopped matching"
+    documented = {name: int(n) for name, n in rows}
+    actual = {d: len(list((_APP_SVG / d).glob("*.svg"))) for d in _SVG_DIRS}
+    assert documented == actual, (
+        f"CLAUDE.md's directory table disagrees with app/public/diagrams/: "
+        f"documented {documented}, shipped {actual}"
+    )
+    assert sum(actual.values()) == EXPECTED_DIAGRAMS
 
 
 def _themed_renders(tmp_path) -> dict[str, str]:
@@ -1298,7 +1360,7 @@ def test_the_oll_plan_views_are_untouched_two_tier_pictures() -> None:
     # Directories, plus one FILE: `444-parity/` holds one OLL-style picture and
     # one PLL-style one, so it cannot be globbed as either.
     svgs = [
-        *(p for subdir, count in (("oll", 11), ("oll-full", 57)) for p in _dir_of(subdir, count)),
+        *(p for subdir, count in (("oll", 12), ("oll-full", 57)) for p in _dir_of(subdir, count)),
         _APP_SVG / "444-parity" / "444_oll_parity.svg",
     ]
     for svg in svgs:

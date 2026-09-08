@@ -16,16 +16,14 @@
  * self-reference, and every `also` variant distinct — a variant claimed by two
  * entries would make which one wins depend on iteration order.
  */
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync } from "node:fs";
 
 import { describe, expect, test } from "vitest";
 
 import { GLOSSARY, GLOSS_ENTRIES, glossByTerm, glossSlug } from "../src/data/glossary";
+import { lessonSources } from "./lessons";
 
-const LESSON_DIR = new URL("../src/content/lessons/", import.meta.url);
-const LESSONS = readdirSync(LESSON_DIR)
-  .filter((f) => f.endsWith(".mdx"))
-  .map((f) => readFileSync(new URL(f, LESSON_DIR), "utf8"));
+const LESSONS = lessonSources();
 /** The two prose surfaces a reader meets: the 25 lessons and the PDF guide. */
 const ALL_PROSE = [
   ...LESSONS,

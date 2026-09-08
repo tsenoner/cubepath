@@ -14,7 +14,7 @@ from typing import Any
 
 import pytest
 
-from cubepath.algs import ALGORITHMS
+from cubepath.algs import ALGORITHMS, HOOK_SEQUENCE
 from cubepath.cube import (
     COLORS,
     Cube,
@@ -98,13 +98,52 @@ def test_hook_is_phase1_angle():
     assert hook.u_face[5] == M and hook.u_face[7] == M
 
 
+def test_hook_wide_is_phase15_angle():
+    """`oll_hook_wide` shows the L in front-right — the angle f-sexy-f' solves.
+
+    It is `eo.hook`'s /reference icon, the guide's Phase 1.5 figure and Card 2's
+    picture, and its twin `oll_hook` is the Phase 1 hold. The pair is the whole
+    recognition cue and nothing but the file name tells them apart, which is
+    exactly how a back-left picture shipped beside a front-right cue. The two
+    are one case at opposite holds, so each must be the other's 180° turn — a
+    plan view rotated a half turn is its own row-major reversal.
+    """
+    cases = _oll_cross_cases()
+    wide = _case(cases, "oll_hook_wide")
+    assert wide.u_face[5] == YELLOW and wide.u_face[7] == YELLOW  # right + front edges
+    assert wide.u_face[1] == M and wide.u_face[3] == M
+    assert wide.u_face == list(reversed(_case(cases, "oll_hook").u_face))
+
+
 def test_phase1_cross_chain():
     """The Phase-1 flow Dot →(F-sexy-F')→ Hook →(F-sexy-F')→ Line → solved works
-    when the learner holds Hook at back-left and Line horizontal, as pictured."""
+    when the learner holds Hook at back-left and Line horizontal, as pictured.
+
+    The Hook state here is the PICTURE's own: `HOOK_SEQUENCE` is the string
+    `_oll_cross_cases()` derives `oll_hook` from, read rather than retyped. It
+    was hand-built as the wide-f pre-state turned `y2` — a different cube state
+    that only happens to share the U-face edge pattern, so once the generator
+    stopped rotating, the test was checking a state no diagram comes from.
+
+    That rewrite costs the chain its independent witness, and the first line
+    below buys it back. `HOOK_SEQUENCE` is literally `f_alg f_alg`, so
+    `state_before` of it followed by one `f_alg` is `state_before(f_alg)` by
+    algebra — the Hook→Line half would pass for ANY string of that shape. The
+    two holds are only the same case if the Phase 1 chain's pre-state orients
+    the same U edges as the wide-f pre-state turned `y2`, and the two full
+    states are NOT equal, so that is a real comparison and not a restatement.
+    """
     f_alg = ALGORITHMS["F-sexy-F'"]
+    # The picture's Hook is the wide-f's Hook, half a turn away: same edges
+    # oriented, from a state that differs everywhere else.
+    chain = state_before(HOOK_SEQUENCE).faces["U"]
+    wide = state_before(ALGORITHMS["f-sexy-f'"])
+    wide.apply("y2")
+    assert [chain[i] == "Y" for i in (1, 3, 5, 7)] == [
+        wide.faces["U"][i] == "Y" for i in (1, 3, 5, 7)
+    ], "the Phase 1 chain's Hook is not the wide-f Hook turned back-left"
     # Hook held with L in back-left → Line (horizontal)
-    c = state_before(ALGORITHMS["f-sexy-f'"])
-    c.apply("y2")
+    c = state_before(HOOK_SEQUENCE)
     c.apply(f_alg)
     u = c.faces["U"]
     assert u[3] == "Y" and u[5] == "Y" and u[1] != "Y" and u[7] != "Y"
